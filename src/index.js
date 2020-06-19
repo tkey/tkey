@@ -15,11 +15,16 @@ class TKDM {
     this.peggedKey = new BN(peggedKey, "hex");
   }
 
-  initializeLogin() {
-    const keyDetails = this.torus.generateMetadataParams({}, this.privKey);
-    const response = this.torus.getMetadata(keyDetails);
-    console.log("we get back", response);
-
+  async initializeLogin() {
+    const keyDetails = this.torus.generateMetadataParams({}, this.peggedKey);
+    let metadataResponse;
+    try {
+      metadataResponse = await post("https://metadata.tor.us/get", keyDetails);
+    } catch (error) {
+      return error;
+    }
+    console.log("we get back", metadataResponse);
+    return metadataResponse;
     // this.torus.getMetadata
   }
 
@@ -34,6 +39,7 @@ class TKDM {
     const encryptedDetails = await encrypt(getPublic(privKeyBnToEcc(this.privKey)), shareDetails);
     const serializedEncryptedDetails = Buffer.from(JSON.stringify(encryptedDetails)).toString("base64");
     const p = this.torus.generateMetadataParams(serializedEncryptedDetails, this.peggedKey);
+    console.log("waht we're setting", serializedEncryptedDetails);
     let response;
     try {
       response = await post("https://metadata.tor.us/set", p);
