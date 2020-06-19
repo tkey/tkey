@@ -1,7 +1,9 @@
 import Torus from "@toruslabs/torus.js";
+import atob from "atob";
 import BN from "bn.js";
+import btoa from "btoa";
 // import { decrypt, encrypt, generatePrivate, getPublic } from "eccrypto";
-import { encrypt, generatePrivate, getPublic } from "eccrypto";
+import { decrypt, encrypt, generatePrivate, getPublic } from "eccrypto";
 import { ec as EC } from "elliptic";
 
 import { post } from "./httpHelpers";
@@ -24,6 +26,7 @@ class TKDM {
       return error;
     }
     console.log("we get back", metadataResponse);
+    decrypt(this.peggedKey, JSON.parse(atob(metadataResponse.message)));
     return metadataResponse;
     // this.torus.getMetadata
   }
@@ -37,7 +40,7 @@ class TKDM {
     // store torus share on metadata
     const shareDetails = Buffer.from(JSON.stringify({ [this.ecKey.getPublic()]: shares[0] }));
     const encryptedDetails = await encrypt(getPublic(privKeyBnToEcc(this.privKey)), shareDetails);
-    const serializedEncryptedDetails = Buffer.from(JSON.stringify(encryptedDetails)).toString("base64");
+    const serializedEncryptedDetails = btoa(JSON.stringify(encryptedDetails));
     const p = this.torus.generateMetadataParams(serializedEncryptedDetails, this.peggedKey);
     console.log("waht we're setting", serializedEncryptedDetails);
     let response;
@@ -49,11 +52,11 @@ class TKDM {
     console.log("set metadata response", response);
     // store tdkm metadata about key
     const keyDetails = this.torus.generateMetadataParams(
-      Buffer.from(
+      btoa(
         JSON.stringify({
           shareNonce: 2,
         })
-      ).toString("base64"),
+      ),
       this.privKey
     );
     response = await this.torus.setMetadata(keyDetails);
