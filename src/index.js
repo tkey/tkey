@@ -26,7 +26,16 @@ class TKDM {
       return error;
     }
     console.log("we get back", metadataResponse);
-    decrypt(privKeyBnToEcc(this.peggedKey), JSON.parse(atob(metadataResponse.message)));
+
+    const input = JSON.parse(atob(metadataResponse.message));
+    console.log("decrypt input", input);
+    const bufferEncDetails = {
+      ciphertext: Buffer.from(input.ciphertext, "hex"),
+      ephemPublicKey: Buffer.from(input.ephemPublicKey, "hex"),
+      iv: Buffer.from(input.iv, "hex"),
+      mac: Buffer.from(input.mac, "hex"),
+    };
+    decrypt(privKeyBnToEcc(this.peggedKey), bufferEncDetails);
     return metadataResponse;
     // this.torus.getMetadata
   }
@@ -40,7 +49,13 @@ class TKDM {
     // store torus share on metadata
     const shareDetails = Buffer.from(JSON.stringify({ [this.ecKey.getPublic()]: shares[0] }));
     const encryptedDetails = await encrypt(getPublic(privKeyBnToEcc(this.privKey)), shareDetails);
-    const serializedEncryptedDetails = btoa(JSON.stringify(encryptedDetails));
+    const nonBufferEncDetails = {
+      ciphertext: encryptedDetails.ciphertext.toString("hex"),
+      ephemPublicKey: encryptedDetails.ephemPublicKey.toString("hex"),
+      iv: encryptedDetails.iv.toString("hex"),
+      mac: encryptedDetails.mac.toString("hex"),
+    };
+    const serializedEncryptedDetails = btoa(JSON.stringify(nonBufferEncDetails));
     const p = this.torus.generateMetadataParams(serializedEncryptedDetails, this.peggedKey);
     console.log("waht we're setting", serializedEncryptedDetails);
     let response;
