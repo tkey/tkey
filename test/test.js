@@ -1,9 +1,14 @@
-const TDKM = require("../dist/threshold-bak.cjs.js");
+import { deepStrictEqual } from "assert";
+
+import ThresholdBak from "../src/index";
+
 global.fetch = require("node-fetch");
 
-const tdkm = new TDKM();
-
-tdkm.initializeNewKey().then((resp) => {
-  console.log("new key resp", resp);
-  tdkm.initializeLogin();
+describe("threshold bak", function () {
+  it("#should return correct values when not skipping - mainnet", async function () {
+    const tb = new ThresholdBak();
+    const resp = await tb.initializeNewKey();
+    console.log("new key resp", resp);
+    const resp2 = await tb.initializeLogin();
+  });
 });

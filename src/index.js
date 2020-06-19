@@ -9,7 +9,7 @@ import { ec as EC } from "elliptic";
 import { post } from "./httpHelpers";
 import { privKeyBnToEcc } from "./utils";
 
-class TKDM {
+class ThresholdBak {
   constructor({ enableLogging = false, peggedKey = "bef742202d22d45533cc512a550bcfc994259bc78ce98117a92387e72ee8240c" } = {}) {
     this.ec = new EC("secp256k1");
     this.enableLogging = enableLogging;
@@ -35,7 +35,14 @@ class TKDM {
       iv: Buffer.from(input.iv, "hex"),
       mac: Buffer.from(input.mac, "hex"),
     };
-    decrypt(privKeyBnToEcc(this.peggedKey), bufferEncDetails);
+    console.log("mac2", bufferEncDetails.mac);
+    console.log("hexmac2", input.mac);
+    try {
+      decrypt(privKeyBnToEcc(this.privKey), bufferEncDetails);
+    } catch (err) {
+      console.log(err);
+      return err;
+    }
     return metadataResponse;
     // this.torus.getMetadata
   }
@@ -55,6 +62,8 @@ class TKDM {
       iv: encryptedDetails.iv.toString("hex"),
       mac: encryptedDetails.mac.toString("hex"),
     };
+    console.log("mac1", encryptedDetails.mac);
+    console.log("hexmac1", nonBufferEncDetails.mac);
     const serializedEncryptedDetails = btoa(JSON.stringify(nonBufferEncDetails));
     const p = this.torus.generateMetadataParams(serializedEncryptedDetails, this.peggedKey);
     console.log("waht we're setting", serializedEncryptedDetails);
@@ -86,4 +95,4 @@ class TKDM {
   }
 }
 
-export default TKDM;
+export default ThresholdBak;
