@@ -26,7 +26,7 @@ class TKDM {
       return error;
     }
     console.log("we get back", metadataResponse);
-    decrypt(this.peggedKey, JSON.parse(atob(metadataResponse.message)));
+    decrypt(privKeyBnToEcc(this.peggedKey), JSON.parse(atob(metadataResponse.message)));
     return metadataResponse;
     // this.torus.getMetadata
   }
