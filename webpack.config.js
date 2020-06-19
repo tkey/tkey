@@ -1,92 +1,112 @@
-const path = require('path')
-const pkg = require('./package.json')
+/* eslint-disable @typescript-eslint/no-var-requires */
+const path = require("path");
+const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin");
 
-const pkgName = 'tdkm'
-const libraryName = pkgName.charAt(0).toUpperCase() + pkgName.slice(1)
+const pkg = require("./package.json");
 
-const packagesToInclude = ['eccrypto', 'elliptic', 'web3-utils', 'bn.js']
+const pkgName = "threshold-bak";
+const libraryName = pkgName.charAt(0).toUpperCase() + pkgName.slice(1);
+
+const packagesToInclude = ["broadcast-channel"];
 
 const baseConfig = {
-  mode: 'production',
-  entry: './index.js',
-  target: 'node',
+  mode: "production",
+  entry: "./index.ts",
+  target: "web",
   output: {
-    path: path.resolve(__dirname, 'dist'),
+    path: path.resolve(__dirname, "dist"),
     library: libraryName,
-    libraryExport: 'default',
+    libraryExport: "default",
   },
-  optimization: { minimize: false },
   resolve: {
+    extensions: [".ts", ".js", ".json"],
     alias: {
-      'bn.js': path.resolve(__dirname, 'node_modules/bn.js'),
-      lodash: path.resolve(__dirname, 'node_modules/lodash'),
+      "bn.js": path.resolve(__dirname, "node_modules/bn.js"),
+      lodash: path.resolve(__dirname, "node_modules/lodash"),
+      "js-sha3": path.resolve(__dirname, "node_modules/js-sha3"),
     },
   },
   module: {
     rules: [],
   },
-  node: {
-    vm: 'empty',
-  },
-}
+};
+
+// const optimization = {
+//   optimization: {
+//     minimize: false,
+//   },
+// };
 
 const eslintLoader = {
-  enforce: 'pre',
+  enforce: "pre",
   test: /\.js$/,
   exclude: /node_modules/,
-  loader: 'eslint-loader',
-}
+  loader: "eslint-loader",
+};
 
 const babelLoaderWithPolyfills = {
   test: /\.m?js$/,
   exclude: /(node_modules|bower_components)/,
   use: {
-    loader: 'babel-loader',
+    loader: "babel-loader",
   },
-}
+};
 
-const babelLoader = { ...babelLoaderWithPolyfills, use: { loader: 'babel-loader', options: { plugins: ['@babel/transform-runtime'] } } }
+const tsLoader = {
+  test: /\.ts?$/,
+  exclude: /(node_modules|bower_components)/,
+  use: {
+    loader: "ts-loader",
+    options: {
+      // disable type checker - we will use it in fork plugin
+      transpileOnly: true,
+    },
+  },
+};
+
+const babelLoader = { ...babelLoaderWithPolyfills, use: { loader: "babel-loader", options: { plugins: ["@babel/transform-runtime"] } } };
 
 const umdPolyfilledConfig = {
   ...baseConfig,
   output: {
     ...baseConfig.output,
     filename: `${pkgName}.polyfill.umd.min.js`,
-    libraryTarget: 'umd',
+    libraryTarget: "umd",
   },
   module: {
-    rules: [eslintLoader, babelLoaderWithPolyfills],
+    rules: [tsLoader, eslintLoader, babelLoaderWithPolyfills],
   },
-}
+};
 
 const umdConfig = {
   ...baseConfig,
   output: {
     ...baseConfig.output,
     filename: `${pkgName}.umd.min.js`,
-    libraryTarget: 'umd',
+    libraryTarget: "umd",
   },
   module: {
-    rules: [eslintLoader, babelLoader],
+    rules: [tsLoader, eslintLoader, babelLoader],
   },
-}
+};
 
 const cjsConfig = {
   ...baseConfig,
+  // ...optimization,
   output: {
     ...baseConfig.output,
     filename: `${pkgName}.cjs.js`,
-    libraryTarget: 'commonjs2',
+    libraryTarget: "commonjs2",
   },
   module: {
-    rules: [eslintLoader, babelLoader],
+    rules: [tsLoader, eslintLoader, babelLoader],
   },
   externals: [...Object.keys(pkg.dependencies).filter((x) => !packagesToInclude.includes(x)), /^(@babel\/runtime)/i],
-}
+  plugins: [new ForkTsCheckerWebpackPlugin()],
+};
 
-module.exports = [ cjsConfig]
-// module.exports = [cjsConfig]
-
+// module.exports = [umdPolyfilledConfig, umdConfig, cjsConfig];
+module.exports = [cjsConfig];
 // V5
 // experiments: {
 //   outputModule: true

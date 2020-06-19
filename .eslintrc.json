@@ -1,0 +1,96 @@
+{
+  "extends": [
+    "plugin:@typescript-eslint/recommended",
+    "prettier/@typescript-eslint",
+    "standard",
+    "eslint:recommended",
+    "plugin:prettier/recommended",
+    "prettier/babel",
+    "plugin:import/errors",
+    "plugin:import/warnings",
+    "plugin:import/typescript",
+    "plugin:flowtype/recommended",
+    "plugin:promise/recommended",
+    "airbnb-base",
+    "prettier"
+  ],
+  "plugins": ["prettier", "babel", "standard", "promise", "import", "flowtype", "standard", "simple-import-sort", "@typescript-eslint"],
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "sourceType": "module",
+    "ecmaVersion": 9,
+    "project": "./tsconfig.json"
+  },
+  "rules": {
+    "camelcase": 0,
+    "no-useless-constructor": 0,
+    "@typescript-eslint/no-useless-constructor": 2,
+    "import/extensions": [
+      "error",
+      "ignorePackages",
+      {
+        "js": "never",
+        "ts": "never"
+      }
+    ],
+    "no-restricted-syntax": 0,
+    "simple-import-sort/sort": "error",
+    "operator-linebreak": 0,
+    "object-curly-newline": 0,
+    "no-underscore-dangle": 0,
+    "max-len": [
+      2,
+      {
+        "code": 150
+      }
+    ],
+    "import/prefer-default-export": 0,
+    "no-nested-ternary": 0,
+    "no-confusing-arrow": 0,
+    "linebreak-style": 0,
+    "no-unused-vars": [2, { "args": "after-used", "argsIgnorePattern": "_" }],
+    "no-param-reassign": [
+      "error",
+      {
+        "props": false
+      }
+    ],
+    "prettier/prettier": [
+      "error",
+      {
+        "singleQuote": false,
+        "printWidth": 150,
+        "semi": true
+      }
+    ]
+  },
+  "settings": {
+    "import/resolver": {
+      "node": {
+        "extensions": [".js", ".jsx", ".ts", ".tsx", ".json", ".vue"]
+      }
+    }
+  },
+  "overrides": [
+    {
+      "files": ["examples"],
+      "parser": "vue-eslint-parser"
+    }
+  ],
+  "env": {
+    "es6": true,
+    "browser": true,
+    "node": true,
+    "serviceworker": true
+  },
+  "globals": {
+    "document": true,
+    "fetch": true,
+    "jest": true,
+    "it": true,
+    "beforeEach": true,
+    "afterEach": true,
+    "describe": true,
+    "expect": true
+  }
+}
