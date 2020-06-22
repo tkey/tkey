@@ -1,4 +1,4 @@
-export const promiseTimeout = (ms, promise) => {
+const promiseTimeout = (ms, promise) => {
   const timeout = new Promise((resolve, reject) => {
     const id = setTimeout(() => {
       clearTimeout(id);
@@ -8,7 +8,7 @@ export const promiseTimeout = (ms, promise) => {
   return Promise.race([promise, timeout]);
 };
 
-export const post = (url = "", data = {}, opts = {}) => {
+const post = (url = "", data = {}, opts = {}) => {
   const defaultOptions = {
     mode: "cors",
     cache: "no-cache",
@@ -33,11 +33,17 @@ export const post = (url = "", data = {}, opts = {}) => {
   );
 };
 
-export const generateJsonRPCObject = (method, params) => {
+const generateJsonRPCObject = (method, params) => {
   return {
     jsonrpc: "2.0",
     method,
     id: 10,
     params,
   };
+};
+
+module.exports = {
+  promiseTimeout,
+  post,
+  generateJsonRPCObject,
 };

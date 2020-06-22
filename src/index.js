@@ -1,50 +1,39 @@
-import Torus from "@toruslabs/torus.js";
-import atob from "atob";
-import BN from "bn.js";
-import btoa from "btoa";
-// import { decrypt, encrypt, generatePrivate, getPublic } from "eccrypto";
-import { decrypt, encrypt, generatePrivate, getPublic } from "eccrypto";
-import { ec as EC } from "elliptic";
+const Torus = require("@toruslabs/torus.js");
+const BN = require("bn.js");
+// const { decrypt, encrypt, generatePrivate, getPublic } = require("eccrypto");
+const { generatePrivate } = require("eccrypto");
+const { ec } = require("elliptic");
+const EC = ec;
 
-import { post } from "./httpHelpers";
-import { privKeyBnToEcc } from "./utils";
+const TorusServiceProvider = require("./service-provider");
+const TorusStorageLayer = require("./storage-layer");
+const { privKeyBnToPubKeyECC } = require("./utils");
 
 class ThresholdBak {
-  constructor({ enableLogging = false, peggedKey = "bef742202d22d45533cc512a550bcfc994259bc78ce98117a92387e72ee8240c" } = {}) {
+  constructor({ enableLogging = false, peggedKey = "d573b6c7d8fe4ec7cbad052189d4a8415b44d8b87af024872f38db3c694d306d" } = {}) {
     this.ec = new EC("secp256k1");
     this.enableLogging = enableLogging;
     this.torus = new Torus();
     this.peggedKey = new BN(peggedKey, "hex");
+    this.serviceProvider = new TorusServiceProvider({ postboxKey: peggedKey });
+    this.storageLayer = new TorusStorageLayer({ enableLogging: true, serviceProvider: this.serviceProvider });
   }
 
-  async initializeLogin() {
-    const keyDetails = this.torus.generateMetadataParams({}, this.peggedKey);
-    let metadataResponse;
+  async retrieveMetadata() {
+    let keyDetails;
     try {
-      metadataResponse = await post("https://metadata.tor.us/get", keyDetails);
-    } catch (error) {
-      return error;
-    }
-    console.log("we get back", metadataResponse);
-
-    const input = JSON.parse(atob(metadataResponse.message));
-    console.log("decrypt input", input);
-    const bufferEncDetails = {
-      ciphertext: Buffer.from(input.ciphertext, "hex"),
-      ephemPublicKey: Buffer.from(input.ephemPublicKey, "hex"),
-      iv: Buffer.from(input.iv, "hex"),
-      mac: Buffer.from(input.mac, "hex"),
-    };
-    console.log("mac2", bufferEncDetails.mac);
-    console.log("hexmac2", input.mac);
-    try {
-      decrypt(privKeyBnToEcc(this.privKey), bufferEncDetails);
+      keyDetails = await this.storageLayer.getMetadata();
     } catch (err) {
       console.log(err);
-      return err;
     }
-    return metadataResponse;
-    // this.torus.getMetadata
+    let response;
+    try {
+      debugger;
+      response = await this.serviceProvider.decrypt(keyDetails);
+    } catch (err) {
+      console.log(err);
+    }
+    return response;
   }
 
   async initializeNewKey() {
@@ -55,36 +44,27 @@ class ThresholdBak {
     [, this.localShare] = shares;
     // store torus share on metadata
     const shareDetails = Buffer.from(JSON.stringify({ [this.ecKey.getPublic()]: shares[0] }));
-    const encryptedDetails = await encrypt(getPublic(privKeyBnToEcc(this.privKey)), shareDetails);
-    const nonBufferEncDetails = {
-      ciphertext: encryptedDetails.ciphertext.toString("hex"),
-      ephemPublicKey: encryptedDetails.ephemPublicKey.toString("hex"),
-      iv: encryptedDetails.iv.toString("hex"),
-      mac: encryptedDetails.mac.toString("hex"),
-    };
-    console.log("mac1", encryptedDetails.mac);
-    console.log("hexmac1", nonBufferEncDetails.mac);
-    const serializedEncryptedDetails = btoa(JSON.stringify(nonBufferEncDetails));
-    const p = this.torus.generateMetadataParams(serializedEncryptedDetails, this.peggedKey);
-    console.log("waht we're setting", serializedEncryptedDetails);
+    const encryptedDetails = await this.serviceProvider.encrypt(privKeyBnToPubKeyECC(this.peggedKey), shareDetails);
+    console.log("privkey1", this.peggedKey);
     let response;
+    console.log(response);
     try {
-      response = await post("https://metadata.tor.us/set", p);
+      await this.storageLayer.setMetadata(encryptedDetails);
     } catch (err) {
-      console.log("error", err);
+      console.log(err);
+      return err;
     }
-    console.log("set metadata response", response);
     // store tdkm metadata about key
-    const keyDetails = this.torus.generateMetadataParams(
-      btoa(
-        JSON.stringify({
-          shareNonce: 2,
-        })
-      ),
-      this.privKey
-    );
-    response = await this.torus.setMetadata(keyDetails);
-    console.log("set metadata response 2", response);
+    // const keyDetails = this.torus.generateMetadataParams(
+    //   btoa(
+    //     JSON.stringify({
+    //       shareNonce: 2,
+    //     })
+    //   ),
+    //   this.privKey
+    // );
+    // response = await this.torus.setMetadata(keyDetails);
+    // console.log("set metadata response 2", response);
     return { privKey: this.privKey, localShare: this.localShare };
   }
 
@@ -95,4 +75,4 @@ class ThresholdBak {
   }
 }
 
-export default ThresholdBak;
+module.exports = ThresholdBak;

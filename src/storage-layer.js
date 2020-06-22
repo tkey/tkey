@@ -1,11 +1,12 @@
-import BN from "bn.js";
-import { keccak256 } from "web3-utils";
+const atob = require("atob");
+const BN = require("bn.js");
+const btoa = require("btoa");
+const { keccak256 } = require("web3-utils");
 
 // import { encrypt } from "eccrypto";
 // import { decrypt, encrypt, generatePrivate, getPublic } from "eccrypto";
 // import { ec as EC } from "elliptic";
-import { post } from "./httpHelpers";
-
+const { post } = require("./httpHelpers");
 class TorusStorageLayer {
   constructor({ enableLogging = false, hostUrl = "https://metadata.tor.us", serviceProvider }) {
     this.enableLogging = enableLogging;
@@ -14,7 +15,7 @@ class TorusStorageLayer {
   }
 
   async getMetadata() {
-    const keyDetails = this.generateMetadataParams({}, this.privKey);
+    const keyDetails = this.generateMetadataParams({});
     let metadataResponse;
     try {
       metadataResponse = await post(`${this.hostUrl}/get`, keyDetails);
@@ -26,7 +27,7 @@ class TorusStorageLayer {
 
   async setMetadata(encryptedDetails) {
     const serializedEncryptedDetails = btoa(JSON.stringify(encryptedDetails));
-    const p = this.generateMetadataParams(serializedEncryptedDetails, this.peggedKey);
+    const p = this.generateMetadataParams(serializedEncryptedDetails);
     let response;
     try {
       response = await post(`${this.hostUrl}/set`, p);
@@ -51,4 +52,4 @@ class TorusStorageLayer {
   }
 }
 
-export default TorusStorageLayer;
+module.exports = TorusStorageLayer;
