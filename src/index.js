@@ -9,6 +9,29 @@ const TorusServiceProvider = require("./service-provider");
 const TorusStorageLayer = require("./storage-layer");
 const { privKeyBnToPubKeyECC } = require("./utils");
 
+/*
+Metadata
+{
+  pubKey
+  polyDetails[polyID]Polynomial
+  shareDetails[polyID]Share
+}
+
+Share
+{
+  share
+  shareIndex
+
+Polynomial
+{
+  threshold
+  shareIndexes
+}
+
+PolyID
+hash(threshold | commitment of 1 | 2 | ... | n = t)
+*/
+
 class ThresholdBak {
   constructor({ enableLogging = false, peggedKey = "d573b6c7d8fe4ec7cbad052189d4a8415b44d8b87af024872f38db3c694d306d" } = {}) {
     this.ec = new EC("secp256k1");
@@ -43,9 +66,9 @@ class ThresholdBak {
     const shares = this.torus.generateRandomShares(2, 2, this.privKey);
     [, this.localShare] = shares;
     // store torus share on metadata
-    const shareDetails = Buffer.from(JSON.stringify({ [this.ecKey.getPublic()]: shares[0] }));
+    metadata = { [this.ecKey.getPublic()]: shares[0] };
+    const shareDetails = Buffer.from(JSON.stringify());
     const encryptedDetails = await this.serviceProvider.encrypt(privKeyBnToPubKeyECC(this.peggedKey), shareDetails);
-    console.log("privkey1", this.peggedKey);
     let response;
     console.log(response);
     try {
