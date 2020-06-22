@@ -9,7 +9,7 @@ const { privKeyBnToPubKeyECC } = require("../src/utils");
 global.fetch = require("node-fetch");
 
 describe("threshold bak", function () {
-  it("#should return correct values when not skipping - mainnet", async function () {
+  it("#should return correct values when initializing a key", async function () {
     debugger;
     const tb = new ThresholdBak();
     await tb.initializeNewKey();

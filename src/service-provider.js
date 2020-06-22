@@ -22,15 +22,12 @@ class TorusServiceProvider {
 
   // TODO: convert not to use ecc publicKey
   async encrypt(publicKey, msg) {
-    console.log("encryption args", arguments);
     let encryptedDetails;
     try {
       encryptedDetails = await ecEncrypt(publicKey, msg);
     } catch (err) {
       throw err;
     }
-
-    console.log("encryption", JSON.stringify(encryptedDetails));
     return {
       ciphertext: encryptedDetails.ciphertext.toString("hex"),
       ephemPublicKey: encryptedDetails.ephemPublicKey.toString("hex"),
@@ -47,8 +44,6 @@ class TorusServiceProvider {
       iv: Buffer.from(msg.iv, "hex"),
       mac: Buffer.from(msg.mac, "hex"),
     };
-    console.log("decryption", JSON.stringify(bufferEncDetails));
-    console.log("privKey2", this.postboxKey);
     let decryption;
     try {
       decryption = await ecDecrypt(privKeyBnToEcc(this.postboxKey), bufferEncDetails);
