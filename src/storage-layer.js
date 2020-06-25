@@ -8,7 +8,7 @@ const { keccak256 } = require("web3-utils");
 // import { ec as EC } from "elliptic";
 const { post } = require("./httpHelpers");
 class TorusStorageLayer {
-  constructor({ enableLogging = false, hostUrl = "https://metadata.tor.us", serviceProvider }) {
+  constructor({ enableLogging = false, hostUrl = "http://localhost:5051", serviceProvider }) {
     this.enableLogging = enableLogging;
     this.hostUrl = hostUrl;
     this.serviceProvider = serviceProvider;
@@ -17,22 +17,25 @@ class TorusStorageLayer {
   async getMetadata() {
     const keyDetails = this.generateMetadataParams({});
     let metadataResponse;
+    console.log("get", keyDetails);
     try {
       metadataResponse = await post(`${this.hostUrl}/get`, keyDetails);
     } catch (error) {
-      return error;
+      throw error;
     }
+    console.log("received", metadataResponse.message);
     return JSON.parse(atob(metadataResponse.message));
   }
 
   async setMetadata(encryptedDetails) {
     const serializedEncryptedDetails = btoa(JSON.stringify(encryptedDetails));
     const p = this.generateMetadataParams(serializedEncryptedDetails);
+    console.log(p);
     let response;
     try {
       response = await post(`${this.hostUrl}/set`, p);
     } catch (err) {
-      return err;
+      throw err;
     }
     return response;
   }

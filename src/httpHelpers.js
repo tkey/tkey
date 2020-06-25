@@ -24,12 +24,16 @@ const post = (url = "", data = {}, opts = {}) => {
   };
   return promiseTimeout(
     12000,
-    fetch(url, options).then((response) => {
-      if (response.ok) {
-        return response.json();
-      }
-      throw response;
-    })
+    fetch(url, options)
+      .then((response) => {
+        if (response.ok) {
+          return response.json();
+        }
+        throw response;
+      })
+      .catch((err) => {
+        throw err;
+      })
   );
 };
 

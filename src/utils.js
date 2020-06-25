@@ -1,14 +1,20 @@
-const { getPublic } = require("eccrypto");
+const { ec } = require("elliptic");
+const EC = ec;
 
-const privKeyBnToEcc = (bnPrivKey) => {
-  return bnPrivKey.toBuffer("be", 32);
-};
+// const { getPublic } = require("eccrypto");
 
-const privKeyBnToPubKeyECC = (bnPrivKey) => {
-  return getPublic(privKeyBnToEcc(bnPrivKey));
-};
+// const privKeyBnToEcc = (bnPrivKey) => {
+//   return bnPrivKey.toBuffer("be", 32);
+// };
+
+// const privKeyBnToPubKeyECC = (bnPrivKey) => {
+//   return getPublic(privKeyBnToEcc(bnPrivKey));
+// };
+
+const ecCurve = new EC("secp256k1");
 
 module.exports = {
-  privKeyBnToEcc,
-  privKeyBnToPubKeyECC,
+  // privKeyBnToEcc,
+  // privKeyBnToPubKeyECC,
+  ecCurve,
 };

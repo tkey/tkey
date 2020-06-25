@@ -1,3 +1,3 @@
-const ThresholdBak = require("./src/index");
+const { ThresholdBak } = require("./src/index");
 
 module.exports = ThresholdBak;

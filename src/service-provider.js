@@ -1,12 +1,10 @@
 const Torus = require("@toruslabs/torus.js");
-const BN = require("bn.js");
+const BN = require("./bnWrapper");
 const { decrypt, encrypt } = require("eccrypto");
 // import { decrypt, encrypt, generatePrivate, getPublic } from "eccrypto";
 const { ec } = require("elliptic");
 
 const EC = ec;
-
-const { privKeyBnToEcc } = require("./utils");
 
 const ecEncrypt = encrypt;
 const ecDecrypt = decrypt;
@@ -23,6 +21,7 @@ class TorusServiceProvider {
   // TODO: convert not to use ecc publicKey
   async encrypt(publicKey, msg) {
     let encryptedDetails;
+    debugger;
     try {
       encryptedDetails = await ecEncrypt(publicKey, msg);
     } catch (err) {
@@ -46,7 +45,9 @@ class TorusServiceProvider {
     };
     let decryption;
     try {
-      decryption = await ecDecrypt(privKeyBnToEcc(this.postboxKey), bufferEncDetails);
+      console.log("decryption key", this.postboxKey);
+      debugger;
+      decryption = await ecDecrypt(this.postboxKey.toPrivKeyECC(), bufferEncDetails);
     } catch (err) {
       console.log(err);
       return err;
