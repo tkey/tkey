@@ -21,7 +21,6 @@ class TorusServiceProvider {
   // TODO: convert not to use ecc publicKey
   async encrypt(publicKey, msg) {
     let encryptedDetails;
-    debugger;
     try {
       encryptedDetails = await ecEncrypt(publicKey, msg);
     } catch (err) {
@@ -45,8 +44,6 @@ class TorusServiceProvider {
     };
     let decryption;
     try {
-      console.log("decryption key", this.postboxKey);
-      debugger;
       decryption = await ecDecrypt(this.postboxKey.toPrivKeyECC(), bufferEncDetails);
     } catch (err) {
       console.log(err);

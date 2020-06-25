@@ -24,7 +24,6 @@ class ThresholdBak {
     } catch (err) {
       throw new Error(`getMetadata errored: ${err}`);
     }
-    console.log("keydetails", keyDetails);
     let response;
     try {
       response = await this.serviceProvider.decrypt(keyDetails);
@@ -68,7 +67,6 @@ class ThresholdBak {
   setKey(privKey) {
     this.privKey = privKey;
     this.ecKey = ecCurve.keyFromPrivate(this.privKey);
-    console.log("privkey", this.privKey);
   }
 }
 

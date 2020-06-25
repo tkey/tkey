@@ -17,13 +17,11 @@ class TorusStorageLayer {
   async getMetadata() {
     const keyDetails = this.generateMetadataParams({});
     let metadataResponse;
-    console.log("get", keyDetails);
     try {
       metadataResponse = await post(`${this.hostUrl}/get`, keyDetails);
     } catch (error) {
       throw error;
     }
-    console.log("received", metadataResponse.message);
     return JSON.parse(atob(metadataResponse.message));
   }
 
