@@ -55,10 +55,7 @@ class ThresholdBak {
     metadata.addFromPolynomialAndShares(poly, shares);
 
     // store torus share on metadata
-    const serializedMetadata = JSON.stringify(
-      "testngonjkdsfnlkjadnflkjadkljfkjahejklhqkljhekqnkljbqgkljbeiuqbnijnfvkldabniufqeribeqkjbrfeqkjbviuabibe"
-    );
-    const bufferMetadata = Buffer.from(serializedMetadata);
+    const bufferMetadata = Buffer.from(JSON.stringify(metadata));
     console.log("enckey", this.postboxKey);
     const encryptedDetails = await this.serviceProvider.encrypt(this.postboxKey.getPubKeyECC(), bufferMetadata);
     let response;
