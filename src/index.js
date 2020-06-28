@@ -14,6 +14,7 @@ class ThresholdBak {
     this.postboxKey = new BN(postboxKey, "hex");
     this.serviceProvider = new TorusServiceProvider({ postboxKey: postboxKey });
     this.storageLayer = new TorusStorageLayer({ enableLogging: true, serviceProvider: this.serviceProvider });
+
     this.shares = {};
   }
 
@@ -35,8 +36,38 @@ class ThresholdBak {
     } catch (err) {
       throw new Error(`getMetadata in initialize errored: ${err}`);
     }
-    return metadata;
-    // metadata exists proceed to reconstruction
+    this.metadata = new Metadata(metadata);
+    this.addShare(shareStore);
+    // now that we have metadata we set the requirements for reconstruction
+    return;
+  }
+
+  reconstructKey() {
+    if (!this.metadata) {
+      throw Error("metadata not found, SDK likely not intialized");
+    }
+    let pubPoly = this.metadata.getLatestPublicPolynomial();
+    let requiredThreshold = pubPoly.getThreshold();
+    let pubPolyID = pubPoly.getPolynomialID();
+
+    // check if threshold is met
+    let polyShares = Object.keys(this.shares[pubPolyID]);
+    let numberOfShares = polyShares.length;
+    if (numberOfShares < requiredThreshold) {
+      // check if we have any encrypted shares first
+      throw Error(`not enough shares for reconstruction, require ${requiredThreshold} but got ${numberOfShares}`);
+    }
+    debugger;
+    let shareArr = [];
+    let shareIndexArr = [];
+    for (let i = 0; i < requiredThreshold; i++) {
+      shareArr.push(this.shares[pubPolyID][polyShares[i]].share.share);
+      shareIndexArr.push(this.shares[pubPolyID][polyShares[i]].share.shareIndex);
+    }
+    let privKey = lagrangeInterpolation(shareArr, shareIndexArr);
+    this.setKey(privKey);
+    debugger;
+    return this.privKey;
   }
 
   async initializeNewKey() {
@@ -58,9 +89,8 @@ class ThresholdBak {
     // create metadata to be stored
     const metadata = new Metadata(this.privKey.getPubKeyPoint());
     metadata.addFromPolynomialAndShares(poly, shares);
-    let serviceProviderShare = shares[2];
+    let serviceProviderShare = shares[shareIndexes[2].toString("hex")];
 
-    debugger;
     // store torus share on metadata
     let shareStore = new ShareStore({ share: serviceProviderShare, polynomialID: poly.getPolynomialID() });
     try {
@@ -75,20 +105,21 @@ class ThresholdBak {
     } catch (err) {
       throw new Error(`setMetadata errored: ${err}`);
     }
-
-    return { privKey: this.privKey };
+    return {
+      privKey: this.privKey,
+      deviceShare: new ShareStore({ share: shares[shareIndexes[3].toString("hex")], polynomialID: poly.getPolynomialID() }),
+    };
   }
 
-  // async retrieveMetadata() {
-  //   let rawMetadata;
-  //   try {
-  //     rawMetadata = await this.storageLayer.getMetadata();
-  //   } catch (err) {
-  //     throw new Error(`getMetadata errored: ${err}`);
-  //   }
-  //   let metadata = new Metadata(rawMetadata);
-  //   return metadata;
-  // }
+  addShare(shareStore) {
+    if (!(shareStore instanceof ShareStore)) {
+      throw TypeError("can only add type ShareStore into shares");
+    }
+    if (!(shareStore.polynomialID in this.shares)) {
+      this.shares[shareStore.polynomialID] = {};
+    }
+    this.shares[shareStore.polynomialID][shareStore.share.shareIndex.toString("hex")] = shareStore;
+  }
 
   setKey(privKey) {
     this.privKey = privKey;
@@ -98,29 +129,29 @@ class ThresholdBak {
 
 // PRIMATIVES (TODO: MOVE TYPES AND THIS INTO DIFFERENT FOLDER)
 
-// function lagrangeInterpolation(shares, nodeIndex) {
-//   if (shares.length !== nodeIndex.length) {
-//     return null;
-//   }
-//   let secret = new BN(0);
-//   for (let i = 0; i < shares.length; i += 1) {
-//     let upper = new BN(1);
-//     let lower = new BN(1);
-//     for (let j = 0; j < shares.length; j += 1) {
-//       if (i !== j) {
-//         upper = upper.mul(nodeIndex[j].neg());
-//         upper = upper.umod(ecCurve.curve.n);
-//         let temp = nodeIndex[i].sub(nodeIndex[j]);
-//         temp = temp.umod(ecCurve.curve.n);
-//         lower = lower.mul(temp).umod(ecCurve.curve.n);
-//       }
-//     }
-//     let delta = upper.mul(lower.invm(ecCurve.curve.n)).umod(ecCurve.curve.n);
-//     delta = delta.mul(shares[i]).umod(ecCurve.curve.n);
-//     secret = secret.add(delta);
-//   }
-//   return secret.umod(ecCurve.curve.n);
-// }
+function lagrangeInterpolation(shares, nodeIndex) {
+  if (shares.length !== nodeIndex.length) {
+    throw Error("shares not equal to nodeIndex length in lagrangeInterpolation");
+  }
+  let secret = new BN(0);
+  for (let i = 0; i < shares.length; i += 1) {
+    let upper = new BN(1);
+    let lower = new BN(1);
+    for (let j = 0; j < shares.length; j += 1) {
+      if (i !== j) {
+        upper = upper.mul(nodeIndex[j].neg());
+        upper = upper.umod(ecCurve.curve.n);
+        let temp = nodeIndex[i].sub(nodeIndex[j]);
+        temp = temp.umod(ecCurve.curve.n);
+        lower = lower.mul(temp).umod(ecCurve.curve.n);
+      }
+    }
+    let delta = upper.mul(lower.invm(ecCurve.curve.n)).umod(ecCurve.curve.n);
+    delta = delta.mul(shares[i]).umod(ecCurve.curve.n);
+    secret = secret.add(delta);
+  }
+  return secret.umod(ecCurve.curve.n);
+}
 
 // function generateRandomShares(degree, numOfShares, secret) {
 //   const poly = this.generateRandomPolynomial(degree, secret);
@@ -207,22 +238,23 @@ class Metadata {
       this.pubKey = input;
       this.publicPolynomials = {};
       this.publicShares = {};
+      this.polyIDList = [];
     } else if (typeof input == "object") {
       // assumed to be JSON.parsed object
       this.pubKey = new Point(input.pubKey.x, input.pubKey.y);
-      // for publicPolynomials
       this.publicPolynomials = {};
-
+      this.publicShares = {};
+      this.polyIDList = input.polyIDList;
+      // for publicPolynomials
       for (let pubPolyID in input.publicPolynomials) {
         let pointCommitments = [];
         input.publicPolynomials[pubPolyID].polynomialCommitments.forEach((commitment) => {
           pointCommitments.push(new Point(commitment.x, commitment.y));
         });
         let publicPolynomial = new PublicPolynomial(pointCommitments);
-        this.addPublicPolynomial(publicPolynomial);
+        this.publicPolynomials[pubPolyID] = publicPolynomial;
       }
       // for publicShares
-      this.publicShares = {};
       for (let pubPolyID in input.publicShares) {
         let newPubShare = new PublicShare(
           input.publicShares[pubPolyID].shareIndex,
@@ -235,8 +267,14 @@ class Metadata {
     }
   }
 
+  getLatestPublicPolynomial() {
+    return this.publicPolynomials[this.polyIDList[this.polyIDList.length - 1]];
+  }
+
   addPublicPolynomial(publicPolynomial) {
-    this.publicPolynomials[publicPolynomial.getPolynomialID()] = publicPolynomial;
+    let polyID = publicPolynomial.getPolynomialID();
+    this.publicPolynomials[polyID] = publicPolynomial;
+    this.polyIDList.push(polyID);
   }
 
   addPublicShare(polynomialID, publicShare) {
@@ -406,4 +444,5 @@ module.exports = {
   Polynomial,
   Metadata,
   generateRandomPolynomial,
+  lagrangeInterpolation,
 };

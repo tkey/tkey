@@ -2,7 +2,7 @@ const { deepStrictEqual, fail } = require("assert");
 const { Point, BN } = require("../src/types.js");
 const { generatePrivate } = require("eccrypto");
 
-const { ThresholdBak, Polynomial, Metadata, generateRandomPolynomial } = require("../src/index");
+const { ThresholdBak, Polynomial, Metadata, generateRandomPolynomial, lagrangeInterpolation } = require("../src/index");
 const TorusServiceProvider = require("../src/service-provider");
 const TorusStorageLayer = require("../src/storage-layer");
 // const { privKeyBnToPubKeyECC } = require("../src/utils");
@@ -12,10 +12,13 @@ global.fetch = require("node-fetch");
 describe("threshold bak", function () {
   it("#should return correct values when initializing a key", async function () {
     const tb = new ThresholdBak();
-    const keyz = await tb.initializeNewKey();
-    console.log("keyz", keyz);
-    const resp2 = await tb.initialize();
-    console.log("resp2", resp2);
+    const resp1 = await tb.initializeNewKey();
+    console.log("resp1", resp1);
+    const tb2 = new ThresholdBak();
+    await tb2.initialize();
+    tb2.addShare(resp1.deviceShare);
+    const reconstructedKey = tb2.reconstructKey();
+    console.log("resp2", reconstructedKey);
   });
 });
 
@@ -97,5 +100,19 @@ describe("threshold bak", function () {
 //     let serializedMetadata = JSON.stringify(metadata);
 //     const deserializedMetadata = new Metadata(JSON.parse(serializedMetadata));
 //     deepStrictEqual(metadata, deserializedMetadata, "metadata and deserializedMetadata should be equal");
+//   });
+// });
+
+// describe("lagrange interpolate", function () {
+//   it("#should interpolate secret correctly", async function () {
+//     let polyArr = [new BN(5), new BN(2)];
+//     let poly = new Polynomial(polyArr);
+//     let share1 = poly.polyEval(new BN(1));
+//     let share2 = poly.polyEval(new BN(2));
+//     let key = lagrangeInterpolation([share1, share2], [new BN(1), new BN(2)]);
+//     debugger;
+//     if (key.cmp(new BN(5)) != 0) {
+//       fail("poly result should equal 7");
+//     }
 //   });
 // });

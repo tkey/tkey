@@ -43,7 +43,6 @@ class TorusStorageLayer {
     if (privKey) {
       encryptedDetails = await encrypt(privKey.getPubKeyECC(), bufferMetadata);
     } else {
-      debugger;
       encryptedDetails = await this.serviceProvider.encrypt(this.serviceProvider.retrievePubKey("ecc"), bufferMetadata);
     }
     const serializedEncryptedDetails = btoa(JSON.stringify(encryptedDetails));
