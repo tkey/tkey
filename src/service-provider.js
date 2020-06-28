@@ -1,13 +1,12 @@
 const Torus = require("@toruslabs/torus.js");
 const { BN } = require("./types.js");
-const { decrypt, encrypt } = require("eccrypto");
+const { decrypt, encrypt } = require("./utils");
+const decryptUtils = decrypt;
+const encryptUtils = encrypt;
 // import { decrypt, encrypt, generatePrivate, getPublic } from "eccrypto";
 const { ec } = require("elliptic");
 
 const EC = ec;
-
-const ecEncrypt = encrypt;
-const ecDecrypt = decrypt;
 
 class TorusServiceProvider {
   constructor({ enableLogging = false, postboxKey = "d573b6c7d8fe4ec7cbad052189d4a8415b44d8b87af024872f38db3c694d306d" } = {}) {
@@ -18,40 +17,30 @@ class TorusServiceProvider {
     this.ecPostboxKey = this.ec.keyFromPrivate(this.postboxKey.toString("hex", 64));
   }
 
-  // TODO: convert not to use ecc publicKey
   async encrypt(publicKey, msg) {
     let encryptedDetails;
     try {
-      encryptedDetails = await ecEncrypt(publicKey, msg);
+      encryptedDetails = await encryptUtils(publicKey, msg);
     } catch (err) {
       throw err;
     }
-    return {
-      ciphertext: encryptedDetails.ciphertext.toString("hex"),
-      ephemPublicKey: encryptedDetails.ephemPublicKey.toString("hex"),
-      iv: encryptedDetails.iv.toString("hex"),
-      mac: encryptedDetails.mac.toString("hex"),
-    };
+    return encryptedDetails;
   }
 
-  // TODO: convert not to use ecc private key
   async decrypt(msg) {
-    const bufferEncDetails = {
-      ciphertext: Buffer.from(msg.ciphertext, "hex"),
-      ephemPublicKey: Buffer.from(msg.ephemPublicKey, "hex"),
-      iv: Buffer.from(msg.iv, "hex"),
-      mac: Buffer.from(msg.mac, "hex"),
-    };
     let decryption;
     try {
-      decryption = await ecDecrypt(this.postboxKey.toPrivKeyECC(), bufferEncDetails);
+      decryption = await decryptUtils(this.postboxKey.toPrivKeyECC(), msg);
     } catch (err) {
       return err;
     }
     return decryption;
   }
 
-  retrievePubKey() {
+  retrievePubKey(type) {
+    if (type === "ecc") {
+      return this.postboxKey.getPubKeyECC();
+    }
     return this.ecPostboxKey.getPublic();
   }
 

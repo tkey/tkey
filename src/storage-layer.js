@@ -2,6 +2,7 @@ const atob = require("atob");
 const BN = require("bn.js");
 const btoa = require("btoa");
 const { keccak256 } = require("web3-utils");
+const { decrypt, encrypt } = require("./utils");
 
 // import { encrypt } from "eccrypto";
 // import { decrypt, encrypt, generatePrivate, getPublic } from "eccrypto";
@@ -22,11 +23,31 @@ class TorusStorageLayer {
     } catch (error) {
       throw error;
     }
-    return JSON.parse(atob(metadataResponse.message));
+    let encryptedMessage = JSON.parse(atob(metadataResponse.message));
+    let decrypted;
+    try {
+      if (privKey) {
+        decrypted = await decrypt(privKey.toPrivKeyECC(), encryptedMessage);
+      } else {
+        decrypted = await this.serviceProvider.decrypt(encryptedMessage);
+      }
+    } catch (err) {
+      throw new Error(`decrypt errored in getMetadata: ${err}`);
+    }
+    return JSON.parse(decrypted);
   }
 
-  async setMetadata(encryptedDetails, privKey) {
+  async setMetadata(input, privKey) {
+    const bufferMetadata = Buffer.from(JSON.stringify(input));
+    let encryptedDetails;
+    if (privKey) {
+      encryptedDetails = await encrypt(privKey.getPubKeyECC(), bufferMetadata);
+    } else {
+      debugger;
+      encryptedDetails = await this.serviceProvider.encrypt(this.serviceProvider.retrievePubKey("ecc"), bufferMetadata);
+    }
     const serializedEncryptedDetails = btoa(JSON.stringify(encryptedDetails));
+
     const p = this.generateMetadataParams(serializedEncryptedDetails, privKey);
     let response;
     try {
