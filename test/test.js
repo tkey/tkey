@@ -1,8 +1,8 @@
 const { deepStrictEqual, fail } = require("assert");
-const BN = require("../src/bnWrapper");
+const { Point, BN } = require("../src/types.js");
 // const { getPublic } = require("eccrypto");
 
-const { ThresholdBak, Polynomial } = require("../src/index");
+const { ThresholdBak, Polynomial, Metadata } = require("../src/index");
 const TorusServiceProvider = require("../src/service-provider");
 const TorusStorageLayer = require("../src/storage-layer");
 // const { privKeyBnToPubKeyECC } = require("../src/utils");
@@ -15,8 +15,8 @@ describe("threshold bak", function () {
     const keyz = await tb.initializeNewKey();
     console.log("keyz", keyz);
     const resp2 = await tb.retrieveMetadata();
-
     console.log("resp2", JSON.parse(resp2));
+    debugger;
   });
 });
 

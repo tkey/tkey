@@ -1,12 +1,11 @@
 const Torus = require("@toruslabs/torus.js");
-const BN = require("./bnWrapper");
 // const { decrypt, encrypt, generatePrivate, getPublic } = require("eccrypto");
 const { generatePrivate } = require("eccrypto");
 
 const TorusServiceProvider = require("./service-provider");
 const TorusStorageLayer = require("./storage-layer");
 const { ecCurve } = require("./utils");
-const { Point } = require("./types.js");
+const { Point, BN } = require("./types.js");
 
 class ThresholdBak {
   constructor({ enableLogging = false, postboxKey = "d573b6c7d8fe4ec7cbad052189d4a8415b44d8b87af024872f38db3c694d306d" } = {}) {
@@ -175,10 +174,19 @@ hash(threshold | commitment of 1 | 2 | ... | n = t)
 */
 
 class Metadata {
-  constructor(pubKey) {
-    this.pubKey = pubKey;
-    this.publicPolynomials = {};
-    this.publicShares = {};
+  constructor(input) {
+    if (input instanceof Point) {
+      this.pubKey = input;
+      this.publicPolynomials = {};
+      this.publicShares = {};
+    } else if (typeof input == "object") {
+    } else {
+      throw TypeError("not a valid constructor argument for Metadata");
+    }
+  }
+
+  setPublicKey(x, y) {
+    this.pubKey = new Point(x, y);
   }
 
   addPublicPolynomial(publicPolynomial) {
@@ -330,4 +338,5 @@ class PublicShare {
 module.exports = {
   ThresholdBak,
   Polynomial,
+  Metadata,
 };

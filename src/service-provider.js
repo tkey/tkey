@@ -1,5 +1,5 @@
 const Torus = require("@toruslabs/torus.js");
-const BN = require("./bnWrapper");
+const { BN } = require("./types.js");
 const { decrypt, encrypt } = require("eccrypto");
 // import { decrypt, encrypt, generatePrivate, getPublic } from "eccrypto";
 const { ec } = require("elliptic");
