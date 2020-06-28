@@ -180,13 +180,28 @@ class Metadata {
       this.publicPolynomials = {};
       this.publicShares = {};
     } else if (typeof input == "object") {
+      // assumed to be JSON.parsed object
+      this.pubKey = new Point(input.pubKey.x, "hex", input.pubKey.y, "hex");
+      // for publicPolynomials
+      for (let pubPolyID in input.publicPolynomials) {
+        let pointCommitments = [];
+        input.publicPolynomials[pubPolyID].forEach((commitment) => {
+          pointCommitments.push(new Point(commitment.x, commitment.y));
+        });
+        let publicPolynomial = new PublicPolynomial(pointCommitments);
+        this.addPublicPolynomial(publicPolynomial);
+      }
+      // for publicShares
+      for (let pubPolyID in input.publicShares) {
+        let newPubShare = new PublicShare(
+          input.publicShares[pubPolyID].shareIndex,
+          new Point(input.publicShares[pubPolyID].shareCommitment.x, input.publicShares[pubPolyID].shareCommitment.y)
+        );
+        this.addPublicShare(newPubShare);
+      }
     } else {
       throw TypeError("not a valid constructor argument for Metadata");
     }
-  }
-
-  setPublicKey(x, y) {
-    this.pubKey = new Point(x, y);
   }
 
   addPublicPolynomial(publicPolynomial) {
@@ -297,12 +312,10 @@ class Polynomial {
 
 class PublicShare {
   constructor(shareIndex, shareCommitment) {
-    if (typeof shareCommitment === "string") {
-      this.shareCommitment = new BN(shareCommitment, "hex");
-    } else if (shareCommitment instanceof Point) {
+    if (shareCommitment instanceof Point) {
       this.shareCommitment = shareCommitment;
     } else {
-      throw new TypeError("expected shareCommitment to be either BN or hex string");
+      throw new TypeError("expected shareCommitment to be Point");
     }
 
     if (typeof shareIndex === "string") {

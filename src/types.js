@@ -19,11 +19,15 @@ BN.prototype.getPubKeyPoint = function () {
 class Point {
   constructor(x, y) {
     debugger;
-    if (!(x instanceof BN || y instanceof BN)) {
+    if (x instanceof BN && y instanceof BN) {
+      this.x = x;
+      this.y = y;
+    } else if (typeof x == "string" && typeof y == "string") {
+      this.x = new BN(x, "hex");
+      this.y = new BN(y, "hex");
+    } else {
       throw TypeError("Point needs to be intialized with BN");
     }
-    this.x = x;
-    this.y = y;
   }
 }
 
