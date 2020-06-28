@@ -14,12 +14,30 @@ class ThresholdBak {
     this.postboxKey = new BN(postboxKey, "hex");
     this.serviceProvider = new TorusServiceProvider({ postboxKey: postboxKey });
     this.storageLayer = new TorusStorageLayer({ enableLogging: true, serviceProvider: this.serviceProvider });
+    this.shares = {};
   }
 
-  // async initialize() {
-  //   let metadata = await this.retrieveMetadata();
+  async initialize() {
+    // first we see if a share has been kept for us
+    let rawShareStore;
+    try {
+      rawShareStore = await this.storageLayer.getMetadata();
+    } catch (err) {
+      throw new Error(`getMetadata for rawShareStore in initialize errored: ${err}`);
+    }
+    let shareStore = new ShareStore(rawShareStore);
 
-  // }
+    // if there is no error we fetch metadata for the account
+
+    let metadata;
+    try {
+      metadata = await this.storageLayer.getMetadata(shareStore.share.share);
+    } catch (err) {
+      throw new Error(`getMetadata in initialize errored: ${err}`);
+    }
+    return metadata;
+    // metadata exists proceed to reconstruction
+  }
 
   async initializeNewKey() {
     const tmpPriv = generatePrivate();
@@ -42,18 +60,18 @@ class ThresholdBak {
     metadata.addFromPolynomialAndShares(poly, shares);
     let serviceProviderShare = shares[2];
 
+    debugger;
     // store torus share on metadata
+    let shareStore = new ShareStore({ share: serviceProviderShare, polynomialID: poly.getPolynomialID() });
     try {
-      await this.storageLayer.setMetadata(serviceProviderShare);
+      await this.storageLayer.setMetadata(shareStore);
     } catch (err) {
       throw new Error(`setMetadata errored: ${err}`);
     }
 
     // store metadata on metadata respective to share
-    const bufferMetadata = Buffer.from(JSON.stringify(serviceProviderShare));
-    const encryptedDetails = await this.serviceProvider.encrypt(this.postboxKey.getPubKeyECC(), bufferMetadata);
     try {
-      await this.storageLayer.setMetadata(encryptedDetails);
+      await this.storageLayer.setMetadata(metadata, serviceProviderShare.share);
     } catch (err) {
       throw new Error(`setMetadata errored: ${err}`);
     }
@@ -61,22 +79,16 @@ class ThresholdBak {
     return { privKey: this.privKey };
   }
 
-  async retrieveMetadata() {
-    let keyDetails;
-    try {
-      keyDetails = await this.storageLayer.getMetadata();
-    } catch (err) {
-      throw new Error(`getMetadata errored: ${err}`);
-    }
-    let response;
-    try {
-      response = await this.serviceProvider.decrypt(keyDetails);
-    } catch (err) {
-      throw new Error(`decrypt errored: ${err}`);
-    }
-    let metadata = new Metadata(JSON.parse(response));
-    return metadata;
-  }
+  // async retrieveMetadata() {
+  //   let rawMetadata;
+  //   try {
+  //     rawMetadata = await this.storageLayer.getMetadata();
+  //   } catch (err) {
+  //     throw new Error(`getMetadata errored: ${err}`);
+  //   }
+  //   let metadata = new Metadata(rawMetadata);
+  //   return metadata;
+  // }
 
   setKey(privKey) {
     this.privKey = privKey;
@@ -164,6 +176,7 @@ Share
 {
   share
   shareIndex
+}
 
 PublicPolynomial
 {
@@ -271,9 +284,26 @@ class Share {
   }
 }
 
+class ShareStore {
+  constructor({ share, polynomialID }) {
+    if (share instanceof Share && typeof polynomialID === "string") {
+      this.share = share;
+      this.polynomialID = polynomialID;
+    } else if (typeof share === "object" && typeof polynomialID === "string") {
+      this.share = new Share(share.shareIndex, share.share);
+      this.polynomialID = polynomialID;
+    } else {
+      throw new TypeError("expected ShareStore inputs to be Share and string");
+    }
+  }
+}
+
 class PublicPolynomial {
   constructor(polynomialCommitments) {
     this.polynomialCommitments = polynomialCommitments;
+  }
+  getThreshold() {
+    return this.polynomialCommitments.length;
   }
   getPolynomialID() {
     let idSeed = "";
@@ -325,6 +355,11 @@ class Polynomial {
       polynomialCommitments.push(this.polynomial[i].getPubKeyPoint());
     }
     return new PublicPolynomial(polynomialCommitments);
+  }
+
+  // TODO: inefficinet optimize this
+  getPolynomialID() {
+    return this.getPublicPolynomial().getPolynomialID();
   }
 }
 
