@@ -3,6 +3,10 @@ const { ecCurve } = require("./utils");
 const { getPublic } = require("eccrypto");
 
 // This is done because we can't extend BN
+BN.prototype.toPrivKeyEC = function () {
+  return ecCurve.keyFromPrivate(this.toString("hex", 64));
+};
+
 BN.prototype.toPrivKeyECC = function () {
   return this.toBuffer("be", 32);
 };

@@ -53,6 +53,16 @@ describe("TorusStorageLayer", function () {
     let resp = await storageLayer.getMetadata();
     deepStrictEqual(resp, message, "set and get message should be equal");
   });
+  it("#should get or set with specified private key correctly", async function () {
+    const privKey = "d573b6c7d8fe4ec7cbad052189d4a8415b44d8b87af024872f38db3c694d306d";
+    const privKeyBN = new BN(privKey, 16);
+    const tsp = new TorusServiceProvider({ postboxKey: privKey });
+    const storageLayer = new TorusStorageLayer({ enableLogging: true, serviceProvider: tsp });
+    const message = { test: Math.random().toString(36).substring(7) };
+    await storageLayer.setMetadata(message, privKeyBN);
+    let resp = await storageLayer.getMetadata(privKeyBN);
+    deepStrictEqual(resp, message, "set and get message should be equal");
+  });
 });
 
 describe("polynomial", function () {

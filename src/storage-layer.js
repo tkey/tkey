@@ -66,7 +66,7 @@ class TorusStorageLayer {
     };
     let hash = keccak256(JSON.stringify(setData)).slice(2);
     if (privKey) {
-      unparsedSig = this.ec.keyFromPrivate(privKey.toString("hex", 64)).sign(hash);
+      let unparsedSig = privKey.toPrivKeyEC().sign(hash);
       sig = Buffer.from(unparsedSig.r.toString(16, 64) + unparsedSig.s.toString(16, 64) + new BN(unparsedSig.v).toString(16, 2), "hex").toString(
         "base64"
       );

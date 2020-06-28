@@ -43,6 +43,13 @@ class ThresholdBak {
     let serviceProviderShare = shares[2];
 
     // store torus share on metadata
+    try {
+      await this.storageLayer.setMetadata(serviceProviderShare);
+    } catch (err) {
+      throw new Error(`setMetadata errored: ${err}`);
+    }
+
+    // store metadata on metadata respective to share
     const bufferMetadata = Buffer.from(JSON.stringify(serviceProviderShare));
     const encryptedDetails = await this.serviceProvider.encrypt(this.postboxKey.getPubKeyECC(), bufferMetadata);
     try {
@@ -51,7 +58,6 @@ class ThresholdBak {
       throw new Error(`setMetadata errored: ${err}`);
     }
 
-    // store metadata on share
     return { privKey: this.privKey };
   }
 
