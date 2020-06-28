@@ -46,7 +46,6 @@ class TorusServiceProvider {
     try {
       decryption = await ecDecrypt(this.postboxKey.toPrivKeyECC(), bufferEncDetails);
     } catch (err) {
-      console.log(err);
       return err;
     }
     return decryption;

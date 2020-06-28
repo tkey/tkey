@@ -28,7 +28,6 @@ class TorusStorageLayer {
   async setMetadata(encryptedDetails) {
     const serializedEncryptedDetails = btoa(JSON.stringify(encryptedDetails));
     const p = this.generateMetadataParams(serializedEncryptedDetails);
-    console.log(p);
     let response;
     try {
       response = await post(`${this.hostUrl}/set`, p);

@@ -194,14 +194,16 @@ class Metadata {
     this.addPublicPolynomial(publicPolynomial);
     if (Array.isArray(shares)) {
       for (let i = 0; i < shares.length; i++) {
-        this.addPublicShare(publicPolynomial.getPolynomialID, shares[i].getPublicShare());
+        this.addPublicShare(publicPolynomial.getPolynomialID(), shares[i].getPublicShare());
       }
     } else {
       for (let k in shares) {
-        this.addPublicShare(publicPolynomial.getPolynomialID, shares[k].getPublicShare());
+        this.addPublicShare(publicPolynomial.getPolynomialID(), shares[k].getPublicShare());
       }
     }
   }
+
+  // toJSON() {}
 }
 
 class Share {
@@ -235,8 +237,13 @@ class PublicPolynomial {
   getPolynomialID() {
     let idSeed = "";
     for (let i = 0; i < this.polynomialCommitments.length; i++) {
-      idSeed = idSeed + `|${this.polynomialCommitments[i].toString("hex")}`;
+      let nextChunk = this.polynomialCommitments[i].x.toString("hex");
+      if (i != 0) {
+        nextChunk = `|${nextChunk}`;
+      }
+      idSeed = idSeed + nextChunk;
     }
+    return idSeed;
   }
 }
 
