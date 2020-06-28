@@ -181,23 +181,26 @@ class Metadata {
       this.publicShares = {};
     } else if (typeof input == "object") {
       // assumed to be JSON.parsed object
-      this.pubKey = new Point(input.pubKey.x, "hex", input.pubKey.y, "hex");
+      this.pubKey = new Point(input.pubKey.x, input.pubKey.y);
       // for publicPolynomials
+      this.publicPolynomials = {};
+
       for (let pubPolyID in input.publicPolynomials) {
         let pointCommitments = [];
-        input.publicPolynomials[pubPolyID].forEach((commitment) => {
+        input.publicPolynomials[pubPolyID].polynomialCommitments.forEach((commitment) => {
           pointCommitments.push(new Point(commitment.x, commitment.y));
         });
         let publicPolynomial = new PublicPolynomial(pointCommitments);
         this.addPublicPolynomial(publicPolynomial);
       }
       // for publicShares
+      this.publicShares = {};
       for (let pubPolyID in input.publicShares) {
         let newPubShare = new PublicShare(
           input.publicShares[pubPolyID].shareIndex,
           new Point(input.publicShares[pubPolyID].shareCommitment.x, input.publicShares[pubPolyID].shareCommitment.y)
         );
-        this.addPublicShare(newPubShare);
+        this.addPublicShare(pubPolyID, newPubShare);
       }
     } else {
       throw TypeError("not a valid constructor argument for Metadata");
@@ -352,4 +355,5 @@ module.exports = {
   ThresholdBak,
   Polynomial,
   Metadata,
+  generateRandomPolynomial,
 };

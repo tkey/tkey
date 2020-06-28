@@ -1,24 +1,23 @@
 const { deepStrictEqual, fail } = require("assert");
 const { Point, BN } = require("../src/types.js");
-// const { getPublic } = require("eccrypto");
+const { generatePrivate } = require("eccrypto");
 
-const { ThresholdBak, Polynomial, Metadata } = require("../src/index");
+const { ThresholdBak, Polynomial, Metadata, generateRandomPolynomial } = require("../src/index");
 const TorusServiceProvider = require("../src/service-provider");
 const TorusStorageLayer = require("../src/storage-layer");
 // const { privKeyBnToPubKeyECC } = require("../src/utils");
 
 global.fetch = require("node-fetch");
 
-describe("threshold bak", function () {
-  it("#should return correct values when initializing a key", async function () {
-    const tb = new ThresholdBak();
-    const keyz = await tb.initializeNewKey();
-    console.log("keyz", keyz);
-    const resp2 = await tb.retrieveMetadata();
-    console.log("resp2", JSON.parse(resp2));
-    debugger;
-  });
-});
+// describe("threshold bak", function () {
+//   it("#should return correct values when initializing a key", async function () {
+//     const tb = new ThresholdBak();
+//     const keyz = await tb.initializeNewKey();
+//     console.log("keyz", keyz);
+//     const resp2 = await tb.retrieveMetadata();
+//     console.log("resp2", JSON.parse(resp2));
+//   });
+// });
 
 // describe("TorusServiceProvider", function () {
 //   it("#should encrypt and decrypt correctly", async function () {
@@ -66,3 +65,27 @@ describe("threshold bak", function () {
 //     }
 //   });
 // });
+
+describe("Metadata", function () {
+  it("#should serialize and deserialize into JSON seamlessly", async function () {
+    const privKey = "d573b6c7d8fe4ec7cbad052189d4a8415b44d8b87af024872f38db3c694d306d";
+    const privKeyBN = new BN(privKey, 16);
+    // create a random poly and respective shares
+    const shareIndexes = [new BN(1), new BN(2)];
+    for (let i = 1; i <= 2; i++) {
+      let ran = generatePrivate();
+      while (ran < 2) {
+        ran = generatePrivate();
+      }
+      shareIndexes.push(new BN(ran));
+    }
+    const poly = generateRandomPolynomial(1, privKeyBN);
+    const shares = poly.generateShares(shareIndexes);
+    const metadata = new Metadata(privKeyBN.getPubKeyPoint());
+    metadata.addFromPolynomialAndShares(poly, shares);
+
+    let serializedMetadata = JSON.stringify(metadata);
+    const deserializedMetadata = new Metadata(JSON.parse(serializedMetadata));
+    deepStrictEqual(metadata, deserializedMetadata, "metadata and deserializedMetadata should be equal");
+  });
+});

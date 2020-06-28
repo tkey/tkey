@@ -18,7 +18,6 @@ BN.prototype.getPubKeyPoint = function () {
 
 class Point {
   constructor(x, y) {
-    debugger;
     if (x instanceof BN && y instanceof BN) {
       this.x = x;
       this.y = y;
