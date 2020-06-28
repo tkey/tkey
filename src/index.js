@@ -16,21 +16,10 @@ class ThresholdBak {
     this.storageLayer = new TorusStorageLayer({ enableLogging: true, serviceProvider: this.serviceProvider });
   }
 
-  async retrieveMetadata() {
-    let keyDetails;
-    try {
-      keyDetails = await this.storageLayer.getMetadata();
-    } catch (err) {
-      throw new Error(`getMetadata errored: ${err}`);
-    }
-    let response;
-    try {
-      response = await this.serviceProvider.decrypt(keyDetails);
-    } catch (err) {
-      throw new Error(`decrypt errored: ${err}`);
-    }
-    return response;
-  }
+  // async initialize() {
+  //   let metadata = await this.retrieveMetadata();
+
+  // }
 
   async initializeNewKey() {
     const tmpPriv = generatePrivate();
@@ -51,16 +40,36 @@ class ThresholdBak {
     // create metadata to be stored
     const metadata = new Metadata(this.privKey.getPubKeyPoint());
     metadata.addFromPolynomialAndShares(poly, shares);
+    let serviceProviderShare = shares[2];
 
     // store torus share on metadata
-    const bufferMetadata = Buffer.from(JSON.stringify(metadata));
+    const bufferMetadata = Buffer.from(JSON.stringify(serviceProviderShare));
     const encryptedDetails = await this.serviceProvider.encrypt(this.postboxKey.getPubKeyECC(), bufferMetadata);
     try {
       await this.storageLayer.setMetadata(encryptedDetails);
     } catch (err) {
       throw new Error(`setMetadata errored: ${err}`);
     }
+
+    // store metadata on share
     return { privKey: this.privKey };
+  }
+
+  async retrieveMetadata() {
+    let keyDetails;
+    try {
+      keyDetails = await this.storageLayer.getMetadata();
+    } catch (err) {
+      throw new Error(`getMetadata errored: ${err}`);
+    }
+    let response;
+    try {
+      response = await this.serviceProvider.decrypt(keyDetails);
+    } catch (err) {
+      throw new Error(`decrypt errored: ${err}`);
+    }
+    let metadata = new Metadata(JSON.parse(response));
+    return metadata;
   }
 
   setKey(privKey) {
