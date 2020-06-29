@@ -2,25 +2,32 @@ const { deepStrictEqual, fail } = require("assert");
 const { Point, BN } = require("../src/types.js");
 const { generatePrivate } = require("eccrypto");
 
-const { ThresholdBak, Polynomial, Metadata, generateRandomPolynomial, lagrangeInterpolation } = require("../src/index");
+const {
+  ThresholdBak,
+  Polynomial,
+  Metadata,
+  generateRandomPolynomial,
+  lagrangeInterpolation,
+  lagrangeInterpolatePolynomial,
+} = require("../src/index");
 const TorusServiceProvider = require("../src/service-provider");
 const TorusStorageLayer = require("../src/storage-layer");
 // const { privKeyBnToPubKeyECC } = require("../src/utils");
 
 global.fetch = require("node-fetch");
 
-describe("threshold bak", function () {
-  it("#should return correct values when initializing a key", async function () {
-    const tb = new ThresholdBak();
-    const resp1 = await tb.initializeNewKey();
-    console.log("resp1", resp1);
-    const tb2 = new ThresholdBak();
-    await tb2.initialize();
-    tb2.addShare(resp1.deviceShare);
-    const reconstructedKey = tb2.reconstructKey();
-    console.log("resp2", reconstructedKey);
-  });
-});
+// describe("threshold bak", function () {
+//   it("#should return correct values when initializing a key", async function () {
+//     const tb = new ThresholdBak();
+//     const resp1 = await tb.initializeNewKey();
+//     console.log("resp1", resp1);
+//     const tb2 = new ThresholdBak();
+//     await tb2.initialize();
+//     tb2.addShare(resp1.deviceShare);
+//     const reconstructedKey = tb2.reconstructKey();
+//     console.log("resp2", reconstructedKey);
+//   });
+// });
 
 // describe("TorusServiceProvider", function () {
 //   it("#should encrypt and decrypt correctly", async function () {
@@ -110,9 +117,39 @@ describe("threshold bak", function () {
 //     let share1 = poly.polyEval(new BN(1));
 //     let share2 = poly.polyEval(new BN(2));
 //     let key = lagrangeInterpolation([share1, share2], [new BN(1), new BN(2)]);
-//     debugger;
 //     if (key.cmp(new BN(5)) != 0) {
 //       fail("poly result should equal 7");
 //     }
 //   });
 // });
+
+describe("lagrangeInterpolatePolynomial", function () {
+  it("#should interpolate basic poly correctly", async function () {
+    let polyArr = [new BN(5), new BN(2)];
+    let poly = new Polynomial(polyArr);
+    let share1 = poly.polyEval(new BN(1));
+    let share2 = poly.polyEval(new BN(2));
+    let resultPoly = lagrangeInterpolatePolynomial([new Point(new BN(1), share1), new Point(new BN(2), share2)]);
+    if (polyArr[0].cmp(resultPoly.polynomial[0]) != 0) {
+      fail("poly result should equal hardcoded poly");
+    }
+    if (polyArr[1].cmp(resultPoly.polynomial[1]) != 0) {
+      fail("poly result should equal hardcoded poly");
+    }
+  });
+  it("#should interpolate random poly correctly", async function () {
+    let degree = Math.floor(Math.random() * (50 - 1)) + 1;
+    let poly = generateRandomPolynomial(degree);
+    let pointArr = [];
+    for (let i = 0; i < degree + 1; i++) {
+      let shareIndex = new BN(generatePrivate());
+      pointArr.push(new Point(shareIndex, poly.polyEval(shareIndex)));
+    }
+    let resultPoly = lagrangeInterpolatePolynomial(pointArr);
+    resultPoly.polynomial.forEach(function (coeff, i) {
+      if (poly.polynomial[i].cmp(coeff) != 0) {
+        fail("poly result should equal hardcoded poly");
+      }
+    });
+  });
+});

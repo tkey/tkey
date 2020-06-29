@@ -57,7 +57,6 @@ class ThresholdBak {
       // check if we have any encrypted shares first
       throw Error(`not enough shares for reconstruction, require ${requiredThreshold} but got ${numberOfShares}`);
     }
-    debugger;
     let shareArr = [];
     let shareIndexArr = [];
     for (let i = 0; i < requiredThreshold; i++) {
@@ -66,9 +65,29 @@ class ThresholdBak {
     }
     let privKey = lagrangeInterpolation(shareArr, shareIndexArr);
     this.setKey(privKey);
-    debugger;
     return this.privKey;
   }
+
+  async generateNewShare() {
+    if (!this.metadata) {
+      throw Error("metadata not found, SDK likely not intialized");
+    }
+    let newShareIndex = new BN(generatePrivate());
+    let pubPoly = this.metadata.getLatestPublicPolynomial();
+    let existingShareIndexes = Object.keys(this.shares[pubPoly.getPolynomialID()]);
+    // check if existing share indexes exist
+    while (newShareIndex.includes(existingShareIndexes.toString("hex"))) {
+      newShareIndex = new BN(generatePrivate());
+    }
+  }
+
+  // async refreshShares(threshold, newShareIndexes, previousPolyID) {
+  //   const poly = generateRandomPolynomial(threshold - 1, this.privKey);
+  //   const shares = poly.generateShares(shareIndexes);
+
+  //   // create metadata to be stored
+  //   this.metadata.addFromPolynomialAndShares(poly, shares);
+  // }
 
   async initializeNewKey() {
     const tmpPriv = generatePrivate();
@@ -76,20 +95,13 @@ class ThresholdBak {
 
     // create a random poly and respective shares
     const shareIndexes = [new BN(1), new BN(2)];
-    for (let i = 1; i <= 2; i++) {
-      let ran = generatePrivate();
-      while (ran < 2) {
-        ran = generatePrivate();
-      }
-      shareIndexes.push(new BN(ran));
-    }
     const poly = generateRandomPolynomial(1, this.privKey);
     const shares = poly.generateShares(shareIndexes);
 
     // create metadata to be stored
     const metadata = new Metadata(this.privKey.getPubKeyPoint());
     metadata.addFromPolynomialAndShares(poly, shares);
-    let serviceProviderShare = shares[shareIndexes[2].toString("hex")];
+    let serviceProviderShare = shares[shareIndexes[0].toString("hex")];
 
     // store torus share on metadata
     let shareStore = new ShareStore({ share: serviceProviderShare, polynomialID: poly.getPolynomialID() });
@@ -107,7 +119,7 @@ class ThresholdBak {
     }
     return {
       privKey: this.privKey,
-      deviceShare: new ShareStore({ share: shares[shareIndexes[3].toString("hex")], polynomialID: poly.getPolynomialID() }),
+      deviceShare: new ShareStore({ share: shares[shareIndexes[1].toString("hex")], polynomialID: poly.getPolynomialID() }),
     };
   }
 
@@ -128,6 +140,85 @@ class ThresholdBak {
 }
 
 // PRIMATIVES (TODO: MOVE TYPES AND THIS INTO DIFFERENT FOLDER)
+
+function lagrangeInterpolatePolynomial(points) {
+  let denominator = function (i, innerPoints) {
+    let result = new BN(1);
+    let xi = innerPoints[i].x;
+    for (let j = innerPoints.length - 1; j >= 0; j--) {
+      if (i != j) {
+        let tmp = new BN(xi);
+        tmp = tmp.sub(innerPoints[j].x);
+        tmp = tmp.umod(ecCurve.curve.n);
+        result = result.mul(tmp);
+        result = result.umod(ecCurve.curve.n);
+      }
+    }
+    return result;
+  };
+
+  let interpolationPoly = function (i, innerPoints) {
+    let coefficients = Array.apply(null, Array(innerPoints.length)).map(function () {
+      return new BN(0);
+    });
+    let d = denominator(i, innerPoints);
+    coefficients[0] = d.invm(ecCurve.curve.n);
+    for (let k = 0; k < innerPoints.length; k++) {
+      let newCoefficients = Array.apply(null, Array(innerPoints.length)).map(function () {
+        return new BN(0);
+      });
+      if (k == i) {
+        continue;
+      }
+      let j;
+      if (k < i) {
+        j = k + 1;
+      } else {
+        j = k;
+      }
+      j = j - 1;
+      for (; j >= 0; j--) {
+        newCoefficients[j + 1] = newCoefficients[j + 1].add(coefficients[j]);
+        newCoefficients[j + 1] = newCoefficients[j + 1].umod(ecCurve.curve.n);
+        let tmp = new BN(innerPoints[k].x);
+        tmp = tmp.mul(coefficients[j]);
+        tmp = tmp.umod(ecCurve.curve.n);
+        newCoefficients[j] = newCoefficients[j].sub(tmp);
+        newCoefficients[j] = newCoefficients[j].umod(ecCurve.curve.n);
+      }
+      coefficients = newCoefficients;
+    }
+    return coefficients;
+  };
+
+  let pointSort = function (innerPoints) {
+    sortedPoints = [...innerPoints];
+    sortedPoints.sort(function (a, b) {
+      return a.x.cmp(b.x);
+    });
+    return sortedPoints;
+  };
+
+  let lagrange = function (unsortedPoints) {
+    debugger;
+    let sortedPoints = pointSort(unsortedPoints);
+    polynomial = Array.apply(null, Array(sortedPoints.length)).map(function () {
+      return new BN(0);
+    });
+    for (let i = 0; i < sortedPoints.length; i++) {
+      let coefficients = interpolationPoly(i, sortedPoints);
+      for (let k = 0; k < sortedPoints.length; k++) {
+        let tmp = new BN(sortedPoints[i].y);
+        tmp = tmp.mul(coefficients[k]);
+        polynomial[k] = polynomial[k].add(tmp);
+        polynomial[k] = polynomial[k].umod(ecCurve.curve.n);
+      }
+    }
+    return new Polynomial(polynomial);
+  };
+
+  return lagrange(points);
+}
 
 function lagrangeInterpolation(shares, nodeIndex) {
   if (shares.length !== nodeIndex.length) {
@@ -445,4 +536,5 @@ module.exports = {
   Metadata,
   generateRandomPolynomial,
   lagrangeInterpolation,
+  lagrangeInterpolatePolynomial,
 };
