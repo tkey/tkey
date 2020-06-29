@@ -17,18 +17,39 @@ const TorusStorageLayer = require("../src/storage-layer");
 
 global.fetch = require("node-fetch");
 
-// describe("threshold bak", function () {
-//   it("#should return correct values when initializing a key", async function () {
-//     const tb = new ThresholdBak();
-//     const resp1 = await tb.initializeNewKey();
-//     console.log("resp1", resp1);
-//     const tb2 = new ThresholdBak();
-//     await tb2.initialize();
-//     tb2.addShare(resp1.deviceShare);
-//     const reconstructedKey = tb2.reconstructKey();
-//     console.log("resp2", reconstructedKey);
-//   });
-// });
+describe("threshold bak", function () {
+  // it("#should be able to reconstruct key when initializing a key", async function () {
+  //   const tb = new ThresholdBak();
+  //   const resp1 = await tb.initializeNewKey();
+  //   const tb2 = new ThresholdBak();
+  //   await tb2.initialize();
+  //   tb2.addShare(resp1.deviceShare);
+  //   const reconstructedKey = tb2.reconstructKey();
+  //   if (resp1.privKey.cmp(reconstructedKey) != 0) {
+  //     fail("key should be able to be reconstructed");
+  //   }
+  // });
+  it("#should be able to reshare a key and retrieve from service provider", async function () {
+    const tb = new ThresholdBak();
+    const resp1 = await tb.initializeNewKey();
+    const tb2 = new ThresholdBak();
+    await tb2.initialize();
+    tb2.addShare(resp1.deviceShare);
+    const reconstructedKey = tb2.reconstructKey();
+    if (resp1.privKey.cmp(reconstructedKey) != 0) {
+      fail("key should be able to be reconstructed");
+    }
+    let resp2 = await tb2.generateNewShare();
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    const tb3 = new ThresholdBak();
+    await tb3.initialize();
+    tb3.addShare(resp2.newShareStores[resp2.newShareIndex.toString("hex")]);
+    let finalKey = tb3.reconstructKey();
+    if (resp1.privKey.cmp(finalKey) != 0) {
+      fail("key should be able to be reconstructed after adding new share");
+    }
+  });
+});
 
 // describe("TorusServiceProvider", function () {
 //   it("#should encrypt and decrypt correctly", async function () {
@@ -53,22 +74,6 @@ global.fetch = require("node-fetch");
 //     deepStrictEqual(result, message, "encrypted and decrypted message should be equal");
 //   });
 // });
-
-describe("utils", function () {
-  it("#should encrypt and decrypt correctly", async function () {
-    const privKey = "d573b6c7d8fe4ec7cbad052189d4a8415b44d8b87af024872f38db3c694d306d";
-    let tmp = new BN(123);
-    const message = Buffer.from(tmp.toString("hex", 15));
-    const privKeyBN = new BN(privKey, 16);
-    const tsp = new TorusServiceProvider({ postboxKey: privKey });
-    debugger;
-    console.log(privKeyBN.getPubKeyEC());
-    console.log(privKeyBN.getPubKeyECC());
-    // const encDeets = await tsp.encrypt(privKeyBN.getPubKeyEC(), message);
-    // const result = await tsp.decrypt(encDeets);
-    // deepStrictEqual(result, message, "encrypted and decrypted message should be equal");
-  });
-});
 
 // describe("TorusStorageLayer", function () {
 //   it("#should get or set correctly", async function () {
