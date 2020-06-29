@@ -1,6 +1,7 @@
 const { deepStrictEqual, fail } = require("assert");
 const { Point, BN } = require("../src/types.js");
 const { generatePrivate } = require("eccrypto");
+const { decrypt, encrypt } = require("../src/utils");
 
 const {
   ThresholdBak,
@@ -52,6 +53,22 @@ global.fetch = require("node-fetch");
 //     deepStrictEqual(result, message, "encrypted and decrypted message should be equal");
 //   });
 // });
+
+describe("utils", function () {
+  it("#should encrypt and decrypt correctly", async function () {
+    const privKey = "d573b6c7d8fe4ec7cbad052189d4a8415b44d8b87af024872f38db3c694d306d";
+    let tmp = new BN(123);
+    const message = Buffer.from(tmp.toString("hex", 15));
+    const privKeyBN = new BN(privKey, 16);
+    const tsp = new TorusServiceProvider({ postboxKey: privKey });
+    debugger;
+    console.log(privKeyBN.getPubKeyEC());
+    console.log(privKeyBN.getPubKeyECC());
+    // const encDeets = await tsp.encrypt(privKeyBN.getPubKeyEC(), message);
+    // const result = await tsp.decrypt(encDeets);
+    // deepStrictEqual(result, message, "encrypted and decrypted message should be equal");
+  });
+});
 
 // describe("TorusStorageLayer", function () {
 //   it("#should get or set correctly", async function () {
@@ -123,33 +140,33 @@ global.fetch = require("node-fetch");
 //   });
 // });
 
-describe("lagrangeInterpolatePolynomial", function () {
-  it("#should interpolate basic poly correctly", async function () {
-    let polyArr = [new BN(5), new BN(2)];
-    let poly = new Polynomial(polyArr);
-    let share1 = poly.polyEval(new BN(1));
-    let share2 = poly.polyEval(new BN(2));
-    let resultPoly = lagrangeInterpolatePolynomial([new Point(new BN(1), share1), new Point(new BN(2), share2)]);
-    if (polyArr[0].cmp(resultPoly.polynomial[0]) != 0) {
-      fail("poly result should equal hardcoded poly");
-    }
-    if (polyArr[1].cmp(resultPoly.polynomial[1]) != 0) {
-      fail("poly result should equal hardcoded poly");
-    }
-  });
-  it("#should interpolate random poly correctly", async function () {
-    let degree = Math.floor(Math.random() * (50 - 1)) + 1;
-    let poly = generateRandomPolynomial(degree);
-    let pointArr = [];
-    for (let i = 0; i < degree + 1; i++) {
-      let shareIndex = new BN(generatePrivate());
-      pointArr.push(new Point(shareIndex, poly.polyEval(shareIndex)));
-    }
-    let resultPoly = lagrangeInterpolatePolynomial(pointArr);
-    resultPoly.polynomial.forEach(function (coeff, i) {
-      if (poly.polynomial[i].cmp(coeff) != 0) {
-        fail("poly result should equal hardcoded poly");
-      }
-    });
-  });
-});
+// describe("lagrangeInterpolatePolynomial", function () {
+//   it("#should interpolate basic poly correctly", async function () {
+//     let polyArr = [new BN(5), new BN(2)];
+//     let poly = new Polynomial(polyArr);
+//     let share1 = poly.polyEval(new BN(1));
+//     let share2 = poly.polyEval(new BN(2));
+//     let resultPoly = lagrangeInterpolatePolynomial([new Point(new BN(1), share1), new Point(new BN(2), share2)]);
+//     if (polyArr[0].cmp(resultPoly.polynomial[0]) != 0) {
+//       fail("poly result should equal hardcoded poly");
+//     }
+//     if (polyArr[1].cmp(resultPoly.polynomial[1]) != 0) {
+//       fail("poly result should equal hardcoded poly");
+//     }
+//   });
+//   it("#should interpolate random poly correctly", async function () {
+//     let degree = Math.floor(Math.random() * (50 - 1)) + 1;
+//     let poly = generateRandomPolynomial(degree);
+//     let pointArr = [];
+//     for (let i = 0; i < degree + 1; i++) {
+//       let shareIndex = new BN(generatePrivate());
+//       pointArr.push(new Point(shareIndex, poly.polyEval(shareIndex)));
+//     }
+//     let resultPoly = lagrangeInterpolatePolynomial(pointArr);
+//     resultPoly.polynomial.forEach(function (coeff, i) {
+//       if (poly.polynomial[i].cmp(coeff) != 0) {
+//         fail("poly result should equal hardcoded poly");
+//       }
+//     });
+//   });
+// });

@@ -32,6 +32,13 @@ class Point {
       throw TypeError("Point needs to be intialized with BN");
     }
   }
+  // complies with EC point pub key  encoding api
+  encode(enc) {
+    if (enc === "arr") {
+      return Buffer.concat[(0x04, this.x.toBuffer("be", 32), this.y.toBuffer("be", 32))];
+    }
+    throw Error("encoding doesnt exist in Point");
+  }
 }
 
 module.exports = { Point, BN };

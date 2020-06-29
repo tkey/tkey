@@ -74,20 +74,46 @@ class ThresholdBak {
     }
     let newShareIndex = new BN(generatePrivate());
     let pubPoly = this.metadata.getLatestPublicPolynomial();
-    let existingShareIndexes = Object.keys(this.shares[pubPoly.getPolynomialID()]);
+    let previousPolyID = pubPoly.getPolynomialID();
+    let existingShareIndexes = this.metadata.getShareIndexesForPolynomial(previousPolyID);
     // check if existing share indexes exist
     while (newShareIndex.includes(existingShareIndexes.toString("hex"))) {
       newShareIndex = new BN(generatePrivate());
     }
   }
 
-  // async refreshShares(threshold, newShareIndexes, previousPolyID) {
-  //   const poly = generateRandomPolynomial(threshold - 1, this.privKey);
-  //   const shares = poly.generateShares(shareIndexes);
+  async refreshShares(threshold, newShareIndexes, previousPolyID) {
+    const poly = generateRandomPolynomial(threshold - 1, this.privKey);
+    const shares = poly.generateShares(shareIndexes);
+    let existingShareIndexes = this.metadata.getShareIndexesForPolynomial(previousPolyID);
+    let shareIndexesNeedingEncryption = [];
 
-  //   // create metadata to be stored
-  //   this.metadata.addFromPolynomialAndShares(poly, shares);
-  // }
+    let pointsArr = [];
+    existingShareIndexes.forEach(function (shareIndexHex) {
+      pointsArr.push(new Point(new BN(shareIndexHex, "hex"), this.shares[previousPolyID][shareIndexHex].share.share));
+      // also add to shares that need encryption/relaying
+      if (newShareIndexes.includes(shareIndexHex)) {
+        shareIndexesNeedingEncryption.push(shareIndexesNeedingEncryption);
+      }
+    });
+    let oldPoly = lagrangeInterpolatePolynomial(pointsArr);
+
+    // add metadata new poly to metadata
+    this.metadata.addFromPolynomialAndShares(poly, shares);
+
+    // evaluate oldPoly for old shares and set new metadata with encrypted share for new polynomial
+    shareIndexesNeedingEncryption.forEach(function (shareIndex) {
+      let m = this.metadata.clone();
+      m.setScopedStore = { encryptedShare: shares[shareIndex] };
+      let oldShare = oldPoly.polyEval(new BN(shareIndex, "hex"));
+      try {
+        this.storageLayer.setMetadata(m, oldShare);
+      } catch (err) {
+        // TODO: handle gracefully
+        throw err;
+      }
+    });
+  }
 
   async initializeNewKey() {
     const tmpPriv = generatePrivate();
@@ -336,6 +362,7 @@ class Metadata {
       this.publicPolynomials = {};
       this.publicShares = {};
       this.polyIDList = input.polyIDList;
+      this.scopedStore = input.scopedStore;
       // for publicPolynomials
       for (let pubPolyID in input.publicPolynomials) {
         let pointCommitments = [];
@@ -347,15 +374,21 @@ class Metadata {
       }
       // for publicShares
       for (let pubPolyID in input.publicShares) {
-        let newPubShare = new PublicShare(
-          input.publicShares[pubPolyID].shareIndex,
-          new Point(input.publicShares[pubPolyID].shareCommitment.x, input.publicShares[pubPolyID].shareCommitment.y)
-        );
-        this.addPublicShare(pubPolyID, newPubShare);
+        for (let shareIndex in input.publicShares[pubPolyID]) {
+          let newPubShare = new PublicShare(
+            input.publicShares[pubPolyID][shareIndex].shareIndex,
+            new Point(input.publicShares[pubPolyID][shareIndex].shareCommitment.x, input.publicShares[pubPolyID][shareIndex].shareCommitment.y)
+          );
+          this.addPublicShare(pubPolyID, newPubShare);
+        }
       }
     } else {
       throw TypeError("not a valid constructor argument for Metadata");
     }
+  }
+
+  getShareIndexesForPolynomial(polyID) {
+    return Object.keys(this.publicShares[polyID]);
   }
 
   getLatestPublicPolynomial() {
@@ -369,7 +402,10 @@ class Metadata {
   }
 
   addPublicShare(polynomialID, publicShare) {
-    this.publicShares[polynomialID] = publicShare;
+    if (!(polynomialID in this.publicShares)) {
+      this.publicShares[polynomialID] = {};
+    }
+    this.publicShares[polynomialID][publicShare.shareIndex.toString("hex")] = publicShare;
   }
 
   addFromPolynomialAndShares(polynomial, shares) {
@@ -386,7 +422,13 @@ class Metadata {
     }
   }
 
-  // toJSON() {}
+  setScopedStore(scopedStore) {
+    this.scopedStore = scopedStore;
+  }
+
+  clone() {
+    return new Metadata(JSON.parse(JSON.stringify(this)));
+  }
 }
 
 class Share {
