@@ -38,7 +38,6 @@ class ThresholdBak {
     // we fetch metadata for the account from the share
     let latestShareDetails = await this.catchupToLatestShare(shareStore);
     this.metadata = latestShareDetails.shareMetadata;
-    debugger;
     this.addShare(latestShareDetails.latestShare);
     // now that we have metadata we set the requirements for reconstruction
     return;
@@ -201,7 +200,16 @@ class ThresholdBak {
       throw new Error(`setMetadata errored: ${JSON.stringify(err)}`);
     }
 
-    // store metadata on metadata respective to share
+    // store metadata on metadata respective to shares
+    // set metadata for all new shares
+    shareIndexes.forEach(async (shareIndex) => {
+      let m = this.metadata.clone();
+      try {
+        await this.storageLayer.setMetadata(m, shares[shareIndex.toString("hex")].share);
+      } catch (err) {
+        throw err;
+      }
+    });
     try {
       await this.storageLayer.setMetadata(metadata, serviceProviderShare.share);
     } catch (err) {
