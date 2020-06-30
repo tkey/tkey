@@ -24,28 +24,41 @@ class ThresholdBak {
     } else if (!input) {
       // default to use service provider
       // first we see if a share has been kept for us
-      let rawShareStore;
+      let rawServiceProviderShare;
       try {
-        rawShareStore = await this.storageLayer.getMetadata();
+        rawServiceProviderShare = await this.storageLayer.getMetadata();
       } catch (err) {
-        throw new Error(`getMetadata for rawShareStore in initialize errored: ${err}`);
+        throw new Error(`getMetadata for rawServiceProviderShare in initialize errored: ${err}`);
       }
-      shareStore = new ShareStore(rawShareStore);
+      shareStore = new ShareStore(rawServiceProviderShare);
     } else {
       throw TypeError("Input is not supported");
     }
 
-    // if there is no error we fetch metadata for the account
+    // we fetch metadata for the account from the share
+    let latestShareDetails = await this.catchupToLatestShare(shareStore);
+    this.metadata = latestShareDetails.shareMetadata;
+    debugger;
+    this.addShare(latestShareDetails.latestShare);
+    // now that we have metadata we set the requirements for reconstruction
+    return;
+  }
+
+  async catchupToLatestShare(shareStore) {
     let metadata;
     try {
       metadata = await this.storageLayer.getMetadata(shareStore.share.share);
     } catch (err) {
       throw new Error(`getMetadata in initialize errored: ${err}`);
     }
-    this.metadata = new Metadata(metadata);
-    this.addShare(shareStore);
-    // now that we have metadata we set the requirements for reconstruction
-    return;
+    let shareMetadata = new Metadata(metadata);
+    let nextShare;
+    try {
+      nextShare = new ShareStore(shareMetadata.getEncryptedShare());
+    } catch (err) {
+      return { latestShare: shareStore, shareMetadata };
+    }
+    return await catchupToLatestShare(nextShare);
   }
 
   reconstructKey() {
@@ -437,6 +450,10 @@ class Metadata {
 
   setScopedStore(scopedStore) {
     this.scopedStore = scopedStore;
+  }
+
+  getEncryptedShare() {
+    return this.scopedStore.encryptedShare;
   }
 
   clone() {
