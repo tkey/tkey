@@ -18,14 +18,22 @@ class ThresholdBak {
   }
 
   async initialize(input) {
-    // first we see if a share has been kept for us
-    let rawShareStore;
-    try {
-      rawShareStore = await this.storageLayer.getMetadata();
-    } catch (err) {
-      throw new Error(`getMetadata for rawShareStore in initialize errored: ${err}`);
+    let shareStore;
+    if (input instanceof ShareStore) {
+      shareStore = input;
+    } else if (!input) {
+      // default to use service provider
+      // first we see if a share has been kept for us
+      let rawShareStore;
+      try {
+        rawShareStore = await this.storageLayer.getMetadata();
+      } catch (err) {
+        throw new Error(`getMetadata for rawShareStore in initialize errored: ${err}`);
+      }
+      shareStore = new ShareStore(rawShareStore);
+    } else {
+      throw TypeError("Input is not supported");
     }
-    let shareStore = new ShareStore(rawShareStore);
 
     // if there is no error we fetch metadata for the account
     let metadata;
