@@ -118,12 +118,12 @@ class ThresholdBak {
       try {
         await this.storageLayer.setMetadata(m, oldShare);
       } catch (err) {
-        // TODO: handle gracefully
         throw err;
       }
     });
 
     // set share for serviceProvider encrytion
+    // 1 is defined as the serviceProvider share
     if (shareIndexesNeedingEncryption.includes("1")) {
       try {
         await this.storageLayer.setMetadata(shareStores["1"], this.postboxKey);
@@ -146,13 +146,27 @@ class ThresholdBak {
     return { shareStores };
   }
 
-  async initializeNewKey() {
+  async initializeNewKey(userInput) {
+    if (userInput) {
+      if (!userInput instanceof BN) {
+        throw TypeError("user input needs to be of type BN in initializeNewKey");
+      }
+    }
+
     const tmpPriv = generatePrivate();
     this.setKey(new BN(tmpPriv));
 
     // create a random poly and respective shares
+    // 1 is defined as the serviceProvider share
     const shareIndexes = [new BN(1), new BN(2)];
-    const poly = generateRandomPolynomial(1, this.privKey);
+    let poly;
+    if (userInput) {
+      let userShareIndex = new BN(3);
+      poly = generateRandomPolynomial(1, this.privKey, [new Share(userShareIndex, userInput)]);
+      shareIndexes.push(userShareIndex);
+    } else {
+      poly = generateRandomPolynomial(1, this.privKey);
+    }
     const shares = poly.generateShares(shareIndexes);
 
     // create metadata to be stored
@@ -300,47 +314,41 @@ function lagrangeInterpolation(shares, nodeIndex) {
   return secret.umod(ecCurve.curve.n);
 }
 
-// function generateRandomShares(degree, numOfShares, secret) {
-//   const poly = this.generateRandomPolynomial(degree, secret);
-//   const shares = [];
-//   for (let x = 1; x <= numOfShares; x += 1) {
-//     shares.push({ index: x, share: this.polyEval(poly, x) });
-//   }
-//   return { shares, poly };
-// }
-
-// function generateShares(shareIndexes, poly) {
-//   const shares = {};
-//   for (let x = 0; x <= shareIndexes.length; x += 1) {
-//     shares[shareIndexes[x].toString("hex")] = new Share(shareIndexes[x], poly.polyEval(shareIndexes[x]));
-//   }
-//   return { shares, poly };
-// }
-
-function generateRandomPolynomial(degree, secret) {
+// generateRandomPolynomial - determinsiticShares are assumed random
+function generateRandomPolynomial(degree, secret, determinsticShares) {
   let actualS = secret;
   if (!secret) {
     actualS = new BN(generatePrivate());
   }
-  const poly = [actualS];
-  for (let i = 0; i < degree; i += 1) {
-    poly.push(new BN(generatePrivate()));
-  }
-  return new Polynomial(poly);
-}
+  if (!determinsticShares) {
+    const poly = [actualS];
+    for (let i = 0; i < degree; i += 1) {
+      poly.push(new BN(generatePrivate()));
+    }
+    return new Polynomial(poly);
+  } else {
+    if (!Array.isArray(determinsticShares)) {
+      throw TypeError("determinisitc shares in generateRandomPolynomial should be an array");
+    }
 
-// function polyEval(polynomial, x) {
-//   let xi = new BN(x);
-//   let sum = new BN(0);
-//   for (let i = 1; i < polynomial.length; i += 1) {
-//     const tmp = xi.mul(polynomial[i]);
-//     sum = sum.add(tmp);
-//     sum = sum.umod(ecCurve.curve.n);
-//     xi = xi.mul(new BN(x));
-//     xi = xi.umod(ecCurve.curve.n);
-//   }
-//   return sum;
-// }
+    if (determinsticShares.length > degree) {
+      throw TypeError("determinsticShares in generateRandomPolynomial need to be less than degree to ensure an element of randomness");
+    }
+    let points = {};
+    determinsticShares.forEach((share) => {
+      shares[share.shareIndex.toString("hex")] = new Point(share.shareIndex, share.share);
+    });
+    for (let i = 0; i < degree - determinsticShares.length; i++) {
+      let shareIndex = new BN(generatePrivate());
+      while (Object.keys(shares).includes(shareIndex.toString("hex"))) {
+        shareIndex = new BN(generatePrivate());
+      }
+      shares[shareIndex.toString("hex")] = new Point(shareIndex, new BN(generatePrivate));
+    }
+    shares["0"] = new Point(new BN(0), actualS);
+    return (poly = lagrangeInterpolatePolynomial(points));
+  }
+}
 
 /*
 Metadata
