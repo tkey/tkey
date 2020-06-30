@@ -4,9 +4,6 @@ const btoa = require("btoa");
 const { keccak256 } = require("web3-utils");
 const { decrypt, encrypt } = require("./utils");
 
-// import { encrypt } from "eccrypto";
-// import { decrypt, encrypt, generatePrivate, getPublic } from "eccrypto";
-// import { ec as EC } from "elliptic";
 const { post } = require("./httpHelpers");
 class TorusStorageLayer {
   constructor({ enableLogging = false, hostUrl = "http://localhost:5051", serviceProvider }) {

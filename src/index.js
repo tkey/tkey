@@ -8,18 +8,16 @@ const { ecCurve } = require("./utils");
 const { Point, BN } = require("./types.js");
 
 class ThresholdBak {
-  constructor({ enableLogging = false, postboxKey = "d573b6c7d8fe4ec7cbad052189d4a8415b44d8b87af024872f38db3c694d306d" } = {}) {
+  constructor({ enableLogging = false } = {}) {
     this.enableLogging = enableLogging;
     this.torus = new Torus();
-    this.postboxKey = new BN(postboxKey, "hex");
-    this.serviceProvider = new TorusServiceProvider({ postboxKey: postboxKey });
+    this.serviceProvider = new TorusServiceProvider();
     this.storageLayer = new TorusStorageLayer({ enableLogging: true, serviceProvider: this.serviceProvider });
 
     this.shares = {};
   }
 
-  async initialize() {
-    debugger;
+  async initialize(input) {
     // first we see if a share has been kept for us
     let rawShareStore;
     try {
@@ -126,7 +124,7 @@ class ThresholdBak {
     // 1 is defined as the serviceProvider share
     if (shareIndexesNeedingEncryption.includes("1")) {
       try {
-        await this.storageLayer.setMetadata(shareStores["1"], this.postboxKey);
+        await this.storageLayer.setMetadata(shareStores["1"]);
       } catch (err) {
         // TODO: handle gracefully
         throw err;
