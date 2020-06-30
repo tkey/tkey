@@ -188,10 +188,14 @@ class ThresholdBak {
     } catch (err) {
       throw new Error(`setMetadata errored: ${err}`);
     }
-    return {
+    let result = {
       privKey: this.privKey,
       deviceShare: new ShareStore({ share: shares[shareIndexes[1].toString("hex")], polynomialID: poly.getPolynomialID() }),
     };
+    if (userInput) {
+      result.userShare = new ShareStore({ share: shares[shareIndexes[2].toString("hex")], polynomialID: poly.getPolynomialID() });
+    }
+    return result;
   }
 
   addShare(shareStore) {
@@ -336,17 +340,19 @@ function generateRandomPolynomial(degree, secret, determinsticShares) {
     }
     let points = {};
     determinsticShares.forEach((share) => {
-      shares[share.shareIndex.toString("hex")] = new Point(share.shareIndex, share.share);
+      points[share.shareIndex.toString("hex")] = new Point(share.shareIndex, share.share);
     });
     for (let i = 0; i < degree - determinsticShares.length; i++) {
       let shareIndex = new BN(generatePrivate());
-      while (Object.keys(shares).includes(shareIndex.toString("hex"))) {
+      while (Object.keys(points).includes(shareIndex.toString("hex"))) {
         shareIndex = new BN(generatePrivate());
       }
-      shares[shareIndex.toString("hex")] = new Point(shareIndex, new BN(generatePrivate));
+      points[shareIndex.toString("hex")] = new Point(shareIndex, new BN(generatePrivate));
     }
-    shares["0"] = new Point(new BN(0), actualS);
-    return (poly = lagrangeInterpolatePolynomial(points));
+    points["0"] = new Point(new BN(0), actualS);
+    let pointsArr = [];
+    Object.keys(points).forEach((shareIndex) => pointsArr.push(points[shareIndex]));
+    return (poly = lagrangeInterpolatePolynomial(pointsArr));
   }
 }
 
@@ -593,6 +599,7 @@ module.exports = {
   ThresholdBak,
   Polynomial,
   Metadata,
+  Share,
   generateRandomPolynomial,
   lagrangeInterpolation,
   lagrangeInterpolatePolynomial,

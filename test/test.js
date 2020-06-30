@@ -1,7 +1,7 @@
 const { deepStrictEqual, deepEqual, equal, fail } = require("assert");
 const { Point, BN } = require("../src/types.js");
 const { generatePrivate } = require("eccrypto");
-// const { decrypt, encrypt } = require("../src/utils");
+const { ecCurve } = require("../src/utils");
 
 const {
   ThresholdBak,
@@ -13,6 +13,7 @@ const {
 } = require("../src/index");
 const TorusServiceProvider = require("../src/service-provider");
 const TorusStorageLayer = require("../src/storage-layer");
+const { keccak256 } = require("web3-utils");
 // const { privKeyBnToPubKeyECC } = require("../src/utils");
 
 global.fetch = require("node-fetch");
@@ -24,6 +25,19 @@ describe("threshold bak", function () {
     const tb2 = new ThresholdBak();
     await tb2.initialize();
     tb2.addShare(resp1.deviceShare);
+    const reconstructedKey = tb2.reconstructKey();
+    if (resp1.privKey.cmp(reconstructedKey) != 0) {
+      fail("key should be able to be reconstructed");
+    }
+  });
+  it("#should be able to reconstruct key when initializing a  with user input", async function () {
+    const tb = new ThresholdBak();
+    let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
+    userInput = userInput.umod(ecCurve.curve.n);
+    const resp1 = await tb.initializeNewKey(userInput);
+    const tb2 = new ThresholdBak();
+    await tb2.initialize();
+    tb2.addShare(resp1.userShare);
     const reconstructedKey = tb2.reconstructKey();
     if (resp1.privKey.cmp(reconstructedKey) != 0) {
       fail("key should be able to be reconstructed");
