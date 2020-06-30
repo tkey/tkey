@@ -19,59 +19,77 @@ const { keccak256 } = require("web3-utils");
 global.fetch = require("node-fetch");
 
 describe("threshold bak", function () {
-  it("#should be able to reconstruct key when initializing a key", async function () {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    const tb = new ThresholdBak();
-    const resp1 = await tb.initializeNewKey();
-    const tb2 = new ThresholdBak();
-    await tb2.initialize();
-    tb2.addShare(resp1.deviceShare);
-    const reconstructedKey = tb2.reconstructKey();
-    if (resp1.privKey.cmp(reconstructedKey) != 0) {
-      fail("key should be able to be reconstructed");
-    }
-  });
-  it("#should be able to reconstruct key when initializing a  with user input", async function () {
+  // it("#should be able to reconstruct key when initializing a key", async function () {
+  //   await new Promise((resolve) => setTimeout(resolve, 1000));
+  //   const tb = new ThresholdBak();
+  //   const resp1 = await tb.initializeNewKey();
+  //   const tb2 = new ThresholdBak();
+  //   await tb2.initialize();
+  //   tb2.addShare(resp1.deviceShare);
+  //   const reconstructedKey = tb2.reconstructKey();
+  //   if (resp1.privKey.cmp(reconstructedKey) != 0) {
+  //     fail("key should be able to be reconstructed");
+  //   }
+  // });
+  // it("#should be able to reconstruct key when initializing a  with user input", async function () {
+  //   await new Promise((resolve) => setTimeout(resolve, 1000));
+  //   const tb = new ThresholdBak();
+  //   let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
+  //   userInput = userInput.umod(ecCurve.curve.n);
+  //   const resp1 = await tb.initializeNewKey(userInput);
+  //   const tb2 = new ThresholdBak();
+  //   await tb2.initialize();
+  //   tb2.addShare(resp1.userShare);
+  //   const reconstructedKey = tb2.reconstructKey();
+  //   if (resp1.privKey.cmp(reconstructedKey) != 0) {
+  //     fail("key should be able to be reconstructed");
+  //   }
+  // });
+  // it("#should be able to reshare a key and retrieve from service provider", async function () {
+  //   await new Promise((resolve) => setTimeout(resolve, 1000));
+  //   const tb = new ThresholdBak();
+  //   const resp1 = await tb.initializeNewKey();
+  //   const tb2 = new ThresholdBak();
+  //   await tb2.initialize();
+  //   tb2.addShare(resp1.deviceShare);
+  //   const reconstructedKey = tb2.reconstructKey();
+  //   if (resp1.privKey.cmp(reconstructedKey) != 0) {
+  //     fail("key should be able to be reconstructed");
+  //   }
+  //   let resp2 = await tb2.generateNewShare();
+  //   await new Promise((resolve) => setTimeout(resolve, 1000));
+  //   const tb3 = new ThresholdBak();
+  //   await tb3.initialize();
+  //   tb3.addShare(resp2.newShareStores[resp2.newShareIndex.toString("hex")]);
+  //   let finalKey = tb3.reconstructKey();
+  //   if (resp1.privKey.cmp(finalKey) != 0) {
+  //     fail("key should be able to be reconstructed after adding new share");
+  //   }
+  // });
+  // it("#should be able to reconstruct key when initializing a with a share ", async function () {
+  //   await new Promise((resolve) => setTimeout(resolve, 1000));
+  //   const tb = new ThresholdBak();
+  //   let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
+  //   userInput = userInput.umod(ecCurve.curve.n);
+  //   const resp1 = await tb.initializeNewKey(userInput);
+  //   await new Promise((resolve) => setTimeout(resolve, 1000));
+  //   const tb2 = new ThresholdBak();
+  //   await tb2.initialize(resp1.userShare);
+  //   tb2.addShare(resp1.deviceShare);
+  //   const reconstructedKey = tb2.reconstructKey();
+  //   if (resp1.privKey.cmp(reconstructedKey) != 0) {
+  //     fail("key should be able to be reconstructed");
+  //   }
+  // });
+  it("#should be able to reconstruct key after refresh and intializeing with a share ", async function () {
+    debugger;
     await new Promise((resolve) => setTimeout(resolve, 1000));
     const tb = new ThresholdBak();
     let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
     userInput = userInput.umod(ecCurve.curve.n);
     const resp1 = await tb.initializeNewKey(userInput);
-    const tb2 = new ThresholdBak();
-    await tb2.initialize();
-    tb2.addShare(resp1.userShare);
-    const reconstructedKey = tb2.reconstructKey();
-    if (resp1.privKey.cmp(reconstructedKey) != 0) {
-      fail("key should be able to be reconstructed");
-    }
-  });
-  it("#should be able to reshare a key and retrieve from service provider", async function () {
     await new Promise((resolve) => setTimeout(resolve, 1000));
-    const tb = new ThresholdBak();
-    const resp1 = await tb.initializeNewKey();
-    const tb2 = new ThresholdBak();
-    await tb2.initialize();
-    tb2.addShare(resp1.deviceShare);
-    const reconstructedKey = tb2.reconstructKey();
-    if (resp1.privKey.cmp(reconstructedKey) != 0) {
-      fail("key should be able to be reconstructed");
-    }
-    let resp2 = await tb2.generateNewShare();
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    const tb3 = new ThresholdBak();
-    await tb3.initialize();
-    tb3.addShare(resp2.newShareStores[resp2.newShareIndex.toString("hex")]);
-    let finalKey = tb3.reconstructKey();
-    if (resp1.privKey.cmp(finalKey) != 0) {
-      fail("key should be able to be reconstructed after adding new share");
-    }
-  });
-  it("#should be able to reconstruct key when initializing a with a share alone", async function () {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    const tb = new ThresholdBak();
-    let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
-    userInput = userInput.umod(ecCurve.curve.n);
-    const resp1 = await tb.initializeNewKey(userInput);
+    await tb.generateNewShare();
     await new Promise((resolve) => setTimeout(resolve, 1000));
     const tb2 = new ThresholdBak();
     await tb2.initialize(resp1.userShare);
