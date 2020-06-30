@@ -14,13 +14,20 @@ class TorusStorageLayer {
 
   async getMetadata(privKey) {
     const keyDetails = this.generateMetadataParams({}, privKey);
+    debugger;
     let metadataResponse;
     try {
       metadataResponse = await post(`${this.hostUrl}/get`, keyDetails);
     } catch (error) {
       throw error;
     }
-    let encryptedMessage = JSON.parse(atob(metadataResponse.message));
+    let encryptedMessage;
+    try {
+      encryptedMessage = JSON.parse(atob(metadataResponse.message));
+    } catch (err) {
+      console.log(metadataResponse);
+      throw err;
+    }
     let decrypted;
     try {
       if (privKey) {

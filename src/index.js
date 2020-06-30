@@ -203,18 +203,12 @@ class ThresholdBak {
     // store metadata on metadata respective to shares
     // set metadata for all new shares
     shareIndexes.forEach(async (shareIndex) => {
-      let m = this.metadata.clone();
       try {
-        await this.storageLayer.setMetadata(m, shares[shareIndex.toString("hex")].share);
+        await this.storageLayer.setMetadata(metadata, shares[shareIndex.toString("hex")].share);
       } catch (err) {
         throw err;
       }
     });
-    try {
-      await this.storageLayer.setMetadata(metadata, serviceProviderShare.share);
-    } catch (err) {
-      throw new Error(`setMetadata errored: ${err}`);
-    }
     let result = {
       privKey: this.privKey,
       deviceShare: new ShareStore({ share: shares[shareIndexes[1].toString("hex")], polynomialID: poly.getPolynomialID() }),
