@@ -400,7 +400,7 @@ class Metadata {
       this.publicPolynomials = {};
       this.publicShares = {};
       this.polyIDList = input.polyIDList;
-      this.scopedStore = input.scopedStore;
+      if (input.scopedStore) this.scopedStore = input.scopedStore;
       // for publicPolynomials
       for (let pubPolyID in input.publicPolynomials) {
         let pointCommitments = [];
@@ -590,7 +590,14 @@ class PublicShare {
     }
 
     if (typeof shareIndex === "string") {
-      this.shareIndex = new BN(shareIndex, "hex");
+      // shaves off extrapadding when serializing BN so when we deserialize we get a deepEqual
+      let tmpShareIndex = shareIndex;
+      if (tmpShareIndex.length == 2) {
+        if (tmpShareIndex[0] == "0") {
+          tmpShareIndex = tmpShareIndex[1];
+        }
+      }
+      this.shareIndex = new BN(tmpShareIndex, "hex");
     } else if (shareIndex instanceof BN) {
       this.shareIndex = shareIndex;
     } else {
