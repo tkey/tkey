@@ -350,43 +350,6 @@ function generateRandomPolynomial(degree, secret, determinsticShares) {
   }
 }
 
-/*
-Metadata
-{
-  pubKey
-  publicPolynomials[polyID]PublicPolynomial
-  publicShares[polyID]PublicShares
-}
-
-Share
-{
-  share
-  shareIndex
-}
-
-PublicPolynomial
-{
-  threshold
-  publicShareDetails
-  idCommitments (of 1...n = t)
-}
-
-PublicShareDetails 
-{
-  shareIndex
-  shareCommitment
-}
-
-IdCommitments 
-{
-  shareIndex
-  shareCommitment 
-}
-
-PolyID
-hash(threshold | commitment of 1 | 2 | ... | n = t)
-*/
-
 class Metadata {
   constructor(input) {
     if (input instanceof Point) {
