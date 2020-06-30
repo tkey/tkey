@@ -57,7 +57,7 @@ class ThresholdBak {
     } catch (err) {
       return { latestShare: shareStore, shareMetadata };
     }
-    return await catchupToLatestShare(nextShare);
+    return await this.catchupToLatestShare(nextShare);
   }
 
   reconstructKey() {
@@ -108,17 +108,24 @@ class ThresholdBak {
     const poly = generateRandomPolynomial(threshold - 1, this.privKey);
     const shares = poly.generateShares(newShareIndexes);
     let existingShareIndexes = this.metadata.getShareIndexesForPolynomial(previousPolyID);
-    let shareIndexesNeedingEncryption = [];
 
     let pointsArr = [];
+    let sharesForExistingPoly = Object.keys(this.shares[previousPolyID]);
+    if (sharesForExistingPoly.length < threshold) {
+      throw Error("not enough shares to reconstruct poly");
+    }
+    for (let i = 0; i < threshold; i++) {
+      pointsArr.push(new Point(new BN(sharesForExistingPoly[i], "hex"), this.shares[previousPolyID][sharesForExistingPoly[i]].share.share));
+    }
+    let oldPoly = lagrangeInterpolatePolynomial(pointsArr);
+
+    let shareIndexesNeedingEncryption = [];
     existingShareIndexes.forEach((shareIndexHex) => {
-      pointsArr.push(new Point(new BN(shareIndexHex, "hex"), this.shares[previousPolyID][shareIndexHex].share.share));
-      // also add to shares that need encryption/relaying
+      // define shares that need encryption/relaying
       if (newShareIndexes.includes(shareIndexHex)) {
         shareIndexesNeedingEncryption.push(shareIndexHex);
       }
     });
-    let oldPoly = lagrangeInterpolatePolynomial(pointsArr);
 
     // add metadata new poly to metadata
     this.metadata.addFromPolynomialAndShares(poly, shares);
@@ -131,7 +138,7 @@ class ThresholdBak {
     // evaluate oldPoly for old shares and set new metadata with encrypted share for new polynomial
     shareIndexesNeedingEncryption.forEach(async (shareIndex) => {
       let m = this.metadata.clone();
-      m.setScopedStore = { encryptedShare: shareStores[shareIndex] };
+      m.setScopedStore({ encryptedShare: shareStores[shareIndex] });
       let oldShare = oldPoly.polyEval(new BN(shareIndex, "hex"));
       try {
         await this.storageLayer.setMetadata(m, oldShare);
@@ -207,6 +214,8 @@ class ThresholdBak {
       } catch (err) {
         throw err;
       }
+      // also add into our share store
+      this.addShare(new ShareStore({ share: shares[shareIndex], polynomialID: poly.getPolynomialID() }));
     });
 
     this.metadata = metadata;

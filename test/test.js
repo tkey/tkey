@@ -89,11 +89,11 @@ describe("threshold bak", function () {
     userInput = userInput.umod(ecCurve.curve.n);
     const resp1 = await tb.initializeNewKey(userInput);
     await new Promise((resolve) => setTimeout(resolve, 1000));
-    await tb.generateNewShare();
+    const newShares = await tb.generateNewShare();
     await new Promise((resolve) => setTimeout(resolve, 1000));
     const tb2 = new ThresholdBak();
     await tb2.initialize(resp1.userShare);
-    tb2.addShare(resp1.deviceShare);
+    tb2.addShare(newShares.newShareStores[resp1.deviceShare.share.shareIndex.toString("hex")]);
     const reconstructedKey = tb2.reconstructKey();
     if (resp1.privKey.cmp(reconstructedKey) != 0) {
       fail("key should be able to be reconstructed");
