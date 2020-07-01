@@ -1,4 +1,3 @@
-const Torus = require("@toruslabs/torus.js");
 // const { decrypt, encrypt, generatePrivate, getPublic } = require("eccrypto");
 const { generatePrivate } = require("eccrypto");
 
@@ -10,7 +9,6 @@ const { Point, BN } = require("./types.js");
 class ThresholdBak {
   constructor({ enableLogging = false } = {}) {
     this.enableLogging = enableLogging;
-    this.torus = new Torus();
     this.serviceProvider = new TorusServiceProvider();
     this.storageLayer = new TorusStorageLayer({ enableLogging: true, serviceProvider: this.serviceProvider });
 
