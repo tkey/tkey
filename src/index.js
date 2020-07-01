@@ -610,26 +610,6 @@ class PublicShare {
   }
 }
 
-// DEPRECATED BECAUSE WE CAN'T EXTEND BN
-// class Scalar extends BN {
-//   constructor(...args) {
-//     super(...args);
-//     // Done because https://stackoverflow.com/questions/47429157/instanceof-not-working-properly
-//     Object.setPrototypeOf(this, Scalar.prototype);
-//   }
-//   toPrivKeyEcc() {
-//     return this.toBuffer("be", 32);
-//   }
-
-//   getPubKeyECC() {
-//     return getPublic(this.toPrivKeyEcc());
-//   }
-
-//   getPubKeyPoint() {
-//     return new Point(this.toPubKeyECC().getX(), this.toPubKeyECC().getY());
-//   }
-// }
-
 module.exports = {
   ThresholdBak,
   Polynomial,
