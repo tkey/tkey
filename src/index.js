@@ -4,14 +4,76 @@ const { generatePrivate } = require("eccrypto");
 const TorusServiceProvider = require("./service-provider");
 const TorusStorageLayer = require("./storage-layer");
 const { ecCurve } = require("./utils");
+const { keccak256 } = require("web3-utils");
 const { Point, BN } = require("./types.js");
+
+class SecurityQuestionsModule {
+  constructor() {
+    this.moduleName = "securityQuestions";
+  }
+
+  initialize(tbSDK) {
+    this.tbSDK = tbSDK;
+
+    // get security questions that should exist
+
+    // TODO: expose functions here
+  }
+
+  async generateNewShareWithSecurityQuestions(answerString, questions) {
+    let newSharesDetails = await this.tbSDK.generateNewShare();
+    let newShareStore = newSharesDetails.newShareStores[newSharesDetails.newShareIndex.toString("hex")];
+    let userInputHash = new BN(keccak256(answerString).slice(2), "hex");
+    let nonce = newShareStore.share.share.sub(userInputHash);
+    nonce = nonce.umod(ecCurve.curve.n);
+    let sqStore = new SecurityQuestionStore({
+      nonce,
+      questions,
+      shareIndex: newShareStore.share.shareIndex,
+      polynomialID: newShareStore.polynomialID,
+    });
+    this.tbSDK.metadata.setGeneralStoreDomain(this.moduleName, sqStore);
+    this.tbSDK.syncShareMetadata();
+  }
+}
+
+class SecurityQuestionStore {
+  constructor({ nonce, shareIndex, polynomialID, questions }) {
+    if (typeof nonce === "string") {
+      this.nonce = new BN(nonce, "hex");
+    } else if (nonce instanceof BN) {
+      this.nonce = nonce;
+    } else {
+      throw new TypeError(`expected nonce to be either BN or hex string instead got :${nonce}`);
+    }
+
+    if (typeof shareIndex === "string") {
+      this.shareIndex = new BN(shareIndex, "hex");
+    } else if (shareIndex instanceof BN) {
+      this.shareIndex = shareIndex;
+    } else {
+      throw new TypeError(`expected shareIndex to be either BN or hex string instead got :${shareIndex}`);
+    }
+
+    if (typeof polynomialID === "string") {
+      this.polynomialID = polynomialID;
+    } else {
+      throw new TypeError("polynomialID msut be string");
+    }
+    if (typeof questions === "string") {
+      this.questions = questions;
+    } else {
+      throw new TypeError("polynomialID msut be string");
+    }
+  }
+}
 
 class ThresholdBak {
   constructor({ enableLogging = false } = {}) {
     this.enableLogging = enableLogging;
     this.serviceProvider = new TorusServiceProvider();
     this.storageLayer = new TorusStorageLayer({ enableLogging: true, serviceProvider: this.serviceProvider });
-
+    this.modules = { securityQuestions: new SecurityQuestionsModule() };
     this.shares = {};
   }
 
@@ -31,6 +93,11 @@ class ThresholdBak {
       shareStore = new ShareStore(rawServiceProviderShare);
     } else {
       throw TypeError("Input is not supported");
+    }
+
+    // initialize modules
+    for (let moduleName in this.modules) {
+      this.modules[moduleName].initialize(this);
     }
 
     // we fetch metadata for the account from the share
@@ -169,6 +236,46 @@ class ThresholdBak {
     return { shareStores };
   }
 
+  async syncShareMetadata(adjustScopedStore) {
+    let pubPoly = this.metadata.getLatestPublicPolynomial();
+    let existingShareIndexes = this.metadata.getShareIndexesForPolynomial(pubPoly.getPolynomialID());
+
+    let pointsArr = [];
+    let sharesForExistingPoly = Object.keys(this.shares[pubPoly]);
+    if (sharesForExistingPoly.length < threshold) {
+      throw Error("not enough shares to reconstruct poly");
+    }
+    for (let i = 0; i < threshold; i++) {
+      pointsArr.push(new Point(new BN(sharesForExistingPoly[i], "hex"), this.shares[pubPoly][sharesForExistingPoly[i]].share.share));
+    }
+    let currentPoly = lagrangeInterpolatePolynomial(pointsArr);
+    const allExistingShares = currentPoly.generateShares(existingShareIndexes);
+
+    existingShareIndexes.forEach(async (shareIndex) => {
+      let newMetadata = this.metadata.clone();
+      let resp;
+      try {
+        resp = await this.storageLayer.getMetadata(allExistingShares[shareIndex].share);
+      } catch (err) {
+        throw new Error(`getMetadata in syncShareMetadata errored: ${err}`);
+      }
+      let specificShareMetadata = new Metadata(resp);
+
+      let scopedStoreToBeSet;
+      if (adjustScopedStore) {
+        scopedStoreToBeSet = adjustScopedStore(specificShareMetadata.scopedStore);
+      } else {
+        scopedStoreToBeSet = specificShareMetadata.scopedStore;
+      }
+      newMetadata.setScopedStore(scopedStoreToBeSet);
+      try {
+        await this.storageLayer.setMetadata(newMetadata, allExistingShares[shareIndex].share);
+      } catch (err) {
+        throw err;
+      }
+    });
+  }
+
   async initializeNewKey(userInput) {
     if (userInput) {
       if (!userInput instanceof BN) {
@@ -204,6 +311,8 @@ class ThresholdBak {
     } catch (err) {
       throw new Error(`setMetadata errored: ${JSON.stringify(err)}`);
     }
+
+    // derive nonce for questions + set questions answered
 
     // store metadata on metadata respective to shares
     shareIndexes.forEach(async (shareIndex) => {
@@ -392,12 +501,15 @@ class Metadata {
       this.publicPolynomials = {};
       this.publicShares = {};
       this.polyIDList = [];
+      this.generalStore = {};
     } else if (typeof input == "object") {
       // assumed to be JSON.parsed object
       this.pubKey = new Point(input.pubKey.x, input.pubKey.y);
       this.publicPolynomials = {};
       this.publicShares = {};
       this.polyIDList = input.polyIDList;
+      this.generalStore = {};
+      if (input.generalStore) this.generalStore = input.generalStore;
       if (input.scopedStore) this.scopedStore = input.scopedStore;
       // for publicPolynomials
       for (let pubPolyID in input.publicPolynomials) {
@@ -442,6 +554,14 @@ class Metadata {
       this.publicShares[polynomialID] = {};
     }
     this.publicShares[polynomialID][publicShare.shareIndex.toString("hex")] = publicShare;
+  }
+
+  setGeneralStoreDomain(key, obj) {
+    this.generalStore[key] = obj;
+  }
+
+  getGeneralStoreDomain(key) {
+    return this.generalStore[key];
   }
 
   addFromPolynomialAndShares(polynomial, shares) {
