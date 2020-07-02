@@ -14,7 +14,6 @@ class TorusStorageLayer {
 
   async getMetadata(privKey) {
     const keyDetails = this.generateMetadataParams({}, privKey);
-    debugger;
     let metadataResponse;
     try {
       metadataResponse = await post(`${this.hostUrl}/get`, keyDetails);

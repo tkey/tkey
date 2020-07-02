@@ -45,27 +45,26 @@ describe("threshold bak", function () {
   //     fail("key should be able to be reconstructed");
   //   }
   // });
-  // it("#should be able to reshare a key and retrieve from service provider", async function () {
-  //   await new Promise((resolve) => setTimeout(resolve, 1000));
-  //   const tb = new ThresholdBak();
-  //   const resp1 = await tb.initializeNewKey();
-  //   const tb2 = new ThresholdBak();
-  //   await tb2.initialize();
-  //   tb2.inputShare(resp1.deviceShare);
-  //   const reconstructedKey = tb2.reconstructKey();
-  //   if (resp1.privKey.cmp(reconstructedKey) != 0) {
-  //     fail("key should be able to be reconstructed");
-  //   }
-  //   let resp2 = await tb2.generateNewShare();
-  //   await new Promise((resolve) => setTimeout(resolve, 1000));
-  //   const tb3 = new ThresholdBak();
-  //   await tb3.initialize();
-  //   tb3.inputShare(resp2.newShareStores[resp2.newShareIndex.toString("hex")]);
-  //   let finalKey = tb3.reconstructKey();
-  //   if (resp1.privKey.cmp(finalKey) != 0) {
-  //     fail("key should be able to be reconstructed after adding new share");
-  //   }
-  // });
+  it("#should be able to reshare a key and retrieve from service provider", async function () {
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    const tb = new ThresholdBak();
+    const resp1 = await tb.initializeNewKey();
+    const tb2 = new ThresholdBak();
+    await tb2.initialize();
+    tb2.inputShare(resp1.deviceShare);
+    const reconstructedKey = tb2.reconstructKey();
+    if (resp1.privKey.cmp(reconstructedKey) != 0) {
+      fail("key should be able to be reconstructed");
+    }
+    let resp2 = await tb2.generateNewShare();
+    const tb3 = new ThresholdBak();
+    await tb3.initialize();
+    tb3.inputShare(resp2.newShareStores[resp2.newShareIndex.toString("hex")]);
+    let finalKey = tb3.reconstructKey();
+    if (resp1.privKey.cmp(finalKey) != 0) {
+      fail("key should be able to be reconstructed after adding new share");
+    }
+  });
   // it("#should be able to reconstruct key when initializing a with a share ", async function () {
   //   await new Promise((resolve) => setTimeout(resolve, 1000));
   //   const tb = new ThresholdBak();
@@ -81,24 +80,23 @@ describe("threshold bak", function () {
   //     fail("key should be able to be reconstructed");
   //   }
   // });
-  it("#should be able to reconstruct key after refresh and intializeing with a share ", async function () {
-    debugger;
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    const tb = new ThresholdBak();
-    let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
-    userInput = userInput.umod(ecCurve.curve.n);
-    const resp1 = await tb.initializeNewKey(userInput);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    const newShares = await tb.generateNewShare();
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    const tb2 = new ThresholdBak();
-    await tb2.initialize(resp1.userShare);
-    tb2.inputShare(newShares.newShareStores[resp1.deviceShare.share.shareIndex.toString("hex")]);
-    const reconstructedKey = tb2.reconstructKey();
-    if (resp1.privKey.cmp(reconstructedKey) != 0) {
-      fail("key should be able to be reconstructed");
-    }
-  });
+  // it("#should be able to reconstruct key after refresh and intializeing with a share ", async function () {
+  //   await new Promise((resolve) => setTimeout(resolve, 1000));
+  //   const tb = new ThresholdBak();
+  //   let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
+  //   userInput = userInput.umod(ecCurve.curve.n);
+  //   const resp1 = await tb.initializeNewKey(userInput);
+  //   await new Promise((resolve) => setTimeout(resolve, 1000));
+  //   const newShares = await tb.generateNewShare();
+  //   await new Promise((resolve) => setTimeout(resolve, 1000));
+  //   const tb2 = new ThresholdBak();
+  //   await tb2.initialize(resp1.userShare);
+  //   tb2.inputShare(newShares.newShareStores[resp1.deviceShare.share.shareIndex.toString("hex")]);
+  //   const reconstructedKey = tb2.reconstructKey();
+  //   if (resp1.privKey.cmp(reconstructedKey) != 0) {
+  //     fail("key should be able to be reconstructed");
+  //   }
+  // });
 });
 
 describe("TorusServiceProvider", function () {
@@ -175,6 +173,7 @@ describe("Metadata", function () {
     const shares = poly.generateShares(shareIndexes);
     const metadata = new Metadata(privKeyBN.getPubKeyPoint());
     metadata.addFromPolynomialAndShares(poly, shares);
+    metadata.setGeneralStoreDomain("something", { test: "oh this is an object" });
 
     let serializedMetadata = JSON.stringify(metadata);
     const deserializedMetadata = new Metadata(JSON.parse(serializedMetadata));
@@ -232,5 +231,23 @@ describe("lagrangeInterpolatePolynomial", function () {
         fail("poly result should equal hardcoded poly");
       }
     });
+  });
+});
+
+describe("SecurityQuestionsModule", function () {
+  it("#should be able to reconstruct key and initialize a key with seciurty questions", async function () {
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    const tb = new ThresholdBak();
+    const resp1 = await tb.initializeNewKey();
+    debugger;
+    await tb.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    const tb2 = new ThresholdBak();
+    await tb2.initialize();
+    await tb2.inputShareFromSecurityQuestions("blublu");
+    const reconstructedKey = tb2.reconstructKey();
+    if (resp1.privKey.cmp(reconstructedKey) != 0) {
+      fail("key should be able to be reconstructed");
+    }
   });
 });

@@ -14,16 +14,18 @@ class SecurityQuestionsModule {
 
   initialize(tbSDK) {
     this.tbSDK = tbSDK;
-
     // get security questions that should exist
 
-    // TODO: expose functions here
+    // expose functions here
+    this.tbSDK.generateNewShareWithSecurityQuestions = this.generateNewShareWithSecurityQuestions.bind(this);
+    this.tbSDK.getSecurityQuestions = this.getSecurityQuestions.bind(this);
+    this.tbSDK.inputShareFromSecurityQuestions = this.inputShareFromSecurityQuestions.bind(this);
   }
 
   async generateNewShareWithSecurityQuestions(answerString, questions) {
     let newSharesDetails = await this.tbSDK.generateNewShare();
     let newShareStore = newSharesDetails.newShareStores[newSharesDetails.newShareIndex.toString("hex")];
-    let userInputHash = answerToUserInputHash(answerString);
+    let userInputHash = answerToUserInputHashBN(answerString);
     let nonce = newShareStore.share.share.sub(userInputHash);
     nonce = nonce.umod(ecCurve.curve.n);
     let sqStore = new SecurityQuestionStore({
@@ -33,26 +35,28 @@ class SecurityQuestionsModule {
       polynomialID: newShareStore.polynomialID,
     });
     this.tbSDK.metadata.setGeneralStoreDomain(this.moduleName, sqStore);
-    this.tbSDK.syncShareMetadata();
+    await this.tbSDK.syncShareMetadata();
+    return newSharesDetails;
   }
 
   getSecurityQuestions() {
-    let sqStore = new SecurityQuestionStore(this.getGeneralStoreDomain(this.moduleName));
+    let sqStore = new SecurityQuestionStore(this.tbSDK.metadata.getGeneralStoreDomain(this.moduleName));
     return sqStore.questions;
   }
 
   async inputShareFromSecurityQuestions(answerString) {
-    let sqStore = new SecurityQuestionStore(this.getGeneralStoreDomain(this.moduleName));
-    let userInputHash = answerToUserInputHash(answerString);
+    debugger;
+    let sqStore = new SecurityQuestionStore(this.tbSDK.metadata.getGeneralStoreDomain(this.moduleName));
+    let userInputHash = answerToUserInputHashBN(answerString);
     let share = sqStore.nonce.add(userInputHash);
     share = share.umod(ecCurve.curve.n);
     let shareStore = new ShareStore({ share: new Share(sqStore.shareIndex, share), polynomialID: sqStore.polynomialID });
-    this.tbSDK.addShare(shareStore);
+    this.tbSDK.inputShare(shareStore);
   }
+}
 
-  answerToUserInputHashBN(answerString) {
-    return new BN(keccak256(answerString).slice(2), "hex");
-  }
+function answerToUserInputHashBN(answerString) {
+  return new BN(keccak256(answerString).slice(2), "hex");
 }
 
 class SecurityQuestionStore {
@@ -96,6 +100,11 @@ class ThresholdBak {
   }
 
   async initialize(input) {
+    // initialize modules
+    for (let moduleName in this.modules) {
+      this.modules[moduleName].initialize(this);
+    }
+
     let shareStore;
     if (input instanceof ShareStore) {
       shareStore = input;
@@ -111,11 +120,6 @@ class ThresholdBak {
       shareStore = new ShareStore(rawServiceProviderShare);
     } else {
       throw TypeError("Input is not supported");
-    }
-
-    // initialize modules
-    for (let moduleName in this.modules) {
-      this.modules[moduleName].initialize(this);
     }
 
     // we fetch metadata for the account from the share
@@ -203,12 +207,13 @@ class ThresholdBak {
     let oldPoly = lagrangeInterpolatePolynomial(pointsArr);
 
     let shareIndexesNeedingEncryption = [];
-    existingShareIndexes.forEach((shareIndexHex) => {
+    for (let index = 0; index < existingShareIndexes.length; index++) {
+      const shareIndexHex = existingShareIndexes[index];
       // define shares that need encryption/relaying
       if (newShareIndexes.includes(shareIndexHex)) {
         shareIndexesNeedingEncryption.push(shareIndexHex);
       }
-    });
+    }
 
     // add metadata new poly to metadata
     this.metadata.addFromPolynomialAndShares(poly, shares);
@@ -219,7 +224,8 @@ class ThresholdBak {
     newShareIndexes.forEach((shareIndexHex) => (shareStores[shareIndexHex] = new ShareStore({ share: shares[shareIndexHex], polynomialID: polyID })));
 
     // evaluate oldPoly for old shares and set new metadata with encrypted share for new polynomial
-    shareIndexesNeedingEncryption.forEach(async (shareIndex) => {
+    for (let index = 0; index < shareIndexesNeedingEncryption.length; index++) {
+      const shareIndex = shareIndexesNeedingEncryption[index];
       let m = this.metadata.clone();
       m.setScopedStore({ encryptedShare: shareStores[shareIndex] });
       let oldShare = oldPoly.polyEval(new BN(shareIndex, "hex"));
@@ -228,7 +234,7 @@ class ThresholdBak {
       } catch (err) {
         throw err;
       }
-    });
+    }
 
     // set share for serviceProvider encrytion
     // 1 is defined as the serviceProvider share
@@ -242,29 +248,33 @@ class ThresholdBak {
     }
 
     // set metadata for all new shares
-    newShareIndexes.forEach(async (shareIndex) => {
+    for (let index = 0; index < newShareIndexes.length; index++) {
+      const shareIndex = newShareIndexes[index];
       let m = this.metadata.clone();
       try {
         await this.storageLayer.setMetadata(m, shareStores[shareIndex].share.share);
       } catch (err) {
         throw err;
       }
-    });
+      this.inputShare(shareStores[shareIndex]);
+    }
 
     return { shareStores };
   }
 
   async syncShareMetadata(adjustScopedStore) {
     let pubPoly = this.metadata.getLatestPublicPolynomial();
-    let existingShareIndexes = this.metadata.getShareIndexesForPolynomial(pubPoly.getPolynomialID());
+    let pubPolyID = pubPoly.getPolynomialID();
+    let existingShareIndexes = this.metadata.getShareIndexesForPolynomial(pubPolyID);
+    let threshold = pubPoly.getThreshold();
 
     let pointsArr = [];
-    let sharesForExistingPoly = Object.keys(this.shares[pubPoly]);
+    let sharesForExistingPoly = Object.keys(this.shares[pubPolyID]);
     if (sharesForExistingPoly.length < threshold) {
       throw Error("not enough shares to reconstruct poly");
     }
     for (let i = 0; i < threshold; i++) {
-      pointsArr.push(new Point(new BN(sharesForExistingPoly[i], "hex"), this.shares[pubPoly][sharesForExistingPoly[i]].share.share));
+      pointsArr.push(new Point(new BN(sharesForExistingPoly[i], "hex"), this.shares[pubPolyID][sharesForExistingPoly[i]].share.share));
     }
     let currentPoly = lagrangeInterpolatePolynomial(pointsArr);
     const allExistingShares = currentPoly.generateShares(existingShareIndexes);
@@ -301,6 +311,11 @@ class ThresholdBak {
       }
     }
 
+    // initialize modules
+    for (let moduleName in this.modules) {
+      this.modules[moduleName].initialize(this);
+    }
+
     const tmpPriv = generatePrivate();
     this.setKey(new BN(tmpPriv));
 
@@ -330,18 +345,17 @@ class ThresholdBak {
       throw new Error(`setMetadata errored: ${JSON.stringify(err)}`);
     }
 
-    // derive nonce for questions + set questions answered
-
     // store metadata on metadata respective to shares
-    shareIndexes.forEach(async (shareIndex) => {
+    for (let index = 0; index < shareIndexes.length; index++) {
+      const shareIndex = shareIndexes[index];
       try {
         await this.storageLayer.setMetadata(metadata, shares[shareIndex.toString("hex")].share);
       } catch (err) {
         throw err;
       }
       // also add into our share store
-      this.inputShare(new ShareStore({ share: shares[shareIndex], polynomialID: poly.getPolynomialID() }));
-    });
+      await this.inputShare(new ShareStore({ share: shares[shareIndex], polynomialID: poly.getPolynomialID() }));
+    }
 
     this.metadata = metadata;
     let result = {
@@ -351,6 +365,7 @@ class ThresholdBak {
     if (userInput) {
       result.userShare = new ShareStore({ share: shares[shareIndexes[2].toString("hex")], polynomialID: poly.getPolynomialID() });
     }
+
     return result;
   }
 
