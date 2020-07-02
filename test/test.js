@@ -25,7 +25,7 @@ describe("threshold bak", function () {
   //   const resp1 = await tb.initializeNewKey();
   //   const tb2 = new ThresholdBak();
   //   await tb2.initialize();
-  //   tb2.addShare(resp1.deviceShare);
+  //   tb2.inputShare(resp1.deviceShare);
   //   const reconstructedKey = tb2.reconstructKey();
   //   if (resp1.privKey.cmp(reconstructedKey) != 0) {
   //     fail("key should be able to be reconstructed");
@@ -39,7 +39,7 @@ describe("threshold bak", function () {
   //   const resp1 = await tb.initializeNewKey(userInput);
   //   const tb2 = new ThresholdBak();
   //   await tb2.initialize();
-  //   tb2.addShare(resp1.userShare);
+  //   tb2.inputShare(resp1.userShare);
   //   const reconstructedKey = tb2.reconstructKey();
   //   if (resp1.privKey.cmp(reconstructedKey) != 0) {
   //     fail("key should be able to be reconstructed");
@@ -51,7 +51,7 @@ describe("threshold bak", function () {
   //   const resp1 = await tb.initializeNewKey();
   //   const tb2 = new ThresholdBak();
   //   await tb2.initialize();
-  //   tb2.addShare(resp1.deviceShare);
+  //   tb2.inputShare(resp1.deviceShare);
   //   const reconstructedKey = tb2.reconstructKey();
   //   if (resp1.privKey.cmp(reconstructedKey) != 0) {
   //     fail("key should be able to be reconstructed");
@@ -60,7 +60,7 @@ describe("threshold bak", function () {
   //   await new Promise((resolve) => setTimeout(resolve, 1000));
   //   const tb3 = new ThresholdBak();
   //   await tb3.initialize();
-  //   tb3.addShare(resp2.newShareStores[resp2.newShareIndex.toString("hex")]);
+  //   tb3.inputShare(resp2.newShareStores[resp2.newShareIndex.toString("hex")]);
   //   let finalKey = tb3.reconstructKey();
   //   if (resp1.privKey.cmp(finalKey) != 0) {
   //     fail("key should be able to be reconstructed after adding new share");
@@ -75,7 +75,7 @@ describe("threshold bak", function () {
   //   await new Promise((resolve) => setTimeout(resolve, 1000));
   //   const tb2 = new ThresholdBak();
   //   await tb2.initialize(resp1.userShare);
-  //   tb2.addShare(resp1.deviceShare);
+  //   tb2.inputShare(resp1.deviceShare);
   //   const reconstructedKey = tb2.reconstructKey();
   //   if (resp1.privKey.cmp(reconstructedKey) != 0) {
   //     fail("key should be able to be reconstructed");
@@ -93,7 +93,7 @@ describe("threshold bak", function () {
     await new Promise((resolve) => setTimeout(resolve, 1000));
     const tb2 = new ThresholdBak();
     await tb2.initialize(resp1.userShare);
-    tb2.addShare(newShares.newShareStores[resp1.deviceShare.share.shareIndex.toString("hex")]);
+    tb2.inputShare(newShares.newShareStores[resp1.deviceShare.share.shareIndex.toString("hex")]);
     const reconstructedKey = tb2.reconstructKey();
     if (resp1.privKey.cmp(reconstructedKey) != 0) {
       fail("key should be able to be reconstructed");

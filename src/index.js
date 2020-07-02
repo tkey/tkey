@@ -23,7 +23,7 @@ class SecurityQuestionsModule {
   async generateNewShareWithSecurityQuestions(answerString, questions) {
     let newSharesDetails = await this.tbSDK.generateNewShare();
     let newShareStore = newSharesDetails.newShareStores[newSharesDetails.newShareIndex.toString("hex")];
-    let userInputHash = new BN(keccak256(answerString).slice(2), "hex");
+    let userInputHash = answerToUserInputHash(answerString);
     let nonce = newShareStore.share.share.sub(userInputHash);
     nonce = nonce.umod(ecCurve.curve.n);
     let sqStore = new SecurityQuestionStore({
@@ -34,6 +34,24 @@ class SecurityQuestionsModule {
     });
     this.tbSDK.metadata.setGeneralStoreDomain(this.moduleName, sqStore);
     this.tbSDK.syncShareMetadata();
+  }
+
+  getSecurityQuestions() {
+    let sqStore = new SecurityQuestionStore(this.getGeneralStoreDomain(this.moduleName));
+    return sqStore.questions;
+  }
+
+  async inputShareFromSecurityQuestions(answerString) {
+    let sqStore = new SecurityQuestionStore(this.getGeneralStoreDomain(this.moduleName));
+    let userInputHash = answerToUserInputHash(answerString);
+    let share = sqStore.nonce.add(userInputHash);
+    share = share.umod(ecCurve.curve.n);
+    let shareStore = new ShareStore({ share: new Share(sqStore.shareIndex, share), polynomialID: sqStore.polynomialID });
+    this.tbSDK.addShare(shareStore);
+  }
+
+  answerToUserInputHashBN(answerString) {
+    return new BN(keccak256(answerString).slice(2), "hex");
   }
 }
 
@@ -103,7 +121,7 @@ class ThresholdBak {
     // we fetch metadata for the account from the share
     let latestShareDetails = await this.catchupToLatestShare(shareStore);
     this.metadata = latestShareDetails.shareMetadata;
-    this.addShare(latestShareDetails.latestShare);
+    this.inputShare(latestShareDetails.latestShare);
     // now that we have metadata we set the requirements for reconstruction
     return;
   }
@@ -322,7 +340,7 @@ class ThresholdBak {
         throw err;
       }
       // also add into our share store
-      this.addShare(new ShareStore({ share: shares[shareIndex], polynomialID: poly.getPolynomialID() }));
+      this.inputShare(new ShareStore({ share: shares[shareIndex], polynomialID: poly.getPolynomialID() }));
     });
 
     this.metadata = metadata;
@@ -336,7 +354,7 @@ class ThresholdBak {
     return result;
   }
 
-  addShare(shareStore) {
+  inputShare(shareStore) {
     if (!(shareStore instanceof ShareStore)) {
       throw TypeError("can only add type ShareStore into shares");
     }
