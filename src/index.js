@@ -44,7 +44,13 @@ class ThresholdBak {
       try {
         rawServiceProviderShare = await this.storageLayer.getMetadata();
       } catch (err) {
-        throw new Error(`getMetadata for rawServiceProviderShare in initialize errored: ${err}`);
+        // TODO: MUST GET RESPONSE FROM METADATA
+        // and determine if new user or not
+        // throw new Error(`getMetadata for rawServiceProviderShare in initialize errored: ${err}`);
+
+        // for now assumes new user
+        await this.initializeNewKey();
+        return;
       }
       shareStore = new ShareStore(rawServiceProviderShare);
     } else {

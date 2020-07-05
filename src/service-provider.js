@@ -16,8 +16,6 @@ class TorusServiceProvider {
     this.postboxKey = new BN(postboxKey, 16);
     this.directWeb = new DirectWebSDK(directParams);
 
-    this.directWeb.init();
-
     // this.triggerAggregateLogin = this.directWeb.triggerAggregateLogin.bind(this.directWeb);
   }
 
