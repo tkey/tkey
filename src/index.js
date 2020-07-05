@@ -1,101 +1,15 @@
 // const { decrypt, encrypt, generatePrivate, getPublic } = require("eccrypto");
 const { generatePrivate } = require("eccrypto");
 
-const TorusServiceProvider = require("./service-provider");
-const TorusStorageLayer = require("./storage-layer");
 const { ecCurve } = require("./utils");
-const { keccak256 } = require("web3-utils");
-const { Point, BN } = require("./types.js");
-
-class SecurityQuestionsModule {
-  constructor() {
-    this.moduleName = "securityQuestions";
-  }
-
-  initialize(tbSDK) {
-    this.tbSDK = tbSDK;
-    // get security questions that should exist
-
-    // expose functions here
-    this.tbSDK.generateNewShareWithSecurityQuestions = this.generateNewShareWithSecurityQuestions.bind(this);
-    this.tbSDK.getSecurityQuestions = this.getSecurityQuestions.bind(this);
-    this.tbSDK.inputShareFromSecurityQuestions = this.inputShareFromSecurityQuestions.bind(this);
-  }
-
-  async generateNewShareWithSecurityQuestions(answerString, questions) {
-    let newSharesDetails = await this.tbSDK.generateNewShare();
-    let newShareStore = newSharesDetails.newShareStores[newSharesDetails.newShareIndex.toString("hex")];
-    let userInputHash = answerToUserInputHashBN(answerString);
-    let nonce = newShareStore.share.share.sub(userInputHash);
-    nonce = nonce.umod(ecCurve.curve.n);
-    let sqStore = new SecurityQuestionStore({
-      nonce,
-      questions,
-      shareIndex: newShareStore.share.shareIndex,
-      polynomialID: newShareStore.polynomialID,
-    });
-    this.tbSDK.metadata.setGeneralStoreDomain(this.moduleName, sqStore);
-    await this.tbSDK.syncShareMetadata();
-    return newSharesDetails;
-  }
-
-  getSecurityQuestions() {
-    let sqStore = new SecurityQuestionStore(this.tbSDK.metadata.getGeneralStoreDomain(this.moduleName));
-    return sqStore.questions;
-  }
-
-  async inputShareFromSecurityQuestions(answerString) {
-    debugger;
-    let sqStore = new SecurityQuestionStore(this.tbSDK.metadata.getGeneralStoreDomain(this.moduleName));
-    let userInputHash = answerToUserInputHashBN(answerString);
-    let share = sqStore.nonce.add(userInputHash);
-    share = share.umod(ecCurve.curve.n);
-    let shareStore = new ShareStore({ share: new Share(sqStore.shareIndex, share), polynomialID: sqStore.polynomialID });
-    this.tbSDK.inputShare(shareStore);
-  }
-}
-
-function answerToUserInputHashBN(answerString) {
-  return new BN(keccak256(answerString).slice(2), "hex");
-}
-
-class SecurityQuestionStore {
-  constructor({ nonce, shareIndex, polynomialID, questions }) {
-    if (typeof nonce === "string") {
-      this.nonce = new BN(nonce, "hex");
-    } else if (nonce instanceof BN) {
-      this.nonce = nonce;
-    } else {
-      throw new TypeError(`expected nonce to be either BN or hex string instead got :${nonce}`);
-    }
-
-    if (typeof shareIndex === "string") {
-      this.shareIndex = new BN(shareIndex, "hex");
-    } else if (shareIndex instanceof BN) {
-      this.shareIndex = shareIndex;
-    } else {
-      throw new TypeError(`expected shareIndex to be either BN or hex string instead got :${shareIndex}`);
-    }
-
-    if (typeof polynomialID === "string") {
-      this.polynomialID = polynomialID;
-    } else {
-      throw new TypeError("polynomialID msut be string");
-    }
-    if (typeof questions === "string") {
-      this.questions = questions;
-    } else {
-      throw new TypeError("polynomialID msut be string");
-    }
-  }
-}
+const { Point, BN, Share, ShareStore, PublicShare, Polynomial, PublicPolynomial } = require("./types.js");
 
 class ThresholdBak {
-  constructor({ enableLogging = false } = {}) {
+  constructor({ enableLogging = false, modules = {}, serviceProvider, storageLayer } = {}) {
     this.enableLogging = enableLogging;
-    this.serviceProvider = new TorusServiceProvider();
-    this.storageLayer = new TorusStorageLayer({ enableLogging: true, serviceProvider: this.serviceProvider });
-    this.modules = { securityQuestions: new SecurityQuestionsModule() };
+    this.serviceProvider = serviceProvider;
+    this.storageLayer = storageLayer;
+    this.modules = modules;
     this.shares = {};
   }
 
@@ -279,7 +193,8 @@ class ThresholdBak {
     let currentPoly = lagrangeInterpolatePolynomial(pointsArr);
     const allExistingShares = currentPoly.generateShares(existingShareIndexes);
 
-    existingShareIndexes.forEach(async (shareIndex) => {
+    for (let index = 0; index < existingShareIndexes.length; index++) {
+      const shareIndex = existingShareIndexes[index];
       let newMetadata = this.metadata.clone();
       let resp;
       try {
@@ -301,7 +216,7 @@ class ThresholdBak {
       } catch (err) {
         throw err;
       }
-    });
+    }
   }
 
   async initializeNewKey(userInput) {
@@ -624,148 +539,9 @@ class Metadata {
   }
 }
 
-class Share {
-  constructor(shareIndex, share) {
-    if (typeof share === "string") {
-      this.share = new BN(share, "hex");
-    } else if (share instanceof BN) {
-      this.share = share;
-    } else {
-      throw new TypeError(`expected share to be either BN or hex string instead got :${share}`);
-    }
-
-    if (typeof shareIndex === "string") {
-      this.shareIndex = new BN(shareIndex, "hex");
-    } else if (shareIndex instanceof BN) {
-      this.shareIndex = shareIndex;
-    } else {
-      throw new TypeError("expected shareIndex to be either BN or hex string");
-    }
-  }
-
-  getPublicShare() {
-    return new PublicShare(this.shareIndex, this.share.getPubKeyPoint());
-  }
-}
-
-class ShareStore {
-  constructor({ share, polynomialID }) {
-    if (share instanceof Share && typeof polynomialID === "string") {
-      this.share = share;
-      this.polynomialID = polynomialID;
-    } else if (typeof share === "object" && typeof polynomialID === "string") {
-      if (!"share" in share || !"shareIndex" in share) {
-        throw new TypeError("expected ShareStore input share to have share and shareIndex");
-      }
-      this.share = new Share(share.shareIndex, share.share);
-      this.polynomialID = polynomialID;
-    } else {
-      throw new TypeError("expected ShareStore inputs to be Share and string");
-    }
-  }
-}
-
-class PublicPolynomial {
-  constructor(polynomialCommitments) {
-    this.polynomialCommitments = polynomialCommitments;
-  }
-  getThreshold() {
-    return this.polynomialCommitments.length;
-  }
-  getPolynomialID() {
-    let idSeed = "";
-    for (let i = 0; i < this.polynomialCommitments.length; i++) {
-      let nextChunk = this.polynomialCommitments[i].x.toString("hex");
-      if (i != 0) {
-        nextChunk = `|${nextChunk}`;
-      }
-      idSeed = idSeed + nextChunk;
-    }
-    return idSeed;
-  }
-}
-
-class Polynomial {
-  constructor(polynomial) {
-    this.polynomial = polynomial;
-  }
-
-  getThreshold() {
-    return this.polynomial.length;
-  }
-
-  polyEval(x) {
-    let tmpX;
-    if (typeof x == "string") {
-      tmpX = new BN(x, "hex");
-    } else {
-      tmpX = new BN(x);
-    }
-    let xi = new BN(tmpX);
-    let sum = new BN(0);
-    sum = sum.add(this.polynomial[0]);
-    for (let i = 1; i < this.polynomial.length; i += 1) {
-      const tmp = xi.mul(this.polynomial[i]);
-      sum = sum.add(tmp);
-      sum = sum.umod(ecCurve.curve.n);
-      xi = xi.mul(new BN(tmpX));
-      xi = xi.umod(ecCurve.curve.n);
-    }
-    return sum;
-  }
-
-  generateShares(shareIndexes) {
-    const shares = {};
-    for (let x = 0; x < shareIndexes.length; x += 1) {
-      shares[shareIndexes[x].toString("hex")] = new Share(shareIndexes[x], this.polyEval(shareIndexes[x]));
-    }
-    return shares;
-  }
-
-  getPublicPolynomial() {
-    let polynomialCommitments = [];
-    for (let i = 0; i < this.polynomial.length; i++) {
-      polynomialCommitments.push(this.polynomial[i].getPubKeyPoint());
-    }
-    return new PublicPolynomial(polynomialCommitments);
-  }
-
-  // TODO: inefficinet optimize this
-  getPolynomialID() {
-    return this.getPublicPolynomial().getPolynomialID();
-  }
-}
-
-class PublicShare {
-  constructor(shareIndex, shareCommitment) {
-    if (shareCommitment instanceof Point) {
-      this.shareCommitment = shareCommitment;
-    } else {
-      throw new TypeError("expected shareCommitment to be Point");
-    }
-
-    if (typeof shareIndex === "string") {
-      // shaves off extrapadding when serializing BN so when we deserialize we get a deepEqual
-      let tmpShareIndex = shareIndex;
-      if (tmpShareIndex.length == 2) {
-        if (tmpShareIndex[0] == "0") {
-          tmpShareIndex = tmpShareIndex[1];
-        }
-      }
-      this.shareIndex = new BN(tmpShareIndex, "hex");
-    } else if (shareIndex instanceof BN) {
-      this.shareIndex = shareIndex;
-    } else {
-      throw new TypeError("expected shareIndex to be either BN or hex string");
-    }
-  }
-}
-
 module.exports = {
   ThresholdBak,
-  Polynomial,
   Metadata,
-  Share,
   generateRandomPolynomial,
   lagrangeInterpolation,
   lagrangeInterpolatePolynomial,
