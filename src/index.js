@@ -13,7 +13,7 @@ class ThresholdBak {
 
     // Defaults to torus SP and SL
     if (!serviceProvider) {
-      this.serviceProvider = new TorusServiceProvider(directParams);
+      this.serviceProvider = new TorusServiceProvider({ directParams });
     } else {
       this.serviceProvider = serviceProvider;
     }
