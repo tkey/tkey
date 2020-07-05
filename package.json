@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/torusresearch/threshold-device-key-management-web#readme",
   "dependencies": {
+    "@toruslabs/torus-direct-web-sdk": "^3.1.0",
     "atob": "^2.1.2",
     "bn.js": "^5.1.2",
     "btoa": "^1.2.1",

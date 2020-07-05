@@ -4,11 +4,26 @@ const { generatePrivate } = require("eccrypto");
 const { ecCurve } = require("./utils");
 const { Point, BN, Share, ShareStore, PublicShare, Polynomial, PublicPolynomial } = require("./types.js");
 
+const TorusServiceProvider = require("../src/service-provider");
+const TorusStorageLayer = require("../src/storage-layer");
+
 class ThresholdBak {
-  constructor({ enableLogging = false, modules = {}, serviceProvider, storageLayer } = {}) {
+  constructor({ enableLogging = false, modules = {}, serviceProvider = undefined, storageLayer = undefined, directParams = {} } = {}) {
     this.enableLogging = enableLogging;
-    this.serviceProvider = serviceProvider;
-    this.storageLayer = storageLayer;
+
+    // Defaults to torus SP and SL
+    if (!serviceProvider) {
+      this.serviceProvider = new TorusServiceProvider(directParams);
+    } else {
+      this.serviceProvider = serviceProvider;
+    }
+
+    if (!storageLayer) {
+      this.storageLayer = new TorusStorageLayer({ serviceProvider: this.serviceProvider });
+    } else {
+      this.storageLayer = storageLayer;
+    }
+
     this.modules = modules;
     this.shares = {};
   }
