@@ -17,7 +17,6 @@ global.fetch = require("node-fetch");
 
 describe("threshold bak", function () {
   it("#should be able to reconstruct key when initializing a key", async function () {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
     const tb = new ThresholdBak({ serviceProvider: defaultSP, storageLayer: defaultSL });
     const resp1 = await tb.initializeNewKey();
     const tb2 = new ThresholdBak({ serviceProvider: defaultSP, storageLayer: defaultSL });
@@ -29,7 +28,6 @@ describe("threshold bak", function () {
     }
   });
   it("#should be able to reconstruct key when initializing a  with user input", async function () {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
     const tb = new ThresholdBak({ serviceProvider: defaultSP, storageLayer: defaultSL });
     let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
     userInput = userInput.umod(ecCurve.curve.n);
@@ -43,7 +41,6 @@ describe("threshold bak", function () {
     }
   });
   it("#should be able to reshare a key and retrieve from service provider", async function () {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
     const tb = new ThresholdBak({ serviceProvider: defaultSP, storageLayer: defaultSL });
     const resp1 = await tb.initializeNewKey();
     const tb2 = new ThresholdBak({ serviceProvider: defaultSP, storageLayer: defaultSL });
@@ -63,12 +60,10 @@ describe("threshold bak", function () {
     }
   });
   it("#should be able to reconstruct key when initializing a with a share ", async function () {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
     const tb = new ThresholdBak({ serviceProvider: defaultSP, storageLayer: defaultSL });
     let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
     userInput = userInput.umod(ecCurve.curve.n);
     const resp1 = await tb.initializeNewKey(userInput);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
     const tb2 = new ThresholdBak({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize(resp1.userShare);
     tb2.inputShare(resp1.deviceShare);
@@ -78,14 +73,11 @@ describe("threshold bak", function () {
     }
   });
   it("#should be able to reconstruct key after refresh and intializeing with a share ", async function () {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
     const tb = new ThresholdBak({ serviceProvider: defaultSP, storageLayer: defaultSL });
     let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
     userInput = userInput.umod(ecCurve.curve.n);
     const resp1 = await tb.initializeNewKey(userInput);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
     const newShares = await tb.generateNewShare();
-    await new Promise((resolve) => setTimeout(resolve, 1000));
     const tb2 = new ThresholdBak({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize(resp1.userShare);
     tb2.inputShare(newShares.newShareStores[resp1.deviceShare.share.shareIndex.toString("hex")]);
