@@ -1,6 +1,6 @@
 {
-  "name": "threshold-device-key-management-web",
-  "version": "1.0.0",
+  "name": "threshold-bal",
+  "version": "0.1.0",
   "description": "",
   "main": "index.js",
   "scripts": {
