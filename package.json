@@ -7,7 +7,8 @@
     "build": "rimraf dist/ && parallel-webpack --no-stats",
     "build:watch": "rimraf dist/ && parallel-webpack --watch --no-stats",
     "test": "mocha --timeout 0",
-    "test-debugger": "mocha --inspect-brk"
+    "test-debugger": "mocha --inspect-brk",
+    "prepack": "npm run build"
   },
   "repository": {
     "type": "git",
