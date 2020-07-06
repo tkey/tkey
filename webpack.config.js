@@ -10,7 +10,8 @@ const libraryName = pkgName.charAt(0).toUpperCase() + pkgName.slice(1);
 const packagesToInclude = ["broadcast-channel"];
 
 const baseConfig = {
-  mode: "production",
+  devtool: "source-map",
+  mode: "development",
   entry: "./index.js",
   target: "web",
   output: {
@@ -74,21 +75,21 @@ const umdPolyfilledConfig = {
     libraryTarget: "umd",
   },
   module: {
-    rules: [eslintLoader],
+    rules: [babelLoaderWithPolyfills],
   },
 };
 
-const umdConfig = {
-  ...baseConfig,
-  output: {
-    ...baseConfig.output,
-    filename: `${pkgName}.umd.min.js`,
-    libraryTarget: "umd",
-  },
-  module: {
-    rules: [eslintLoader],
-  },
-};
+// const umdConfig = {
+//   ...baseConfig,
+//   output: {
+//     ...baseConfig.output,
+//     filename: `${pkgName}.umd.min.js`,
+//     libraryTarget: "umd",
+//   },
+//   module: {
+//     rules: [tsLoader, eslintLoader, babelLoader],
+//   },
+// };
 
 const cjsConfig = {
   ...baseConfig,
@@ -99,14 +100,14 @@ const cjsConfig = {
     libraryTarget: "commonjs2",
   },
   module: {
-    rules: [eslintLoader],
+    rules: [babelLoader],
   },
   externals: [...Object.keys(pkg.dependencies).filter((x) => !packagesToInclude.includes(x)), /^(@babel\/runtime)/i],
-  // plugins: [new ForkTsCheckerWebpackPlugin()],
+  plugins: [],
 };
 
-// module.exports = [umdPolyfilledConfig, umdConfig, cjsConfig];
-module.exports = [cjsConfig];
+module.exports = [cjsConfig, umdPolyfilledConfig];
+// module.exports = [cjsConfig];
 // V5
 // experiments: {
 //   outputModule: true
