@@ -315,6 +315,18 @@ class ThresholdBak {
     this.shares[shareStore.polynomialID][shareStore.share.shareIndex.toString("hex")] = shareStore;
   }
 
+  outputShare(shareIndex) {
+    let shareIndexParsed;
+    if (typeof shareIndex == "number") {
+      shareIndexParsed = new BN(shareIndex);
+    } else if (shareIndex instanceof BN) {
+      shareIndexParsed = shareIndex;
+    } else if (typeof shareIndex == "string") {
+      shareIndexParsed = new BN(shareIndex, "hex");
+    }
+    return this.shares[this.metadata.getLatestPublicPolynomial().getPolynomialID()][shareIndexParsed.toString("hex")];
+  }
+
   setKey(privKey) {
     this.privKey = privKey;
     this.ecKey = ecCurve.keyFromPrivate(this.privKey);
