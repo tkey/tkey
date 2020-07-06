@@ -86,6 +86,18 @@ describe("threshold bak", function () {
       fail("key should be able to be reconstructed");
     }
   });
+  it("#should be able to detect a new user and reconstruct key on initialize", async function () {
+    let privKey = new BN(generatePrivate());
+    const uniqueSP = new ServiceProvider({ postboxKey: privKey.toString("hex") });
+    const uniqueSL = new TorusStorageLayer({ serviceProvider: uniqueSP });
+    debugger;
+    const tb = new ThresholdBak({ serviceProvider: uniqueSP, storageLayer: uniqueSL });
+    await tb.initialize();
+    const reconstructedKey = tb.reconstructKey();
+    if (tb.privKey.cmp(reconstructedKey) != 0) {
+      fail("key should be able to be reconstructed");
+    }
+  });
 });
 
 describe("ServiceProvider", function () {
@@ -231,7 +243,6 @@ describe("SecurityQuestionsModule", function () {
       modules: { securityQuestions: new SecurityQuestionsModule() },
     });
     const resp1 = await tb.initializeNewKey();
-    debugger;
     await tb.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
     const tb2 = new ThresholdBak({
       serviceProvider: defaultSP,

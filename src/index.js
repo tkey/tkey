@@ -281,6 +281,8 @@ class ThresholdBak {
       throw new Error(`setMetadata errored: ${JSON.stringify(err)}`);
     }
 
+    debugger;
+
     // store metadata on metadata respective to shares
     for (let index = 0; index < shareIndexes.length; index++) {
       const shareIndex = shareIndexes[index];
@@ -290,7 +292,7 @@ class ThresholdBak {
         throw err;
       }
       // also add into our share store
-      await this.inputShare(new ShareStore({ share: shares[shareIndex], polynomialID: poly.getPolynomialID() }));
+      this.inputShare(new ShareStore({ share: shares[shareIndex.toString("hex")], polynomialID: poly.getPolynomialID() }));
     }
 
     this.metadata = metadata;

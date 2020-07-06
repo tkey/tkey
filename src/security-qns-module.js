@@ -42,7 +42,6 @@ class SecurityQuestionsModule {
   }
 
   async inputShareFromSecurityQuestions(answerString) {
-    debugger;
     let sqStore = new SecurityQuestionStore(this.tbSDK.metadata.getGeneralStoreDomain(this.moduleName));
     let userInputHash = answerToUserInputHashBN(answerString);
     let share = sqStore.nonce.add(userInputHash);

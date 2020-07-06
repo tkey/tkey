@@ -2,7 +2,7 @@ const atob = require("atob");
 const BN = require("bn.js");
 const btoa = require("btoa");
 const { keccak256 } = require("web3-utils");
-const { decrypt, encrypt, isEmptyObject } = require("./utils");
+const { decrypt, encrypt } = require("./utils");
 
 const { post } = require("./httpHelpers");
 class TorusStorageLayer {
@@ -21,7 +21,7 @@ class TorusStorageLayer {
       throw error;
     }
     // returns empty object if objec
-    if (isEmptyObject(metadataResponse.message)) {
+    if (metadataResponse.message === "") {
       return {};
     }
     let encryptedMessage;
