@@ -306,13 +306,18 @@ class ThresholdBak {
   }
 
   inputShare(shareStore) {
-    if (!(shareStore instanceof ShareStore)) {
+    let ss;
+    if (shareStore instanceof ShareStore) {
+      ss = shareStore;
+    } else if (typeof shareStore === "object") {
+      ss = new ShareStore(shareStore);
+    } else {
       throw TypeError("can only add type ShareStore into shares");
     }
-    if (!(shareStore.polynomialID in this.shares)) {
-      this.shares[shareStore.polynomialID] = {};
+    if (!(ss.polynomialID in this.shares)) {
+      this.shares[ss.polynomialID] = {};
     }
-    this.shares[shareStore.polynomialID][shareStore.share.shareIndex.toString("hex")] = shareStore;
+    this.shares[ss.polynomialID][ss.share.shareIndex.toString("hex")] = ss;
   }
 
   outputShare(shareIndex) {
