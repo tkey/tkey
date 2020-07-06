@@ -321,9 +321,12 @@ class ThresholdBak {
   }
 
   getKeyDetails() {
+    let polyID = this.metadata.getLatestPublicPolynomial();
+    let requiredShares = this.metadata.publicPolynomials[polyID].getThreshold() - Object.keys(this.shares[polyID]).length;
     return {
       pubKey: this.metadata.pubKey,
-      requiredShares: this.metadata.publicPolynomials.getThreshold(),
+      requiredShares: requiredShares,
+      threshold: this.metadata.publicPolynomials[polyID].getThreshold(),
       totalShares: Object.keys(this.metadata.publicShares).length,
       modules: this.modules,
     };
