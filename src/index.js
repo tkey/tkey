@@ -49,7 +49,7 @@ class ThresholdBak {
       if (isEmptyObject(rawServiceProviderShare)) {
         // no metadata set, assumes new user
         await this.initializeNewKey();
-        return;
+        return this.getKeyDetails();
       }
       // else we continue with catching up share and metadata
       shareStore = new ShareStore(rawServiceProviderShare);
@@ -62,7 +62,7 @@ class ThresholdBak {
     this.metadata = latestShareDetails.shareMetadata;
     this.inputShare(latestShareDetails.latestShare);
     // now that we have metadata we set the requirements for reconstruction
-    return;
+    return this.getKeyDetails();
   }
 
   async catchupToLatestShare(shareStore) {
@@ -281,8 +281,6 @@ class ThresholdBak {
       throw new Error(`setMetadata errored: ${JSON.stringify(err)}`);
     }
 
-    debugger;
-
     // store metadata on metadata respective to shares
     for (let index = 0; index < shareIndexes.length; index++) {
       const shareIndex = shareIndexes[index];
@@ -320,6 +318,15 @@ class ThresholdBak {
   setKey(privKey) {
     this.privKey = privKey;
     this.ecKey = ecCurve.keyFromPrivate(this.privKey);
+  }
+
+  getKeyDetails() {
+    return {
+      pubKey: this.metadata.pubKey,
+      requiredShares: this.metadata.publicPolynomials.getThreshold(),
+      totalShares: Object.keys(this.metadata.publicShares).length,
+      modules: this.modules,
+    };
   }
 }
 
