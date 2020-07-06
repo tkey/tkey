@@ -327,7 +327,7 @@ class ThresholdBak {
       pubKey: this.metadata.pubKey,
       requiredShares: requiredShares,
       threshold: poly.getThreshold(),
-      totalShares: Object.keys(this.metadata.publicShares).length,
+      totalShares: Object.keys(this.metadata.publicShares[poly.getPolynomialID()]).length,
       modules: this.modules,
     };
   }
