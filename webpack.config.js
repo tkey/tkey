@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 const path = require("path");
-const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin");
+// const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin");
 
 const pkg = require("./package.json");
 
@@ -11,7 +11,7 @@ const packagesToInclude = ["broadcast-channel"];
 
 const baseConfig = {
   mode: "production",
-  entry: "./index.ts",
+  entry: "./index.js",
   target: "web",
   output: {
     path: path.resolve(__dirname, "dist"),
@@ -52,17 +52,17 @@ const babelLoaderWithPolyfills = {
   },
 };
 
-const tsLoader = {
-  test: /\.ts?$/,
-  exclude: /(node_modules|bower_components)/,
-  use: {
-    loader: "ts-loader",
-    options: {
-      // disable type checker - we will use it in fork plugin
-      transpileOnly: true,
-    },
-  },
-};
+// const tsLoader = {
+//   test: /\.ts?$/,
+//   exclude: /(node_modules|bower_components)/,
+//   use: {
+//     loader: "ts-loader",
+//     options: {
+//       // disable type checker - we will use it in fork plugin
+//       transpileOnly: true,
+//     },
+//   },
+// };
 
 const babelLoader = { ...babelLoaderWithPolyfills, use: { loader: "babel-loader", options: { plugins: ["@babel/transform-runtime"] } } };
 
@@ -74,7 +74,7 @@ const umdPolyfilledConfig = {
     libraryTarget: "umd",
   },
   module: {
-    rules: [tsLoader, eslintLoader, babelLoaderWithPolyfills],
+    rules: [eslintLoader],
   },
 };
 
@@ -86,7 +86,7 @@ const umdConfig = {
     libraryTarget: "umd",
   },
   module: {
-    rules: [tsLoader, eslintLoader, babelLoader],
+    rules: [eslintLoader],
   },
 };
 
@@ -99,10 +99,10 @@ const cjsConfig = {
     libraryTarget: "commonjs2",
   },
   module: {
-    rules: [tsLoader, eslintLoader, babelLoader],
+    rules: [eslintLoader],
   },
   externals: [...Object.keys(pkg.dependencies).filter((x) => !packagesToInclude.includes(x)), /^(@babel\/runtime)/i],
-  plugins: [new ForkTsCheckerWebpackPlugin()],
+  // plugins: [new ForkTsCheckerWebpackPlugin()],
 };
 
 // module.exports = [umdPolyfilledConfig, umdConfig, cjsConfig];

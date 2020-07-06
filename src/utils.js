@@ -50,9 +50,14 @@ async function editedDecrypt(privKey, msg) {
   return decryption;
 }
 
+function isEmptyObject(obj) {
+  return Object.keys(obj).length === 0 && obj.constructor === Object;
+}
+
 module.exports = {
   // privKeyBnToEcc,
   // privKeyBnToPubKeyECC,
+  isEmptyObject,
   encrypt: editedEncrypt,
   decrypt: editedDecrypt,
   ecCurve,

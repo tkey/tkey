@@ -1,7 +1,7 @@
 // const { decrypt, encrypt, generatePrivate, getPublic } = require("eccrypto");
 const { generatePrivate } = require("eccrypto");
 
-const { ecCurve } = require("./utils");
+const { ecCurve, isEmptyObject } = require("./utils");
 const { Point, BN, Share, ShareStore, PublicShare, Polynomial, PublicPolynomial } = require("./types.js");
 
 const TorusServiceProvider = require("../src/service-provider");
@@ -44,14 +44,14 @@ class ThresholdBak {
       try {
         rawServiceProviderShare = await this.storageLayer.getMetadata();
       } catch (err) {
-        // TODO: MUST GET RESPONSE FROM METADATA
-        // and determine if new user or not
         throw new Error(`getMetadata for rawServiceProviderShare in initialize errored: ${err}`);
-
-        // for now assumes new user
-        // await this.initializeNewKey();
-        // return;
       }
+      if (isEmptyObject(rawServiceProviderShare)) {
+        // no metadata set, assumes new user
+        await this.initializeNewKey();
+        return;
+      }
+      // else we continue with catching up share and metadata
       shareStore = new ShareStore(rawServiceProviderShare);
     } else {
       throw TypeError("Input is not supported");
