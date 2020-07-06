@@ -8,7 +8,8 @@ BN.prototype.toPrivKeyEC = function () {
 };
 
 BN.prototype.toPrivKeyECC = function () {
-  return this.toBuffer("be", 32);
+  const tmp = new BN("be", "hex");
+  return Buffer.from(tmp.toString("hex", 64), "hex");
 };
 BN.prototype.getPubKeyEC = function () {
   return ecCurve.keyFromPrivate(this.toString("hex", 64)).getPublic();
