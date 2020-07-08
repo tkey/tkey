@@ -1,5 +1,5 @@
-import { Point } from "./BNandPoint";
 import { PolynomialID } from "./commonTypes";
+import Point from "./Point";
 
 class PublicPolynomial {
   polynomialCommitments: Array<Point>;

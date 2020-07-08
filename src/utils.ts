@@ -1,5 +1,7 @@
 import { decrypt as ecDecrypt, encrypt as ecEncrypt } from "eccrypto";
 import { ec as EC } from "elliptic";
+
+import { EncryptedMessage } from "./base/commonTypes";
 // const { getPublic } = require("eccrypto");
 
 // const privKeyBnToEcc = (bnPrivKey) => {
@@ -11,13 +13,6 @@ import { ec as EC } from "elliptic";
 // };
 
 const ecCurve = new EC("secp256k1");
-
-interface EncryptedMessage {
-  ciphertext: string;
-  ephemPublicKey: string;
-  iv: string;
-  mac: string;
-}
 
 // Wrappers around ECC encrypt/decrypt to use the hex serialization
 // TODO: refactor to take BN
@@ -32,16 +27,15 @@ async function encrypt(publicKey: Buffer, msg: Buffer): Promise<EncryptedMessage
   };
 }
 
-async function decrypt(privKey: Buffer, msg: EncryptedMessage): Promise<string> {
+async function decrypt(privKey: Buffer, msg: EncryptedMessage): Promise<Buffer> {
   const bufferEncDetails = {
     ciphertext: Buffer.from(msg.ciphertext, "hex"),
     ephemPublicKey: Buffer.from(msg.ephemPublicKey, "hex"),
     iv: Buffer.from(msg.iv, "hex"),
     mac: Buffer.from(msg.mac, "hex"),
   };
-  const decryption = await ecDecrypt(privKey, bufferEncDetails);
 
-  return decryption;
+  return ecDecrypt(privKey, bufferEncDetails);
 }
 
 function isEmptyObject(obj: unknown): boolean {

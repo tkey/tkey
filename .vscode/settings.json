@@ -40,6 +40,7 @@
       }
     ],
     "rules": {
+      "class-methods-use-this": 0,
       "camelcase": 0,
       "no-useless-constructor": 0,
       "@typescript-eslint/no-useless-constructor": 2,

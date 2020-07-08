@@ -1,5 +1,16 @@
+import BN from "bn.js";
+
 import { ecCurve } from "../utils";
-import { BN } from "./BNandPoint";
+import { getPubKeyPoint } from "./BNUtils";
+import { BNString, PolynomialID } from "./commonTypes";
+import Point from "./Point";
+import PublicPolynomial from "./PublicPolynomial";
+import Share from "./Share";
+
+// @flow
+export type ShareMap = {
+  [x: string]: Share;
+};
 
 class Polynomial {
   polynomial: Array<BN>;
@@ -8,17 +19,12 @@ class Polynomial {
     this.polynomial = polynomial;
   }
 
-  getThreshold() {
+  getThreshold(): number {
     return this.polynomial.length;
   }
 
-  polyEval(x) {
-    let tmpX;
-    if (typeof x === "string") {
-      tmpX = new BN(x, "hex");
-    } else {
-      tmpX = new BN(x);
-    }
+  polyEval(x: BNString): BN {
+    const tmpX = new BN(x, "hex");
     let xi = new BN(tmpX);
     let sum = new BN(0);
     sum = sum.add(this.polynomial[0]);
@@ -32,24 +38,24 @@ class Polynomial {
     return sum;
   }
 
-  generateShares(shareIndexes) {
-    const shares = {};
+  generateShares(shareIndexes: Array<BNString>): ShareMap {
+    const shares: ShareMap = {};
     for (let x = 0; x < shareIndexes.length; x += 1) {
       shares[shareIndexes[x].toString("hex")] = new Share(shareIndexes[x], this.polyEval(shareIndexes[x]));
     }
     return shares;
   }
 
-  getPublicPolynomial() {
-    const polynomialCommitments = [];
-    for (let i = 0; i < this.polynomial.length; i++) {
-      polynomialCommitments.push(this.polynomial[i].getPubKeyPoint());
+  getPublicPolynomial(): PublicPolynomial {
+    const polynomialCommitments: Array<Point> = [];
+    for (let i = 0; i < this.polynomial.length; i += 1) {
+      polynomialCommitments.push(getPubKeyPoint(this.polynomial[i]));
     }
     return new PublicPolynomial(polynomialCommitments);
   }
 
-  // TODO: inefficinet optimize this
-  getPolynomialID() {
+  // TODO: inefficient optimize this
+  getPolynomialID(): PolynomialID {
     return this.getPublicPolynomial().getPolynomialID();
   }
 }

@@ -1,12 +1,19 @@
-import atob from "atob";
+import { post } from "@toruslabs/http-helpers";
 import BN from "bn.js";
-import btoa from "btoa";
 import { keccak256 } from "web3-utils";
 
-import { post } from "./httpHelpers";
+import { IServiceProvider } from "./base/commonTypes";
 import { decrypt, encrypt } from "./utils";
 
+interface IStorageLayer {}
+
 class TorusStorageLayer {
+  enableLogging: boolean;
+
+  hostUrl: string;
+
+  serviceProvider: IServiceProvider;
+
   constructor({ enableLogging = false, hostUrl = "http://localhost:5051", serviceProvider }) {
     this.enableLogging = enableLogging;
     this.hostUrl = hostUrl;

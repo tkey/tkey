@@ -1,13 +1,25 @@
-// const { decrypt, encrypt, generatePrivate, getPublic } = require("eccrypto");
 import { generatePrivate } from "eccrypto";
 
-import TorusServiceProvider from "./service-provider";
+import { IThresholdBak, ModuleMap, KeyDetails, IServiceProvider } from "./base/commonTypes";
+import TorusServiceProvider from "./serviceProvider/TorusServiceProvider";
 import TorusStorageLayer from "./storage-layer";
 import { BN, Point, Polynomial, PublicPolynomial, PublicShare, Share, ShareStore } from "./types.js";
 import { ecCurve, isEmptyObject } from "./utils";
+import ShareStore from "./base/ShareStore";
+import Point from "./base/Point";
 
-class ThresholdBak {
-  constructor({ enableLogging = false, modules = {}, serviceProvider = undefined, storageLayer = undefined, directParams = {} } = {}) {
+type ThresholdBakArgs = {
+  enableLogging?:boolean
+  modules?:ModuleMap
+  serviceProvider?: IServiceProvider
+  storageLayer: 
+}
+
+class ThresholdBak implements IThresholdBak {
+  modules: ModuleMap
+  enableLogging: boolean
+  serviceProvider: IServiceProvider
+  constructor({ enableLogging = false, modules = {}, serviceProvider, storageLayer, directParams = {}}: ThresholdBakArgs) {
     this.enableLogging = enableLogging;
 
     // Defaults to torus SP and SL
@@ -27,7 +39,7 @@ class ThresholdBak {
     this.shares = {};
   }
 
-  async initialize(input) {
+  async initialize(input: ShareStore): Promise<KeyDetails>{
     // initialize modules
     for (const moduleName in this.modules) {
       this.modules[moduleName].initialize(this);
@@ -336,7 +348,7 @@ class ThresholdBak {
     this.ecKey = ecCurve.keyFromPrivate(this.privKey);
   }
 
-  getKeyDetails() {
+  getKeyDetails():  {
     const poly = this.metadata.getLatestPublicPolynomial();
     const requiredShares = poly.getThreshold() - Object.keys(this.shares[poly.getPolynomialID()]).length;
     return {
@@ -348,6 +360,7 @@ class ThresholdBak {
     };
   }
 }
+
 
 // PRIMATIVES (TODO: MOVE TYPES AND THIS INTO DIFFERENT FOLDER)
 
