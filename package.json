@@ -4,11 +4,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "rimraf dist/ && parallel-webpack --no-stats",
-    "build:watch": "rimraf dist/ && parallel-webpack --watch --no-stats",
     "test": "mocha --timeout 0",
     "test-debugger": "mocha --inspect-brk",
-    "prepack": "npm run build"
+    "dev": "rimraf dist/ && cross-env NODE_ENV=development parallel-webpack --no-stats",
+    "build": "rimraf dist/ && cross-env NODE_ENV=production parallel-webpack --no-stats",
+    "build:types": "rimraf types/ && tsc --project tsconfig.types.json",
+    "lint:ts": "eslint --fix 'src/**/*.ts'",
+    "prepack": "npm run build && npm run build:types"
   },
   "repository": {
     "type": "git",
@@ -39,6 +41,7 @@
     "@babel/preset-env": "^7.10.2",
     "@babel/register": "^7.10.1",
     "@babel/runtime-corejs3": "^7.10.2",
+    "@types/elliptic": "^6.4.12",
     "@typescript-eslint/eslint-plugin": "3.2.0",
     "@typescript-eslint/parser": "3.2.0",
     "babel-eslint": "^10.1.0",

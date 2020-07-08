@@ -1,6 +1,7 @@
-const BN = require("bn.js");
-const { ecCurve } = require("./utils");
-const { getPublic } = require("eccrypto");
+import BN from "bn.js";
+import { getPublic } from "eccrypto";
+
+import { ecCurve } from "./utils";
 
 // This is done because we can't extend BN
 BN.prototype.toPrivKeyEC = function () {
@@ -26,13 +27,14 @@ class Point {
     if (x instanceof BN && y instanceof BN) {
       this.x = x;
       this.y = y;
-    } else if (typeof x == "string" && typeof y == "string") {
+    } else if (typeof x === "string" && typeof y === "string") {
       this.x = new BN(x, "hex");
       this.y = new BN(y, "hex");
     } else {
       throw TypeError("Point needs to be intialized with BN");
     }
   }
+
   // complies with EC point pub key  encoding api
   encode(enc) {
     if (enc === "arr") {
@@ -87,9 +89,11 @@ class PublicPolynomial {
   constructor(polynomialCommitments) {
     this.polynomialCommitments = polynomialCommitments;
   }
+
   getThreshold() {
     return this.polynomialCommitments.length;
   }
+
   getPolynomialID() {
     let idSeed = "";
     for (let i = 0; i < this.polynomialCommitments.length; i++) {
@@ -97,7 +101,7 @@ class PublicPolynomial {
       if (i != 0) {
         nextChunk = `|${nextChunk}`;
       }
-      idSeed = idSeed + nextChunk;
+      idSeed += nextChunk;
     }
     return idSeed;
   }
@@ -114,7 +118,7 @@ class Polynomial {
 
   polyEval(x) {
     let tmpX;
-    if (typeof x == "string") {
+    if (typeof x === "string") {
       tmpX = new BN(x, "hex");
     } else {
       tmpX = new BN(x);
@@ -141,7 +145,7 @@ class Polynomial {
   }
 
   getPublicPolynomial() {
-    let polynomialCommitments = [];
+    const polynomialCommitments = [];
     for (let i = 0; i < this.polynomial.length; i++) {
       polynomialCommitments.push(this.polynomial[i].getPubKeyPoint());
     }
@@ -179,4 +183,4 @@ class PublicShare {
   }
 }
 
-module.exports = { Point, BN, Share, ShareStore, PublicShare, Polynomial, PublicPolynomial };
+export { Point, BN, Share, ShareStore, PublicShare, Polynomial, PublicPolynomial };

@@ -46,8 +46,4 @@ const generateJsonRPCObject = (method, params) => {
   };
 };
 
-module.exports = {
-  promiseTimeout,
-  post,
-  generateJsonRPCObject,
-};
+export { promiseTimeout, post, generateJsonRPCObject };

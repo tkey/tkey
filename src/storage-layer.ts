@@ -1,10 +1,11 @@
-const atob = require("atob");
-const BN = require("bn.js");
-const btoa = require("btoa");
-const { keccak256 } = require("web3-utils");
-const { decrypt, encrypt } = require("./utils");
+import atob from "atob";
+import BN from "bn.js";
+import btoa from "btoa";
+import { keccak256 } from "web3-utils";
 
-const { post } = require("./httpHelpers");
+import { post } from "./httpHelpers";
+import { decrypt, encrypt } from "./utils";
+
 class TorusStorageLayer {
   constructor({ enableLogging = false, hostUrl = "http://localhost:5051", serviceProvider }) {
     this.enableLogging = enableLogging;
@@ -64,18 +65,20 @@ class TorusStorageLayer {
   }
 
   generateMetadataParams(message, privKey) {
-    let sig, pubX, pubY;
+    let sig;
+    let pubX;
+    let pubY;
     const setData = {
       data: message,
       timestamp: new BN(Date.now()).toString(16),
     };
-    let hash = keccak256(JSON.stringify(setData)).slice(2);
+    const hash = keccak256(JSON.stringify(setData)).slice(2);
     if (privKey) {
-      let unparsedSig = privKey.toPrivKeyEC().sign(hash);
+      const unparsedSig = privKey.toPrivKeyEC().sign(hash);
       sig = Buffer.from(unparsedSig.r.toString(16, 64) + unparsedSig.s.toString(16, 64) + new BN(unparsedSig.v).toString(16, 2), "hex").toString(
         "base64"
       );
-      let pubK = privKey.getPubKeyPoint();
+      const pubK = privKey.getPubKeyPoint();
       pubX = pubK.x.toString("hex");
       pubY = pubK.y.toString("hex");
     } else {
@@ -92,4 +95,4 @@ class TorusStorageLayer {
   }
 }
 
-module.exports = TorusStorageLayer;
+export default TorusStorageLayer;

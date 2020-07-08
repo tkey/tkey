@@ -1,7 +1,5 @@
-const { ec } = require("elliptic");
-let { decrypt, encrypt } = require("eccrypto");
-const EC = ec;
-
+import { decrypt as ecDecrypt, encrypt as ecEncrypt } from "eccrypto";
+import { ec as EC } from "elliptic";
 // const { getPublic } = require("eccrypto");
 
 // const privKeyBnToEcc = (bnPrivKey) => {
@@ -14,18 +12,18 @@ const EC = ec;
 
 const ecCurve = new EC("secp256k1");
 
-const ecEncrypt = encrypt;
-const ecDecrypt = decrypt;
+interface EncryptedMessage {
+  ciphertext: string;
+  ephemPublicKey: string;
+  iv: string;
+  mac: string;
+}
 
 // Wrappers around ECC encrypt/decrypt to use the hex serialization
 // TODO: refactor to take BN
-async function editedEncrypt(publicKey, msg) {
-  let encryptedDetails;
-  try {
-    encryptedDetails = await ecEncrypt(publicKey, msg);
-  } catch (err) {
-    throw err;
-  }
+async function encrypt(publicKey: Buffer, msg: Buffer): Promise<EncryptedMessage> {
+  const encryptedDetails = await ecEncrypt(publicKey, msg);
+
   return {
     ciphertext: encryptedDetails.ciphertext.toString("hex"),
     ephemPublicKey: encryptedDetails.ephemPublicKey.toString("hex"),
@@ -34,31 +32,27 @@ async function editedEncrypt(publicKey, msg) {
   };
 }
 
-async function editedDecrypt(privKey, msg) {
+async function decrypt(privKey: Buffer, msg: EncryptedMessage): Promise<string> {
   const bufferEncDetails = {
     ciphertext: Buffer.from(msg.ciphertext, "hex"),
     ephemPublicKey: Buffer.from(msg.ephemPublicKey, "hex"),
     iv: Buffer.from(msg.iv, "hex"),
     mac: Buffer.from(msg.mac, "hex"),
   };
-  let decryption;
-  try {
-    decryption = await ecDecrypt(privKey, bufferEncDetails);
-  } catch (err) {
-    return err;
-  }
+  const decryption = await ecDecrypt(privKey, bufferEncDetails);
+
   return decryption;
 }
 
-function isEmptyObject(obj) {
+function isEmptyObject(obj: unknown): boolean {
   return Object.keys(obj).length === 0 && obj.constructor === Object;
 }
 
-module.exports = {
+export {
   // privKeyBnToEcc,
   // privKeyBnToPubKeyECC,
   isEmptyObject,
-  encrypt: editedEncrypt,
-  decrypt: editedDecrypt,
+  encrypt,
+  decrypt,
   ecCurve,
 };

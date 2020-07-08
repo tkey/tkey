@@ -1,9 +1,11 @@
-const { BN } = require("./types.js");
-const { decrypt, encrypt } = require("./utils");
+// import { decrypt, encrypt, generatePrivate, getPublic } from "eccrypto";
+import { ec } from "elliptic";
+
+import { BN } from "./types.js";
+import { decrypt, encrypt } from "./utils";
+
 const decryptUtils = decrypt;
 const encryptUtils = encrypt;
-// import { decrypt, encrypt, generatePrivate, getPublic } from "eccrypto";
-const { ec } = require("elliptic");
 
 const EC = ec;
 
@@ -48,4 +50,4 @@ class ServiceProvider {
   }
 }
 
-module.exports = ServiceProvider;
+export default ServiceProvider;

@@ -1,8 +1,9 @@
 // const { decrypt, encrypt, generatePrivate, getPublic } = require("eccrypto");
 
-const { ecCurve } = require("./utils");
-const { keccak256 } = require("web3-utils");
-const { BN, Share, ShareStore } = require("./types.js");
+import { keccak256 } from "web3-utils";
+
+import { BN, Share, ShareStore } from "./types.js";
+import { ecCurve } from "./utils";
 
 class SecurityQuestionsModule {
   constructor() {
@@ -20,12 +21,12 @@ class SecurityQuestionsModule {
   }
 
   async generateNewShareWithSecurityQuestions(answerString, questions) {
-    let newSharesDetails = await this.tbSDK.generateNewShare();
-    let newShareStore = newSharesDetails.newShareStores[newSharesDetails.newShareIndex.toString("hex")];
-    let userInputHash = answerToUserInputHashBN(answerString);
+    const newSharesDetails = await this.tbSDK.generateNewShare();
+    const newShareStore = newSharesDetails.newShareStores[newSharesDetails.newShareIndex.toString("hex")];
+    const userInputHash = answerToUserInputHashBN(answerString);
     let nonce = newShareStore.share.share.sub(userInputHash);
     nonce = nonce.umod(ecCurve.curve.n);
-    let sqStore = new SecurityQuestionStore({
+    const sqStore = new SecurityQuestionStore({
       nonce,
       questions,
       shareIndex: newShareStore.share.shareIndex,
@@ -37,16 +38,16 @@ class SecurityQuestionsModule {
   }
 
   getSecurityQuestions() {
-    let sqStore = new SecurityQuestionStore(this.tbSDK.metadata.getGeneralStoreDomain(this.moduleName));
+    const sqStore = new SecurityQuestionStore(this.tbSDK.metadata.getGeneralStoreDomain(this.moduleName));
     return sqStore.questions;
   }
 
   async inputShareFromSecurityQuestions(answerString) {
-    let sqStore = new SecurityQuestionStore(this.tbSDK.metadata.getGeneralStoreDomain(this.moduleName));
-    let userInputHash = answerToUserInputHashBN(answerString);
+    const sqStore = new SecurityQuestionStore(this.tbSDK.metadata.getGeneralStoreDomain(this.moduleName));
+    const userInputHash = answerToUserInputHashBN(answerString);
     let share = sqStore.nonce.add(userInputHash);
     share = share.umod(ecCurve.curve.n);
-    let shareStore = new ShareStore({ share: new Share(sqStore.shareIndex, share), polynomialID: sqStore.polynomialID });
+    const shareStore = new ShareStore({ share: new Share(sqStore.shareIndex, share), polynomialID: sqStore.polynomialID });
     this.tbSDK.inputShare(shareStore);
   }
 }
@@ -86,4 +87,4 @@ class SecurityQuestionStore {
   }
 }
 
-module.exports = SecurityQuestionsModule;
+export default SecurityQuestionsModule;

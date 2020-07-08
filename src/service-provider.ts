@@ -1,12 +1,12 @@
-const { BN } = require("./types.js");
-const { decrypt, encrypt } = require("./utils");
+import DirectWebSDK from "@toruslabs/torus-direct-web-sdk";
+// import { decrypt, encrypt, generatePrivate, getPublic } from "eccrypto";
+import { ec } from "elliptic";
+
+import { BN } from "./types.js";
+import { decrypt, encrypt } from "./utils";
+
 const decryptUtils = decrypt;
 const encryptUtils = encrypt;
-// import { decrypt, encrypt, generatePrivate, getPublic } from "eccrypto";
-const { ec } = require("elliptic");
-
-const DirectWebSDK = require("@toruslabs/torus-direct-web-sdk");
-
 const EC = ec;
 
 class TorusServiceProvider {
@@ -58,4 +58,4 @@ class TorusServiceProvider {
   }
 }
 
-module.exports = TorusServiceProvider;
+export default TorusServiceProvider;
