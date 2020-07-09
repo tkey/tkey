@@ -1,6 +1,7 @@
 import { post } from "@toruslabs/http-helpers";
 import BN from "bn.js";
 import { curve } from "elliptic";
+import stringify from "fast-json-stable-stringify";
 import { keccak256 } from "web3-utils";
 
 import { getPubKeyECC, getPubKeyPoint, toPrivKeyEC, toPrivKeyECC } from "./base/BNUtils";
@@ -47,7 +48,7 @@ class TorusStorageLayer implements IStorageLayer {
     } else {
       encryptedDetails = await this.serviceProvider.encrypt(this.serviceProvider.retrievePubKey("ecc") as Buffer, bufferMetadata);
     }
-    const serializedEncryptedDetails = btoa(JSON.stringify(encryptedDetails));
+    const serializedEncryptedDetails = btoa(stringify(encryptedDetails));
     const p = this.generateMetadataParams(serializedEncryptedDetails, privKey);
     return post<{ message: string }>(`${this.hostUrl}/set`, p);
   }
@@ -60,7 +61,7 @@ class TorusStorageLayer implements IStorageLayer {
       data: message,
       timestamp: new BN(Date.now()).toString(16),
     };
-    const hash = keccak256(JSON.stringify(setData)).slice(2);
+    const hash = keccak256(stringify(setData)).slice(2);
     if (privKey) {
       const unparsedSig = toPrivKeyEC(privKey).sign(hash);
       sig = Buffer.from(unparsedSig.r.toString(16, 64) + unparsedSig.s.toString(16, 64) + new BN(0).toString(16, 2), "hex").toString("base64");

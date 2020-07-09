@@ -20,7 +20,7 @@ import { BNString, IServiceProvider, IStorageLayer, PolynomialID } from "./base/
 import Point from "./base/Point";
 import { Polynomial } from "./base/Polynomial";
 import Share from "./base/Share";
-import ShareStore, { ShareStorePolyIDShareIndexMap } from "./base/ShareStore";
+import ShareStore, { ScopedStore, ShareStorePolyIDShareIndexMap } from "./base/ShareStore";
 import Metadata from "./metadata";
 import TorusServiceProvider from "./serviceProvider/TorusServiceProvider";
 import TorusStorageLayer from "./storage-layer";
@@ -220,7 +220,7 @@ class ThresholdBak implements IThresholdBak {
     return { shareStores };
   }
 
-  async syncShareMetadata(adjustScopedStore) {
+  async syncShareMetadata(adjustScopedStore?: (ss: ScopedStore) => ScopedStore): Promise<void> {
     const pubPoly = this.metadata.getLatestPublicPolynomial();
     const pubPolyID = pubPoly.getPolynomialID();
     const existingShareIndexes = this.metadata.getShareIndexesForPolynomial(pubPolyID);
@@ -440,7 +440,7 @@ function lagrangeInterpolatePolynomial(points: Array<Point>): Polynomial {
   return lagrange(points);
 }
 
-function lagrangeInterpolation(shares, nodeIndex) {
+function lagrangeInterpolation(shares: Array<BN>, nodeIndex: Array<BN>): BN {
   if (shares.length !== nodeIndex.length) {
     throw Error("shares not equal to nodeIndex length in lagrangeInterpolation");
   }

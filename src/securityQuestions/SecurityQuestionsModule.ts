@@ -1,7 +1,8 @@
 import BN from "bn.js";
 import { keccak256 } from "web3-utils";
 
-import { IModule } from "../base/commonTypes";
+import { GenerateNewShareResult, IModule, IThresholdBak } from "../base/aggregateTypes";
+import { SecurityQuestionStoreArgs } from "../base/commonTypes";
 import Share from "../base/Share";
 import ShareStore from "../base/ShareStore";
 import { ecCurve } from "../utils";
@@ -14,15 +15,17 @@ function answerToUserInputHashBN(answerString) {
 class SecurityQuestionsModule implements IModule {
   moduleName: string;
 
+  tbSDK: IThresholdBak;
+
   constructor() {
     this.moduleName = "securityQuestions";
   }
 
-  initialize(tbSDK) {
+  initialize(tbSDK: IThresholdBak) {
     this.tbSDK = tbSDK;
   }
 
-  async generateNewShareWithSecurityQuestions(answerString, questions) {
+  async generateNewShareWithSecurityQuestions(answerString: string, questions: string): Promise<GenerateNewShareResult> {
     const newSharesDetails = await this.tbSDK.generateNewShare();
     const newShareStore = newSharesDetails.newShareStores[newSharesDetails.newShareIndex.toString("hex")];
     const userInputHash = answerToUserInputHashBN(answerString);
@@ -39,13 +42,13 @@ class SecurityQuestionsModule implements IModule {
     return newSharesDetails;
   }
 
-  getSecurityQuestions() {
-    const sqStore = new SecurityQuestionStore(this.tbSDK.metadata.getGeneralStoreDomain(this.moduleName));
+  getSecurityQuestions(): string {
+    const sqStore = new SecurityQuestionStore(this.tbSDK.metadata.getGeneralStoreDomain(this.moduleName) as SecurityQuestionStoreArgs);
     return sqStore.questions;
   }
 
-  async inputShareFromSecurityQuestions(answerString) {
-    const sqStore = new SecurityQuestionStore(this.tbSDK.metadata.getGeneralStoreDomain(this.moduleName));
+  async inputShareFromSecurityQuestions(answerString: string): Promise<void> {
+    const sqStore = new SecurityQuestionStore(this.tbSDK.metadata.getGeneralStoreDomain(this.moduleName) as SecurityQuestionStoreArgs);
     const userInputHash = answerToUserInputHashBN(answerString);
     let share = sqStore.nonce.add(userInputHash);
     share = share.umod(ecCurve.curve.n);

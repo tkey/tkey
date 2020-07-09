@@ -1,21 +1,28 @@
-const { deepStrictEqual, deepEqual, equal, fail } = require("assert");
-const { generatePrivate } = require("eccrypto");
-const { keccak256 } = require("web3-utils");
-const { Point, BN, Polynomial } = require("../src/types.js");
-const { ecCurve } = require("../src/utils");
+import { deepEqual, deepStrictEqual, equal, fail } from "assert";
+// const { privKeyBnToPubKeyECC }  from "../src/utils";
+import atob from "atob";
+import BN from "bn.js";
+import btoa from "btoa";
+import { generatePrivate } from "eccrypto";
+import stringify from "fast-json-stable-stringify";
+import fetch from "node-fetch";
+import { keccak256 } from "web3-utils";
 
-const { ThresholdBak, Metadata, generateRandomPolynomial, lagrangeInterpolation, lagrangeInterpolatePolynomial } = require("../src/index");
-const ServiceProvider = require("../src/service-provider-base");
-const TorusStorageLayer = require("../src/storage-layer");
-const SecurityQuestionsModule = require("../src/security-qns-module");
+import { getPubKeyEC, getPubKeyECC, getPubKeyPoint } from "../src/base/BNUtils";
+import Point from "../src/base/Point";
+import { Polynomial } from "../src/base/Polynomial";
+import { generateRandomPolynomial, lagrangeInterpolatePolynomial, lagrangeInterpolation, Metadata, ThresholdBak } from "../src/index";
+import SecurityQuestionsModule from "../src/securityQuestions/SecurityQuestionsModule";
+import ServiceProviderBase from "../src/serviceProvider/ServiceProviderBase";
+import TorusStorageLayer from "../src/storage-layer";
+import { ecCurve } from "../src/utils";
 
-const defaultSP = new ServiceProvider();
+const defaultSP = new ServiceProviderBase();
 const defaultSL = new TorusStorageLayer({ serviceProvider: defaultSP });
-// const { privKeyBnToPubKeyECC } = require("../src/utils");
 
-global.fetch = require("node-fetch");
-global.atob = require("atob");
-global.btoa = require("btoa");
+global.fetch = fetch;
+global.atob = atob;
+global.btoa = btoa;
 
 describe("threshold bak", function () {
   it("#should be able to reconstruct key when initializing a key", async function () {
@@ -25,7 +32,7 @@ describe("threshold bak", function () {
     await tb2.initialize();
     tb2.inputShare(resp1.deviceShare);
     const reconstructedKey = tb2.reconstructKey();
-    if (resp1.privKey.cmp(reconstructedKey) != 0) {
+    if (resp1.privKey.cmp(reconstructedKey) !== 0) {
       fail("key should be able to be reconstructed");
     }
   });
@@ -38,7 +45,7 @@ describe("threshold bak", function () {
     await tb2.initialize();
     tb2.inputShare(resp1.userShare);
     const reconstructedKey = tb2.reconstructKey();
-    if (resp1.privKey.cmp(reconstructedKey) != 0) {
+    if (resp1.privKey.cmp(reconstructedKey) !== 0) {
       fail("key should be able to be reconstructed");
     }
   });
@@ -49,7 +56,7 @@ describe("threshold bak", function () {
     await tb2.initialize();
     tb2.inputShare(resp1.deviceShare);
     const reconstructedKey = tb2.reconstructKey();
-    if (resp1.privKey.cmp(reconstructedKey) != 0) {
+    if (resp1.privKey.cmp(reconstructedKey) !== 0) {
       fail("key should be able to be reconstructed");
     }
     const resp2 = await tb2.generateNewShare();
@@ -57,7 +64,7 @@ describe("threshold bak", function () {
     await tb3.initialize();
     tb3.inputShare(resp2.newShareStores[resp2.newShareIndex.toString("hex")]);
     const finalKey = tb3.reconstructKey();
-    if (resp1.privKey.cmp(finalKey) != 0) {
+    if (resp1.privKey.cmp(finalKey) !== 0) {
       fail("key should be able to be reconstructed after adding new share");
     }
   });
@@ -70,7 +77,7 @@ describe("threshold bak", function () {
     await tb2.initialize(resp1.userShare);
     tb2.inputShare(resp1.deviceShare);
     const reconstructedKey = tb2.reconstructKey();
-    if (resp1.privKey.cmp(reconstructedKey) != 0) {
+    if (resp1.privKey.cmp(reconstructedKey) !== 0) {
       fail("key should be able to be reconstructed");
     }
   });
@@ -84,20 +91,19 @@ describe("threshold bak", function () {
     await tb2.initialize(resp1.userShare);
     tb2.inputShare(newShares.newShareStores[resp1.deviceShare.share.shareIndex.toString("hex")]);
     const reconstructedKey = tb2.reconstructKey();
-    if (resp1.privKey.cmp(reconstructedKey) != 0) {
+    if (resp1.privKey.cmp(reconstructedKey) !== 0) {
       fail("key should be able to be reconstructed");
     }
   });
   it("#should be able to detect a new user and reconstruct key on initialize", async function () {
     const privKey = new BN(generatePrivate());
-    const uniqueSP = new ServiceProvider({ postboxKey: privKey.toString("hex") });
+    const uniqueSP = new ServiceProviderBase({ postboxKey: privKey.toString("hex") });
     const uniqueSL = new TorusStorageLayer({ serviceProvider: uniqueSP });
-    debugger;
     const tb = new ThresholdBak({ serviceProvider: uniqueSP, storageLayer: uniqueSL });
     const resp1 = await tb.initialize();
     console.log(resp1);
     const reconstructedKey = tb.reconstructKey();
-    if (tb.privKey.cmp(reconstructedKey) != 0) {
+    if (tb.privKey.cmp(reconstructedKey) !== 0) {
       fail("key should be able to be reconstructed");
     }
   });
@@ -109,8 +115,8 @@ describe("ServiceProvider", function () {
     const tmp = new BN(123);
     const message = Buffer.from(tmp.toString("hex", 15));
     const privKeyBN = new BN(privKey, 16);
-    const tsp = new ServiceProvider({ postboxKey: privKey });
-    const encDeets = await tsp.encrypt(privKeyBN.getPubKeyECC(), message);
+    const tsp = new ServiceProviderBase({ postboxKey: privKey });
+    const encDeets = await tsp.encrypt(getPubKeyECC(privKeyBN), message);
     const result = await tsp.decrypt(encDeets);
     deepStrictEqual(result, message, "encrypted and decrypted message should be equal");
   });
@@ -120,8 +126,8 @@ describe("ServiceProvider", function () {
     const tmp = new BN(123);
     const message = Buffer.from(tmp.toString("hex", 16));
     const privKeyBN = new BN(privKey, 16);
-    const tsp = new ServiceProvider({ postboxKey: privKey });
-    const encDeets = await tsp.encrypt(privKeyBN.getPubKeyECC(), message);
+    const tsp = new ServiceProviderBase({ postboxKey: privKey });
+    const encDeets = await tsp.encrypt(getPubKeyECC(privKeyBN), message);
     const result = await tsp.decrypt(encDeets);
     deepStrictEqual(result, message, "encrypted and decrypted message should be equal");
   });
@@ -130,7 +136,7 @@ describe("ServiceProvider", function () {
 describe("TorusStorageLayer", function () {
   it("#should get or set correctly", async function () {
     const privKey = "d573b6c7d8fe4ec7cbad052189d4a8415b44d8b87af024872f38db3c694d306d";
-    const tsp = new ServiceProvider({ postboxKey: privKey });
+    const tsp = new ServiceProviderBase({ postboxKey: privKey });
     const storageLayer = new TorusStorageLayer({ enableLogging: true, serviceProvider: tsp });
     const message = { test: Math.random().toString(36).substring(7) };
     await storageLayer.setMetadata(message);
@@ -140,7 +146,7 @@ describe("TorusStorageLayer", function () {
   it("#should get or set with specified private key correctly", async function () {
     const privKey = "d573b6c7d8fe4ec7cbad052189d4a8415b44d8b87af024872f38db3c694d306d";
     const privKeyBN = new BN(privKey, 16);
-    const tsp = new ServiceProvider({ postboxKey: privKey });
+    const tsp = new ServiceProviderBase({ postboxKey: privKey });
     const storageLayer = new TorusStorageLayer({ enableLogging: true, serviceProvider: tsp });
     const message = { test: Math.random().toString(36).substring(7) };
     await storageLayer.setMetadata(message, privKeyBN);
@@ -153,8 +159,8 @@ describe("polynomial", function () {
   it("#should polyEval indexes correctly", async function () {
     const polyArr = [new BN(5), new BN(2)];
     const poly = new Polynomial(polyArr);
-    result = poly.polyEval(new BN(1));
-    if (result.cmp(new BN(7)) != 0) {
+    const result = poly.polyEval(new BN(1));
+    if (result.cmp(new BN(7)) !== 0) {
       fail("poly result should equal 7");
     }
   });
@@ -166,7 +172,7 @@ describe("Metadata", function () {
     const privKeyBN = new BN(privKey, 16);
     // create a random poly and respective shares
     const shareIndexes = [new BN(1), new BN(2)];
-    for (let i = 1; i <= 2; i++) {
+    for (let i = 1; i <= 2; i += 1) {
       let ran = generatePrivate();
       while (ran < 2) {
         ran = generatePrivate();
@@ -175,13 +181,13 @@ describe("Metadata", function () {
     }
     const poly = generateRandomPolynomial(1, privKeyBN);
     const shares = poly.generateShares(shareIndexes);
-    const metadata = new Metadata(privKeyBN.getPubKeyPoint());
+    const metadata = new Metadata(getPubKeyPoint(privKeyBN));
     metadata.addFromPolynomialAndShares(poly, shares);
     metadata.setGeneralStoreDomain("something", { test: "oh this is an object" });
 
-    const serializedMetadata = JSON.stringify(metadata);
+    const serializedMetadata = stringify(metadata);
     const deserializedMetadata = new Metadata(JSON.parse(serializedMetadata));
-    const secondSerialization = JSON.stringify(deserializedMetadata);
+    const secondSerialization = stringify(deserializedMetadata);
 
     // this one fails becauseof BN.js serilaization/deserialization on hex. Isnt breaking just annoying
     // deepEqual(metadata, deserializedMetadata, "metadata and deserializedMetadata should be equal");
@@ -201,7 +207,7 @@ describe("lagrange interpolate", function () {
     const share1 = poly.polyEval(new BN(1));
     const share2 = poly.polyEval(new BN(2));
     const key = lagrangeInterpolation([share1, share2], [new BN(1), new BN(2)]);
-    if (key.cmp(new BN(5)) != 0) {
+    if (key.cmp(new BN(5)) !== 0) {
       fail("poly result should equal 7");
     }
   });
@@ -214,10 +220,10 @@ describe("lagrangeInterpolatePolynomial", function () {
     const share1 = poly.polyEval(new BN(1));
     const share2 = poly.polyEval(new BN(2));
     const resultPoly = lagrangeInterpolatePolynomial([new Point(new BN(1), share1), new Point(new BN(2), share2)]);
-    if (polyArr[0].cmp(resultPoly.polynomial[0]) != 0) {
+    if (polyArr[0].cmp(resultPoly.polynomial[0]) !== 0) {
       fail("poly result should equal hardcoded poly");
     }
-    if (polyArr[1].cmp(resultPoly.polynomial[1]) != 0) {
+    if (polyArr[1].cmp(resultPoly.polynomial[1]) !== 0) {
       fail("poly result should equal hardcoded poly");
     }
   });
@@ -225,20 +231,20 @@ describe("lagrangeInterpolatePolynomial", function () {
     const degree = Math.floor(Math.random() * (50 - 1)) + 1;
     const poly = generateRandomPolynomial(degree);
     const pointArr = [];
-    for (let i = 0; i < degree + 1; i++) {
+    for (let i = 0; i < degree + 1; i += 1) {
       const shareIndex = new BN(generatePrivate());
       pointArr.push(new Point(shareIndex, poly.polyEval(shareIndex)));
     }
     const resultPoly = lagrangeInterpolatePolynomial(pointArr);
     resultPoly.polynomial.forEach(function (coeff, i) {
-      if (poly.polynomial[i].cmp(coeff) != 0) {
+      if (poly.polynomial[i].cmp(coeff) !== 0) {
         fail("poly result should equal hardcoded poly");
       }
     });
   });
 });
 
-describe("SecurityQuestionsModule", function () {
+describe.only("SecurityQuestionsModule", function () {
   it("#should be able to reconstruct key and initialize a key with seciurty questions", async function () {
     const tb = new ThresholdBak({
       serviceProvider: defaultSP,
@@ -246,16 +252,17 @@ describe("SecurityQuestionsModule", function () {
       modules: { securityQuestions: new SecurityQuestionsModule() },
     });
     const resp1 = await tb.initializeNewKey();
-    await tb.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
+    await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
     const tb2 = new ThresholdBak({
       serviceProvider: defaultSP,
       storageLayer: defaultSL,
       modules: { securityQuestions: new SecurityQuestionsModule() },
     });
     await tb2.initialize();
-    await tb2.inputShareFromSecurityQuestions("blublu");
+
+    await tb2.modules.securityQuestions.inputShareFromSecurityQuestions("blublu");
     const reconstructedKey = tb2.reconstructKey();
-    if (resp1.privKey.cmp(reconstructedKey) != 0) {
+    if (resp1.privKey.cmp(reconstructedKey) !== 0) {
       fail("key should be able to be reconstructed");
     }
   });

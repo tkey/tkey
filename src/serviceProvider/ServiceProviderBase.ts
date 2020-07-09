@@ -12,7 +12,7 @@ class ServiceProviderBase implements IServiceProvider {
 
   postboxKey: BN;
 
-  constructor({ enableLogging = false, postboxKey = "d573b6c7d8fe4ec7cbad052189d4a8415b44d8b87af024872f38db3c694d306d" }: ServiceProviderArgs) {
+  constructor({ enableLogging = false, postboxKey = "d573b6c7d8fe4ec7cbad052189d4a8415b44d8b87af024872f38db3c694d306d" }: ServiceProviderArgs = {}) {
     this.ec = new EC("secp256k1");
     this.enableLogging = enableLogging;
     this.postboxKey = new BN(postboxKey, 16);

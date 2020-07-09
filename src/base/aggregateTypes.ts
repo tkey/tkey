@@ -4,7 +4,7 @@ import BN from "bn.js";
 import Metadata from "../metadata";
 import { BNString, IServiceProvider, IStorageLayer, PolynomialID } from "./commonTypes";
 import Point from "./Point";
-import ShareStore, { ShareStoreMap } from "./ShareStore";
+import ShareStore, { ScopedStore, ShareStoreMap, ShareStorePolyIDShareIndexMap } from "./ShareStore";
 
 // @flow
 
@@ -14,7 +14,7 @@ export type ModuleMap = {
 
 export interface IModule {
   moduleName: string;
-  initialize(tbSDK: IThresholdBak);
+  initialize(tbSDK: IThresholdBak): void;
 }
 export type InitializeNewKeyResult = {
   privKey: BN;
@@ -45,6 +45,19 @@ export type KeyDetails = {
 };
 
 export interface IThresholdBak {
+  modules: ModuleMap;
+
+  enableLogging: boolean;
+
+  serviceProvider: IServiceProvider;
+
+  storageLayer: IStorageLayer;
+
+  shares: ShareStorePolyIDShareIndexMap;
+
+  privKey: BN;
+
+  metadata: Metadata;
   initialize(input: ShareStore): Promise<KeyDetails>;
 
   catchupToLatestShare(shareStore: ShareStore): Promise<CatchupToLatestShareResult>;
@@ -56,6 +69,8 @@ export interface IThresholdBak {
   refreshShares(threshold: number, newShareIndexes: Array<string>, previousPolyID: PolynomialID): Promise<RefreshSharesResult>;
 
   initializeNewKey(userInput?: BN): Promise<InitializeNewKeyResult>;
+
+  syncShareMetadata(adjustScopedStore?: (ss: ScopedStore) => ScopedStore): Promise<void>;
 
   inputShare(shareStore: ShareStore): void;
 

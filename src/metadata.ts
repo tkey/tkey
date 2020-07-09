@@ -1,15 +1,13 @@
 /* eslint-disable guard-for-in */
+import stringify from "fast-json-stable-stringify";
+
 import { PolynomialID } from "./base/commonTypes";
 import Point from "./base/Point";
 import { Polynomial, ShareMap } from "./base/Polynomial";
 import PublicPolynomial, { PublicPolynomialMap } from "./base/PublicPolynomial";
 import PublicShare, { PublicSharePolyIDShareIndexMap } from "./base/PublicShare";
 import Share from "./base/Share";
-import ShareStore from "./base/ShareStore";
-
-type ScopedStore = {
-  encryptedShare: ShareStore;
-};
+import ShareStore, { ScopedStore } from "./base/ShareStore";
 
 class Metadata {
   pubKey: Point;
@@ -118,7 +116,7 @@ class Metadata {
   }
 
   clone(): Metadata {
-    return new Metadata(JSON.parse(JSON.stringify(this)));
+    return new Metadata(JSON.parse(stringify(this)));
   }
 }
 
