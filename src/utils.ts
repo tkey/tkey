@@ -1,8 +1,7 @@
-import { decrypt as ecDecrypt, encrypt as ecEncrypt } from "eccrypto";
+import { decrypt as ecDecrypt, encrypt as ecEncrypt } from "@toruslabs/eccrypto";
 import { ec as EC } from "elliptic";
 
 import { EncryptedMessage } from "./base/commonTypes";
-// const { getPublic } = require("eccrypto");
 
 // const privKeyBnToEcc = (bnPrivKey) => {
 //   return bnPrivKey.toBuffer("be", 32);

@@ -1,5 +1,5 @@
+import { getPublic } from "@toruslabs/eccrypto";
 import BN from "bn.js";
-import { getPublic } from "eccrypto";
 import { curve, ec } from "elliptic";
 
 import { ecCurve } from "../utils";

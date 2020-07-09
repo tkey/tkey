@@ -1,5 +1,4 @@
-// eslint-disable-next-line import/no-unresolved
-import { DirectWebSDKArgs } from "@toruslabs/torus-direct-web-sdk/types/src/handlers/interfaces";
+import { DirectWebSDKArgs } from "@toruslabs/torus-direct-web-sdk";
 import BN from "bn.js";
 import { curve, ec as EC } from "elliptic";
 

@@ -1,14 +1,14 @@
+import { generatePrivate } from "@toruslabs/eccrypto";
 import { deepEqual, deepStrictEqual, equal, fail } from "assert";
 // const { privKeyBnToPubKeyECC }  from "../src/utils";
 import atob from "atob";
 import BN from "bn.js";
 import btoa from "btoa";
-import { generatePrivate } from "eccrypto";
 import stringify from "fast-json-stable-stringify";
 import fetch from "node-fetch";
 import { keccak256 } from "web3-utils";
 
-import { getPubKeyEC, getPubKeyECC, getPubKeyPoint } from "../src/base/BNUtils";
+import { getPubKeyECC, getPubKeyPoint } from "../src/base/BNUtils";
 import Point from "../src/base/Point";
 import { Polynomial } from "../src/base/Polynomial";
 import { generateRandomPolynomial, lagrangeInterpolatePolynomial, lagrangeInterpolation, Metadata, ThresholdBak } from "../src/index";

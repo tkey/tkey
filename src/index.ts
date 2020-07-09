@@ -2,8 +2,8 @@
 /* eslint-disable guard-for-in */
 /* eslint-disable no-await-in-loop */
 /* eslint-disable prefer-spread */
+import { generatePrivate } from "@toruslabs/eccrypto";
 import BN from "bn.js";
-import { generatePrivate } from "eccrypto";
 
 import {
   CatchupToLatestShareResult,

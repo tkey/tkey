@@ -58,6 +58,7 @@ export interface IThresholdBak {
   privKey: BN;
 
   metadata: Metadata;
+
   initialize(input: ShareStore): Promise<KeyDetails>;
 
   catchupToLatestShare(shareStore: ShareStore): Promise<CatchupToLatestShareResult>;
