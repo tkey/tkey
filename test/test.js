@@ -244,7 +244,7 @@ describe("lagrangeInterpolatePolynomial", function () {
   });
 });
 
-describe.only("SecurityQuestionsModule", function () {
+describe("SecurityQuestionsModule", function () {
   it("#should be able to reconstruct key and initialize a key with seciurty questions", async function () {
     const tb = new ThresholdBak({
       serviceProvider: defaultSP,
