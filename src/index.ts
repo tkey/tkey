@@ -1,25 +1,49 @@
+/* eslint-disable no-use-before-define */
+/* eslint-disable guard-for-in */
+/* eslint-disable no-await-in-loop */
+/* eslint-disable prefer-spread */
+import BN from "bn.js";
 import { generatePrivate } from "eccrypto";
 
-import { IThresholdBak, ModuleMap, KeyDetails, IServiceProvider } from "./base/commonTypes";
+import {
+  CatchupToLatestShareResult,
+  GenerateNewShareResult,
+  InitializeNewKeyResult,
+  IThresholdBak,
+  KeyDetails,
+  ModuleMap,
+  RefreshSharesResult,
+  ThresholdBakArgs,
+} from "./base/aggregateTypes";
+import { getPubKeyPoint } from "./base/BNUtils";
+import { BNString, IServiceProvider, IStorageLayer, PolynomialID } from "./base/commonTypes";
+import Point from "./base/Point";
+import { Polynomial } from "./base/Polynomial";
+import Share from "./base/Share";
+import ShareStore, { ShareStorePolyIDShareIndexMap } from "./base/ShareStore";
+import Metadata from "./metadata";
 import TorusServiceProvider from "./serviceProvider/TorusServiceProvider";
 import TorusStorageLayer from "./storage-layer";
-import { BN, Point, Polynomial, PublicPolynomial, PublicShare, Share, ShareStore } from "./types.js";
 import { ecCurve, isEmptyObject } from "./utils";
-import ShareStore from "./base/ShareStore";
-import Point from "./base/Point";
 
-type ThresholdBakArgs = {
-  enableLogging?:boolean
-  modules?:ModuleMap
-  serviceProvider?: IServiceProvider
-  storageLayer: 
-}
+// TODO: handle errors for get and set with retries
 
 class ThresholdBak implements IThresholdBak {
-  modules: ModuleMap
-  enableLogging: boolean
-  serviceProvider: IServiceProvider
-  constructor({ enableLogging = false, modules = {}, serviceProvider, storageLayer, directParams = {}}: ThresholdBakArgs) {
+  modules: ModuleMap;
+
+  enableLogging: boolean;
+
+  serviceProvider: IServiceProvider;
+
+  storageLayer: IStorageLayer;
+
+  shares: ShareStorePolyIDShareIndexMap;
+
+  privKey: BN;
+
+  metadata: Metadata;
+
+  constructor({ enableLogging = false, modules = {}, serviceProvider, storageLayer, directParams }: ThresholdBakArgs) {
     this.enableLogging = enableLogging;
 
     // Defaults to torus SP and SL
@@ -37,9 +61,10 @@ class ThresholdBak implements IThresholdBak {
 
     this.modules = modules;
     this.shares = {};
+    this.privKey = undefined;
   }
 
-  async initialize(input: ShareStore): Promise<KeyDetails>{
+  async initialize(input: ShareStore): Promise<KeyDetails> {
     // initialize modules
     for (const moduleName in this.modules) {
       this.modules[moduleName].initialize(this);
@@ -51,19 +76,15 @@ class ThresholdBak implements IThresholdBak {
     } else if (!input) {
       // default to use service provider
       // first we see if a share has been kept for us
-      let rawServiceProviderShare;
-      try {
-        rawServiceProviderShare = await this.storageLayer.getMetadata();
-      } catch (err) {
-        throw new Error(`getMetadata for rawServiceProviderShare in initialize errored: ${err}`);
-      }
+      const rawServiceProviderShare = await this.storageLayer.getMetadata();
+
       if (isEmptyObject(rawServiceProviderShare)) {
         // no metadata set, assumes new user
         await this.initializeNewKey();
         return this.getKeyDetails();
       }
       // else we continue with catching up share and metadata
-      shareStore = new ShareStore(rawServiceProviderShare);
+      shareStore = new ShareStore(rawServiceProviderShare as ShareStore);
     } else {
       throw TypeError("Input is not supported");
     }
@@ -76,7 +97,7 @@ class ThresholdBak implements IThresholdBak {
     return this.getKeyDetails();
   }
 
-  async catchupToLatestShare(shareStore) {
+  async catchupToLatestShare(shareStore: ShareStore): Promise<CatchupToLatestShareResult> {
     let metadata;
     try {
       metadata = await this.storageLayer.getMetadata(shareStore.share.share);
@@ -90,10 +111,10 @@ class ThresholdBak implements IThresholdBak {
     } catch (err) {
       return { latestShare: shareStore, shareMetadata };
     }
-    return await this.catchupToLatestShare(nextShare);
+    return this.catchupToLatestShare(nextShare);
   }
 
-  reconstructKey() {
+  reconstructKey(): BN {
     if (!this.metadata) {
       throw Error("metadata not found, SDK likely not intialized");
     }
@@ -110,7 +131,7 @@ class ThresholdBak implements IThresholdBak {
     }
     const shareArr = [];
     const shareIndexArr = [];
-    for (let i = 0; i < requiredThreshold; i++) {
+    for (let i = 0; i < requiredThreshold; i += 1) {
       shareArr.push(this.shares[pubPolyID][polyShares[i]].share.share);
       shareIndexArr.push(this.shares[pubPolyID][polyShares[i]].share.shareIndex);
     }
@@ -119,7 +140,7 @@ class ThresholdBak implements IThresholdBak {
     return this.privKey;
   }
 
-  async generateNewShare() {
+  async generateNewShare(): Promise<GenerateNewShareResult> {
     if (!this.metadata) {
       throw Error("metadata not found, SDK likely not intialized");
     }
@@ -137,7 +158,7 @@ class ThresholdBak implements IThresholdBak {
     return { newShareStores, newShareIndex };
   }
 
-  async refreshShares(threshold, newShareIndexes, previousPolyID) {
+  async refreshShares(threshold: number, newShareIndexes: Array<string>, previousPolyID: PolynomialID): Promise<RefreshSharesResult> {
     const poly = generateRandomPolynomial(threshold - 1, this.privKey);
     const shares = poly.generateShares(newShareIndexes);
     const existingShareIndexes = this.metadata.getShareIndexesForPolynomial(previousPolyID);
@@ -147,13 +168,13 @@ class ThresholdBak implements IThresholdBak {
     if (sharesForExistingPoly.length < threshold) {
       throw Error("not enough shares to reconstruct poly");
     }
-    for (let i = 0; i < threshold; i++) {
+    for (let i = 0; i < threshold; i += 1) {
       pointsArr.push(new Point(new BN(sharesForExistingPoly[i], "hex"), this.shares[previousPolyID][sharesForExistingPoly[i]].share.share));
     }
     const oldPoly = lagrangeInterpolatePolynomial(pointsArr);
 
     const shareIndexesNeedingEncryption = [];
-    for (let index = 0; index < existingShareIndexes.length; index++) {
+    for (let index = 0; index < existingShareIndexes.length; index += 1) {
       const shareIndexHex = existingShareIndexes[index];
       // define shares that need encryption/relaying
       if (newShareIndexes.includes(shareIndexHex)) {
@@ -167,41 +188,32 @@ class ThresholdBak implements IThresholdBak {
     // change to share stores for public storing
     const shareStores = {};
     const polyID = poly.getPolynomialID();
-    newShareIndexes.forEach((shareIndexHex) => (shareStores[shareIndexHex] = new ShareStore({ share: shares[shareIndexHex], polynomialID: polyID })));
+    newShareIndexes.forEach((shareIndexHex) => {
+      shareStores[shareIndexHex] = new ShareStore({ share: shares[shareIndexHex], polynomialID: polyID });
+    });
 
     // evaluate oldPoly for old shares and set new metadata with encrypted share for new polynomial
-    for (let index = 0; index < shareIndexesNeedingEncryption.length; index++) {
+    for (let index = 0; index < shareIndexesNeedingEncryption.length; index += 1) {
       const shareIndex = shareIndexesNeedingEncryption[index];
       const m = this.metadata.clone();
       m.setScopedStore({ encryptedShare: shareStores[shareIndex] });
       const oldShare = oldPoly.polyEval(new BN(shareIndex, "hex"));
-      try {
-        await this.storageLayer.setMetadata(m, oldShare);
-      } catch (err) {
-        throw err;
-      }
+      await this.storageLayer.setMetadata(m, oldShare);
     }
 
     // set share for serviceProvider encrytion
     // 1 is defined as the serviceProvider share
     if (shareIndexesNeedingEncryption.includes("1")) {
-      try {
-        await this.storageLayer.setMetadata(shareStores["1"]);
-      } catch (err) {
-        // TODO: handle gracefully
-        throw err;
-      }
+      await this.storageLayer.setMetadata(shareStores["1"]);
+      // TODO: handle gracefully
     }
 
     // set metadata for all new shares
-    for (let index = 0; index < newShareIndexes.length; index++) {
+    for (let index = 0; index < newShareIndexes.length; index += 1) {
       const shareIndex = newShareIndexes[index];
       const m = this.metadata.clone();
-      try {
-        await this.storageLayer.setMetadata(m, shareStores[shareIndex].share.share);
-      } catch (err) {
-        throw err;
-      }
+      await this.storageLayer.setMetadata(m, shareStores[shareIndex].share.share);
+
       this.inputShare(shareStores[shareIndex]);
     }
 
@@ -219,13 +231,13 @@ class ThresholdBak implements IThresholdBak {
     if (sharesForExistingPoly.length < threshold) {
       throw Error("not enough shares to reconstruct poly");
     }
-    for (let i = 0; i < threshold; i++) {
+    for (let i = 0; i < threshold; i += 1) {
       pointsArr.push(new Point(new BN(sharesForExistingPoly[i], "hex"), this.shares[pubPolyID][sharesForExistingPoly[i]].share.share));
     }
     const currentPoly = lagrangeInterpolatePolynomial(pointsArr);
     const allExistingShares = currentPoly.generateShares(existingShareIndexes);
 
-    for (let index = 0; index < existingShareIndexes.length; index++) {
+    for (let index = 0; index < existingShareIndexes.length; index += 1) {
       const shareIndex = existingShareIndexes[index];
       const newMetadata = this.metadata.clone();
       let resp;
@@ -243,21 +255,11 @@ class ThresholdBak implements IThresholdBak {
         scopedStoreToBeSet = specificShareMetadata.scopedStore;
       }
       newMetadata.setScopedStore(scopedStoreToBeSet);
-      try {
-        await this.storageLayer.setMetadata(newMetadata, allExistingShares[shareIndex].share);
-      } catch (err) {
-        throw err;
-      }
+      await this.storageLayer.setMetadata(newMetadata, allExistingShares[shareIndex].share);
     }
   }
 
-  async initializeNewKey(userInput) {
-    if (userInput) {
-      if (!userInput instanceof BN) {
-        throw TypeError("user input needs to be of type BN in initializeNewKey");
-      }
-    }
-
+  async initializeNewKey(userInput?: BN): Promise<InitializeNewKeyResult> {
     // initialize modules
     for (const moduleName in this.modules) {
       this.modules[moduleName].initialize(this);
@@ -280,7 +282,7 @@ class ThresholdBak implements IThresholdBak {
     const shares = poly.generateShares(shareIndexes);
 
     // create metadata to be stored
-    const metadata = new Metadata(this.privKey.getPubKeyPoint());
+    const metadata = new Metadata(getPubKeyPoint(this.privKey));
     metadata.addFromPolynomialAndShares(poly, shares);
     const serviceProviderShare = shares[shareIndexes[0].toString("hex")];
 
@@ -293,13 +295,9 @@ class ThresholdBak implements IThresholdBak {
     }
 
     // store metadata on metadata respective to shares
-    for (let index = 0; index < shareIndexes.length; index++) {
+    for (let index = 0; index < shareIndexes.length; index += 1) {
       const shareIndex = shareIndexes[index];
-      try {
-        await this.storageLayer.setMetadata(metadata, shares[shareIndex.toString("hex")].share);
-      } catch (err) {
-        throw err;
-      }
+      await this.storageLayer.setMetadata(metadata, shares[shareIndex.toString("hex")].share);
       // also add into our share store
       this.inputShare(new ShareStore({ share: shares[shareIndex.toString("hex")], polynomialID: poly.getPolynomialID() }));
     }
@@ -308,6 +306,7 @@ class ThresholdBak implements IThresholdBak {
     const result = {
       privKey: this.privKey,
       deviceShare: new ShareStore({ share: shares[shareIndexes[1].toString("hex")], polynomialID: poly.getPolynomialID() }),
+      userShare: undefined,
     };
     if (userInput) {
       result.userShare = new ShareStore({ share: shares[shareIndexes[2].toString("hex")], polynomialID: poly.getPolynomialID() });
@@ -316,7 +315,7 @@ class ThresholdBak implements IThresholdBak {
     return result;
   }
 
-  inputShare(shareStore) {
+  inputShare(shareStore: ShareStore): void {
     let ss;
     if (shareStore instanceof ShareStore) {
       ss = shareStore;
@@ -331,7 +330,7 @@ class ThresholdBak implements IThresholdBak {
     this.shares[ss.polynomialID][ss.share.shareIndex.toString("hex")] = ss;
   }
 
-  outputShare(shareIndex) {
+  outputShare(shareIndex: BNString): ShareStore {
     let shareIndexParsed;
     if (typeof shareIndex === "number") {
       shareIndexParsed = new BN(shareIndex);
@@ -343,12 +342,11 @@ class ThresholdBak implements IThresholdBak {
     return this.shares[this.metadata.getLatestPublicPolynomial().getPolynomialID()][shareIndexParsed.toString("hex")];
   }
 
-  setKey(privKey) {
+  setKey(privKey: BN): void {
     this.privKey = privKey;
-    this.ecKey = ecCurve.keyFromPrivate(this.privKey);
   }
 
-  getKeyDetails():  {
+  getKeyDetails(): KeyDetails {
     const poly = this.metadata.getLatestPublicPolynomial();
     const requiredShares = poly.getThreshold() - Object.keys(this.shares[poly.getPolynomialID()]).length;
     return {
@@ -361,15 +359,14 @@ class ThresholdBak implements IThresholdBak {
   }
 }
 
-
 // PRIMATIVES (TODO: MOVE TYPES AND THIS INTO DIFFERENT FOLDER)
 
-function lagrangeInterpolatePolynomial(points) {
-  const denominator = function (i, innerPoints) {
+function lagrangeInterpolatePolynomial(points: Array<Point>): Polynomial {
+  const denominator = function (i: number, innerPoints: Array<Point>) {
     let result = new BN(1);
     const xi = innerPoints[i].x;
-    for (let j = innerPoints.length - 1; j >= 0; j--) {
-      if (i != j) {
+    for (let j = innerPoints.length - 1; j >= 0; j -= 1) {
+      if (i !== j) {
         let tmp = new BN(xi);
         tmp = tmp.sub(innerPoints[j].x);
         tmp = tmp.umod(ecCurve.curve.n);
@@ -380,17 +377,18 @@ function lagrangeInterpolatePolynomial(points) {
     return result;
   };
 
-  const interpolationPoly = function (i, innerPoints) {
+  const interpolationPoly = function (i: number, innerPoints: Array<Point>): Array<BN> {
     let coefficients = Array.apply(null, Array(innerPoints.length)).map(function () {
       return new BN(0);
     });
     const d = denominator(i, innerPoints);
     coefficients[0] = d.invm(ecCurve.curve.n);
-    for (let k = 0; k < innerPoints.length; k++) {
+    for (let k = 0; k < innerPoints.length; k += 1) {
       const newCoefficients = Array.apply(null, Array(innerPoints.length)).map(function () {
         return new BN(0);
       });
-      if (k == i) {
+      if (k === i) {
+        // eslint-disable-next-line no-continue
         continue;
       }
       let j;
@@ -400,7 +398,7 @@ function lagrangeInterpolatePolynomial(points) {
         j = k;
       }
       j -= 1;
-      for (; j >= 0; j--) {
+      for (; j >= 0; j -= 1) {
         newCoefficients[j + 1] = newCoefficients[j + 1].add(coefficients[j]);
         newCoefficients[j + 1] = newCoefficients[j + 1].umod(ecCurve.curve.n);
         let tmp = new BN(innerPoints[k].x);
@@ -415,7 +413,7 @@ function lagrangeInterpolatePolynomial(points) {
   };
 
   const pointSort = function (innerPoints) {
-    sortedPoints = [...innerPoints];
+    const sortedPoints = [...innerPoints];
     sortedPoints.sort(function (a, b) {
       return a.x.cmp(b.x);
     });
@@ -424,12 +422,12 @@ function lagrangeInterpolatePolynomial(points) {
 
   const lagrange = function (unsortedPoints) {
     const sortedPoints = pointSort(unsortedPoints);
-    polynomial = Array.apply(null, Array(sortedPoints.length)).map(function () {
+    const polynomial = Array.apply(null, Array(sortedPoints.length)).map(function () {
       return new BN(0);
     });
-    for (let i = 0; i < sortedPoints.length; i++) {
+    for (let i = 0; i < sortedPoints.length; i += 1) {
       const coefficients = interpolationPoly(i, sortedPoints);
-      for (let k = 0; k < sortedPoints.length; k++) {
+      for (let k = 0; k < sortedPoints.length; k += 1) {
         let tmp = new BN(sortedPoints[i].y);
         tmp = tmp.mul(coefficients[k]);
         polynomial[k] = polynomial[k].add(tmp);
@@ -467,7 +465,7 @@ function lagrangeInterpolation(shares, nodeIndex) {
 }
 
 // generateRandomPolynomial - determinsiticShares are assumed random
-function generateRandomPolynomial(degree, secret, determinsticShares) {
+function generateRandomPolynomial(degree: number, secret?: BN, determinsticShares?: Array<Share>): Polynomial {
   let actualS = secret;
   if (!secret) {
     actualS = new BN(generatePrivate());
@@ -490,114 +488,17 @@ function generateRandomPolynomial(degree, secret, determinsticShares) {
   determinsticShares.forEach((share) => {
     points[share.shareIndex.toString("hex")] = new Point(share.shareIndex, share.share);
   });
-  for (let i = 0; i < degree - determinsticShares.length; i++) {
+  for (let i = 0; i < degree - determinsticShares.length; i += 1) {
     let shareIndex = new BN(generatePrivate());
     while (Object.keys(points).includes(shareIndex.toString("hex"))) {
       shareIndex = new BN(generatePrivate());
     }
-    points[shareIndex.toString("hex")] = new Point(shareIndex, new BN(generatePrivate));
+    points[shareIndex.toString("hex")] = new Point(shareIndex, new BN(generatePrivate()));
   }
   points["0"] = new Point(new BN(0), actualS);
   const pointsArr = [];
   Object.keys(points).forEach((shareIndex) => pointsArr.push(points[shareIndex]));
-  return (poly = lagrangeInterpolatePolynomial(pointsArr));
-}
-
-class Metadata {
-  constructor(input) {
-    if (input instanceof Point) {
-      this.pubKey = input;
-      this.publicPolynomials = {};
-      this.publicShares = {};
-      this.polyIDList = [];
-      this.generalStore = {};
-    } else if (typeof input === "object") {
-      // assumed to be JSON.parsed object
-      this.pubKey = new Point(input.pubKey.x, input.pubKey.y);
-      this.publicPolynomials = {};
-      this.publicShares = {};
-      this.polyIDList = input.polyIDList;
-      this.generalStore = {};
-      if (input.generalStore) this.generalStore = input.generalStore;
-      if (input.scopedStore) this.scopedStore = input.scopedStore;
-      // for publicPolynomials
-      for (const pubPolyID in input.publicPolynomials) {
-        const pointCommitments = [];
-        input.publicPolynomials[pubPolyID].polynomialCommitments.forEach((commitment) => {
-          pointCommitments.push(new Point(commitment.x, commitment.y));
-        });
-        const publicPolynomial = new PublicPolynomial(pointCommitments);
-        this.publicPolynomials[pubPolyID] = publicPolynomial;
-      }
-      // for publicShares
-      for (const pubPolyID in input.publicShares) {
-        for (const shareIndex in input.publicShares[pubPolyID]) {
-          const newPubShare = new PublicShare(
-            input.publicShares[pubPolyID][shareIndex].shareIndex,
-            new Point(input.publicShares[pubPolyID][shareIndex].shareCommitment.x, input.publicShares[pubPolyID][shareIndex].shareCommitment.y)
-          );
-          this.addPublicShare(pubPolyID, newPubShare);
-        }
-      }
-    } else {
-      throw TypeError("not a valid constructor argument for Metadata");
-    }
-  }
-
-  getShareIndexesForPolynomial(polyID) {
-    return Object.keys(this.publicShares[polyID]);
-  }
-
-  getLatestPublicPolynomial() {
-    return this.publicPolynomials[this.polyIDList[this.polyIDList.length - 1]];
-  }
-
-  addPublicPolynomial(publicPolynomial) {
-    const polyID = publicPolynomial.getPolynomialID();
-    this.publicPolynomials[polyID] = publicPolynomial;
-    this.polyIDList.push(polyID);
-  }
-
-  addPublicShare(polynomialID, publicShare) {
-    if (!(polynomialID in this.publicShares)) {
-      this.publicShares[polynomialID] = {};
-    }
-    this.publicShares[polynomialID][publicShare.shareIndex.toString("hex")] = publicShare;
-  }
-
-  setGeneralStoreDomain(key, obj) {
-    this.generalStore[key] = obj;
-  }
-
-  getGeneralStoreDomain(key) {
-    return this.generalStore[key];
-  }
-
-  addFromPolynomialAndShares(polynomial, shares) {
-    const publicPolynomial = polynomial.getPublicPolynomial();
-    this.addPublicPolynomial(publicPolynomial);
-    if (Array.isArray(shares)) {
-      for (let i = 0; i < shares.length; i++) {
-        this.addPublicShare(publicPolynomial.getPolynomialID(), shares[i].getPublicShare());
-      }
-    } else {
-      for (const k in shares) {
-        this.addPublicShare(publicPolynomial.getPolynomialID(), shares[k].getPublicShare());
-      }
-    }
-  }
-
-  setScopedStore(scopedStore) {
-    this.scopedStore = scopedStore;
-  }
-
-  getEncryptedShare() {
-    return this.scopedStore.encryptedShare;
-  }
-
-  clone() {
-    return new Metadata(JSON.parse(JSON.stringify(this)));
-  }
+  return lagrangeInterpolatePolynomial(pointsArr);
 }
 
 export { ThresholdBak, Metadata, generateRandomPolynomial, lagrangeInterpolation, lagrangeInterpolatePolynomial };

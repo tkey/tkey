@@ -15,8 +15,8 @@ export interface EncryptedMessage {
   mac: string;
 }
 export interface ServiceProviderArgs {
-  enableLogging: boolean;
-  postboxKey: string;
+  enableLogging?: boolean;
+  postboxKey?: string;
 }
 
 export interface TorusServiceProviderArgs extends ServiceProviderArgs {
@@ -33,33 +33,11 @@ export interface SecurityQuestionStoreArgs {
   questions: string;
 }
 
-export interface IModule {
-  moduleName: string;
-  initialize(): void;
-}
-
-export interface IThresholdBak {
-  generateNewShare(): Promise<void>;
-}
-
 export interface IPoint {
   x: BN;
   y: BN;
   encode(enc: "arr"): Buffer;
 }
-
-export type ModuleMap = {
-  [moduleName: string]: IModule;
-};
-
-export type KeyDetails = {
-  pubKey: IPoint;
-  requiredShares: number;
-
-  threshold: number;
-  totalShares: number;
-  modules: ModuleMap;
-};
 
 export interface IServiceProvider {
   ec: EC;
@@ -70,6 +48,33 @@ export interface IServiceProvider {
 
   encrypt(publicKey: Buffer, msg: Buffer): Promise<EncryptedMessage>;
   decrypt(msg: EncryptedMessage): Promise<Buffer>;
-  retrievePubKey(type: "ecc"): Buffer | curve.base.BasePoint;
+  retrievePubKey(type?: "ecc"): Buffer | curve.base.BasePoint;
   sign(msg: BNString): string;
 }
+
+export interface IStorageLayer {
+  enableLogging: boolean;
+
+  hostUrl: string;
+
+  serviceProvider: IServiceProvider;
+
+  getMetadata<T>(privKey?: BN): Promise<T>;
+
+  setMetadata<T>(input: T, privKey?: BN): Promise<{ message: string }>;
+
+  generateMetadataParams(message: unknown, privKey: BN): TorusStorageLayerAPIParams;
+}
+
+export type TorusStorageLayerArgs = {
+  enableLogging?: boolean;
+  hostUrl?: string;
+  serviceProvider: IServiceProvider;
+};
+
+export type TorusStorageLayerAPIParams = {
+  pub_key_X: string;
+  pub_key_Y: string;
+  set_data: unknown;
+  signature: Buffer;
+};

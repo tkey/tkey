@@ -25,4 +25,9 @@ class PublicPolynomial {
   }
 }
 
+// @flow
+export type PublicPolynomialMap = {
+  [polynomialID: string]: PublicPolynomial;
+};
+
 export default PublicPolynomial;

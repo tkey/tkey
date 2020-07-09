@@ -85,6 +85,8 @@
     "serviceworker": true
   },
   "globals": {
+    "atob": true,
+    "btoa": true,
     "document": true,
     "fetch": true,
     "jest": true,
