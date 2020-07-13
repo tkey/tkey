@@ -103,6 +103,8 @@ typings/
 examples/
 toruslabs-torus-direct-web-sdk-*
 ssl/
+src/
+scripts/
 .eslintrc.json
 .eslintignore
 .prettierignore
