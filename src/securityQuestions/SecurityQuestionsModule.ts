@@ -4,7 +4,7 @@ import { keccak256 } from "web3-utils";
 import { GenerateNewShareResult, IModule, IThresholdBak } from "../base/aggregateTypes";
 import { SecurityQuestionStoreArgs } from "../base/commonTypes";
 import Share from "../base/Share";
-import ShareStore from "../base/ShareStore";
+import ShareStore, { ShareStoreMap } from "../base/ShareStore";
 import { ecCurve } from "../utils";
 import SecurityQuestionStore from "./SecurityQuestionStore";
 
@@ -54,6 +54,19 @@ class SecurityQuestionsModule implements IModule {
     share = share.umod(ecCurve.curve.n);
     const shareStore = new ShareStore({ share: new Share(sqStore.shareIndex, share), polynomialID: sqStore.polynomialID });
     this.tbSDK.inputShare(shareStore);
+  }
+
+  refreshSecurityQuestionsMiddleware(generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap): unknown {
+    const sqStore = new SecurityQuestionStore(generalStore as SecurityQuestionStoreArgs);
+    const sqAnswer = oldShareStores[sqStore.shareIndex.toString("hex")].share.share.sub(sqStore.nonce);
+    const newNonce = newShareStores[sqStore.shareIndex.toString("hex")].share.share.sub(sqAnswer);
+
+    return new SecurityQuestionStore({
+      nonce: newNonce,
+      polynomialID: newShareStores[Object.keys(newShareStores)[0]].polynomialID,
+      shareIndex: sqStore.shareIndex,
+      questions: sqStore.questions,
+    });
   }
 }
 

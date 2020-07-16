@@ -12,15 +12,16 @@ import {
   IThresholdBak,
   KeyDetails,
   ModuleMap,
+  RefreshMiddlewareMap,
   RefreshSharesResult,
   ThresholdBakArgs,
 } from "./base/aggregateTypes";
 import { getPubKeyPoint } from "./base/BNUtils";
-import { BNString, IServiceProvider, IStorageLayer, PolynomialID, RefreshMiddlewareMap } from "./base/commonTypes";
+import { BNString, IServiceProvider, IStorageLayer, PolynomialID } from "./base/commonTypes";
 import Point from "./base/Point";
 import { Polynomial } from "./base/Polynomial";
 import Share from "./base/Share";
-import ShareStore, { ScopedStore, ShareStorePolyIDShareIndexMap } from "./base/ShareStore";
+import ShareStore, { ScopedStore, ShareStoreMap, ShareStorePolyIDShareIndexMap } from "./base/ShareStore";
 import Metadata from "./metadata";
 import TorusServiceProvider from "./serviceProvider/TorusServiceProvider";
 import TorusStorageLayer from "./storage-layer";
@@ -188,31 +189,37 @@ class ThresholdBak implements IThresholdBak {
     this.metadata.addFromPolynomialAndShares(poly, shares);
 
     // change to share stores for public storing
-    const shareStores = {};
+    const oldShareStores = {};
+    const newShareStores = {};
     const polyID = poly.getPolynomialID();
     newShareIndexes.forEach((shareIndexHex) => {
-      shareStores[shareIndexHex] = new ShareStore({ share: shares[shareIndexHex], polynomialID: polyID });
+      newShareStores[shareIndexHex] = new ShareStore({ share: shares[shareIndexHex], polynomialID: polyID });
     });
 
     // evaluate oldPoly for old shares and set new metadata with encrypted share for new polynomial
     for (let index = 0; index < shareIndexesNeedingEncryption.length; index += 1) {
       const shareIndex = shareIndexesNeedingEncryption[index];
       const m = this.metadata.clone();
-      m.setScopedStore({ encryptedShare: shareStores[shareIndex] });
+      m.setScopedStore({ encryptedShare: newShareStores[shareIndex] });
       const oldShare = oldPoly.polyEval(new BN(shareIndex, "hex"));
+      oldShareStores[shareIndex] = new ShareStore({ share: new Share(shareIndex, oldShare), polynomialID: previousPolyID });
       await this.storageLayer.setMetadata(m, oldShare);
     }
 
     // set share for serviceProvider encrytion
-    // 1 is defined as the serviceProvider share
     if (shareIndexesNeedingEncryption.includes("1")) {
-      await this.storageLayer.setMetadata(shareStores["1"]);
-      // TODO: handle gracefully
+      await this.storageLayer.setMetadata(newShareStores["1"]);
+      // TODO: handle failure gracefully
     }
 
+    // run refreshShare middleware
     for (let index = 0; index < Object.keys(this.refreshMiddleware).length; index += 1) {
       const moduleName = Object.keys(this.refreshMiddleware)[index];
-      const adjustedGeneralStore = this.refreshMiddleware[moduleName](this.metadata.getGeneralStoreDomain(moduleName));
+      const adjustedGeneralStore = this.refreshMiddleware[moduleName](
+        this.metadata.getGeneralStoreDomain(moduleName),
+        oldShareStores,
+        newShareStores
+      );
       this.metadata.setGeneralStoreDomain(moduleName, adjustedGeneralStore);
     }
 
@@ -220,12 +227,12 @@ class ThresholdBak implements IThresholdBak {
     for (let index = 0; index < newShareIndexes.length; index += 1) {
       const shareIndex = newShareIndexes[index];
       const m = this.metadata.clone();
-      await this.storageLayer.setMetadata(m, shareStores[shareIndex].share.share);
+      await this.storageLayer.setMetadata(m, newShareStores[shareIndex].share.share);
 
-      this.inputShare(shareStores[shareIndex]);
+      this.inputShare(newShareStores[shareIndex]);
     }
 
-    return { shareStores };
+    return { shareStores: newShareStores };
   }
 
   async initializeNewKey(userInput?: BN): Promise<InitializeNewKeyResult> {
@@ -368,7 +375,10 @@ class ThresholdBak implements IThresholdBak {
     }
   }
 
-  addRefreshMiddleware(moduleName: string, middleware: (generalStore: unknown) => unknown): void {
+  addRefreshMiddleware(
+    moduleName: string,
+    middleware: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap) => unknown
+  ): void {
     this.refreshMiddleware[moduleName] = middleware;
   }
 }
