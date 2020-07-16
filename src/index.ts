@@ -210,6 +210,11 @@ class ThresholdBak implements IThresholdBak {
       // TODO: handle gracefully
     }
 
+    for (let index = 0; index < this.refreshMiddleware.length; index += 1) {
+      const mw = this.refreshMiddleware[index];
+      mw(this.metadata);
+    }
+
     // set metadata for all new shares
     for (let index = 0; index < newShareIndexes.length; index += 1) {
       const shareIndex = newShareIndexes[index];
