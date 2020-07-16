@@ -43,6 +43,8 @@ class ThresholdBak implements IThresholdBak {
 
   metadata: Metadata;
 
+  refreshMiddleware: Array<(metadata: Metadata) => Metadata>;
+
   constructor({ enableLogging = false, modules = {}, serviceProvider, storageLayer, directParams }: ThresholdBakArgs) {
     this.enableLogging = enableLogging;
 
@@ -220,45 +222,6 @@ class ThresholdBak implements IThresholdBak {
     return { shareStores };
   }
 
-  async syncShareMetadata(adjustScopedStore?: (ss: ScopedStore) => ScopedStore): Promise<void> {
-    const pubPoly = this.metadata.getLatestPublicPolynomial();
-    const pubPolyID = pubPoly.getPolynomialID();
-    const existingShareIndexes = this.metadata.getShareIndexesForPolynomial(pubPolyID);
-    const threshold = pubPoly.getThreshold();
-
-    const pointsArr = [];
-    const sharesForExistingPoly = Object.keys(this.shares[pubPolyID]);
-    if (sharesForExistingPoly.length < threshold) {
-      throw Error("not enough shares to reconstruct poly");
-    }
-    for (let i = 0; i < threshold; i += 1) {
-      pointsArr.push(new Point(new BN(sharesForExistingPoly[i], "hex"), this.shares[pubPolyID][sharesForExistingPoly[i]].share.share));
-    }
-    const currentPoly = lagrangeInterpolatePolynomial(pointsArr);
-    const allExistingShares = currentPoly.generateShares(existingShareIndexes);
-
-    for (let index = 0; index < existingShareIndexes.length; index += 1) {
-      const shareIndex = existingShareIndexes[index];
-      const newMetadata = this.metadata.clone();
-      let resp;
-      try {
-        resp = await this.storageLayer.getMetadata(allExistingShares[shareIndex].share);
-      } catch (err) {
-        throw new Error(`getMetadata in syncShareMetadata errored: ${err}`);
-      }
-      const specificShareMetadata = new Metadata(resp);
-
-      let scopedStoreToBeSet;
-      if (adjustScopedStore) {
-        scopedStoreToBeSet = adjustScopedStore(specificShareMetadata.scopedStore);
-      } else {
-        scopedStoreToBeSet = specificShareMetadata.scopedStore;
-      }
-      newMetadata.setScopedStore(scopedStoreToBeSet);
-      await this.storageLayer.setMetadata(newMetadata, allExistingShares[shareIndex].share);
-    }
-  }
-
   async initializeNewKey(userInput?: BN): Promise<InitializeNewKeyResult> {
     // initialize modules
     for (const moduleName in this.modules) {
@@ -356,6 +319,51 @@ class ThresholdBak implements IThresholdBak {
       totalShares: Object.keys(this.metadata.publicShares[poly.getPolynomialID()]).length,
       modules: this.modules,
     };
+  }
+
+  // Module functions
+
+  async syncShareMetadata(adjustScopedStore?: (ss: ScopedStore) => ScopedStore): Promise<void> {
+    const pubPoly = this.metadata.getLatestPublicPolynomial();
+    const pubPolyID = pubPoly.getPolynomialID();
+    const existingShareIndexes = this.metadata.getShareIndexesForPolynomial(pubPolyID);
+    const threshold = pubPoly.getThreshold();
+
+    const pointsArr = [];
+    const sharesForExistingPoly = Object.keys(this.shares[pubPolyID]);
+    if (sharesForExistingPoly.length < threshold) {
+      throw Error("not enough shares to reconstruct poly");
+    }
+    for (let i = 0; i < threshold; i += 1) {
+      pointsArr.push(new Point(new BN(sharesForExistingPoly[i], "hex"), this.shares[pubPolyID][sharesForExistingPoly[i]].share.share));
+    }
+    const currentPoly = lagrangeInterpolatePolynomial(pointsArr);
+    const allExistingShares = currentPoly.generateShares(existingShareIndexes);
+
+    for (let index = 0; index < existingShareIndexes.length; index += 1) {
+      const shareIndex = existingShareIndexes[index];
+      const newMetadata = this.metadata.clone();
+      let resp;
+      try {
+        resp = await this.storageLayer.getMetadata(allExistingShares[shareIndex].share);
+      } catch (err) {
+        throw new Error(`getMetadata in syncShareMetadata errored: ${err}`);
+      }
+      const specificShareMetadata = new Metadata(resp);
+
+      let scopedStoreToBeSet;
+      if (adjustScopedStore) {
+        scopedStoreToBeSet = adjustScopedStore(specificShareMetadata.scopedStore);
+      } else {
+        scopedStoreToBeSet = specificShareMetadata.scopedStore;
+      }
+      newMetadata.setScopedStore(scopedStoreToBeSet);
+      await this.storageLayer.setMetadata(newMetadata, allExistingShares[shareIndex].share);
+    }
+  }
+
+  addRefreshMiddleware(middleware: (metadata: Metadata) => Metadata): void {
+    this.refreshMiddleware.push(middleware);
   }
 }
 

@@ -100,8 +100,7 @@ describe("threshold bak", function () {
     const uniqueSP = new ServiceProviderBase({ postboxKey: privKey.toString("hex") });
     const uniqueSL = new TorusStorageLayer({ serviceProvider: uniqueSP });
     const tb = new ThresholdBak({ serviceProvider: uniqueSP, storageLayer: uniqueSL });
-    const resp1 = await tb.initialize();
-    console.log(resp1);
+    await tb.initialize();
     const reconstructedKey = tb.reconstructKey();
     if (tb.privKey.cmp(reconstructedKey) !== 0) {
       fail("key should be able to be reconstructed");

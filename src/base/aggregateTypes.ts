@@ -59,6 +59,8 @@ export interface IThresholdBak {
 
   metadata: Metadata;
 
+  refreshMiddleware: Array<(metadata: Metadata) => Metadata>;
+
   initialize(input: ShareStore): Promise<KeyDetails>;
 
   catchupToLatestShare(shareStore: ShareStore): Promise<CatchupToLatestShareResult>;
@@ -80,6 +82,8 @@ export interface IThresholdBak {
   setKey(privKey: BN): void;
 
   getKeyDetails(): KeyDetails;
+
+  addRefreshMiddleware(middleware: (metadata: Metadata) => Metadata): void;
 }
 
 export type ThresholdBakArgs = {
