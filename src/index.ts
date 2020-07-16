@@ -65,6 +65,7 @@ class ThresholdBak implements IThresholdBak {
     this.modules = modules;
     this.shares = {};
     this.privKey = undefined;
+    this.refreshMiddleware = {};
   }
 
   async initialize(input: ShareStore): Promise<KeyDetails> {
