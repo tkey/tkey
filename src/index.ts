@@ -16,7 +16,7 @@ import {
   ThresholdBakArgs,
 } from "./base/aggregateTypes";
 import { getPubKeyPoint } from "./base/BNUtils";
-import { BNString, IServiceProvider, IStorageLayer, PolynomialID } from "./base/commonTypes";
+import { BNString, IServiceProvider, IStorageLayer, PolynomialID, RefreshMiddlewareMap } from "./base/commonTypes";
 import Point from "./base/Point";
 import { Polynomial } from "./base/Polynomial";
 import Share from "./base/Share";
@@ -43,7 +43,7 @@ class ThresholdBak implements IThresholdBak {
 
   metadata: Metadata;
 
-  refreshMiddleware: Array<(metadata: Metadata) => Metadata>;
+  refreshMiddleware: RefreshMiddlewareMap;
 
   constructor({ enableLogging = false, modules = {}, serviceProvider, storageLayer, directParams }: ThresholdBakArgs) {
     this.enableLogging = enableLogging;
@@ -210,9 +210,10 @@ class ThresholdBak implements IThresholdBak {
       // TODO: handle gracefully
     }
 
-    for (let index = 0; index < this.refreshMiddleware.length; index += 1) {
-      const mw = this.refreshMiddleware[index];
-      mw(this.metadata);
+    for (let index = 0; index < Object.keys(this.refreshMiddleware).length; index += 1) {
+      const moduleName = Object.keys(this.refreshMiddleware)[index];
+      const adjustedGeneralStore = this.refreshMiddleware[moduleName](this.metadata.getGeneralStoreDomain(moduleName));
+      this.metadata.setGeneralStoreDomain(moduleName, adjustedGeneralStore);
     }
 
     // set metadata for all new shares
@@ -367,8 +368,8 @@ class ThresholdBak implements IThresholdBak {
     }
   }
 
-  addRefreshMiddleware(middleware: (metadata: Metadata) => Metadata): void {
-    this.refreshMiddleware.push(middleware);
+  addRefreshMiddleware(moduleName: string, middleware: (generalStore: unknown) => unknown): void {
+    this.refreshMiddleware[moduleName] = middleware;
   }
 }
 

@@ -77,3 +77,7 @@ export type TorusStorageLayerAPIParams = {
   set_data: unknown;
   signature: Buffer;
 };
+
+export type RefreshMiddlewareMap = {
+  [moduleName: string]: (generalStore: unknown) => unknown;
+};

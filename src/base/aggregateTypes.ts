@@ -2,7 +2,7 @@ import { DirectWebSDKArgs } from "@toruslabs/torus-direct-web-sdk";
 import BN from "bn.js";
 
 import Metadata from "../metadata";
-import { BNString, IServiceProvider, IStorageLayer, PolynomialID } from "./commonTypes";
+import { BNString, IServiceProvider, IStorageLayer, PolynomialID, RefreshMiddlewareMap } from "./commonTypes";
 import Point from "./Point";
 import ShareStore, { ScopedStore, ShareStoreMap, ShareStorePolyIDShareIndexMap } from "./ShareStore";
 
@@ -59,7 +59,7 @@ export interface IThresholdBak {
 
   metadata: Metadata;
 
-  refreshMiddleware: Array<(metadata: Metadata) => Metadata>;
+  refreshMiddleware: RefreshMiddlewareMap;
 
   initialize(input: ShareStore): Promise<KeyDetails>;
 
@@ -83,7 +83,7 @@ export interface IThresholdBak {
 
   getKeyDetails(): KeyDetails;
 
-  addRefreshMiddleware(middleware: (metadata: Metadata) => Metadata): void;
+  addRefreshMiddleware(moduleName: string, middleware: (generalStore: unknown) => unknown): void;
 }
 
 export type ThresholdBakArgs = {
