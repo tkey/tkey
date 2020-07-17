@@ -59,6 +59,8 @@ export interface IThresholdBak {
 
   metadata: Metadata;
 
+  refreshMiddleware: RefreshMiddlewareMap;
+
   initialize(input: ShareStore): Promise<KeyDetails>;
 
   catchupToLatestShare(shareStore: ShareStore): Promise<CatchupToLatestShareResult>;
@@ -80,6 +82,8 @@ export interface IThresholdBak {
   setKey(privKey: BN): void;
 
   getKeyDetails(): KeyDetails;
+
+  addRefreshMiddleware(moduleName: string, middleware: (generalStore: unknown) => unknown): void;
 }
 
 export type ThresholdBakArgs = {
@@ -88,4 +92,8 @@ export type ThresholdBakArgs = {
   serviceProvider?: IServiceProvider;
   storageLayer: IStorageLayer;
   directParams?: DirectWebSDKArgs;
+};
+
+export type RefreshMiddlewareMap = {
+  [moduleName: string]: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap) => unknown;
 };
