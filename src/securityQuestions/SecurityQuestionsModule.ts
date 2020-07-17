@@ -5,7 +5,7 @@ import { GenerateNewShareResult, IModule, IThresholdBak } from "../base/aggregat
 import { SecurityQuestionStoreArgs } from "../base/commonTypes";
 import Share from "../base/Share";
 import ShareStore, { ShareStoreMap } from "../base/ShareStore";
-import { ecCurve } from "../utils";
+import { ecCurve, isEmptyObject } from "../utils";
 import SecurityQuestionStore from "./SecurityQuestionStore";
 
 function answerToUserInputHashBN(answerString) {
@@ -21,8 +21,9 @@ class SecurityQuestionsModule implements IModule {
     this.moduleName = "securityQuestions";
   }
 
-  initialize(tbSDK: IThresholdBak) {
+  initialize(tbSDK: IThresholdBak): void {
     this.tbSDK = tbSDK;
+    this.tbSDK.addRefreshMiddleware(this.moduleName, this.refreshSecurityQuestionsMiddleware.bind(this));
   }
 
   async generateNewShareWithSecurityQuestions(answerString: string, questions: string): Promise<GenerateNewShareResult> {
@@ -57,6 +58,9 @@ class SecurityQuestionsModule implements IModule {
   }
 
   refreshSecurityQuestionsMiddleware(generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap): unknown {
+    if (generalStore === undefined || isEmptyObject(generalStore)) {
+      return generalStore;
+    }
     const sqStore = new SecurityQuestionStore(generalStore as SecurityQuestionStoreArgs);
     const sqAnswer = oldShareStores[sqStore.shareIndex.toString("hex")].share.share.sub(sqStore.nonce);
     const newNonce = newShareStores[sqStore.shareIndex.toString("hex")].share.share.sub(sqAnswer);
