@@ -27,7 +27,7 @@ global.btoa = btoa;
 describe("threshold bak", function () {
   it("#should be able to reconstruct key when initializing a key", async function () {
     const tb = new ThresholdBak({ serviceProvider: defaultSP, storageLayer: defaultSL });
-    const resp1 = await tb.initializeNewKey();
+    const resp1 = await tb.initializeNewKey(undefined, true);
     const tb2 = new ThresholdBak({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize();
     tb2.inputShare(resp1.deviceShare);
@@ -40,7 +40,7 @@ describe("threshold bak", function () {
     const tb = new ThresholdBak({ serviceProvider: defaultSP, storageLayer: defaultSL });
     let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
     userInput = userInput.umod(ecCurve.curve.n);
-    const resp1 = await tb.initializeNewKey(userInput);
+    const resp1 = await tb.initializeNewKey(userInput, true);
     const tb2 = new ThresholdBak({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize();
     tb2.inputShare(resp1.userShare);
@@ -51,7 +51,7 @@ describe("threshold bak", function () {
   });
   it("#should be able to reshare a key and retrieve from service provider", async function () {
     const tb = new ThresholdBak({ serviceProvider: defaultSP, storageLayer: defaultSL });
-    const resp1 = await tb.initializeNewKey();
+    const resp1 = await tb.initializeNewKey(undefined, true);
     const tb2 = new ThresholdBak({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize();
     tb2.inputShare(resp1.deviceShare);
@@ -72,7 +72,7 @@ describe("threshold bak", function () {
     const tb = new ThresholdBak({ serviceProvider: defaultSP, storageLayer: defaultSL });
     let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
     userInput = userInput.umod(ecCurve.curve.n);
-    const resp1 = await tb.initializeNewKey(userInput);
+    const resp1 = await tb.initializeNewKey(userInput, true);
     const tb2 = new ThresholdBak({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize(resp1.userShare);
     tb2.inputShare(resp1.deviceShare);
@@ -85,7 +85,7 @@ describe("threshold bak", function () {
     const tb = new ThresholdBak({ serviceProvider: defaultSP, storageLayer: defaultSL });
     let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
     userInput = userInput.umod(ecCurve.curve.n);
-    const resp1 = await tb.initializeNewKey(userInput);
+    const resp1 = await tb.initializeNewKey(userInput, true);
     const newShares = await tb.generateNewShare();
     const tb2 = new ThresholdBak({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize(resp1.userShare);
@@ -243,14 +243,14 @@ describe("lagrangeInterpolatePolynomial", function () {
   });
 });
 
-describe.only("SecurityQuestionsModule", function () {
+describe("SecurityQuestionsModule", function () {
   it("#should be able to reconstruct key and initialize a key with seciurty questions", async function () {
     const tb = new ThresholdBak({
       serviceProvider: defaultSP,
       storageLayer: defaultSL,
       modules: { securityQuestions: new SecurityQuestionsModule() },
     });
-    const resp1 = await tb.initializeNewKey();
+    const resp1 = await tb.initializeNewKey(undefined, true);
     await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
     const tb2 = new ThresholdBak({
       serviceProvider: defaultSP,
@@ -271,14 +271,13 @@ describe.only("SecurityQuestionsModule", function () {
       storageLayer: defaultSL,
       modules: { securityQuestions: new SecurityQuestionsModule() },
     });
-    const resp1 = await tb.initializeNewKey();
+    const resp1 = await tb.initializeNewKey(undefined, true);
     await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
     const tb2 = new ThresholdBak({
       serviceProvider: defaultSP,
       storageLayer: defaultSL,
       modules: { securityQuestions: new SecurityQuestionsModule() },
     });
-    debugger;
     await tb.generateNewShare();
     await tb2.initialize();
 

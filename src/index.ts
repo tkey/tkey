@@ -236,10 +236,12 @@ class ThresholdBak implements IThresholdBak {
     return { shareStores: newShareStores };
   }
 
-  async initializeNewKey(userInput?: BN): Promise<InitializeNewKeyResult> {
+  async initializeNewKey(userInput?: BN, initializeModules?: boolean): Promise<InitializeNewKeyResult> {
     // initialize modules
-    for (const moduleName in this.modules) {
-      this.modules[moduleName].initialize(this);
+    if (initializeModules) {
+      for (const moduleName in this.modules) {
+        this.modules[moduleName].initialize(this);
+      }
     }
 
     const tmpPriv = generatePrivate();
