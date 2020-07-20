@@ -46,6 +46,8 @@ class ThresholdBak implements IThresholdBak {
 
   refreshMiddleware: RefreshMiddlewareMap;
 
+  storeDeviceShare: (deviceShareStore: ShareStore) => void;
+
   constructor({ enableLogging = false, modules = {}, serviceProvider, storageLayer, directParams }: ThresholdBakArgs) {
     this.enableLogging = enableLogging;
 
@@ -66,6 +68,7 @@ class ThresholdBak implements IThresholdBak {
     this.shares = {};
     this.privKey = undefined;
     this.refreshMiddleware = {};
+    this.storeDeviceShare = undefined;
   }
 
   async initialize(input: ShareStore): Promise<KeyDetails> {
@@ -280,8 +283,11 @@ class ThresholdBak implements IThresholdBak {
       // also add into our share store
       this.inputShare(new ShareStore({ share: shares[shareIndex.toString("hex")], polynomialID: poly.getPolynomialID() }));
     }
-
     this.metadata = metadata;
+    if (this.storeDeviceShare) {
+      this.storeDeviceShare(new ShareStore({ share: shares[shareIndexes[1].toString("hex")], polynomialID: poly.getPolynomialID() }));
+    }
+
     const result = {
       privKey: this.privKey,
       deviceShare: new ShareStore({ share: shares[shareIndexes[1].toString("hex")], polynomialID: poly.getPolynomialID() }),
@@ -383,6 +389,13 @@ class ThresholdBak implements IThresholdBak {
     middleware: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap) => unknown
   ): void {
     this.refreshMiddleware[moduleName] = middleware;
+  }
+
+  setDeviceStorage(storeDeviceStorage: (deviceShareStore: ShareStore) => void): void {
+    if (this.storeDeviceShare) {
+      throw Error("storeDeviceShare already set");
+    }
+    this.storeDeviceShare = storeDeviceStorage;
   }
 }
 

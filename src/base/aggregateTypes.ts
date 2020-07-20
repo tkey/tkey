@@ -84,6 +84,8 @@ export interface IThresholdBak {
   getKeyDetails(): KeyDetails;
 
   addRefreshMiddleware(moduleName: string, middleware: (generalStore: unknown) => unknown): void;
+
+  setDeviceStorage(storeDeviceStorage: (deviceShareStore: ShareStore) => void): void;
 }
 
 export type ThresholdBakArgs = {
