@@ -106,7 +106,7 @@ const cjsConfig = {
     rules: [tsLoader, eslintLoader, babelLoader],
   },
   externals: [...Object.keys(pkg.dependencies), /^(@babel\/runtime)/i],
-  plugins: [new ForkTsCheckerWebpackPlugin()],
+  // plugins: [new ForkTsCheckerWebpackPlugin()],
   node: {
     ...baseConfig.node,
     Buffer: false,

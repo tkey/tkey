@@ -1,6 +1,11 @@
 import DirectWebSDK from "@toruslabs/torus-direct-web-sdk";
-// eslint-disable-next-line import/no-unresolved
-import { AggregateLoginParams, TorusAggregateLoginResponse } from "@toruslabs/torus-direct-web-sdk/types/src/handlers/interfaces";
+import {
+  AggregateLoginParams,
+  SubVerifierDetails,
+  TorusAggregateLoginResponse,
+  TorusLoginResponse,
+  // eslint-disable-next-line import/no-unresolved
+} from "@toruslabs/torus-direct-web-sdk/types/src/handlers/interfaces";
 import BN from "bn.js";
 
 import { TorusServiceProviderArgs } from "../base/commonTypes";
@@ -16,6 +21,12 @@ class TorusServiceProvider extends ServiceProviderBase {
   }: TorusServiceProviderArgs) {
     super({ enableLogging, postboxKey });
     this.directWeb = new DirectWebSDK(directParams);
+  }
+
+  async triggerLogin(params: SubVerifierDetails): Promise<TorusLoginResponse> {
+    const obj = await this.directWeb.triggerLogin(params);
+    this.postboxKey = new BN(obj.privateKey, "hex");
+    return obj;
   }
 
   async triggerAggregateLogin(params: AggregateLoginParams): Promise<TorusAggregateLoginResponse> {

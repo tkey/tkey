@@ -3,6 +3,7 @@
     "outDir": "dist",
     "module": "commonjs",
     "target": "es5",
+    "lib": ["ES2019", "DOM"],
     "moduleResolution": "node",
     "sourceMap": false,
     "esModuleInterop": true,
