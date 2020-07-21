@@ -145,7 +145,8 @@ export default {
         //     },
         //   ],
         // });
-        this.console(loginDetails);
+        const initalizedDetails = this.tbsdk.initialize()
+        this.console(initializedDetails);
       } catch (error) {
         console.error(error, "caught");
       }
@@ -164,12 +165,9 @@ export default {
         network: "ropsten", // details for test net
       }});
       const torusdirectsdk = tbsdk.serviceProvider
-      console.log(tbsdk)
-
       // { enableLogging = false, modules = {}, serviceProvider, storageLayer, directParams }
-
-
       await torusdirectsdk.init({ skipSw: false });
+      this.tbsdk = tbsdk;
       this.torusdirectsdk = torusdirectsdk;
     } catch (error) {
       console.error(error, "mounted caught");
