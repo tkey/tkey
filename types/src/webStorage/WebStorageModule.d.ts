@@ -12,6 +12,7 @@ declare class WebStorageModule implements IModule {
     tbSDK: IThresholdBak;
     constructor();
     initialize(tbSDK: IThresholdBak): void;
+    storeDeviceShare(deviceShareStore: ShareStore): Promise<void>;
     storeShareOnFileStorage(share: ShareStore): Promise<void>;
     storeShareOnLocalStorage(share: ShareStore): Promise<void>;
 }

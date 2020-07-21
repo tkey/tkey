@@ -147,6 +147,7 @@ export default {
         //   ],
         // });
         const initializedDetails = this.tbsdk.initialize()
+        
         this.console(initializedDetails);
       } catch (error) {
         console.error(error, "caught");

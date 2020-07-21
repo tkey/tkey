@@ -15,7 +15,7 @@ declare class ThresholdBak implements IThresholdBak {
     privKey: BN;
     metadata: Metadata;
     refreshMiddleware: RefreshMiddlewareMap;
-    storeDeviceShare: (deviceShareStore: ShareStore) => void;
+    storeDeviceShare: (deviceShareStore: ShareStore) => Promise<void>;
     constructor({ enableLogging, modules, serviceProvider, storageLayer, directParams }: ThresholdBakArgs);
     initialize(input: ShareStore): Promise<KeyDetails>;
     catchupToLatestShare(shareStore: ShareStore): Promise<CatchupToLatestShareResult>;
@@ -29,7 +29,7 @@ declare class ThresholdBak implements IThresholdBak {
     getKeyDetails(): KeyDetails;
     syncShareMetadata(adjustScopedStore?: (ss: ScopedStore) => ScopedStore): Promise<void>;
     addRefreshMiddleware(moduleName: string, middleware: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap) => unknown): void;
-    setDeviceStorage(storeDeviceStorage: (deviceShareStore: ShareStore) => void): void;
+    setDeviceStorage(storeDeviceStorage: (deviceShareStore: ShareStore) => Promise<void>): void;
 }
 declare function lagrangeInterpolatePolynomial(points: Array<Point>): Polynomial;
 declare function lagrangeInterpolation(shares: Array<BN>, nodeIndex: Array<BN>): BN;

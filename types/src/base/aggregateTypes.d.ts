@@ -55,7 +55,7 @@ export interface IThresholdBak {
     setKey(privKey: BN): void;
     getKeyDetails(): KeyDetails;
     addRefreshMiddleware(moduleName: string, middleware: (generalStore: unknown) => unknown): void;
-    setDeviceStorage(storeDeviceStorage: (deviceShareStore: ShareStore) => void): void;
+    setDeviceStorage(storeDeviceStorage: (deviceShareStore: ShareStore) => Promise<void>): void;
 }
 export declare type ThresholdBakArgs = {
     enableLogging?: boolean;
