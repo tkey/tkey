@@ -46,7 +46,7 @@ class ThresholdBak implements IThresholdBak {
 
   refreshMiddleware: RefreshMiddlewareMap;
 
-  storeDeviceShare: (deviceShareStore: ShareStore) => void;
+  storeDeviceShare: (deviceShareStore: ShareStore) => Promise<void>;
 
   constructor({ enableLogging = false, modules = {}, serviceProvider, storageLayer, directParams }: ThresholdBakArgs) {
     this.enableLogging = enableLogging;
@@ -391,7 +391,7 @@ class ThresholdBak implements IThresholdBak {
     this.refreshMiddleware[moduleName] = middleware;
   }
 
-  setDeviceStorage(storeDeviceStorage: (deviceShareStore: ShareStore) => void): void {
+  setDeviceStorage(storeDeviceStorage: (deviceShareStore: ShareStore) => Promise<void>): void {
     if (this.storeDeviceShare) {
       throw Error("storeDeviceShare already set");
     }

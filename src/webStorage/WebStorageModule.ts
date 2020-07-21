@@ -76,6 +76,12 @@ class WebStorageModule implements IModule {
   initialize(tbSDK: IThresholdBak): void {
     this.tbSDK = tbSDK;
     // this.tbSDK.addRefreshMiddleware(this.moduleName, this.refreshSecurityQuestionsMiddleware.bind(this));
+    this.tbSDK.setDeviceStorage(this.storeDeviceShare.bind(this));
+  }
+
+  async storeDeviceShare(deviceShareStore: ShareStore): Promise<void> {
+    await this.storeShareOnLocalStorage(deviceShareStore);
+    await this.storeShareOnFileStorage(deviceShareStore);
   }
 
   async storeShareOnFileStorage(share: ShareStore): Promise<void> {

@@ -20,6 +20,7 @@
 
 <script>
 import ThresholdBak from "threshold-bak";
+import {WebStorageModule} from "threshold-bak";
 
 const GOOGLE = "google";
 const FACEBOOK = "facebook";
@@ -112,7 +113,7 @@ export default {
         if (!this.torusdirectsdk) return;
         const jwtParams = this.loginToConnectionMap[this.selectedVerifier] || {};
         const { typeOfLogin, clientId, verifier } = this.verifierMap[this.selectedVerifier];
-        const loginDetails = await this.torusdirectsdk.triggerLogin({
+        await this.torusdirectsdk.triggerLogin({
           typeOfLogin,
           verifier,
           clientId,
@@ -145,7 +146,7 @@ export default {
         //     },
         //   ],
         // });
-        const initalizedDetails = this.tbsdk.initialize()
+        const initializedDetails = this.tbsdk.initialize()
         this.console(initializedDetails);
       } catch (error) {
         console.error(error, "caught");
@@ -157,13 +158,16 @@ export default {
   },
   async mounted() {
     try {
+      const webStorageModule = new WebStorageModule();
 
       const tbsdk =  new ThresholdBak({directParams: {
         baseUrl: `${location.origin}/serviceworker`,
         enableLogging: true,
         proxyContractAddress: "0x4023d2a0D330bF11426B12C6144Cfb96B7fa6183", // details for test net
         network: "ropsten", // details for test net
-      }});
+      }, 
+      modules: { "webStorage" : webStorageModule}
+      });
       const torusdirectsdk = tbsdk.serviceProvider
       // { enableLogging = false, modules = {}, serviceProvider, storageLayer, directParams }
       await torusdirectsdk.init({ skipSw: false });
