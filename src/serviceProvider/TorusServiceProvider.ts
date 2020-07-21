@@ -1,6 +1,7 @@
 import DirectWebSDK from "@toruslabs/torus-direct-web-sdk";
 import {
   AggregateLoginParams,
+  InitParams,
   SubVerifierDetails,
   TorusAggregateLoginResponse,
   TorusLoginResponse,
@@ -21,6 +22,10 @@ class TorusServiceProvider extends ServiceProviderBase {
   }: TorusServiceProviderArgs) {
     super({ enableLogging, postboxKey });
     this.directWeb = new DirectWebSDK(directParams);
+  }
+
+  async init(params: InitParams): Promise<void> {
+    return this.directWeb.init(params);
   }
 
   async triggerLogin(params: SubVerifierDetails): Promise<TorusLoginResponse> {
