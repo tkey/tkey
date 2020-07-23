@@ -63,6 +63,14 @@ async function getFile(fs: FileSystem, path: string, create: boolean): Promise<F
     fs.root.getFile(path, { create }, resolve, reject);
   });
 }
+async function readFile(fileEntry: FileEntry): Promise<File> {
+  return new Promise(function (resolve, reject) {
+    fileEntry.file(resolve, reject);
+  });
+}
+function derivePubKeyXFromPolyID(polyID: string): string {
+  return polyID.split("|")[0];
+}
 
 class WebStorageModule implements IModule {
   moduleName: string;
@@ -84,9 +92,30 @@ class WebStorageModule implements IModule {
     await this.storeShareOnFileStorage(deviceShareStore);
   }
 
+  // async inputShareFromWebStorage()
+
+  async getShareFromChromeFileStorage(polyID: string): Promise<ShareStore> {
+    const fileName = derivePubKeyXFromPolyID(polyID);
+    if (window.requestFileSystem) {
+      const grantedBytes = await requestQuota();
+      const fs = await chromeRequestFileSystem(grantedBytes);
+
+      const fileEntry = await getFile(fs, fileName, true);
+      const file = await readFile(fileEntry);
+      const fileStr = await file.text();
+      return new ShareStore(JSON.parse(fileStr));
+    }
+    throw Error("no requestFileSystem");
+  }
+
+  async getShareFromLocalStorage(polyID: string): Promise<ShareStore> {
+    const fileName = derivePubKeyXFromPolyID(polyID);
+    return new ShareStore(JSON.parse(localStorage.getItem(fileName)));
+  }
+
   async storeShareOnFileStorage(share: ShareStore): Promise<void> {
     // if we're on chrome (thus window.requestFileSystem exists) we use it
-    const fileName = `${share.polynomialID.split("|")[0]}.json`;
+    const fileName = `${derivePubKeyXFromPolyID(share.polynomialID)}.json`;
     const fileStr = JSON.stringify(share);
     if (window.requestFileSystem) {
       const grantedBytes = await requestQuota();
@@ -120,7 +149,7 @@ class WebStorageModule implements IModule {
   }
 
   async storeShareOnLocalStorage(share: ShareStore) {
-    const fileName = share.polynomialID.split("|")[0];
+    const fileName = derivePubKeyXFromPolyID(share.polynomialID);
     const fileStr = JSON.stringify(share);
     if (!storageAvailable("localStorage")) {
       throw Error("local storage isn't enabled");

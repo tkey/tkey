@@ -146,9 +146,10 @@ export default {
         //     },
         //   ],
         // });
-        const initializedDetails = this.tbsdk.initialize()
-        
-        this.console(initializedDetails);
+        // const initializedDetails = await this.tbsdk.initialize()
+        await this.tbsdk.initializeNewKey(undefined, true)
+
+        // this.console(initializedDetails);
       } catch (error) {
         console.error(error, "caught");
       }
