@@ -146,9 +146,13 @@ export default {
         //     },
         //   ],
         // });
-        // const initializedDetails = await this.tbsdk.initialize()
-        await this.tbsdk.initializeNewKey(undefined, true)
-
+        const initializedDetails = await this.tbsdk.initialize()
+        console.log(initializedDetails)
+        await this.tbsdk.modules.webStorage.inputShareFromWebStorage()
+        const key = await this.tbsdk.reconstructKey()
+        // await this.tbsdk.initializeNewKey(undefined, true)
+        console.log(key)
+        this.console(key)
         // this.console(initializedDetails);
       } catch (error) {
         console.error(error, "caught");

@@ -92,7 +92,20 @@ class WebStorageModule implements IModule {
     await this.storeShareOnFileStorage(deviceShareStore);
   }
 
-  // async inputShareFromWebStorage()
+  async inputShareFromWebStorage(): Promise<void> {
+    const polyID = this.tbSDK.metadata.getLatestPublicPolynomial().getPolynomialID();
+    let shareStore;
+    try {
+      shareStore = await this.getShareFromLocalStorage(polyID);
+    } catch (localErr) {
+      try {
+        shareStore = await this.getShareFromChromeFileStorage(polyID);
+      } catch (chromeErr) {
+        throw Error(`Error inputShareFromWebStorage: ${localErr} and ${chromeErr}`);
+      }
+    }
+    this.tbSDK.inputShare(shareStore);
+  }
 
   async getShareFromChromeFileStorage(polyID: string): Promise<ShareStore> {
     const fileName = derivePubKeyXFromPolyID(polyID);
