@@ -50,6 +50,7 @@ class SecurityQuestionsModule implements IModule {
 
   async inputShareFromSecurityQuestions(answerString: string): Promise<void> {
     const sqStore = new SecurityQuestionStore(this.tbSDK.metadata.getGeneralStoreDomain(this.moduleName) as SecurityQuestionStoreArgs);
+    if (isEmptyObject(sqStore)) throw Error("sqStore doesnt exist, has tKey SDK been updated?");
     const userInputHash = answerToUserInputHashBN(answerString);
     let share = sqStore.nonce.add(userInputHash);
     share = share.umod(ecCurve.curve.n);
