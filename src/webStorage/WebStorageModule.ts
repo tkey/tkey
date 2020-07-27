@@ -104,7 +104,10 @@ class WebStorageModule implements IModule {
         throw Error(`Error inputShareFromWebStorage: ${localErr} and ${chromeErr}`);
       }
     }
-    this.tbSDK.inputShare(shareStore);
+    const castedShareStore = shareStore as ShareStore;
+    const latestShareDetails = await this.tbSDK.catchupToLatestShare(castedShareStore);
+    if (castedShareStore.polynomialID !== latestShareDetails.latestShare.polynomialID) this.storeDeviceShare(latestShareDetails.latestShare);
+    this.tbSDK.inputShare(latestShareDetails.latestShare);
   }
 
   async getShareFromChromeFileStorage(polyID: string): Promise<ShareStore> {

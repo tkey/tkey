@@ -54,7 +54,10 @@ class SecurityQuestionsModule implements IModule {
     let share = sqStore.nonce.add(userInputHash);
     share = share.umod(ecCurve.curve.n);
     const shareStore = new ShareStore({ share: new Share(sqStore.shareIndex, share), polynomialID: sqStore.polynomialID });
-    this.tbSDK.inputShare(shareStore);
+    const latestShareDetails = await this.tbSDK.catchupToLatestShare(shareStore);
+    // TODO: update share nonce on all metadata. would be cleaner in long term?
+    // if (shareStore.polynomialID !== latestShareDetails.latestShare.polynomialID) this.storeDeviceShare(latestShareDetails.latestShare);
+    this.tbSDK.inputShare(latestShareDetails.latestShare);
   }
 
   refreshSecurityQuestionsMiddleware(generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap): unknown {

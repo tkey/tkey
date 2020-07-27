@@ -148,7 +148,9 @@ export default {
         // });
         const initializedDetails = await this.tbsdk.initialize()
         console.log(initializedDetails)
-        await this.tbsdk.modules.webStorage.inputShareFromWebStorage()
+        if (initializedDetails.requiredShares > 0) {
+          await this.tbsdk.modules.webStorage.inputShareFromWebStorage()
+        }
         const key = await this.tbsdk.reconstructKey()
         // await this.tbsdk.initializeNewKey(undefined, true)
         console.log(key)
