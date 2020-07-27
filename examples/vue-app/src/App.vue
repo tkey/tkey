@@ -14,7 +14,8 @@
     </div>
     <div :style="{ marginTop: '20px' }">
       <button @click="login">Login with Torus</button>
-      <button @click="login">Add Security questions </button>
+      <button @click="generateNewShareWithSecurityQuestions">generateNewShareWithSecurityQuestions</button>
+      <button @click="inputShareFromSecurityQuestions">inputShareFromSecurityQuestions</button>
       <button @click="generateNewShare">generateNewShare</button>
       <button @click="initializeNewKey">initializeNewKey</button>
     </div>
@@ -26,7 +27,7 @@
 
 <script>
 import ThresholdBak from "threshold-bak";
-import {WebStorageModule} from "threshold-bak";
+import {WebStorageModule, SecurityQuestionsModule} from "threshold-bak";
 
 const GOOGLE = "google";
 const FACEBOOK = "facebook";
@@ -167,29 +168,36 @@ export default {
         console.error(error, "caught");
       }
     },
-    async setSQModuleAnswer() {
-    try {
-      console.log("placeholder")
-    } catch (error) {
-      console.error(error, "caught")
-    }
-  },
-  async generateNewShare() {
-    try {
-      const res = await this.tbsdk.generateNewShare();
-      this.console(res)
-    } catch (error) {
-      console.error(error, "caught")
-    }
-  },
-  async initializeNewKey() {
-    try {
-      const res = await this.tbsdk.initializeNewKey(undefined, false);
-      this.console(res)
-    } catch (error) {
-      console.error(error, "caught")
-    }
-  },
+    async generateNewShareWithSecurityQuestions() {
+      try {
+        this.tbsdk.modules.securityQuestions.generateNewShareWithSecurityQuestions(this.answer, "whats your password?")
+      } catch (error) {
+        console.error(error, "caught")
+      }
+    },
+    async inputShareFromSecurityQuestions() {
+      try {
+        this.tbsdk.modules.securityQuestions.inputShareFromSecurityQuestions(this.answer);
+      } catch (error) {
+        console.error(error, "caught")
+      }
+    },
+    async generateNewShare() {
+      try {
+        const res = await this.tbsdk.generateNewShare();
+        this.console(res)
+      } catch (error) {
+        console.error(error, "caught")
+      }
+    },
+    async initializeNewKey() {
+      try {
+        const res = await this.tbsdk.initializeNewKey(undefined, false);
+        this.console(res)
+      } catch (error) {
+        console.error(error, "caught")
+      }
+    },
     console(text) {
       document.querySelector("#console>p").innerHTML = typeof text === "object" ? JSON.stringify(text) : text;
     },
@@ -197,13 +205,14 @@ export default {
   async mounted() {
     try {
       const webStorageModule = new WebStorageModule();
+      const securityQuestionsModule = new SecurityQuestionsModule();
       const tbsdk =  new ThresholdBak({directParams: {
         baseUrl: `${location.origin}/serviceworker`,
         enableLogging: true,
         proxyContractAddress: "0x4023d2a0D330bF11426B12C6144Cfb96B7fa6183", // details for test net
         network: "ropsten", // details for test net
       }, 
-      modules: { "webStorage" : webStorageModule}
+      modules: { "webStorage" : webStorageModule, "securityQuestions":securityQuestionsModule}
       });
       const torusdirectsdk = tbsdk.serviceProvider
       // { enableLogging = false, modules = {}, serviceProvider, storageLayer, directParams }

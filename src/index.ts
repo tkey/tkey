@@ -80,6 +80,8 @@ class ThresholdBak implements IThresholdBak {
     let shareStore;
     if (input instanceof ShareStore) {
       shareStore = input;
+    } else if (typeof input === "object") {
+      shareStore = new ShareStore(input);
     } else if (!input) {
       // default to use service provider
       // first we see if a share has been kept for us
