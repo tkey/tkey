@@ -4,6 +4,7 @@ import BN from "bn.js";
 import Metadata from "../metadata";
 import { BNString, IServiceProvider, IStorageLayer, PolynomialID } from "./commonTypes";
 import Point from "./Point";
+import PublicShare from "./PublicShare";
 import ShareStore, { ScopedStore, ShareStoreMap, ShareStorePolyIDShareIndexMap } from "./ShareStore";
 
 // @flow
@@ -99,3 +100,15 @@ export type ThresholdBakArgs = {
 export type RefreshMiddlewareMap = {
   [moduleName: string]: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap) => unknown;
 };
+
+export interface SecurityQuestionStoreArgs {
+  nonce: BNString;
+
+  shareIndex: BNString;
+
+  sqPublicShare: PublicShare;
+
+  polynomialID: PolynomialID;
+
+  questions: string;
+}

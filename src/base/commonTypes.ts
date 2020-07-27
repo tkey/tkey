@@ -22,16 +22,6 @@ export interface TorusServiceProviderArgs extends ServiceProviderArgs {
   directParams: DirectWebSDKArgs;
 }
 
-export interface SecurityQuestionStoreArgs {
-  nonce: BNString;
-
-  shareIndex: BNString;
-
-  polynomialID: PolynomialID;
-
-  questions: string;
-}
-
 export interface IPoint {
   x: BN;
   y: BN;

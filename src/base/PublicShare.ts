@@ -18,7 +18,7 @@ class PublicShare {
   shareIndex: BN;
 
   constructor(shareIndex: BNString, shareCommitment: Point) {
-    this.shareCommitment = shareCommitment;
+    this.shareCommitment = new Point(shareCommitment.x, shareCommitment.y);
     this.shareIndex = new BN(shareIndex, "hex");
   }
 }

@@ -1,8 +1,7 @@
 import BN from "bn.js";
 import { keccak256 } from "web3-utils";
 
-import { GenerateNewShareResult, IModule, IThresholdBak } from "../base/aggregateTypes";
-import { SecurityQuestionStoreArgs } from "../base/commonTypes";
+import { GenerateNewShareResult, IModule, IThresholdBak, SecurityQuestionStoreArgs } from "../base/aggregateTypes";
 import Share from "../base/Share";
 import ShareStore, { ShareStoreMap } from "../base/ShareStore";
 import { ecCurve, isEmptyObject } from "../utils";
@@ -35,6 +34,7 @@ class SecurityQuestionsModule implements IModule {
     const sqStore = new SecurityQuestionStore({
       nonce,
       questions,
+      sqPublicShare: newShareStore.share.getPublicShare(),
       shareIndex: newShareStore.share.shareIndex,
       polynomialID: newShareStore.polynomialID,
     });
@@ -50,11 +50,17 @@ class SecurityQuestionsModule implements IModule {
 
   async inputShareFromSecurityQuestions(answerString: string): Promise<void> {
     const sqStore = new SecurityQuestionStore(this.tbSDK.metadata.getGeneralStoreDomain(this.moduleName) as SecurityQuestionStoreArgs);
-    if (isEmptyObject(sqStore)) throw Error("sqStore doesnt exist, has tKey SDK been updated?");
+    if (isEmptyObject(sqStore)) throw Error("sqStore doesnt exist, has tKey SDK been initialized with metadata?");
     const userInputHash = answerToUserInputHashBN(answerString);
     let share = sqStore.nonce.add(userInputHash);
     share = share.umod(ecCurve.curve.n);
     const shareStore = new ShareStore({ share: new Share(sqStore.shareIndex, share), polynomialID: sqStore.polynomialID });
+    // validate if share is correct
+    const derivedPublicShare = shareStore.share.getPublicShare();
+    if (derivedPublicShare.shareCommitment.x.cmp(sqStore.sqPublicShare.shareCommitment.x) !== 0) {
+      throw Error("wrong password");
+    }
+
     const latestShareDetails = await this.tbSDK.catchupToLatestShare(shareStore);
     // TODO: update share nonce on all metadata. would be cleaner in long term?
     // if (shareStore.polynomialID !== latestShareDetails.latestShare.polynomialID) this.storeDeviceShare(latestShareDetails.latestShare);
@@ -72,6 +78,7 @@ class SecurityQuestionsModule implements IModule {
     return new SecurityQuestionStore({
       nonce: newNonce,
       polynomialID: newShareStores[Object.keys(newShareStores)[0]].polynomialID,
+      sqPublicShare: newShareStores[sqStore.shareIndex.toString("hex")].share.getPublicShare(),
       shareIndex: sqStore.shareIndex,
       questions: sqStore.questions,
     });
