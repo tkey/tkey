@@ -10,7 +10,13 @@
       <input type="email" v-model="loginHint" placeholder="Enter your email" />
     </div>
     <div :style="{ marginTop: '20px' }">
+      <input v-model="answer" placeholder="enter your answer" />
+    </div>
+    <div :style="{ marginTop: '20px' }">
       <button @click="login">Login with Torus</button>
+      <button @click="login">Add Security questions </button>
+      <button @click="generateNewShare">generateNewShare</button>
+      <button @click="initializeNewKey">initializeNewKey</button>
     </div>
     <div id="console">
       <p></p>
@@ -47,6 +53,7 @@ export default {
       torusdirectsdk: undefined,
       selectedVerifier: "google",
       loginHint: "",
+      answer:"",
       verifierMap: {
         [GOOGLE]: {
           name: "Google",
@@ -160,6 +167,29 @@ export default {
         console.error(error, "caught");
       }
     },
+    async setSQModuleAnswer() {
+    try {
+      console.log("placeholder")
+    } catch (error) {
+      console.error(error, "caught")
+    }
+  },
+  async generateNewShare() {
+    try {
+      const res = await this.tbsdk.generateNewShare();
+      this.console(res)
+    } catch (error) {
+      console.error(error, "caught")
+    }
+  },
+  async initializeNewKey() {
+    try {
+      const res = await this.tbsdk.initializeNewKey(undefined, false);
+      this.console(res)
+    } catch (error) {
+      console.error(error, "caught")
+    }
+  },
     console(text) {
       document.querySelector("#console>p").innerHTML = typeof text === "object" ? JSON.stringify(text) : text;
     },
@@ -167,7 +197,6 @@ export default {
   async mounted() {
     try {
       const webStorageModule = new WebStorageModule();
-
       const tbsdk =  new ThresholdBak({directParams: {
         baseUrl: `${location.origin}/serviceworker`,
         enableLogging: true,
