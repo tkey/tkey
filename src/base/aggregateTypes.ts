@@ -76,6 +76,8 @@ export interface IThresholdBak {
 
   syncShareMetadata(adjustScopedStore?: (ss: ScopedStore) => ScopedStore): Promise<void>;
 
+  syncSingleShareMetadata(share: BN, adjustScopedStore?: (ss: ScopedStore) => ScopedStore): Promise<void>;
+
   inputShare(shareStore: ShareStore): void;
 
   outputShare(shareIndex: BNString): ShareStore;
@@ -111,4 +113,8 @@ export interface SecurityQuestionStoreArgs {
   polynomialID: PolynomialID;
 
   questions: string;
+}
+
+export interface ShareTransferStorePointerArgs {
+  pointer: BNString;
 }

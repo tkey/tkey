@@ -366,24 +366,28 @@ class ThresholdBak implements IThresholdBak {
 
     for (let index = 0; index < existingShareIndexes.length; index += 1) {
       const shareIndex = existingShareIndexes[index];
-      const newMetadata = this.metadata.clone();
-      let resp;
-      try {
-        resp = await this.storageLayer.getMetadata(allExistingShares[shareIndex].share);
-      } catch (err) {
-        throw new Error(`getMetadata in syncShareMetadata errored: ${err}`);
-      }
-      const specificShareMetadata = new Metadata(resp);
-
-      let scopedStoreToBeSet;
-      if (adjustScopedStore) {
-        scopedStoreToBeSet = adjustScopedStore(specificShareMetadata.scopedStore);
-      } else {
-        scopedStoreToBeSet = specificShareMetadata.scopedStore;
-      }
-      newMetadata.setScopedStore(scopedStoreToBeSet);
-      await this.storageLayer.setMetadata(newMetadata, allExistingShares[shareIndex].share);
+      await this.syncSingleShareMetadata(allExistingShares[shareIndex].share, adjustScopedStore);
     }
+  }
+
+  async syncSingleShareMetadata(share: BN, adjustScopedStore?: (ss: ScopedStore) => ScopedStore): Promise<void> {
+    const newMetadata = this.metadata.clone();
+    let resp;
+    try {
+      resp = await this.storageLayer.getMetadata(share);
+    } catch (err) {
+      throw new Error(`getMetadata in syncShareMetadata errored: ${err}`);
+    }
+    const specificShareMetadata = new Metadata(resp);
+
+    let scopedStoreToBeSet;
+    if (adjustScopedStore) {
+      scopedStoreToBeSet = adjustScopedStore(specificShareMetadata.scopedStore);
+    } else {
+      scopedStoreToBeSet = specificShareMetadata.scopedStore;
+    }
+    newMetadata.setScopedStore(scopedStoreToBeSet);
+    await this.storageLayer.setMetadata(newMetadata, share);
   }
 
   addRefreshMiddleware(
