@@ -39,12 +39,12 @@ class ShareTransferModule implements IModule {
     const encPubKeyX = getPubKeyPoint(this.currentEncKey).x.toString("hex");
     newShareTransferStore[encPubKeyX] = { encPubKey: pubKey } as ShareRequest;
     await this.setShareTransferStore(newShareTransferStore);
+    // watcher
     const timerID = setInterval(async () => {
       const latestShareTransferStore = await this.getShareTransferStore();
       if (latestShareTransferStore[encPubKeyX].encShareInTransit) {
         const shareStoreBuf = await decrypt(pubKey, latestShareTransferStore[encPubKeyX].encShareInTransit);
         callback(new ShareStore(JSON.parse(shareStoreBuf.toString())));
-
         clearInterval(timerID);
       }
     }, 6000);
@@ -65,9 +65,13 @@ class ShareTransferModule implements IModule {
   }
 
   async getShareTransferStore(): Promise<ShareTransferStore> {
-    const shareTransferStorePointer = new ShareTransferStorePointer(
+    let shareTransferStorePointer = new ShareTransferStorePointer(
       this.tbSDK.metadata.getGeneralStoreDomain(this.moduleName) as ShareTransferStorePointerArgs
     );
+    if (shareTransferStorePointer) {
+      shareTransferStorePointer = { pointer: new BN(generatePrivate()) };
+      this.tbSDK.metadata.setGeneralStoreDomain(this.moduleName, shareTransferStorePointer);
+    }
     return (await this.tbSDK.storageLayer.getMetadata(shareTransferStorePointer.pointer)) as ShareTransferStore;
   }
 
