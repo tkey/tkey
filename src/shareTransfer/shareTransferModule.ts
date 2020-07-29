@@ -3,9 +3,10 @@ import BN from "bn.js";
 import { generatePrivate } from "eccrypto";
 
 import { IModule, IThresholdBak, ShareTransferStorePointerArgs } from "../base/aggregateTypes";
-import { getPubKeyECC } from "../base/BNUtils";
+import { getPubKeyECC, getPubKeyPoint } from "../base/BNUtils";
 import { EncryptedMessage } from "../base/commonTypes";
-import { encrypt } from "../utils";
+import ShareStore from "../base/ShareStore";
+import { decrypt, encrypt } from "../utils";
 import ShareTransferStorePointer from "./ShareTransferStorePointer";
 
 class ShareTransferModule implements IModule {
@@ -24,20 +25,29 @@ class ShareTransferModule implements IModule {
     //   this.tbSDK.addRefreshMiddleware(this.moduleName, this.refreshSecurityQuestionsMiddleware.bind(this));
   }
 
-  async requestNewShare(sharedShare: BN): Promise<string> {
+  async requestNewShare(callback: (shareStore: ShareStore) => void): Promise<string> {
     if (this.currentEncKey) throw Error(`Current request already exists ${this.currentEncKey.toString("hex")}`);
     this.currentEncKey = new BN(generatePrivate());
-    const shareTransferStore = await this.getShareTransferStore();
-
     let newShareTransferStore;
+    const shareTransferStore = await this.getShareTransferStore();
     if (shareTransferStore) {
       newShareTransferStore = shareTransferStore;
     } else {
       newShareTransferStore = {};
     }
-    newShareTransferStore[this.currentEncKey.toString("hex")] = { encPubKey: getPubKeyECC(this.currentEncKey) } as ShareRequest;
-    this.tbSDK.metadata.setGeneralStoreDomain(this.moduleName, newShareTransferStore);
-    this.tbSDK.syncSingleShareMetadata(sharedShare);
+    const pubKey = getPubKeyECC(this.currentEncKey);
+    const encPubKeyX = getPubKeyPoint(this.currentEncKey).x.toString("hex");
+    newShareTransferStore[encPubKeyX] = { encPubKey: pubKey } as ShareRequest;
+    await this.setShareTransferStore(newShareTransferStore);
+    const timerID = setInterval(async () => {
+      const latestShareTransferStore = await this.getShareTransferStore();
+      if (latestShareTransferStore[encPubKeyX].encShareInTransit) {
+        const shareStoreBuf = await decrypt(pubKey, latestShareTransferStore[encPubKeyX].encShareInTransit);
+        callback(new ShareStore(JSON.parse(shareStoreBuf.toString())));
+
+        clearInterval(timerID);
+      }
+    }, 6000);
     return getPubKeyECC(this.currentEncKey).toString();
   }
 

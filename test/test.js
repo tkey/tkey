@@ -14,6 +14,7 @@ import { Polynomial } from "../src/base/Polynomial";
 import { generateRandomPolynomial, lagrangeInterpolatePolynomial, lagrangeInterpolation, Metadata, ThresholdBak } from "../src/index";
 import SecurityQuestionsModule from "../src/securityQuestions/SecurityQuestionsModule";
 import ServiceProviderBase from "../src/serviceProvider/ServiceProviderBase";
+import ShareTransferModule from "../src/shareTransfer/ShareTransferModule";
 import TorusStorageLayer from "../src/storage-layer";
 import { ecCurve } from "../src/utils";
 
@@ -248,7 +249,7 @@ describe("SecurityQuestionsModule", function () {
     const tb = new ThresholdBak({
       serviceProvider: defaultSP,
       storageLayer: defaultSL,
-      modules: { securityQuestions: new SecurityQuestionsModule() },
+      modules: { securityQuestions: new ShareTransferModule() },
     });
     const resp1 = await tb.initializeNewKey(undefined, true);
     await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
@@ -287,4 +288,50 @@ describe("SecurityQuestionsModule", function () {
       fail("key should be able to be reconstructed");
     }
   });
+});
+
+describe("ShareTransferModule", function () {
+  it("#should be able to reconstruct key and initialize a key with seciurty questions", async function () {
+    const tb = new ThresholdBak({
+      serviceProvider: defaultSP,
+      storageLayer: defaultSL,
+      modules: { securityQuestions: new ShareTransferModule() },
+    });
+    const resp1 = await tb.initializeNewKey(undefined, true);
+    await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
+    const tb2 = new ThresholdBak({
+      serviceProvider: defaultSP,
+      storageLayer: defaultSL,
+      modules: { securityQuestions: new ShareTransferModule() },
+    });
+    await tb2.initialize();
+
+    await tb2.modules.securityQuestions.inputShareFromSecurityQuestions("blublu");
+    const reconstructedKey = tb2.reconstructKey();
+    if (resp1.privKey.cmp(reconstructedKey) !== 0) {
+      fail("key should be able to be reconstructed");
+    }
+  });
+  // it("#should be able to reconstruct key and initialize a key with seciurty questions after refresh", async function () {
+  //   const tb = new ThresholdBak({
+  //     serviceProvider: defaultSP,
+  //     storageLayer: defaultSL,
+  //     modules: { securityQuestions: new SecurityQuestionsModule() },
+  //   });
+  //   const resp1 = await tb.initializeNewKey(undefined, true);
+  //   await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
+  //   const tb2 = new ThresholdBak({
+  //     serviceProvider: defaultSP,
+  //     storageLayer: defaultSL,
+  //     modules: { securityQuestions: new SecurityQuestionsModule() },
+  //   });
+  //   await tb.generateNewShare();
+  //   await tb2.initialize();
+
+  //   await tb2.modules.securityQuestions.inputShareFromSecurityQuestions("blublu");
+  //   const reconstructedKey = tb2.reconstructKey();
+  //   if (resp1.privKey.cmp(reconstructedKey) !== 0) {
+  //     fail("key should be able to be reconstructed");
+  //   }
+  // });
 });
