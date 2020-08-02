@@ -2,7 +2,7 @@ import { DirectWebSDKArgs } from "@toruslabs/torus-direct-web-sdk";
 import BN from "bn.js";
 
 import Metadata from "../metadata";
-import { BNString, EncryptedMessage, IServiceProvider, IStorageLayer, PolynomialID } from "./commonTypes";
+import { BNString, EncryptedMessage, IServiceProvider, IStorageLayer, PolynomialID, ShareDescriptionMap } from "./commonTypes";
 import Point from "./Point";
 import PublicShare from "./PublicShare";
 import ShareStore, { ScopedStore, ShareStoreMap, ShareStorePolyIDShareIndexMap } from "./ShareStore";
@@ -42,6 +42,7 @@ export type KeyDetails = {
   requiredShares: number;
   threshold: number;
   totalShares: number;
+  shareDescriptions: ShareDescriptionMap;
   modules: ModuleMap;
 };
 
