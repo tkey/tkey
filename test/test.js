@@ -291,7 +291,7 @@ describe("SecurityQuestionsModule", function () {
 });
 
 describe("ShareTransferModule", function () {
-  it("#should be able to reconstruct key and initialize a key with seciurty questions", async function () {
+  it("#should be able to transfer share via the module", async function () {
     const tb = new ThresholdBak({
       serviceProvider: defaultSP,
       storageLayer: defaultSL,
