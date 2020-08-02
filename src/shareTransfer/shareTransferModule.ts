@@ -54,10 +54,10 @@ class ShareTransferModule implements IModule {
         const shareStoreBuf = await decrypt(toPrivKeyECC(this.currentEncKey), latestShareTransferStore[encPubKeyX].encShareInTransit);
         const receivedShare = new ShareStore(JSON.parse(shareStoreBuf.toString()));
         await this.tbSDK.inputShareSafe(receivedShare);
-        callback(receivedShare);
+        if (callback) callback(receivedShare);
         clearInterval(timerID);
       }
-    }, 6000);
+    }, 1000);
     return encPubKeyX;
   }
 

@@ -124,7 +124,7 @@ class ThresholdBak implements IThresholdBak {
     return this.catchupToLatestShare(nextShare);
   }
 
-  reconstructKey(): BN {
+  async reconstructKey(): Promise<BN> {
     if (!this.metadata) {
       throw Error("metadata not found, SDK likely not intialized");
     }
@@ -132,15 +132,36 @@ class ThresholdBak implements IThresholdBak {
     const requiredThreshold = pubPoly.getThreshold();
     const pubPolyID = pubPoly.getPolynomialID();
 
-    // check if threshold is met
-    const polyShares = Object.keys(this.shares[pubPolyID]);
-    const numberOfShares = polyShares.length;
-    if (numberOfShares < requiredThreshold) {
-      // check if we have enough shares first
-      // since we don't on the latest polynomial, we recursively check if the previous shares have the share indexes we require
-      // const listOfShareIndexesToCheck
-      throw Error(`not enough shares for reconstruction, require ${requiredThreshold} but got ${numberOfShares}`);
+    // check if we have enough shares to meet threshold
+    let sharesLeft = requiredThreshold;
+    // we don't jsut check the latest poly but
+    //  we check if the shares on previous polynomials in our stores have the share indexes we require
+    const fullShareList = Object.keys(this.metadata.publicShares[pubPolyID]);
+    const shareIndexesRequired = {};
+    for (let i = 0; i < fullShareList.length; i += 1) {
+      shareIndexesRequired[fullShareList[i]] = true;
     }
+    for (let z = this.metadata.polyIDList.length - 1; z >= 0 && sharesLeft > 0; z -= 1) {
+      const sharesForPoly = this.shares[this.metadata.polyIDList[z]];
+      if (sharesForPoly) {
+        const shareIndexesForPoly = Object.keys(sharesForPoly);
+        for (let k = 0; k < shareIndexesForPoly.length && sharesLeft > 0; k += 1) {
+          if (shareIndexesForPoly[k] in shareIndexesRequired) {
+            const latestShareRes = await this.catchupToLatestShare(sharesForPoly[shareIndexesForPoly[k]]);
+            if (latestShareRes.latestShare.polynomialID === pubPolyID) {
+              sharesLeft -= 1;
+              delete shareIndexesRequired[shareIndexesForPoly[k]];
+              this.inputShare(latestShareRes.latestShare);
+            }
+          }
+        }
+      }
+    }
+    if (sharesLeft > 0) {
+      throw Error(`not enough shares for reconstruction, require ${requiredThreshold} but have ${sharesLeft - requiredThreshold}`);
+    }
+
+    const polyShares = Object.keys(this.shares[pubPolyID]);
     const shareArr = [];
     const shareIndexArr = [];
     for (let i = 0; i < requiredThreshold; i += 1) {

@@ -69,7 +69,7 @@ export interface IThresholdBak {
 
   catchupToLatestShare(shareStore: ShareStore): Promise<CatchupToLatestShareResult>;
 
-  reconstructKey(): BN;
+  reconstructKey(): Promise<BN>;
 
   generateNewShare(): Promise<GenerateNewShareResult>;
 

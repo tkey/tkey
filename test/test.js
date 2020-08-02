@@ -32,7 +32,7 @@ describe("threshold bak", function () {
     const tb2 = new ThresholdBak({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize();
     tb2.inputShare(resp1.deviceShare);
-    const reconstructedKey = tb2.reconstructKey();
+    const reconstructedKey = await tb2.reconstructKey();
     if (resp1.privKey.cmp(reconstructedKey) !== 0) {
       fail("key should be able to be reconstructed");
     }
@@ -45,7 +45,7 @@ describe("threshold bak", function () {
     const tb2 = new ThresholdBak({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize();
     tb2.inputShare(resp1.userShare);
-    const reconstructedKey = tb2.reconstructKey();
+    const reconstructedKey = await tb2.reconstructKey();
     if (resp1.privKey.cmp(reconstructedKey) !== 0) {
       fail("key should be able to be reconstructed");
     }
@@ -56,7 +56,7 @@ describe("threshold bak", function () {
     const tb2 = new ThresholdBak({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize();
     tb2.inputShare(resp1.deviceShare);
-    const reconstructedKey = tb2.reconstructKey();
+    const reconstructedKey = await tb2.reconstructKey();
     if (resp1.privKey.cmp(reconstructedKey) !== 0) {
       fail("key should be able to be reconstructed");
     }
@@ -64,7 +64,7 @@ describe("threshold bak", function () {
     const tb3 = new ThresholdBak({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb3.initialize();
     tb3.inputShare(resp2.newShareStores[resp2.newShareIndex.toString("hex")]);
-    const finalKey = tb3.reconstructKey();
+    const finalKey = await tb3.reconstructKey();
     if (resp1.privKey.cmp(finalKey) !== 0) {
       fail("key should be able to be reconstructed after adding new share");
     }
@@ -77,7 +77,7 @@ describe("threshold bak", function () {
     const tb2 = new ThresholdBak({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize(resp1.userShare);
     tb2.inputShare(resp1.deviceShare);
-    const reconstructedKey = tb2.reconstructKey();
+    const reconstructedKey = await tb2.reconstructKey();
     if (resp1.privKey.cmp(reconstructedKey) !== 0) {
       fail("key should be able to be reconstructed");
     }
@@ -91,7 +91,7 @@ describe("threshold bak", function () {
     const tb2 = new ThresholdBak({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize(resp1.userShare);
     tb2.inputShare(newShares.newShareStores[resp1.deviceShare.share.shareIndex.toString("hex")]);
-    const reconstructedKey = tb2.reconstructKey();
+    const reconstructedKey = await tb2.reconstructKey();
     if (resp1.privKey.cmp(reconstructedKey) !== 0) {
       fail("key should be able to be reconstructed");
     }
@@ -102,7 +102,7 @@ describe("threshold bak", function () {
     const uniqueSL = new TorusStorageLayer({ serviceProvider: uniqueSP });
     const tb = new ThresholdBak({ serviceProvider: uniqueSP, storageLayer: uniqueSL });
     await tb.initialize();
-    const reconstructedKey = tb.reconstructKey();
+    const reconstructedKey = await tb.reconstructKey();
     if (tb.privKey.cmp(reconstructedKey) !== 0) {
       fail("key should be able to be reconstructed");
     }
@@ -261,7 +261,7 @@ describe("SecurityQuestionsModule", function () {
     await tb2.initialize();
 
     await tb2.modules.securityQuestions.inputShareFromSecurityQuestions("blublu");
-    const reconstructedKey = tb2.reconstructKey();
+    const reconstructedKey = await tb2.reconstructKey();
     if (resp1.privKey.cmp(reconstructedKey) !== 0) {
       fail("key should be able to be reconstructed");
     }
@@ -283,7 +283,7 @@ describe("SecurityQuestionsModule", function () {
     await tb2.initialize();
 
     await tb2.modules.securityQuestions.inputShareFromSecurityQuestions("blublu");
-    const reconstructedKey = tb2.reconstructKey();
+    const reconstructedKey = await tb2.reconstructKey();
     if (resp1.privKey.cmp(reconstructedKey) !== 0) {
       fail("key should be able to be reconstructed");
     }
@@ -291,7 +291,7 @@ describe("SecurityQuestionsModule", function () {
 });
 
 describe("ShareTransferModule", function () {
-  it.only("#should be able to reconstruct key and initialize a key with seciurty questions", async function (done) {
+  it.only("#should be able to reconstruct key and initialize a key with seciurty questions", async function () {
     const tb = new ThresholdBak({
       serviceProvider: defaultSP,
       storageLayer: defaultSL,
@@ -305,21 +305,27 @@ describe("ShareTransferModule", function () {
     });
     await tb2.initialize();
 
-    const pubkey = await tb2.modules.shareTransfer.requestNewShare(async function (newShare) {
-      await tb2.inputShare(newShare);
-      const reconstructedKey = tb2.reconstructKey();
-      if (resp1.privKey.cmp(reconstructedKey) !== 0) {
-        fail("key should be able to be reconstructed");
-      }
-      done();
-    });
+    // usually should be called in callback, but mocha does not allow
+    const pubkey = await tb2.modules.shareTransfer.requestNewShare();
 
     // eslint-disable-next-line promise/param-names
     await new Promise((res) => {
-      setTimeout(res, 5000);
+      setTimeout(res, 200);
     });
 
-    tb.modules.shareTransfer.approveRequest(pubkey);
+    await tb.modules.shareTransfer.approveRequest(pubkey);
+
+    // eslint-disable-next-line promise/param-names
+    await new Promise((res) => {
+      setTimeout(res, 1001);
+    });
+
+    debugger;
+
+    const reconstructedKey = await tb2.reconstructKey();
+    if (resp1.privKey.cmp(reconstructedKey) !== 0) {
+      fail("key should be able to be reconstructed");
+    }
   });
   // it("#should be able to reconstruct key and initialize a key with seciurty questions after refresh", async function () {
   //   const tb = new ThresholdBak({
@@ -338,7 +344,7 @@ describe("ShareTransferModule", function () {
   //   await tb2.initialize();
 
   //   await tb2.modules.securityQuestions.inputShareFromSecurityQuestions("blublu");
-  //   const reconstructedKey = tb2.reconstructKey();
+  //   const reconstructedKey = await tb2.reconstructKey();
   //   if (resp1.privKey.cmp(reconstructedKey) !== 0) {
   //     fail("key should be able to be reconstructed");
   //   }
