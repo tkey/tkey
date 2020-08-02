@@ -72,11 +72,6 @@ class ThresholdBak implements IThresholdBak {
   }
 
   async initialize(input: ShareStore): Promise<KeyDetails> {
-    // initialize modules
-    for (const moduleName in this.modules) {
-      this.modules[moduleName].initialize(this);
-    }
-
     let shareStore;
     if (input instanceof ShareStore) {
       shareStore = input;
@@ -103,6 +98,12 @@ class ThresholdBak implements IThresholdBak {
     this.metadata = latestShareDetails.shareMetadata;
     this.inputShare(latestShareDetails.latestShare);
     // now that we have metadata we set the requirements for reconstruction
+
+    // initialize modules
+    for (const moduleName in this.modules) {
+      await this.modules[moduleName].initialize(this);
+    }
+
     return this.getKeyDetails();
   }
 
@@ -242,13 +243,6 @@ class ThresholdBak implements IThresholdBak {
   }
 
   async initializeNewKey(userInput?: BN, initializeModules?: boolean): Promise<InitializeNewKeyResult> {
-    // initialize modules
-    if (initializeModules) {
-      for (const moduleName in this.modules) {
-        this.modules[moduleName].initialize(this);
-      }
-    }
-
     const tmpPriv = generatePrivate();
     this.setKey(new BN(tmpPriv));
 
@@ -297,6 +291,13 @@ class ThresholdBak implements IThresholdBak {
     };
     if (userInput) {
       result.userShare = new ShareStore({ share: shares[shareIndexes[2].toString("hex")], polynomialID: poly.getPolynomialID() });
+    }
+
+    // initialize modules
+    if (initializeModules) {
+      for (const moduleName in this.modules) {
+        await this.modules[moduleName].initialize(this);
+      }
     }
 
     return result;
@@ -402,6 +403,13 @@ class ThresholdBak implements IThresholdBak {
       throw Error("storeDeviceShare already set");
     }
     this.storeDeviceShare = storeDeviceStorage;
+  }
+
+  async addShareDescription(shareIndex: string, description: string, updateMetadata?: boolean): Promise<void> {
+    this.metadata.addShareDescription(shareIndex, description);
+    if (updateMetadata) {
+      await this.syncShareMetadata();
+    }
   }
 }
 

@@ -1,7 +1,7 @@
 /* eslint-disable guard-for-in */
 import stringify from "fast-json-stable-stringify";
 
-import { PolynomialID } from "./base/commonTypes";
+import { PolynomialID, ShareDescriptionMap } from "./base/commonTypes";
 import Point from "./base/Point";
 import { Polynomial, ShareMap } from "./base/Polynomial";
 import PublicPolynomial, { PublicPolynomialMap } from "./base/PublicPolynomial";
@@ -16,6 +16,8 @@ class Metadata {
 
   publicShares: PublicSharePolyIDShareIndexMap;
 
+  shareDescriptions: ShareDescriptionMap;
+
   polyIDList: Array<PolynomialID>;
 
   generalStore: {
@@ -25,21 +27,21 @@ class Metadata {
   scopedStore: ScopedStore;
 
   constructor(input) {
+    this.publicPolynomials = {};
+    this.publicShares = {};
+    this.generalStore = {};
+    this.shareDescriptions = {};
+
     if (input instanceof Point) {
       this.pubKey = input;
-      this.publicPolynomials = {};
-      this.publicShares = {};
       this.polyIDList = [];
-      this.generalStore = {};
     } else if (typeof input === "object") {
       // assumed to be JSON.parsed object
       this.pubKey = new Point(input.pubKey.x, input.pubKey.y);
-      this.publicPolynomials = {};
-      this.publicShares = {};
       this.polyIDList = input.polyIDList;
-      this.generalStore = {};
       if (input.generalStore) this.generalStore = input.generalStore;
       if (input.scopedStore) this.scopedStore = input.scopedStore;
+      if (input.shareDescriptions) this.shareDescriptions = input.shareDescriptions;
       // for publicPolynomials
       for (const pubPolyID in input.publicPolynomials) {
         const pointCommitments = [];
@@ -113,6 +115,14 @@ class Metadata {
 
   getEncryptedShare(): ShareStore {
     return this.scopedStore.encryptedShare;
+  }
+
+  addShareDescription(shareIndex: string, description: string): void {
+    if (this.shareDescriptions[shareIndex]) {
+      this.shareDescriptions[shareIndex].push(description);
+    } else {
+      this.shareDescriptions[shareIndex] = [description];
+    }
   }
 
   clone(): Metadata {

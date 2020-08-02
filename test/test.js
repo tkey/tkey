@@ -249,7 +249,7 @@ describe("SecurityQuestionsModule", function () {
     const tb = new ThresholdBak({
       serviceProvider: defaultSP,
       storageLayer: defaultSL,
-      modules: { securityQuestions: new ShareTransferModule() },
+      modules: { securityQuestions: new SecurityQuestionsModule() },
     });
     const resp1 = await tb.initializeNewKey(undefined, true);
     await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
@@ -291,26 +291,35 @@ describe("SecurityQuestionsModule", function () {
 });
 
 describe("ShareTransferModule", function () {
-  it("#should be able to reconstruct key and initialize a key with seciurty questions", async function () {
+  it.only("#should be able to reconstruct key and initialize a key with seciurty questions", async function (done) {
     const tb = new ThresholdBak({
       serviceProvider: defaultSP,
       storageLayer: defaultSL,
-      modules: { securityQuestions: new ShareTransferModule() },
+      modules: { shareTransfer: new ShareTransferModule() },
     });
     const resp1 = await tb.initializeNewKey(undefined, true);
-    await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
     const tb2 = new ThresholdBak({
       serviceProvider: defaultSP,
       storageLayer: defaultSL,
-      modules: { securityQuestions: new ShareTransferModule() },
+      modules: { shareTransfer: new ShareTransferModule() },
     });
     await tb2.initialize();
 
-    await tb2.modules.securityQuestions.inputShareFromSecurityQuestions("blublu");
-    const reconstructedKey = tb2.reconstructKey();
-    if (resp1.privKey.cmp(reconstructedKey) !== 0) {
-      fail("key should be able to be reconstructed");
-    }
+    const pubkey = await tb2.modules.shareTransfer.requestNewShare(async function (newShare) {
+      await tb2.inputShare(newShare);
+      const reconstructedKey = tb2.reconstructKey();
+      if (resp1.privKey.cmp(reconstructedKey) !== 0) {
+        fail("key should be able to be reconstructed");
+      }
+      done();
+    });
+
+    // eslint-disable-next-line promise/param-names
+    await new Promise((res) => {
+      setTimeout(res, 5000);
+    });
+
+    tb.modules.shareTransfer.approveRequest(pubkey);
   });
   // it("#should be able to reconstruct key and initialize a key with seciurty questions after refresh", async function () {
   //   const tb = new ThresholdBak({

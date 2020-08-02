@@ -67,3 +67,7 @@ export type TorusStorageLayerAPIParams = {
   set_data: unknown;
   signature: Buffer;
 };
+
+export type ShareDescriptionMap = {
+  [shareIndexStr: string]: Array<string>;
+};

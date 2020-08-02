@@ -20,13 +20,14 @@ class SecurityQuestionsModule implements IModule {
     this.moduleName = "securityQuestions";
   }
 
-  initialize(tbSDK: IThresholdBak): void {
+  async initialize(tbSDK: IThresholdBak): Promise<void> {
     this.tbSDK = tbSDK;
     this.tbSDK.addRefreshMiddleware(this.moduleName, this.refreshSecurityQuestionsMiddleware.bind(this));
   }
 
   async generateNewShareWithSecurityQuestions(answerString: string, questions: string): Promise<GenerateNewShareResult> {
     const newSharesDetails = await this.tbSDK.generateNewShare();
+    await this.tbSDK.addShareDescription(newSharesDetails.newShareIndex.toString("hex"), `${this.moduleName}-${questions}`);
     const newShareStore = newSharesDetails.newShareStores[newSharesDetails.newShareIndex.toString("hex")];
     const userInputHash = answerToUserInputHashBN(answerString);
     let nonce = newShareStore.share.share.sub(userInputHash);

@@ -2,7 +2,7 @@ import { DirectWebSDKArgs } from "@toruslabs/torus-direct-web-sdk";
 import BN from "bn.js";
 
 import Metadata from "../metadata";
-import { BNString, IServiceProvider, IStorageLayer, PolynomialID } from "./commonTypes";
+import { BNString, EncryptedMessage, IServiceProvider, IStorageLayer, PolynomialID } from "./commonTypes";
 import Point from "./Point";
 import PublicShare from "./PublicShare";
 import ShareStore, { ScopedStore, ShareStoreMap, ShareStorePolyIDShareIndexMap } from "./ShareStore";
@@ -15,7 +15,7 @@ export type ModuleMap = {
 
 export interface IModule {
   moduleName: string;
-  initialize(tbSDK: IThresholdBak): void;
+  initialize(tbSDK: IThresholdBak): Promise<void>;
 }
 export type InitializeNewKeyResult = {
   privKey: BN;
@@ -89,6 +89,8 @@ export interface IThresholdBak {
   addRefreshMiddleware(moduleName: string, middleware: (generalStore: unknown) => unknown): void;
 
   setDeviceStorage(storeDeviceStorage: (deviceShareStore: ShareStore) => Promise<void>): void;
+
+  addShareDescription(shareIndex: string, description: string, updateMetadata?: boolean): Promise<void>;
 }
 
 export type ThresholdBakArgs = {
@@ -117,4 +119,15 @@ export interface SecurityQuestionStoreArgs {
 
 export interface ShareTransferStorePointerArgs {
   pointer: BNString;
+}
+
+export type BufferObj = {
+  type: string;
+  data: Array<number>;
+};
+
+export interface ShareRequestArgs {
+  encPubKey: unknown;
+
+  encShareInTransit: EncryptedMessage;
 }
