@@ -291,7 +291,7 @@ describe("SecurityQuestionsModule", function () {
 });
 
 describe("ShareTransferModule", function () {
-  it.only("#should be able to reconstruct key and initialize a key with seciurty questions", async function () {
+  it("#should be able to reconstruct key and initialize a key with seciurty questions", async function () {
     const tb = new ThresholdBak({
       serviceProvider: defaultSP,
       storageLayer: defaultSL,
@@ -319,8 +319,6 @@ describe("ShareTransferModule", function () {
     await new Promise((res) => {
       setTimeout(res, 1001);
     });
-
-    debugger;
 
     const reconstructedKey = await tb2.reconstructKey();
     if (resp1.privKey.cmp(reconstructedKey) !== 0) {
