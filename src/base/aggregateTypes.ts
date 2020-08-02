@@ -15,6 +15,8 @@ export type ModuleMap = {
 
 export interface IModule {
   moduleName: string;
+  // called to initialize a module on the main TBSDK.
+  // currenty called immedietly after the base metadata has been set on the SDK
   initialize(tbSDK: IThresholdBak): Promise<void>;
 }
 export type InitializeNewKeyResult = {
@@ -80,6 +82,8 @@ export interface IThresholdBak {
   syncSingleShareMetadata(share: BN, adjustScopedStore?: (ss: ScopedStore) => ScopedStore): Promise<void>;
 
   inputShare(shareStore: ShareStore): void;
+
+  inputShareSafe(shareStore: ShareStore): Promise<void>;
 
   outputShare(shareIndex: BNString): ShareStore;
 

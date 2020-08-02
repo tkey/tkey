@@ -84,7 +84,7 @@ class ThresholdBak implements IThresholdBak {
 
       if (isEmptyObject(rawServiceProviderShare)) {
         // no metadata set, assumes new user
-        await this.initializeNewKey();
+        await this.initializeNewKey(undefined, true);
         return this.getKeyDetails();
       }
       // else we continue with catching up share and metadata
@@ -136,7 +136,9 @@ class ThresholdBak implements IThresholdBak {
     const polyShares = Object.keys(this.shares[pubPolyID]);
     const numberOfShares = polyShares.length;
     if (numberOfShares < requiredThreshold) {
-      // check if we have any encrypted shares first
+      // check if we have enough shares first
+      // since we don't on the latest polynomial, we recursively check if the previous shares have the share indexes we require
+      // const listOfShareIndexesToCheck
       throw Error(`not enough shares for reconstruction, require ${requiredThreshold} but got ${numberOfShares}`);
     }
     const shareArr = [];
@@ -280,6 +282,14 @@ class ThresholdBak implements IThresholdBak {
       this.inputShare(new ShareStore({ share: shares[shareIndex.toString("hex")], polynomialID: poly.getPolynomialID() }));
     }
     this.metadata = metadata;
+
+    // initialize modules
+    if (initializeModules) {
+      for (const moduleName in this.modules) {
+        await this.modules[moduleName].initialize(this);
+      }
+    }
+
     if (this.storeDeviceShare) {
       this.storeDeviceShare(new ShareStore({ share: shares[shareIndexes[1].toString("hex")], polynomialID: poly.getPolynomialID() }));
     }
@@ -292,14 +302,6 @@ class ThresholdBak implements IThresholdBak {
     if (userInput) {
       result.userShare = new ShareStore({ share: shares[shareIndexes[2].toString("hex")], polynomialID: poly.getPolynomialID() });
     }
-
-    // initialize modules
-    if (initializeModules) {
-      for (const moduleName in this.modules) {
-        await this.modules[moduleName].initialize(this);
-      }
-    }
-
     return result;
   }
 
@@ -316,6 +318,27 @@ class ThresholdBak implements IThresholdBak {
       this.shares[ss.polynomialID] = {};
     }
     this.shares[ss.polynomialID][ss.share.shareIndex.toString("hex")] = ss;
+  }
+
+  // inputs a share ensuring that the share is the latest share AND metadata is udpated to its latest state
+  async inputShareSafe(shareStore: ShareStore): Promise<void> {
+    let ss;
+    if (shareStore instanceof ShareStore) {
+      ss = shareStore;
+    } else if (typeof shareStore === "object") {
+      ss = new ShareStore(shareStore);
+    } else {
+      throw TypeError("can only add type ShareStore into shares");
+    }
+    const latestShareRes = await this.catchupToLatestShare(ss);
+    // if not in poly id list, metadata is probably outdated
+    if (!this.metadata.polyIDList.includes(latestShareRes.latestShare.polynomialID)) {
+      this.metadata = latestShareRes.shareMetadata;
+    }
+    if (!(latestShareRes.latestShare.polynomialID in this.shares)) {
+      this.shares[latestShareRes.latestShare.polynomialID] = {};
+    }
+    this.shares[latestShareRes.latestShare.polynomialID][latestShareRes.latestShare.share.shareIndex.toString("hex")] = latestShareRes.latestShare;
   }
 
   outputShare(shareIndex: BNString): ShareStore {
