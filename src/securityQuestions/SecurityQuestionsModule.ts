@@ -27,7 +27,7 @@ class SecurityQuestionsModule implements IModule {
 
   async generateNewShareWithSecurityQuestions(answerString: string, questions: string): Promise<GenerateNewShareResult> {
     const newSharesDetails = await this.tbSDK.generateNewShare();
-    await this.tbSDK.addShareDescription(newSharesDetails.newShareIndex.toString("hex"), `${this.moduleName}-${questions}`);
+    await this.tbSDK.addShareDescription(newSharesDetails.newShareIndex.toString("hex"), JSON.stringify({ module: this.moduleName, questions }));
     const newShareStore = newSharesDetails.newShareStores[newSharesDetails.newShareIndex.toString("hex")];
     const userInputHash = answerToUserInputHashBN(answerString);
     let nonce = newShareStore.share.share.sub(userInputHash);

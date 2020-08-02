@@ -1,3 +1,5 @@
+// import Bowser from "bowser"; // ES6 (and TypeScript with --esModuleInterop enabled)
+
 import { IModule, IThresholdBak } from "../base/aggregateTypes";
 import ShareStore from "../base/ShareStore";
 
@@ -90,6 +92,10 @@ class WebStorageModule implements IModule {
   async storeDeviceShare(deviceShareStore: ShareStore): Promise<void> {
     await this.storeShareOnLocalStorage(deviceShareStore);
     await this.storeShareOnFileStorage(deviceShareStore);
+    await this.tbSDK.addShareDescription(
+      deviceShareStore.share.shareIndex.toString("hex"),
+      JSON.stringify({ module: this.moduleName, userAgent: window.navigator.userAgent })
+    );
   }
 
   async inputShareFromWebStorage(): Promise<void> {
@@ -136,7 +142,6 @@ class WebStorageModule implements IModule {
     if (window.requestFileSystem) {
       const grantedBytes = await requestQuota();
       const fs = await chromeRequestFileSystem(grantedBytes);
-
       const fileEntry = await getFile(fs, fileName, true);
       await new Promise(function (resolve) {
         fileEntry.createWriter(
