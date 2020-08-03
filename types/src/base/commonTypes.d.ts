@@ -17,12 +17,6 @@ export interface ServiceProviderArgs {
 export interface TorusServiceProviderArgs extends ServiceProviderArgs {
     directParams: DirectWebSDKArgs;
 }
-export interface SecurityQuestionStoreArgs {
-    nonce: BNString;
-    shareIndex: BNString;
-    polynomialID: PolynomialID;
-    questions: string;
-}
 export interface IPoint {
     x: BN;
     y: BN;
@@ -57,4 +51,7 @@ export declare type TorusStorageLayerAPIParams = {
     pub_key_Y: string;
     set_data: unknown;
     signature: Buffer;
+};
+export declare type ShareDescriptionMap = {
+    [shareIndexStr: string]: Array<string>;
 };

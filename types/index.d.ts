@@ -3,5 +3,6 @@ import SecurityQuestionsModule from "./src/securityQuestions/SecurityQuestionsMo
 import ServiceProviderBase from "./src/serviceProvider/ServiceProviderBase";
 import TorusServiceProvider from "./src/serviceProvider/TorusServiceProvider";
 import WebStorageModule from "./src/webStorage/WebStorageModule";
+import ChromeExtensionStorageModule from "./src/chromeStorage/ChromeStorageModule";
 export default ThresholdBak;
-export { ThresholdBak, TorusServiceProvider, ServiceProviderBase, WebStorageModule, SecurityQuestionsModule };
+export { ThresholdBak, TorusServiceProvider, ServiceProviderBase, WebStorageModule, ChromeExtensionStorageModule, SecurityQuestionsModule };
