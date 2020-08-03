@@ -37,9 +37,10 @@ export default class ChromeExtensionStorageModule implements IModule {
   }
 
   async getStoreFromChromeExtensionStorage(chrome: any, verifierId: string): Promise<ShareStore> {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       chrome.storage.sync.get([verifierId], async (result) => {
         const verifierIdObj = JSON.parse(result[verifierId]);
+        if (!verifierIdObj) reject();
         this.tbSDK.inputShare(verifierIdObj as ShareStore);
         resolve(verifierIdObj as ShareStore);
       });
