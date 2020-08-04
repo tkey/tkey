@@ -94,6 +94,7 @@
     "beforeEach": true,
     "afterEach": true,
     "describe": true,
-    "expect": true
+    "expect": true,
+    "chrome": true
   }
 }
