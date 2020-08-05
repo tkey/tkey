@@ -174,6 +174,22 @@ class ThresholdBak implements IThresholdBak {
     return this.privKey;
   }
 
+  reconstructLatestPoly(): Polynomial {
+    const pubPoly = this.metadata.getLatestPublicPolynomial();
+    const pubPolyID = pubPoly.getPolynomialID();
+    const threshold = pubPoly.getThreshold();
+
+    const pointsArr = [];
+    const sharesForExistingPoly = Object.keys(this.shares[pubPolyID]);
+    if (sharesForExistingPoly.length < threshold) {
+      throw Error("not enough shares to reconstruct poly");
+    }
+    for (let i = 0; i < threshold; i += 1) {
+      pointsArr.push(new Point(new BN(sharesForExistingPoly[i], "hex"), this.shares[pubPolyID][sharesForExistingPoly[i]].share.share));
+    }
+    return lagrangeInterpolatePolynomial(pointsArr);
+  }
+
   async generateNewShare(): Promise<GenerateNewShareResult> {
     if (!this.metadata) {
       throw Error("metadata not found, SDK likely not intialized");
@@ -372,7 +388,17 @@ class ThresholdBak implements IThresholdBak {
     } else if (typeof shareIndex === "string") {
       shareIndexParsed = new BN(shareIndex, "hex");
     }
-    return this.shares[this.metadata.getLatestPublicPolynomial().getPolynomialID()][shareIndexParsed.toString("hex")];
+
+    const latestPolyID = this.metadata.getLatestPublicPolynomial().getPolynomialID();
+    if (!this.metadata.publicShares[latestPolyID][shareIndexParsed]) {
+      throw Error("no such share index created");
+    }
+    const shareFromStore = this.shares[latestPolyID][shareIndexParsed.toString("hex")];
+    if (shareFromStore) return shareFromStore;
+    const poly = this.reconstructLatestPoly();
+    const shareMap = poly.generateShares([shareIndex]);
+
+    return new ShareStore({ share: shareMap[shareIndexParsed], polynomialID: latestPolyID });
   }
 
   setKey(privKey: BN): void {
