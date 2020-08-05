@@ -313,7 +313,7 @@ class ThresholdBak implements IThresholdBak {
     }
 
     if (this.storeDeviceShare) {
-      this.storeDeviceShare(new ShareStore({ share: shares[shareIndexes[1].toString("hex")], polynomialID: poly.getPolynomialID() }));
+      await this.storeDeviceShare(new ShareStore({ share: shares[shareIndexes[1].toString("hex")], polynomialID: poly.getPolynomialID() }));
     }
 
     const result = {
