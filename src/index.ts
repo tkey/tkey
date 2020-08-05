@@ -114,14 +114,15 @@ class ThresholdBak implements IThresholdBak {
     } catch (err) {
       throw new Error(`getMetadata in initialize errored: ${err}`);
     }
-    const shareMetadata = new Metadata(metadata);
+    let shareMetadata;
     let nextShare;
     try {
+      shareMetadata = new Metadata(metadata);
       nextShare = new ShareStore(shareMetadata.getEncryptedShare());
+      return this.catchupToLatestShare(nextShare);
     } catch (err) {
       return { latestShare: shareStore, shareMetadata };
     }
-    return this.catchupToLatestShare(nextShare);
   }
 
   async reconstructKey(): Promise<BN> {
