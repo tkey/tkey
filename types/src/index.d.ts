@@ -19,17 +19,20 @@ declare class ThresholdBak implements IThresholdBak {
     constructor({ enableLogging, modules, serviceProvider, storageLayer, directParams }: ThresholdBakArgs);
     initialize(input: ShareStore): Promise<KeyDetails>;
     catchupToLatestShare(shareStore: ShareStore): Promise<CatchupToLatestShareResult>;
-    reconstructKey(): BN;
+    reconstructKey(): Promise<BN>;
     generateNewShare(): Promise<GenerateNewShareResult>;
     refreshShares(threshold: number, newShareIndexes: Array<string>, previousPolyID: PolynomialID): Promise<RefreshSharesResult>;
     initializeNewKey(userInput?: BN, initializeModules?: boolean): Promise<InitializeNewKeyResult>;
     inputShare(shareStore: ShareStore): void;
+    inputShareSafe(shareStore: ShareStore): Promise<void>;
     outputShare(shareIndex: BNString): ShareStore;
     setKey(privKey: BN): void;
     getKeyDetails(): KeyDetails;
     syncShareMetadata(adjustScopedStore?: (ss: ScopedStore) => ScopedStore): Promise<void>;
+    syncSingleShareMetadata(share: BN, adjustScopedStore?: (ss: ScopedStore) => ScopedStore): Promise<void>;
     addRefreshMiddleware(moduleName: string, middleware: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap) => unknown): void;
     setDeviceStorage(storeDeviceStorage: (deviceShareStore: ShareStore) => Promise<void>): void;
+    addShareDescription(shareIndex: string, description: string, updateMetadata?: boolean): Promise<void>;
 }
 declare function lagrangeInterpolatePolynomial(points: Array<Point>): Polynomial;
 declare function lagrangeInterpolation(shares: Array<BN>, nodeIndex: Array<BN>): BN;

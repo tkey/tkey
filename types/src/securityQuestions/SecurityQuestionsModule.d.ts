@@ -4,7 +4,7 @@ declare class SecurityQuestionsModule implements IModule {
     moduleName: string;
     tbSDK: IThresholdBak;
     constructor();
-    initialize(tbSDK: IThresholdBak): void;
+    initialize(tbSDK: IThresholdBak): Promise<void>;
     generateNewShareWithSecurityQuestions(answerString: string, questions: string): Promise<GenerateNewShareResult>;
     getSecurityQuestions(): string;
     inputShareFromSecurityQuestions(answerString: string): Promise<void>;
