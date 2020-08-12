@@ -288,6 +288,29 @@ describe("SecurityQuestionsModule", function () {
       fail("key should be able to be reconstructed");
     }
   });
+  it("#should be able to change password", async function () {
+    const tb = new ThresholdBak({
+      serviceProvider: defaultSP,
+      storageLayer: defaultSL,
+      modules: { securityQuestions: new SecurityQuestionsModule() },
+    });
+    const resp1 = await tb.initializeNewKey(undefined, true);
+    await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
+    await tb.modules.securityQuestions.changeSecurityQuestionAndAnswer("dodo", "who is your cat?");
+
+    const tb2 = new ThresholdBak({
+      serviceProvider: defaultSP,
+      storageLayer: defaultSL,
+      modules: { securityQuestions: new SecurityQuestionsModule() },
+    });
+    await tb2.initialize();
+
+    await tb2.modules.securityQuestions.inputShareFromSecurityQuestions("dodo");
+    const reconstructedKey = await tb2.reconstructKey();
+    if (resp1.privKey.cmp(reconstructedKey) !== 0) {
+      fail("key should be able to be reconstructed");
+    }
+  });
 });
 
 describe("ShareTransferModule", function () {
