@@ -31,6 +31,8 @@ class SecurityQuestionsModule implements IModule {
   }
 
   async generateNewShareWithSecurityQuestions(answerString: string, questions: string): Promise<GenerateNewShareResult> {
+    const oldSqStore = new SecurityQuestionStore(this.tbSDK.metadata.getGeneralStoreDomain(this.moduleName) as SecurityQuestionStoreArgs);
+    if (isEmptyObject(oldSqStore)) throw Error("sqStore doesnt exist, has tKey SDK been initialized with metadata?");
     const newSharesDetails = await this.tbSDK.generateNewShare();
     await this.tbSDK.addShareDescription(newSharesDetails.newShareIndex.toString("hex"), JSON.stringify({ module: this.moduleName, questions }));
     const newShareStore = newSharesDetails.newShareStores[newSharesDetails.newShareIndex.toString("hex")];
@@ -74,12 +76,9 @@ class SecurityQuestionsModule implements IModule {
   }
 
   async changeSecurityQuestionAndAnswer(newAnswerString: string, newQuestions: string): Promise<void> {
-    let sqStore;
-    try {
-      sqStore = new SecurityQuestionStore(this.tbSDK.metadata.getGeneralStoreDomain(this.moduleName) as SecurityQuestionStoreArgs);
-    } catch (err) {
-      throw Error(`Error: security questions might not exist/be setup ${err}`);
-    }
+    const sqStore = new SecurityQuestionStore(this.tbSDK.metadata.getGeneralStoreDomain(this.moduleName) as SecurityQuestionStoreArgs);
+    if (isEmptyObject(sqStore)) throw Error("security questions might not exist/be setup");
+
     const userInputHash = answerToUserInputHashBN(newAnswerString);
     const sqShare = this.tbSDK.outputShare(sqStore.shareIndex);
     let nonce = sqShare.share.share.sub(userInputHash);
