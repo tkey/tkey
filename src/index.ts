@@ -390,7 +390,7 @@ class ThresholdBak implements IThresholdBak {
     }
 
     const latestPolyID = this.metadata.getLatestPublicPolynomial().getPolynomialID();
-    if (!this.metadata.publicShares[latestPolyID][shareIndexParsed]) {
+    if (!this.metadata.publicShares[latestPolyID][shareIndexParsed.toString("hex")]) {
       throw Error("no such share index created");
     }
     const shareFromStore = this.shares[latestPolyID][shareIndexParsed.toString("hex")];
@@ -398,7 +398,7 @@ class ThresholdBak implements IThresholdBak {
     const poly = this.reconstructLatestPoly();
     const shareMap = poly.generateShares([shareIndex]);
 
-    return new ShareStore({ share: shareMap[shareIndexParsed], polynomialID: latestPolyID });
+    return new ShareStore({ share: shareMap[shareIndexParsed.toString("hex")], polynomialID: latestPolyID });
   }
 
   setKey(privKey: BN): void {

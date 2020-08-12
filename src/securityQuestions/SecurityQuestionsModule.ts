@@ -11,6 +11,11 @@ function answerToUserInputHashBN(answerString) {
   return new BN(keccak256(answerString).slice(2), "hex");
 }
 
+// password + nonce = share
+// password has changed to password2
+
+// password2 + newNonce = share
+
 class SecurityQuestionsModule implements IModule {
   moduleName: string;
 
@@ -26,6 +31,8 @@ class SecurityQuestionsModule implements IModule {
   }
 
   async generateNewShareWithSecurityQuestions(answerString: string, questions: string): Promise<GenerateNewShareResult> {
+    const oldSqStore = new SecurityQuestionStore(this.tbSDK.metadata.getGeneralStoreDomain(this.moduleName) as SecurityQuestionStoreArgs);
+    if (isEmptyObject(oldSqStore)) throw Error("sqStore doesnt exist, has tKey SDK been initialized with metadata?");
     const newSharesDetails = await this.tbSDK.generateNewShare();
     await this.tbSDK.addShareDescription(newSharesDetails.newShareIndex.toString("hex"), JSON.stringify({ module: this.moduleName, questions }));
     const newShareStore = newSharesDetails.newShareStores[newSharesDetails.newShareIndex.toString("hex")];
@@ -68,13 +75,34 @@ class SecurityQuestionsModule implements IModule {
     this.tbSDK.inputShare(latestShareDetails.latestShare);
   }
 
+  async changeSecurityQuestionAndAnswer(newAnswerString: string, newQuestions: string): Promise<void> {
+    const sqStore = new SecurityQuestionStore(this.tbSDK.metadata.getGeneralStoreDomain(this.moduleName) as SecurityQuestionStoreArgs);
+    if (isEmptyObject(sqStore)) throw Error("security questions might not exist/be setup");
+
+    const userInputHash = answerToUserInputHashBN(newAnswerString);
+    const sqShare = this.tbSDK.outputShare(sqStore.shareIndex);
+    let nonce = sqShare.share.share.sub(userInputHash);
+    nonce = nonce.umod(ecCurve.curve.n);
+
+    const newSqStore = new SecurityQuestionStore({
+      nonce,
+      polynomialID: sqStore.polynomialID,
+      sqPublicShare: sqStore.sqPublicShare,
+      shareIndex: sqStore.shareIndex,
+      questions: newQuestions,
+    });
+    await this.tbSDK.metadata.setGeneralStoreDomain(this.moduleName, newSqStore);
+    await this.tbSDK.syncShareMetadata();
+  }
+
   refreshSecurityQuestionsMiddleware(generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap): unknown {
     if (generalStore === undefined || isEmptyObject(generalStore)) {
       return generalStore;
     }
     const sqStore = new SecurityQuestionStore(generalStore as SecurityQuestionStoreArgs);
     const sqAnswer = oldShareStores[sqStore.shareIndex.toString("hex")].share.share.sub(sqStore.nonce);
-    const newNonce = newShareStores[sqStore.shareIndex.toString("hex")].share.share.sub(sqAnswer);
+    let newNonce = newShareStores[sqStore.shareIndex.toString("hex")].share.share.sub(sqAnswer);
+    newNonce = newNonce.umod(ecCurve.curve.n);
 
     return new SecurityQuestionStore({
       nonce: newNonce,
