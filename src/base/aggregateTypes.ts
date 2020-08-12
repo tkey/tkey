@@ -4,6 +4,7 @@ import BN from "bn.js";
 import Metadata from "../metadata";
 import { BNString, EncryptedMessage, IServiceProvider, IStorageLayer, PolynomialID, ShareDescriptionMap } from "./commonTypes";
 import Point from "./Point";
+import { Polynomial } from "./Polynomial";
 import PublicShare from "./PublicShare";
 import ShareStore, { ScopedStore, ShareStoreMap, ShareStorePolyIDShareIndexMap } from "./ShareStore";
 
@@ -70,6 +71,8 @@ export interface IThresholdBak {
   catchupToLatestShare(shareStore: ShareStore): Promise<CatchupToLatestShareResult>;
 
   reconstructKey(): Promise<BN>;
+
+  reconstructLatestPoly(): Polynomial;
 
   generateNewShare(): Promise<GenerateNewShareResult>;
 

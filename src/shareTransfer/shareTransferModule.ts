@@ -66,10 +66,9 @@ class ShareTransferModule implements IModule {
     return Object.keys(shareTransferStore);
   }
 
-  async approveRequest(encPubKeyX: string): Promise<void> {
+  async approveRequest(encPubKeyX: string, shareStore: ShareStore): Promise<void> {
     const shareTransferStore = await this.getShareTransferStore();
-    const result = await this.tbSDK.generateNewShare();
-    const bufferedShare = Buffer.from(JSON.stringify(result.newShareStores[result.newShareIndex.toString("hex")]));
+    const bufferedShare = Buffer.from(JSON.stringify(shareStore));
     const shareRequest = new ShareRequest(shareTransferStore[encPubKeyX]);
     shareTransferStore[encPubKeyX].encShareInTransit = await encrypt(shareRequest.encPubKey, bufferedShare);
     this.setShareTransferStore(shareTransferStore);

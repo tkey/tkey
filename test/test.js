@@ -312,8 +312,8 @@ describe("ShareTransferModule", function () {
     await new Promise((res) => {
       setTimeout(res, 200);
     });
-
-    await tb.modules.shareTransfer.approveRequest(pubkey);
+    const result = await tb.generateNewShare();
+    await tb.modules.shareTransfer.approveRequest(pubkey, result.newShareStores[result.newShareIndex.toString("hex")]);
 
     // eslint-disable-next-line promise/param-names
     await new Promise((res) => {
