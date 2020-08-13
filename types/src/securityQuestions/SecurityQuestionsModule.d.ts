@@ -8,6 +8,7 @@ declare class SecurityQuestionsModule implements IModule {
     generateNewShareWithSecurityQuestions(answerString: string, questions: string): Promise<GenerateNewShareResult>;
     getSecurityQuestions(): string;
     inputShareFromSecurityQuestions(answerString: string): Promise<void>;
+    changeSecurityQuestionAndAnswer(newAnswerString: string, newQuestions: string): Promise<void>;
     refreshSecurityQuestionsMiddleware(generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap): unknown;
 }
 export default SecurityQuestionsModule;
