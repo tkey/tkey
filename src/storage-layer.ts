@@ -1,11 +1,10 @@
 import { post } from "@toruslabs/http-helpers";
 import BN from "bn.js";
-import { curve } from "elliptic";
-import stringify from "fast-json-stable-stringify";
+import stringify from "json-stable-stringify";
 import { keccak256 } from "web3-utils";
 
 import { getPubKeyECC, getPubKeyPoint, toPrivKeyEC, toPrivKeyECC } from "./base/BNUtils";
-import { IServiceProvider, IStorageLayer, TorusStorageLayerAPIParams, TorusStorageLayerArgs } from "./base/commonTypes";
+import { EncryptedMessage, IServiceProvider, IStorageLayer, TorusStorageLayerAPIParams, TorusStorageLayerArgs } from "./base/commonTypes";
 import { decrypt, encrypt } from "./utils";
 
 class TorusStorageLayer implements IStorageLayer {
@@ -24,42 +23,42 @@ class TorusStorageLayer implements IStorageLayer {
   async getMetadata<T>(privKey?: BN): Promise<T> {
     const keyDetails = this.generateMetadataParams({}, privKey);
     const metadataResponse = await post<{ message: string }>(`${this.hostUrl}/get`, keyDetails);
-    // returns empty object if objec
+    // returns empty object if object
     if (metadataResponse.message === "") {
       return {} as T;
     }
     const encryptedMessage = JSON.parse(atob(metadataResponse.message));
 
-    let decrypted;
+    let decrypted: Buffer;
     if (privKey) {
       decrypted = await decrypt(toPrivKeyECC(privKey), encryptedMessage);
     } else {
       decrypted = await this.serviceProvider.decrypt(encryptedMessage);
     }
 
-    return JSON.parse(decrypted) as T;
+    return JSON.parse(decrypted.toString()) as T;
   }
 
   async setMetadata<T>(input: T, privKey?: BN): Promise<{ message: string }> {
-    const bufferMetadata = Buffer.from(JSON.stringify(input));
-    let encryptedDetails;
+    const bufferMetadata = Buffer.from(stringify(input));
+    let encryptedDetails: EncryptedMessage;
     if (privKey) {
       encryptedDetails = await encrypt(getPubKeyECC(privKey), bufferMetadata);
     } else {
-      encryptedDetails = await this.serviceProvider.encrypt(this.serviceProvider.retrievePubKey("ecc") as Buffer, bufferMetadata);
+      encryptedDetails = await this.serviceProvider.encrypt(bufferMetadata);
     }
     const serializedEncryptedDetails = btoa(stringify(encryptedDetails));
-    const p = this.generateMetadataParams(serializedEncryptedDetails, privKey);
-    return post<{ message: string }>(`${this.hostUrl}/set`, p);
+    const metadataParams = this.generateMetadataParams(serializedEncryptedDetails, privKey);
+    return post<{ message: string }>(`${this.hostUrl}/set`, metadataParams);
   }
 
-  generateMetadataParams(message: unknown, privKey: BN): TorusStorageLayerAPIParams {
-    let sig;
-    let pubX;
-    let pubY;
+  generateMetadataParams(message: unknown, privKey?: BN): TorusStorageLayerAPIParams {
+    let sig: string;
+    let pubX: string;
+    let pubY: string;
     const setData = {
       data: message,
-      timestamp: new BN(Date.now()).toString(16),
+      timestamp: new BN(~~(Date.now() / 1000)).toString(16),
     };
     const hash = keccak256(stringify(setData)).slice(2);
     if (privKey) {
@@ -69,9 +68,10 @@ class TorusStorageLayer implements IStorageLayer {
       pubX = pubK.x.toString("hex");
       pubY = pubK.y.toString("hex");
     } else {
+      const point = this.serviceProvider.retrievePubKeyPoint();
       sig = this.serviceProvider.sign(hash);
-      pubX = (this.serviceProvider.retrievePubKey() as curve.base.BasePoint).getX().toString("hex");
-      pubY = (this.serviceProvider.retrievePubKey() as curve.base.BasePoint).getY().toString("hex");
+      pubX = point.getX().toString("hex");
+      pubY = point.getY().toString("hex");
     }
     return {
       pub_key_X: pubX,

@@ -22,7 +22,8 @@
     "project": "./tsconfig.json"
   },
   "rules": {
-  "class-methods-use-this": 0,
+    "no-console": "error",
+    "no-bitwise": [2, { "allow": ["~"] }],
     "camelcase": 0,
     "no-useless-constructor": 0,
     "@typescript-eslint/no-useless-constructor": 2,

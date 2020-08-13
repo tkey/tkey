@@ -7,25 +7,24 @@ import { BNString } from "./commonTypes";
 import Point from "./Point";
 
 // These functions are here because BN can't be extended
-const toPrivKeyEC = (bn: BN): ec.KeyPair => {
+export const toPrivKeyEC = (bn: BN): ec.KeyPair => {
   return ecCurve.keyFromPrivate(bn.toString("hex", 64));
 };
 
-const toPrivKeyECC = (bn: BNString): Buffer => {
+export const toPrivKeyECC = (bn: BNString): Buffer => {
   const tmp = new BN(bn, "hex");
   return Buffer.from(tmp.toString("hex", 64), "hex");
 };
 
-const getPubKeyEC = (bn: BN): curve.base.BasePoint => {
+export const getPubKeyEC = (bn: BN): curve.base.BasePoint => {
   return ecCurve.keyFromPrivate(bn.toString("hex", 64)).getPublic();
 };
 
-const getPubKeyECC = (bn: BN): Buffer => {
+export const getPubKeyECC = (bn: BN): Buffer => {
   return getPublic(toPrivKeyECC(bn));
 };
 
-const getPubKeyPoint = (bn: BN): Point => {
-  return new Point(getPubKeyEC(bn).getX(), getPubKeyEC(bn).getY());
+export const getPubKeyPoint = (bn: BN): Point => {
+  const pubKeyEc = getPubKeyEC(bn);
+  return new Point(pubKeyEc.getX().toString("hex"), pubKeyEc.getY().toString("hex"));
 };
-
-export { toPrivKeyEC, toPrivKeyECC, getPubKeyEC, getPubKeyECC, getPubKeyPoint };

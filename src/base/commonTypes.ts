@@ -2,6 +2,8 @@ import { DirectWebSDKArgs } from "@toruslabs/torus-direct-web-sdk";
 import BN from "bn.js";
 import { curve, ec as EC } from "elliptic";
 
+export type PubKeyType = "ecc";
+
 // @flow
 export type PolynomialID = string;
 
@@ -35,9 +37,10 @@ export interface IServiceProvider {
 
   postboxKey: BN;
 
-  encrypt(publicKey: Buffer, msg: Buffer): Promise<EncryptedMessage>;
+  encrypt(msg: Buffer): Promise<EncryptedMessage>;
   decrypt(msg: EncryptedMessage): Promise<Buffer>;
-  retrievePubKey(type?: "ecc"): Buffer | curve.base.BasePoint;
+  retrievePubKey(type: PubKeyType): Buffer;
+  retrievePubKeyPoint(): curve.base.BasePoint;
   sign(msg: BNString): string;
 }
 
@@ -65,7 +68,7 @@ export type TorusStorageLayerAPIParams = {
   pub_key_X: string;
   pub_key_Y: string;
   set_data: unknown;
-  signature: Buffer;
+  signature: string;
 };
 
 export type ShareDescriptionMap = {

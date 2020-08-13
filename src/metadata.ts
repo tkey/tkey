@@ -1,5 +1,5 @@
 /* eslint-disable guard-for-in */
-import stringify from "fast-json-stable-stringify";
+import stringify from "json-stable-stringify";
 
 import { PolynomialID, ShareDescriptionMap } from "./base/commonTypes";
 import Point from "./base/Point";
