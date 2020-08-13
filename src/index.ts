@@ -396,7 +396,7 @@ class ThresholdBak implements IThresholdBak {
     const shareFromStore = this.shares[latestPolyID][shareIndexParsed.toString("hex")];
     if (shareFromStore) return shareFromStore;
     const poly = this.reconstructLatestPoly();
-    const shareMap = poly.generateShares([shareIndex]);
+    const shareMap = poly.generateShares([shareIndexParsed]);
 
     return new ShareStore({ share: shareMap[shareIndexParsed.toString("hex")], polynomialID: latestPolyID });
   }
