@@ -3,6 +3,7 @@ import BN from "bn.js";
 import Metadata from "../metadata";
 import { BNString, EncryptedMessage, IServiceProvider, IStorageLayer, PolynomialID, ShareDescriptionMap } from "./commonTypes";
 import Point from "./Point";
+import { Polynomial } from "./Polynomial";
 import PublicShare from "./PublicShare";
 import ShareStore, { ScopedStore, ShareStoreMap, ShareStorePolyIDShareIndexMap } from "./ShareStore";
 export declare type ModuleMap = {
@@ -48,6 +49,7 @@ export interface IThresholdBak {
     initialize(input: ShareStore): Promise<KeyDetails>;
     catchupToLatestShare(shareStore: ShareStore): Promise<CatchupToLatestShareResult>;
     reconstructKey(): Promise<BN>;
+    reconstructLatestPoly(): Polynomial;
     generateNewShare(): Promise<GenerateNewShareResult>;
     refreshShares(threshold: number, newShareIndexes: Array<string>, previousPolyID: PolynomialID): Promise<RefreshSharesResult>;
     initializeNewKey(userInput?: BN, initializeModules?: boolean): Promise<InitializeNewKeyResult>;
