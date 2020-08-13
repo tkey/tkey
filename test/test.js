@@ -136,7 +136,7 @@ describe("ServiceProvider", function () {
 });
 
 describe("TorusStorageLayer", function () {
-  it.only("#should get or set correctly", async function () {
+  it("#should get or set correctly", async function () {
     const privKey = PRIVATE_KEY;
     const tsp = new ServiceProviderBase({ postboxKey: privKey });
     const storageLayer = new TorusStorageLayer({ enableLogging: true, serviceProvider: tsp });
