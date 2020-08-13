@@ -39,7 +39,7 @@ export interface IServiceProvider {
 
   encrypt(msg: Buffer): Promise<EncryptedMessage>;
   decrypt(msg: EncryptedMessage): Promise<Buffer>;
-  retrievePubKey(type: "ecc"): Buffer;
+  retrievePubKey(type: PubKeyType): Buffer;
   retrievePubKeyPoint(): curve.base.BasePoint;
   sign(msg: BNString): string;
 }
