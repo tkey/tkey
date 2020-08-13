@@ -10,7 +10,7 @@ declare class ShareTransferModule implements IModule {
     initialize(tbSDK: IThresholdBak): Promise<void>;
     requestNewShare(callback: (shareStore: ShareStore) => void): Promise<string>;
     lookForRequests(): Promise<Array<string>>;
-    approveRequest(encPubKeyX: string): Promise<void>;
+    approveRequest(encPubKeyX: string, shareStore: ShareStore): Promise<void>;
     getShareTransferStore(): Promise<ShareTransferStore>;
     setShareTransferStore(shareTransferStore: ShareTransferStore): Promise<void>;
 }
