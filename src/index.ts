@@ -84,7 +84,7 @@ class ThresholdBak implements IThresholdBak {
 
       if (isEmptyObject(rawServiceProviderShare)) {
         // no metadata set, assumes new user
-        await this.initializeNewKey(undefined, true);
+        await this.initializeNewKey({ initializeModules: true });
         return this.getKeyDetails();
       }
       // else we continue with catching up share and metadata
@@ -282,7 +282,7 @@ class ThresholdBak implements IThresholdBak {
     return { shareStores: newShareStores };
   }
 
-  async initializeNewKey(userInput?: BN, initializeModules?: boolean): Promise<InitializeNewKeyResult> {
+  async initializeNewKey({ userInput, initializeModules }: { userInput?: BN; initializeModules?: boolean }): Promise<InitializeNewKeyResult> {
     const tmpPriv = generatePrivate();
     this.setKey(new BN(tmpPriv));
 

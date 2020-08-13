@@ -19,6 +19,10 @@ class Point implements IPoint {
     }
     throw Error("encoding doesnt exist in Point");
   }
+
+  // toString(): string {
+  //   return `{"x":"${this.x.toString("hex", 32)}","y":"${this.y.toString("hex", 32)}"}`;
+  // }
 }
 
 export default Point;

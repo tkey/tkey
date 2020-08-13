@@ -4,7 +4,7 @@ import { deepEqual, deepStrictEqual, equal, fail } from "assert";
 import atob from "atob";
 import BN from "bn.js";
 import btoa from "btoa";
-import stringify from "fast-json-stable-stringify";
+import stringify from "json-stable-stringify";
 import fetch from "node-fetch";
 import { keccak256 } from "web3-utils";
 
@@ -30,7 +30,7 @@ global.btoa = btoa;
 describe("threshold bak", function () {
   it("#should be able to reconstruct key when initializing a key", async function () {
     const tb = new ThresholdBak({ serviceProvider: defaultSP, storageLayer: defaultSL });
-    const resp1 = await tb.initializeNewKey(undefined, true);
+    const resp1 = await tb.initializeNewKey({ initializeModules: true });
     const tb2 = new ThresholdBak({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize();
     tb2.inputShare(resp1.deviceShare);
@@ -43,7 +43,7 @@ describe("threshold bak", function () {
     const tb = new ThresholdBak({ serviceProvider: defaultSP, storageLayer: defaultSL });
     let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
     userInput = userInput.umod(ecCurve.curve.n);
-    const resp1 = await tb.initializeNewKey(userInput, true);
+    const resp1 = await tb.initializeNewKey({ userInput, initializeModules: true });
     const tb2 = new ThresholdBak({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize();
     tb2.inputShare(resp1.userShare);
@@ -54,7 +54,7 @@ describe("threshold bak", function () {
   });
   it("#should be able to reshare a key and retrieve from service provider", async function () {
     const tb = new ThresholdBak({ serviceProvider: defaultSP, storageLayer: defaultSL });
-    const resp1 = await tb.initializeNewKey(undefined, true);
+    const resp1 = await tb.initializeNewKey({ initializeModules: true });
     const tb2 = new ThresholdBak({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize();
     tb2.inputShare(resp1.deviceShare);
@@ -75,7 +75,7 @@ describe("threshold bak", function () {
     const tb = new ThresholdBak({ serviceProvider: defaultSP, storageLayer: defaultSL });
     let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
     userInput = userInput.umod(ecCurve.curve.n);
-    const resp1 = await tb.initializeNewKey(userInput, true);
+    const resp1 = await tb.initializeNewKey({ userInput, initializeModules: true });
     const tb2 = new ThresholdBak({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize(resp1.userShare);
     tb2.inputShare(resp1.deviceShare);
@@ -88,7 +88,7 @@ describe("threshold bak", function () {
     const tb = new ThresholdBak({ serviceProvider: defaultSP, storageLayer: defaultSL });
     let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
     userInput = userInput.umod(ecCurve.curve.n);
-    const resp1 = await tb.initializeNewKey(userInput, true);
+    const resp1 = await tb.initializeNewKey({ userInput, initializeModules: true });
     const newShares = await tb.generateNewShare();
     const tb2 = new ThresholdBak({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize(resp1.userShare);
@@ -184,7 +184,6 @@ describe("Metadata", function () {
     const metadata = new Metadata(getPubKeyPoint(privKeyBN));
     metadata.addFromPolynomialAndShares(poly, shares);
     metadata.setGeneralStoreDomain("something", { test: "oh this is an object" });
-
     const serializedMetadata = stringify(metadata);
     const deserializedMetadata = new Metadata(JSON.parse(serializedMetadata));
     const secondSerialization = stringify(deserializedMetadata);
@@ -250,7 +249,7 @@ describe("SecurityQuestionsModule", function () {
       storageLayer: defaultSL,
       modules: { securityQuestions: new SecurityQuestionsModule() },
     });
-    const resp1 = await tb.initializeNewKey(undefined, true);
+    const resp1 = await tb.initializeNewKey({ initializeModules: true });
     await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
     const tb2 = new ThresholdBak({
       serviceProvider: defaultSP,
@@ -271,7 +270,7 @@ describe("SecurityQuestionsModule", function () {
       storageLayer: defaultSL,
       modules: { securityQuestions: new SecurityQuestionsModule() },
     });
-    const resp1 = await tb.initializeNewKey(undefined, true);
+    const resp1 = await tb.initializeNewKey({ initializeModules: true });
     await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
     const tb2 = new ThresholdBak({
       serviceProvider: defaultSP,
@@ -293,7 +292,7 @@ describe("SecurityQuestionsModule", function () {
       storageLayer: defaultSL,
       modules: { securityQuestions: new SecurityQuestionsModule() },
     });
-    const resp1 = await tb.initializeNewKey(undefined, true);
+    const resp1 = await tb.initializeNewKey({ initializeModules: true });
     await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
     await tb.modules.securityQuestions.changeSecurityQuestionAndAnswer("dodo", "who is your cat?");
 
@@ -319,7 +318,7 @@ describe("ShareTransferModule", function () {
       storageLayer: defaultSL,
       modules: { shareTransfer: new ShareTransferModule() },
     });
-    const resp1 = await tb.initializeNewKey(undefined, true);
+    const resp1 = await tb.initializeNewKey({ initializeModules: true });
     const tb2 = new ThresholdBak({
       serviceProvider: defaultSP,
       storageLayer: defaultSL,
@@ -353,7 +352,7 @@ describe("ShareTransferModule", function () {
   //     storageLayer: defaultSL,
   //     modules: { securityQuestions: new SecurityQuestionsModule() },
   //   });
-  //   const resp1 = await tb.initializeNewKey(undefined, true);
+  //   const resp1 = await tb.initializeNewKey({ initializeModules: true });
   //   await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
   //   const tb2 = new ThresholdBak({
   //     serviceProvider: defaultSP,

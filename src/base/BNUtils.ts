@@ -25,5 +25,6 @@ export const getPubKeyECC = (bn: BN): Buffer => {
 };
 
 export const getPubKeyPoint = (bn: BN): Point => {
-  return new Point(getPubKeyEC(bn).getX(), getPubKeyEC(bn).getY());
+  const pubKeyEc = getPubKeyEC(bn);
+  return new Point(pubKeyEc.getX().toString("hex"), pubKeyEc.getY().toString("hex"));
 };

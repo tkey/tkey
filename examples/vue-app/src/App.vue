@@ -192,7 +192,7 @@ export default {
     },
     async initializeNewKey() {
       try {
-        const res = await this.tbsdk.initializeNewKey(undefined, false);
+        const res = await this.tbsdk.initializeNewKey({ initializeModules: false });
         this.console(res)
       } catch (error) {
         console.error(error, "caught")
