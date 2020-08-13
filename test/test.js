@@ -4,11 +4,11 @@ import { deepEqual, deepStrictEqual, equal, fail } from "assert";
 import atob from "atob";
 import BN from "bn.js";
 import btoa from "btoa";
-import stringify from "fast-json-stable-stringify";
+import stringify from "json-stable-stringify";
 import fetch from "node-fetch";
 import { keccak256 } from "web3-utils";
 
-import { getPubKeyECC, getPubKeyPoint } from "../src/base/BNUtils";
+import { getPubKeyPoint } from "../src/base/BNUtils";
 import Point from "../src/base/Point";
 import { Polynomial } from "../src/base/Polynomial";
 import { generateRandomPolynomial, lagrangeInterpolatePolynomial, lagrangeInterpolation, Metadata, ThresholdBak } from "../src/index";
@@ -20,7 +20,7 @@ import { ecCurve } from "../src/utils";
 
 const PRIVATE_KEY = "e70fb5f5970b363879bc36f54d4fc0ad77863bfd059881159251f50f48863acf";
 
-const defaultSP = new ServiceProviderBase();
+const defaultSP = new ServiceProviderBase({ postboxKey: PRIVATE_KEY });
 const defaultSL = new TorusStorageLayer({ serviceProvider: defaultSP });
 
 global.fetch = fetch;
@@ -116,9 +116,8 @@ describe("ServiceProvider", function () {
     const privKey = PRIVATE_KEY;
     const tmp = new BN(123);
     const message = Buffer.from(tmp.toString("hex", 15));
-    const privKeyBN = new BN(privKey, 16);
     const tsp = new ServiceProviderBase({ postboxKey: privKey });
-    const encDeets = await tsp.encrypt(getPubKeyECC(privKeyBN), message);
+    const encDeets = await tsp.encrypt(message);
     const result = await tsp.decrypt(encDeets);
     deepStrictEqual(result, message, "encrypted and decrypted message should be equal");
   });
@@ -127,9 +126,8 @@ describe("ServiceProvider", function () {
     const privKey = PRIVATE_KEY;
     const tmp = new BN(123);
     const message = Buffer.from(tmp.toString("hex", 16));
-    const privKeyBN = new BN(privKey, 16);
     const tsp = new ServiceProviderBase({ postboxKey: privKey });
-    const encDeets = await tsp.encrypt(getPubKeyECC(privKeyBN), message);
+    const encDeets = await tsp.encrypt(message);
     const result = await tsp.decrypt(encDeets);
     deepStrictEqual(result, message, "encrypted and decrypted message should be equal");
   });

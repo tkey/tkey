@@ -13,7 +13,7 @@ class ServiceProviderBase implements IServiceProvider {
   // For easy serialization
   postboxKey: BN;
 
-  constructor({ enableLogging = false, postboxKey }: ServiceProviderArgs = {}) {
+  constructor({ enableLogging = false, postboxKey }: ServiceProviderArgs) {
     this.ec = new EC("secp256k1");
     this.enableLogging = enableLogging;
     this.postboxKey = new BN(postboxKey, 16);

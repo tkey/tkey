@@ -72,7 +72,7 @@ class ThresholdBak implements IThresholdBak {
   }
 
   async initialize(input: ShareStore): Promise<KeyDetails> {
-    let shareStore;
+    let shareStore: ShareStore;
     if (input instanceof ShareStore) {
       shareStore = input;
     } else if (typeof input === "object") {
@@ -309,7 +309,7 @@ class ThresholdBak implements IThresholdBak {
     try {
       await this.storageLayer.setMetadata(shareStore);
     } catch (err) {
-      throw new Error(`setMetadata errored: ${JSON.stringify(err)}`);
+      throw new Error(`setMetadata errored: ${err}`);
     }
 
     // store metadata on metadata respective to shares
