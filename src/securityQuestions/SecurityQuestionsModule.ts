@@ -35,7 +35,10 @@ class SecurityQuestionsModule implements IModule {
     if (rawSqStore) throw Error("security questions exists, cant replace, maybe change?");
 
     const newSharesDetails = await this.tbSDK.generateNewShare();
-    await this.tbSDK.addShareDescription(newSharesDetails.newShareIndex.toString("hex"), JSON.stringify({ module: this.moduleName, questions }));
+    await this.tbSDK.addShareDescription(
+      newSharesDetails.newShareIndex.toString("hex"),
+      JSON.stringify({ module: this.moduleName, questions, dateAdded: Date.now() })
+    );
     const newShareStore = newSharesDetails.newShareStores[newSharesDetails.newShareIndex.toString("hex")];
     const userInputHash = answerToUserInputHashBN(answerString);
     let nonce = newShareStore.share.share.sub(userInputHash);

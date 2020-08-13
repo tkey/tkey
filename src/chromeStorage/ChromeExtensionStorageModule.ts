@@ -21,7 +21,7 @@ export default class ChromeExtensionStorageModule implements IModule {
     await this.storeShareOnChromeExtensionStorage(deviceShareStore);
     await this.tbSDK.addShareDescription(
       deviceShareStore.share.shareIndex.toString("hex"),
-      JSON.stringify({ module: this.moduleName, userAgent: window.navigator.userAgent }),
+      JSON.stringify({ module: this.moduleName, userAgent: window.navigator.userAgent, dateAdded: Date.now() }),
       true
     );
   }
