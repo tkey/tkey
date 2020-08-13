@@ -1,12 +1,10 @@
-import DirectWebSDK from "@toruslabs/torus-direct-web-sdk";
-import {
+import DirectWebSDK, {
   AggregateLoginParams,
   InitParams,
   SubVerifierDetails,
   TorusAggregateLoginResponse,
   TorusLoginResponse,
-  // eslint-disable-next-line import/no-unresolved
-} from "@toruslabs/torus-direct-web-sdk/types/src/handlers/interfaces";
+} from "@toruslabs/torus-direct-web-sdk";
 import BN from "bn.js";
 
 import { TorusServiceProviderArgs } from "../base/commonTypes";
@@ -15,11 +13,7 @@ import ServiceProviderBase from "./ServiceProviderBase";
 class TorusServiceProvider extends ServiceProviderBase {
   directWeb: DirectWebSDK;
 
-  constructor({
-    enableLogging = false,
-    postboxKey = "d573b6c7d8fe4ec7cbad052189d4a8415b44d8b87af024872f38db3c694d306d",
-    directParams,
-  }: TorusServiceProviderArgs) {
+  constructor({ enableLogging = false, postboxKey, directParams }: TorusServiceProviderArgs) {
     super({ enableLogging, postboxKey });
     this.directWeb = new DirectWebSDK(directParams);
   }

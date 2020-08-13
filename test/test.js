@@ -14,9 +14,11 @@ import { Polynomial } from "../src/base/Polynomial";
 import { generateRandomPolynomial, lagrangeInterpolatePolynomial, lagrangeInterpolation, Metadata, ThresholdBak } from "../src/index";
 import SecurityQuestionsModule from "../src/securityQuestions/SecurityQuestionsModule";
 import ServiceProviderBase from "../src/serviceProvider/ServiceProviderBase";
-import ShareTransferModule from "../src/shareTransfer/ShareTransferModule";
+import ShareTransferModule from "../src/shareTransfer/shareTransferModule";
 import TorusStorageLayer from "../src/storage-layer";
 import { ecCurve } from "../src/utils";
+
+const PRIVATE_KEY = "e70fb5f5970b363879bc36f54d4fc0ad77863bfd059881159251f50f48863acf";
 
 const defaultSP = new ServiceProviderBase();
 const defaultSL = new TorusStorageLayer({ serviceProvider: defaultSP });
@@ -111,7 +113,7 @@ describe("threshold bak", function () {
 
 describe("ServiceProvider", function () {
   it("#should encrypt and decrypt correctly", async function () {
-    const privKey = "d573b6c7d8fe4ec7cbad052189d4a8415b44d8b87af024872f38db3c694d306d";
+    const privKey = PRIVATE_KEY;
     const tmp = new BN(123);
     const message = Buffer.from(tmp.toString("hex", 15));
     const privKeyBN = new BN(privKey, 16);
@@ -122,7 +124,7 @@ describe("ServiceProvider", function () {
   });
 
   it("#should encrypt and decrypt correctly messages > 15", async function () {
-    const privKey = "d573b6c7d8fe4ec7cbad052189d4a8415b44d8b87af024872f38db3c694d306d";
+    const privKey = PRIVATE_KEY;
     const tmp = new BN(123);
     const message = Buffer.from(tmp.toString("hex", 16));
     const privKeyBN = new BN(privKey, 16);
@@ -134,8 +136,8 @@ describe("ServiceProvider", function () {
 });
 
 describe("TorusStorageLayer", function () {
-  it("#should get or set correctly", async function () {
-    const privKey = "d573b6c7d8fe4ec7cbad052189d4a8415b44d8b87af024872f38db3c694d306d";
+  it.only("#should get or set correctly", async function () {
+    const privKey = PRIVATE_KEY;
     const tsp = new ServiceProviderBase({ postboxKey: privKey });
     const storageLayer = new TorusStorageLayer({ enableLogging: true, serviceProvider: tsp });
     const message = { test: Math.random().toString(36).substring(7) };
@@ -144,7 +146,7 @@ describe("TorusStorageLayer", function () {
     deepStrictEqual(resp, message, "set and get message should be equal");
   });
   it("#should get or set with specified private key correctly", async function () {
-    const privKey = "d573b6c7d8fe4ec7cbad052189d4a8415b44d8b87af024872f38db3c694d306d";
+    const privKey = PRIVATE_KEY;
     const privKeyBN = new BN(privKey, 16);
     const tsp = new ServiceProviderBase({ postboxKey: privKey });
     const storageLayer = new TorusStorageLayer({ enableLogging: true, serviceProvider: tsp });
@@ -168,7 +170,7 @@ describe("polynomial", function () {
 
 describe("Metadata", function () {
   it("#should serialize and deserialize into JSON seamlessly", async function () {
-    const privKey = "d573b6c7d8fe4ec7cbad052189d4a8415b44d8b87af024872f38db3c694d306d";
+    const privKey = PRIVATE_KEY;
     const privKeyBN = new BN(privKey, 16);
     // create a random poly and respective shares
     const shareIndexes = [new BN(1), new BN(2)];
