@@ -29,7 +29,7 @@
     "bn.js": "^5.1.2",
     "bowser": "^2.10.0",
     "elliptic": "^6.5.3",
-    "json-stable-stringify": "^1.0.1",
+    "fast-json-stable-stringify": "^2.1.0",
     "web3-utils": "^1.2.11"
   },
   "devDependencies": {

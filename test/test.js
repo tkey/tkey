@@ -4,7 +4,7 @@ import { deepEqual, deepStrictEqual, equal, fail } from "assert";
 import atob from "atob";
 import BN from "bn.js";
 import btoa from "btoa";
-import stringify from "json-stable-stringify";
+import stringify from "fast-json-stable-stringify";
 import fetch from "node-fetch";
 import { keccak256 } from "web3-utils";
 
@@ -188,7 +188,6 @@ describe("Metadata", function () {
     const serializedMetadata = stringify(metadata);
     const deserializedMetadata = new Metadata(JSON.parse(serializedMetadata));
     const secondSerialization = stringify(deserializedMetadata);
-
     // this one fails becauseof BN.js serilaization/deserialization on hex. Isnt breaking just annoying
     // deepEqual(metadata, deserializedMetadata, "metadata and deserializedMetadata should be equal");
     equal(serializedMetadata, secondSerialization, "serializedMetadata should be equal");

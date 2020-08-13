@@ -1,6 +1,6 @@
 import { post } from "@toruslabs/http-helpers";
 import BN from "bn.js";
-import stringify from "json-stable-stringify";
+import stringify from "fast-json-stable-stringify";
 import { keccak256 } from "web3-utils";
 
 import { getPubKeyECC, getPubKeyPoint, toPrivKeyEC, toPrivKeyECC } from "./base/BNUtils";
