@@ -39,9 +39,22 @@ class Polynomial {
   }
 
   generateShares(shareIndexes: Array<BNString>): ShareMap {
+    const newShareIndexes = shareIndexes.map((index) => {
+      if (typeof index === "number") {
+        return new BN(index);
+      }
+      if (index instanceof BN) {
+        return index;
+      }
+      if (typeof index === "string") {
+        return new BN(index, "hex");
+      }
+      return index;
+    });
+
     const shares: ShareMap = {};
-    for (let x = 0; x < shareIndexes.length; x += 1) {
-      shares[shareIndexes[x].toString("hex")] = new Share(shareIndexes[x], this.polyEval(shareIndexes[x]));
+    for (let x = 0; x < newShareIndexes.length; x += 1) {
+      shares[newShareIndexes[x].toString("hex")] = new Share(newShareIndexes[x], this.polyEval(newShareIndexes[x]));
     }
     return shares;
   }
