@@ -26,6 +26,7 @@ declare class Metadata {
     setScopedStore(scopedStore: ScopedStore): void;
     getEncryptedShare(): ShareStore;
     addShareDescription(shareIndex: string, description: string): void;
+    deleteShareDescription(shareIndex: string, description: string): void;
     clone(): Metadata;
 }
 export default Metadata;

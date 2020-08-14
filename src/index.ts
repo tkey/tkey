@@ -483,6 +483,13 @@ class ThresholdBak implements IThresholdBak {
       await this.syncShareMetadata();
     }
   }
+
+  async deleteShareDescription(shareIndex: string, description: string, updateMetadata?: boolean): Promise<void> {
+    this.metadata.deleteShareDescription(shareIndex, description);
+    if (updateMetadata) {
+      await this.syncShareMetadata();
+    }
+  }
 }
 
 // PRIMATIVES (TODO: MOVE TYPES AND THIS INTO DIFFERENT FOLDER)

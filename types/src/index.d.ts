@@ -34,6 +34,7 @@ declare class ThresholdBak implements IThresholdBak {
     addRefreshMiddleware(moduleName: string, middleware: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap) => unknown): void;
     setDeviceStorage(storeDeviceStorage: (deviceShareStore: ShareStore) => Promise<void>): void;
     addShareDescription(shareIndex: string, description: string, updateMetadata?: boolean): Promise<void>;
+    deleteShareDescription(shareIndex: string, description: string, updateMetadata?: boolean): Promise<void>;
 }
 declare function lagrangeInterpolatePolynomial(points: Array<Point>): Polynomial;
 declare function lagrangeInterpolation(shares: Array<BN>, nodeIndex: Array<BN>): BN;
