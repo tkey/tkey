@@ -1,10 +1,10 @@
-import { IModule, IThresholdBak } from "../base/aggregateTypes";
+import { IModule, IThresholdBakApi } from "../base/aggregateTypes";
 import ShareStore from "../base/ShareStore";
 export default class ChromeExtensionStorageModule implements IModule {
     moduleName: string;
-    tbSDK: IThresholdBak;
+    tbSDK: IThresholdBakApi;
     constructor();
-    initialize(tbSDK: IThresholdBak): Promise<void>;
+    initialize(tbSDK: IThresholdBakApi): Promise<void>;
     storeDeviceShare(deviceShareStore: ShareStore): Promise<void>;
     storeShareOnChromeExtensionStorage(share: ShareStore): Promise<void>;
     getStoreFromChromeExtensionStorage(): Promise<ShareStore>;

@@ -11,7 +11,7 @@ export declare type ModuleMap = {
 };
 export interface IModule {
     moduleName: string;
-    initialize(tbSDK: IThresholdBak): Promise<void>;
+    initialize(api: IThresholdBakApi): Promise<void>;
 }
 export declare type InitializeNewKeyResult = {
     privKey: BN;
@@ -37,38 +37,43 @@ export declare type KeyDetails = {
     shareDescriptions: ShareDescriptionMap;
     modules: ModuleMap;
 };
-export interface IThresholdBak {
+export interface IThresholdBakApi {
+    metadata: Metadata;
+    storageLayer: IStorageLayer;
+    catchupToLatestShare(shareStore: ShareStore): Promise<CatchupToLatestShareResult>;
+    syncShareMetadata(adjustScopedStore?: (ss: ScopedStore) => ScopedStore): Promise<void>;
+    inputShareSafe(shareStore: ShareStore): Promise<void>;
+    setDeviceStorage(storeDeviceStorage: (deviceShareStore: ShareStore) => Promise<void>): void;
+    addShareDescription(shareIndex: string, description: string, updateMetadata?: boolean): Promise<void>;
+    inputShare(shareStore: ShareStore): void;
+    addRefreshMiddleware(moduleName: string, middleware: (generalStore: unknown) => unknown): void;
+    generateNewShare(): Promise<GenerateNewShareResult>;
+    outputShare(shareIndex: BNString): ShareStore;
+}
+export interface IThresholdBak extends IThresholdBakApi {
     modules: ModuleMap;
     enableLogging: boolean;
     serviceProvider: IServiceProvider;
-    storageLayer: IStorageLayer;
     shares: ShareStorePolyIDShareIndexMap;
     privKey: BN;
-    metadata: Metadata;
     refreshMiddleware: RefreshMiddlewareMap;
     initialize(input: ShareStore): Promise<KeyDetails>;
-    catchupToLatestShare(shareStore: ShareStore): Promise<CatchupToLatestShareResult>;
     reconstructKey(): Promise<BN>;
     reconstructLatestPoly(): Polynomial;
-    generateNewShare(): Promise<GenerateNewShareResult>;
     refreshShares(threshold: number, newShareIndexes: Array<string>, previousPolyID: PolynomialID): Promise<RefreshSharesResult>;
-    initializeNewKey(userInput?: BN, initializeModules?: boolean): Promise<InitializeNewKeyResult>;
-    syncShareMetadata(adjustScopedStore?: (ss: ScopedStore) => ScopedStore): Promise<void>;
+    initializeNewKey(params: {
+        userInput?: BN;
+        initializeModules?: boolean;
+    }): Promise<InitializeNewKeyResult>;
     syncSingleShareMetadata(share: BN, adjustScopedStore?: (ss: ScopedStore) => ScopedStore): Promise<void>;
-    inputShare(shareStore: ShareStore): void;
-    inputShareSafe(shareStore: ShareStore): Promise<void>;
-    outputShare(shareIndex: BNString): ShareStore;
     setKey(privKey: BN): void;
     getKeyDetails(): KeyDetails;
-    addRefreshMiddleware(moduleName: string, middleware: (generalStore: unknown) => unknown): void;
-    setDeviceStorage(storeDeviceStorage: (deviceShareStore: ShareStore) => Promise<void>): void;
-    addShareDescription(shareIndex: string, description: string, updateMetadata?: boolean): Promise<void>;
 }
 export declare type ThresholdBakArgs = {
     enableLogging?: boolean;
     modules?: ModuleMap;
     serviceProvider?: IServiceProvider;
-    storageLayer: IStorageLayer;
+    storageLayer?: IStorageLayer;
     directParams?: DirectWebSDKArgs;
 };
 export declare type RefreshMiddlewareMap = {

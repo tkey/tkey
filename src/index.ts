@@ -10,6 +10,7 @@ import {
   GenerateNewShareResult,
   InitializeNewKeyResult,
   IThresholdBak,
+  IThresholdBakApi,
   KeyDetails,
   ModuleMap,
   RefreshMiddlewareMap,
@@ -71,7 +72,23 @@ class ThresholdBak implements IThresholdBak {
     this.storeDeviceShare = undefined;
   }
 
-  async initialize(input: ShareStore): Promise<KeyDetails> {
+  getApi(): IThresholdBakApi {
+    return {
+      metadata: this.metadata,
+      storageLayer: this.storageLayer,
+      catchupToLatestShare: this.catchupToLatestShare.bind(this),
+      syncShareMetadata: this.syncShareMetadata.bind(this),
+      addRefreshMiddleware: this.addRefreshMiddleware.bind(this),
+      addShareDescription: this.addShareDescription.bind(this),
+      generateNewShare: this.generateNewShare.bind(this),
+      inputShare: this.inputShare.bind(this),
+      inputShareSafe: this.inputShareSafe.bind(this),
+      outputShare: this.outputShare.bind(this),
+      setDeviceStorage: this.setDeviceStorage.bind(this),
+    };
+  }
+
+  async initialize(input?: ShareStore): Promise<KeyDetails> {
     let shareStore: ShareStore;
     if (input instanceof ShareStore) {
       shareStore = input;
@@ -101,7 +118,7 @@ class ThresholdBak implements IThresholdBak {
 
     // initialize modules
     for (const moduleName in this.modules) {
-      await this.modules[moduleName].initialize(this);
+      await this.modules[moduleName].initialize(this.getApi());
     }
 
     return this.getKeyDetails();
@@ -114,8 +131,8 @@ class ThresholdBak implements IThresholdBak {
     } catch (err) {
       throw new Error(`getMetadata in initialize errored: ${err}`);
     }
-    let shareMetadata;
-    let nextShare;
+    let shareMetadata: Metadata;
+    let nextShare: ShareStore;
     try {
       shareMetadata = new Metadata(metadata);
       nextShare = new ShareStore(shareMetadata.getEncryptedShare());
@@ -135,7 +152,7 @@ class ThresholdBak implements IThresholdBak {
 
     // check if we have enough shares to meet threshold
     let sharesLeft = requiredThreshold;
-    // we don't jsut check the latest poly but
+    // we don't just check the latest poly but
     //  we check if the shares on previous polynomials in our stores have the share indexes we require
     const fullShareList = Object.keys(this.metadata.publicShares[pubPolyID]);
     const shareIndexesRequired = {};
@@ -324,7 +341,7 @@ class ThresholdBak implements IThresholdBak {
     // initialize modules
     if (initializeModules) {
       for (const moduleName in this.modules) {
-        await this.modules[moduleName].initialize(this);
+        await this.modules[moduleName].initialize(this.getApi());
       }
     }
 
@@ -344,7 +361,7 @@ class ThresholdBak implements IThresholdBak {
   }
 
   inputShare(shareStore: ShareStore): void {
-    let ss;
+    let ss: ShareStore;
     if (shareStore instanceof ShareStore) {
       ss = shareStore;
     } else if (typeof shareStore === "object") {

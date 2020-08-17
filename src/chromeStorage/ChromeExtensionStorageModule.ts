@@ -1,18 +1,18 @@
 // import Bowser from "bowser"; // ES6 (and TypeScript with --esModuleInterop enabled)
 
-import { IModule, IThresholdBak } from "../base/aggregateTypes";
+import { IModule, IThresholdBakApi } from "../base/aggregateTypes";
 import ShareStore from "../base/ShareStore";
 
 export default class ChromeExtensionStorageModule implements IModule {
   moduleName: string;
 
-  tbSDK: IThresholdBak;
+  tbSDK: IThresholdBakApi;
 
   constructor() {
     this.moduleName = "chromeExtensionStorage";
   }
 
-  async initialize(tbSDK: IThresholdBak): Promise<void> {
+  async initialize(tbSDK: IThresholdBakApi): Promise<void> {
     this.tbSDK = tbSDK;
     this.tbSDK.setDeviceStorage(this.storeDeviceShare.bind(this));
   }

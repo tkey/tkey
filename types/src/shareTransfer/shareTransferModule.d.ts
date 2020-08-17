@@ -1,13 +1,13 @@
 import BN from "bn.js";
-import { IModule, IThresholdBak } from "../base/aggregateTypes";
+import { IModule, IThresholdBakApi } from "../base/aggregateTypes";
 import ShareStore from "../base/ShareStore";
 import ShareRequest from "./ShareRequest";
 declare class ShareTransferModule implements IModule {
     moduleName: string;
-    tbSDK: IThresholdBak;
+    tbSDK: IThresholdBakApi;
     currentEncKey: BN;
     constructor();
-    initialize(tbSDK: IThresholdBak): Promise<void>;
+    initialize(tbSdk: IThresholdBakApi): Promise<void>;
     requestNewShare(callback: (shareStore: ShareStore) => void): Promise<string>;
     lookForRequests(): Promise<Array<string>>;
     approveRequest(encPubKeyX: string, shareStore: ShareStore): Promise<void>;

@@ -1,7 +1,8 @@
+/* eslint-disable class-methods-use-this */
 import BN from "bn.js";
 import { keccak256 } from "web3-utils";
 
-import { GenerateNewShareResult, IModule, IThresholdBak, SecurityQuestionStoreArgs } from "../base/aggregateTypes";
+import { GenerateNewShareResult, IModule, IThresholdBakApi, SecurityQuestionStoreArgs } from "../base/aggregateTypes";
 import Share from "../base/Share";
 import ShareStore, { ShareStoreMap } from "../base/ShareStore";
 import { ecCurve, isEmptyObject } from "../utils";
@@ -19,13 +20,13 @@ function answerToUserInputHashBN(answerString) {
 class SecurityQuestionsModule implements IModule {
   moduleName: string;
 
-  tbSDK: IThresholdBak;
+  tbSDK: IThresholdBakApi;
 
   constructor() {
     this.moduleName = "securityQuestions";
   }
 
-  async initialize(tbSDK: IThresholdBak): Promise<void> {
+  async initialize(tbSDK: IThresholdBakApi): Promise<void> {
     this.tbSDK = tbSDK;
     this.tbSDK.addRefreshMiddleware(this.moduleName, this.refreshSecurityQuestionsMiddleware.bind(this));
   }

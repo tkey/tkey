@@ -1,6 +1,7 @@
+/* eslint-disable class-methods-use-this */
 // import Bowser from "bowser"; // ES6 (and TypeScript with --esModuleInterop enabled)
 
-import { IModule, IThresholdBak } from "../base/aggregateTypes";
+import { IModule, IThresholdBakApi } from "../base/aggregateTypes";
 import ShareStore from "../base/ShareStore";
 
 // Web Specific declarations
@@ -77,13 +78,13 @@ function derivePubKeyXFromPolyID(polyID: string): string {
 class WebStorageModule implements IModule {
   moduleName: string;
 
-  tbSDK: IThresholdBak;
+  tbSDK: IThresholdBakApi;
 
   constructor() {
     this.moduleName = "webStorage";
   }
 
-  async initialize(tbSDK: IThresholdBak): Promise<void> {
+  async initialize(tbSDK: IThresholdBakApi): Promise<void> {
     this.tbSDK = tbSDK;
     // this.tbSDK.addRefreshMiddleware(this.moduleName, this.refreshSecurityQuestionsMiddleware.bind(this));
     this.tbSDK.setDeviceStorage(this.storeDeviceShare.bind(this));
@@ -169,7 +170,7 @@ class WebStorageModule implements IModule {
     }
   }
 
-  async storeShareOnLocalStorage(share: ShareStore) {
+  async storeShareOnLocalStorage(share: ShareStore): Promise<void> {
     const fileName = derivePubKeyXFromPolyID(share.polynomialID);
     const fileStr = JSON.stringify(share);
     if (!storageAvailable("localStorage")) {
