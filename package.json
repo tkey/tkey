@@ -3,6 +3,7 @@
   "version": "0.2.0",
   "description": "",
   "main": "dist/threshold-bak.cjs.js",
+  "types": "types/index.d.ts",
   "scripts": {
     "test": "mocha --timeout 0",
     "test-debugger": "mocha --inspect-brk",

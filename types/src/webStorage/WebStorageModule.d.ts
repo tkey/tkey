@@ -1,4 +1,4 @@
-import { IModule, IThresholdBak } from "../base/aggregateTypes";
+import { IModule, IThresholdBakApi } from "../base/aggregateTypes";
 import ShareStore from "../base/ShareStore";
 declare global {
     interface Navigator {
@@ -9,9 +9,9 @@ declare global {
 }
 declare class WebStorageModule implements IModule {
     moduleName: string;
-    tbSDK: IThresholdBak;
+    tbSDK: IThresholdBakApi;
     constructor();
-    initialize(tbSDK: IThresholdBak): Promise<void>;
+    initialize(tbSDK: IThresholdBakApi): Promise<void>;
     storeDeviceShare(deviceShareStore: ShareStore): Promise<void>;
     inputShareFromWebStorage(): Promise<void>;
     getShareFromChromeFileStorage(polyID: string): Promise<ShareStore>;

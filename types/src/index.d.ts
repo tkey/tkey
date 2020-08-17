@@ -1,5 +1,5 @@
 import BN from "bn.js";
-import { CatchupToLatestShareResult, GenerateNewShareResult, InitializeNewKeyResult, IThresholdBak, KeyDetails, ModuleMap, RefreshMiddlewareMap, RefreshSharesResult, ThresholdBakArgs } from "./base/aggregateTypes";
+import { CatchupToLatestShareResult, GenerateNewShareResult, InitializeNewKeyResult, IThresholdBak, IThresholdBakApi, KeyDetails, ModuleMap, RefreshMiddlewareMap, RefreshSharesResult, ThresholdBakArgs } from "./base/aggregateTypes";
 import { BNString, IServiceProvider, IStorageLayer, PolynomialID } from "./base/commonTypes";
 import Point from "./base/Point";
 import { Polynomial } from "./base/Polynomial";
@@ -17,13 +17,17 @@ declare class ThresholdBak implements IThresholdBak {
     refreshMiddleware: RefreshMiddlewareMap;
     storeDeviceShare: (deviceShareStore: ShareStore) => Promise<void>;
     constructor({ enableLogging, modules, serviceProvider, storageLayer, directParams }: ThresholdBakArgs);
-    initialize(input: ShareStore): Promise<KeyDetails>;
+    getApi(): IThresholdBakApi;
+    initialize(input?: ShareStore): Promise<KeyDetails>;
     catchupToLatestShare(shareStore: ShareStore): Promise<CatchupToLatestShareResult>;
     reconstructKey(): Promise<BN>;
     reconstructLatestPoly(): Polynomial;
     generateNewShare(): Promise<GenerateNewShareResult>;
     refreshShares(threshold: number, newShareIndexes: Array<string>, previousPolyID: PolynomialID): Promise<RefreshSharesResult>;
-    initializeNewKey(userInput?: BN, initializeModules?: boolean): Promise<InitializeNewKeyResult>;
+    initializeNewKey({ userInput, initializeModules }: {
+        userInput?: BN;
+        initializeModules?: boolean;
+    }): Promise<InitializeNewKeyResult>;
     inputShare(shareStore: ShareStore): void;
     inputShareSafe(shareStore: ShareStore): Promise<void>;
     outputShare(shareIndex: BNString): ShareStore;
