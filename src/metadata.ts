@@ -125,6 +125,13 @@ class Metadata {
     }
   }
 
+  deleteShareDescription(shareIndex: string, description: string): void {
+    const index = this.shareDescriptions[shareIndex].indexOf(description);
+    if (index > -1) {
+      this.shareDescriptions[shareIndex].splice(index, 1);
+    }
+  }
+
   clone(): Metadata {
     return new Metadata(JSON.parse(stringify(this)));
   }
