@@ -118,7 +118,7 @@ class ThresholdBak implements IThresholdBak {
 
     // initialize modules
     for (const moduleName in this.modules) {
-      await this.modules[moduleName].initialize(this);
+      await this.modules[moduleName].initialize(this.getApi());
     }
 
     return this.getKeyDetails();
@@ -341,7 +341,7 @@ class ThresholdBak implements IThresholdBak {
     // initialize modules
     if (initializeModules) {
       for (const moduleName in this.modules) {
-        await this.modules[moduleName].initialize(this);
+        await this.modules[moduleName].initialize(this.getApi());
       }
     }
 
