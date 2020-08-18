@@ -1,5 +1,6 @@
 import DirectWebSDK, {
   AggregateLoginParams,
+  DirectWebSDKArgs,
   InitParams,
   SubVerifierDetails,
   TorusAggregateLoginResponse,
@@ -7,14 +8,17 @@ import DirectWebSDK, {
 } from "@toruslabs/torus-direct-web-sdk";
 import BN from "bn.js";
 
-import { TorusServiceProviderArgs } from "../base/commonTypes";
+import { StringifiedType, TorusServiceProviderArgs } from "../baseTypes/commonTypes";
 import ServiceProviderBase from "./ServiceProviderBase";
 
 class TorusServiceProvider extends ServiceProviderBase {
   directWeb: DirectWebSDK;
 
+  directParams: DirectWebSDKArgs;
+
   constructor({ enableLogging = false, postboxKey, directParams }: TorusServiceProviderArgs) {
     super({ enableLogging, postboxKey });
+    this.directParams = directParams;
     this.directWeb = new DirectWebSDK(directParams);
   }
 
@@ -32,6 +36,22 @@ class TorusServiceProvider extends ServiceProviderBase {
     const obj = await this.directWeb.triggerAggregateLogin(params);
     this.postboxKey = new BN(obj.privateKey, "hex");
     return obj;
+  }
+
+  toJSON(): StringifiedType {
+    return {
+      ...super.toJSON(),
+      directParams: this.directParams,
+    };
+  }
+
+  static fromJSON(value: StringifiedType): TorusServiceProvider {
+    const { enableLogging, postboxKey, directParams } = value;
+    return new TorusServiceProvider({
+      enableLogging,
+      postboxKey,
+      directParams,
+    });
   }
 }
 

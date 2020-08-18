@@ -1,5 +1,5 @@
-import { BufferObj, ShareRequestArgs } from "../base/aggregateTypes";
-import { EncryptedMessage } from "../base/commonTypes";
+import { BufferObj, ShareRequestArgs } from "../baseTypes/aggregateTypes";
+import { EncryptedMessage } from "../baseTypes/commonTypes";
 
 class ShareRequest {
   encPubKey: Buffer;

@@ -1,5 +1,5 @@
 import BN from "bn.js";
-import { BNString } from "./commonTypes";
+import { BNString, ISerializable, StringifiedType } from "../baseTypes/commonTypes";
 import Point from "./Point";
 export declare type PublicSharePolyIDShareIndexMap = {
     [polynomialID: string]: PublicShareShareIndexMap;
@@ -7,9 +7,11 @@ export declare type PublicSharePolyIDShareIndexMap = {
 declare type PublicShareShareIndexMap = {
     [shareIndex: string]: PublicShare;
 };
-declare class PublicShare {
+declare class PublicShare implements ISerializable {
     shareCommitment: Point;
     shareIndex: BN;
     constructor(shareIndex: BNString, shareCommitment: Point);
+    toJSON(): StringifiedType;
+    static fromJSON(value: StringifiedType): PublicShare;
 }
 export default PublicShare;

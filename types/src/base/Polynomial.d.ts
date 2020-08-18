@@ -1,17 +1,19 @@
 import BN from "bn.js";
-import { BNString, PolynomialID } from "./commonTypes";
+import { BNString, ISerializable, PolynomialID, StringifiedType } from "../baseTypes/commonTypes";
 import PublicPolynomial from "./PublicPolynomial";
 import Share from "./Share";
 export declare type ShareMap = {
     [x: string]: Share;
 };
-declare class Polynomial {
-    polynomial: Array<BN>;
-    constructor(polynomial: Array<BN>);
+declare class Polynomial implements ISerializable {
+    polynomial: BN[];
+    constructor(polynomial: BN[]);
     getThreshold(): number;
     polyEval(x: BNString): BN;
-    generateShares(shareIndexes: Array<BNString>): ShareMap;
+    generateShares(shareIndexes: BNString[]): ShareMap;
     getPublicPolynomial(): PublicPolynomial;
     getPolynomialID(): PolynomialID;
+    toJSON(): StringifiedType;
+    static fromJSON(value: StringifiedType): Polynomial;
 }
-export { Polynomial, PublicPolynomial };
+export default Polynomial;

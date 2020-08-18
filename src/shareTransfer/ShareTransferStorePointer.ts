@@ -1,6 +1,6 @@
 import BN from "bn.js";
 
-import { ShareTransferStorePointerArgs } from "../base/aggregateTypes";
+import { ShareTransferStorePointerArgs } from "../baseTypes/aggregateTypes";
 
 class ShareTransferStorePointer {
   pointer: BN;

@@ -1,21 +1,17 @@
-import { PolynomialID, ShareDescriptionMap } from "./base/commonTypes";
-import Point from "./base/Point";
-import { Polynomial, ShareMap } from "./base/Polynomial";
-import PublicPolynomial, { PublicPolynomialMap } from "./base/PublicPolynomial";
-import PublicShare, { PublicSharePolyIDShareIndexMap } from "./base/PublicShare";
-import Share from "./base/Share";
-import ShareStore, { ScopedStore } from "./base/ShareStore";
-declare class Metadata {
+import { Point, Polynomial, PublicPolynomial, PublicPolynomialMap, PublicShare, PublicSharePolyIDShareIndexMap, ScopedStore, Share, ShareMap, ShareStore } from "./base";
+import { IMetadata } from "./baseTypes/aggregateTypes";
+import { PolynomialID, ShareDescriptionMap, StringifiedType } from "./baseTypes/commonTypes";
+declare class Metadata implements IMetadata {
     pubKey: Point;
     publicPolynomials: PublicPolynomialMap;
     publicShares: PublicSharePolyIDShareIndexMap;
     shareDescriptions: ShareDescriptionMap;
-    polyIDList: Array<PolynomialID>;
+    polyIDList: PolynomialID[];
     generalStore: {
         [moduleName: string]: unknown;
     };
     scopedStore: ScopedStore;
-    constructor(input: any);
+    constructor(input: Point);
     getShareIndexesForPolynomial(polyID: PolynomialID): Array<string>;
     getLatestPublicPolynomial(): PublicPolynomial;
     addPublicPolynomial(publicPolynomial: PublicPolynomial): void;
@@ -28,5 +24,7 @@ declare class Metadata {
     addShareDescription(shareIndex: string, description: string): void;
     deleteShareDescription(shareIndex: string, description: string): void;
     clone(): Metadata;
+    toJSON(): StringifiedType;
+    static fromJSON(value: StringifiedType): Metadata;
 }
 export default Metadata;

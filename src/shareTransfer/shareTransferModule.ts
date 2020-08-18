@@ -1,9 +1,8 @@
 import { generatePrivate } from "@toruslabs/eccrypto";
 import BN from "bn.js";
 
-import { IModule, IThresholdBakApi, ShareTransferStorePointerArgs } from "../base/aggregateTypes";
-import { getPubKeyECC, getPubKeyPoint, toPrivKeyECC } from "../base/BNUtils";
-import ShareStore from "../base/ShareStore";
+import { getPubKeyECC, getPubKeyPoint, ShareStore, toPrivKeyECC } from "../base";
+import { IModule, IThresholdBakApi, ShareTransferStorePointerArgs } from "../baseTypes/aggregateTypes";
 import { decrypt, encrypt } from "../utils";
 import ShareRequest from "./ShareRequest";
 import ShareTransferStorePointer from "./ShareTransferStorePointer";
@@ -51,7 +50,7 @@ class ShareTransferModule implements IModule {
       const latestShareTransferStore = await this.getShareTransferStore();
       if (latestShareTransferStore[encPubKeyX].encShareInTransit) {
         const shareStoreBuf = await decrypt(toPrivKeyECC(this.currentEncKey), latestShareTransferStore[encPubKeyX].encShareInTransit);
-        const receivedShare = new ShareStore(JSON.parse(shareStoreBuf.toString()));
+        const receivedShare = ShareStore.fromJSON(JSON.parse(shareStoreBuf.toString()));
         await this.tbSDK.inputShareSafe(receivedShare);
         if (callback) callback(receivedShare);
         clearInterval(timerID);

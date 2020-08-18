@@ -2,8 +2,8 @@ import { getPublic } from "@toruslabs/eccrypto";
 import BN from "bn.js";
 import { curve, ec } from "elliptic";
 
+import { BNString } from "../baseTypes/commonTypes";
 import { ecCurve } from "../utils";
-import { BNString } from "./commonTypes";
 import Point from "./Point";
 
 // These functions are here because BN can't be extended

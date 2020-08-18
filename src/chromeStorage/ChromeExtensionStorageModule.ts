@@ -1,7 +1,7 @@
 // import Bowser from "bowser"; // ES6 (and TypeScript with --esModuleInterop enabled)
 
-import { IModule, IThresholdBakApi } from "../base/aggregateTypes";
-import ShareStore from "../base/ShareStore";
+import { ShareStore } from "../base";
+import { IModule, IThresholdBakApi } from "../baseTypes/aggregateTypes";
 
 export default class ChromeExtensionStorageModule implements IModule {
   moduleName: string;

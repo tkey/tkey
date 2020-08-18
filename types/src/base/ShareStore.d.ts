@@ -1,9 +1,11 @@
-import { PolynomialID } from "./commonTypes";
+import { ISerializable, PolynomialID, StringifiedType } from "../baseTypes/commonTypes";
 import Share from "./Share";
-declare class ShareStore {
+declare class ShareStore implements ISerializable {
     share: Share;
     polynomialID: PolynomialID;
-    constructor({ share, polynomialID }: ShareStore);
+    constructor(share: Share, polynomialID: PolynomialID);
+    toJSON(): StringifiedType;
+    static fromJSON(value: StringifiedType): ShareStore;
 }
 export declare type ScopedStore = {
     encryptedShare: ShareStore;

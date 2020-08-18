@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import BN from "bn.js";
 import { curve, ec } from "elliptic";
-import { BNString } from "./commonTypes";
+import { BNString } from "../baseTypes/commonTypes";
 import Point from "./Point";
 export declare const toPrivKeyEC: (bn: BN) => ec.KeyPair;
 export declare const toPrivKeyECC: (bn: BNString) => Buffer;

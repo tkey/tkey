@@ -1,5 +1,5 @@
 import BN from "bn.js";
-import { IServiceProvider, IStorageLayer, TorusStorageLayerAPIParams, TorusStorageLayerArgs } from "./base/commonTypes";
+import { IServiceProvider, IStorageLayer, StringifiedType, TorusStorageLayerAPIParams, TorusStorageLayerArgs } from "./baseTypes/commonTypes";
 declare class TorusStorageLayer implements IStorageLayer {
     enableLogging: boolean;
     hostUrl: string;
@@ -10,5 +10,7 @@ declare class TorusStorageLayer implements IStorageLayer {
         message: string;
     }>;
     generateMetadataParams(message: unknown, privKey?: BN): TorusStorageLayerAPIParams;
+    toJSON(): StringifiedType;
+    static fromJSON(value: StringifiedType): TorusStorageLayer;
 }
 export default TorusStorageLayer;

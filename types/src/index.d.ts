@@ -1,10 +1,7 @@
 import BN from "bn.js";
-import { CatchupToLatestShareResult, GenerateNewShareResult, InitializeNewKeyResult, IThresholdBak, IThresholdBakApi, KeyDetails, ModuleMap, RefreshMiddlewareMap, RefreshSharesResult, ThresholdBakArgs } from "./base/aggregateTypes";
-import { BNString, IServiceProvider, IStorageLayer, PolynomialID } from "./base/commonTypes";
-import Point from "./base/Point";
-import { Polynomial } from "./base/Polynomial";
-import Share from "./base/Share";
-import ShareStore, { ScopedStore, ShareStoreMap, ShareStorePolyIDShareIndexMap } from "./base/ShareStore";
+import { Polynomial, ScopedStore, ShareStore, ShareStoreMap, ShareStorePolyIDShareIndexMap } from "./base";
+import { CatchupToLatestShareResult, GenerateNewShareResult, InitializeNewKeyResult, IThresholdBak, IThresholdBakApi, KeyDetails, ModuleMap, RefreshMiddlewareMap, RefreshSharesResult, ThresholdBakArgs } from "./baseTypes/aggregateTypes";
+import { BNString, IServiceProvider, IStorageLayer, PolynomialID, StringifiedType } from "./baseTypes/commonTypes";
 import Metadata from "./metadata";
 declare class ThresholdBak implements IThresholdBak {
     modules: ModuleMap;
@@ -16,9 +13,10 @@ declare class ThresholdBak implements IThresholdBak {
     metadata: Metadata;
     refreshMiddleware: RefreshMiddlewareMap;
     storeDeviceShare: (deviceShareStore: ShareStore) => Promise<void>;
-    constructor({ enableLogging, modules, serviceProvider, storageLayer, directParams }: ThresholdBakArgs);
+    constructor(args?: ThresholdBakArgs);
     getApi(): IThresholdBakApi;
     initialize(input?: ShareStore): Promise<KeyDetails>;
+    private initializeModules;
     catchupToLatestShare(shareStore: ShareStore): Promise<CatchupToLatestShareResult>;
     reconstructKey(): Promise<BN>;
     reconstructLatestPoly(): Polynomial;
@@ -39,8 +37,7 @@ declare class ThresholdBak implements IThresholdBak {
     setDeviceStorage(storeDeviceStorage: (deviceShareStore: ShareStore) => Promise<void>): void;
     addShareDescription(shareIndex: string, description: string, updateMetadata?: boolean): Promise<void>;
     deleteShareDescription(shareIndex: string, description: string, updateMetadata?: boolean): Promise<void>;
+    toJSON(): StringifiedType;
+    static fromJSON(value: StringifiedType, args: ThresholdBakArgs): Promise<ThresholdBak>;
 }
-declare function lagrangeInterpolatePolynomial(points: Array<Point>): Polynomial;
-declare function lagrangeInterpolation(shares: Array<BN>, nodeIndex: Array<BN>): BN;
-declare function generateRandomPolynomial(degree: number, secret?: BN, determinsticShares?: Array<Share>): Polynomial;
-export { ThresholdBak, Metadata, generateRandomPolynomial, lagrangeInterpolation, lagrangeInterpolatePolynomial };
+export default ThresholdBak;

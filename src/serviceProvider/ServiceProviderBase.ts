@@ -1,8 +1,8 @@
 import BN from "bn.js";
 import { curve, ec as EC } from "elliptic";
 
-import { getPubKeyECC, toPrivKeyEC, toPrivKeyECC } from "../base/BNUtils";
-import { BNString, EncryptedMessage, IServiceProvider, PubKeyType, ServiceProviderArgs } from "../base/commonTypes";
+import { getPubKeyECC, toPrivKeyEC, toPrivKeyECC } from "../base";
+import { BNString, EncryptedMessage, IServiceProvider, PubKeyType, ServiceProviderArgs, StringifiedType } from "../baseTypes/commonTypes";
 import { decrypt as decryptUtils, encrypt as encryptUtils } from "../utils";
 
 class ServiceProviderBase implements IServiceProvider {
@@ -16,7 +16,7 @@ class ServiceProviderBase implements IServiceProvider {
   constructor({ enableLogging = false, postboxKey }: ServiceProviderArgs) {
     this.ec = new EC("secp256k1");
     this.enableLogging = enableLogging;
-    this.postboxKey = new BN(postboxKey, 16);
+    this.postboxKey = new BN(postboxKey, "hex");
   }
 
   async encrypt(msg: Buffer): Promise<EncryptedMessage> {
@@ -42,6 +42,18 @@ class ServiceProviderBase implements IServiceProvider {
   sign(msg: BNString): string {
     const sig = toPrivKeyEC(this.postboxKey).sign(msg);
     return Buffer.from(sig.r.toString(16, 64) + sig.s.toString(16, 64) + new BN(0).toString(16, 2), "hex").toString("base64");
+  }
+
+  toJSON(): StringifiedType {
+    return {
+      enableLogging: this.enableLogging,
+      postboxKey: this.postboxKey.toString("hex"),
+    };
+  }
+
+  static fromJSON(value: StringifiedType): ServiceProviderBase {
+    const { enableLogging, postboxKey } = value;
+    return new ServiceProviderBase({ enableLogging, postboxKey });
   }
 }
 
