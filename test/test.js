@@ -248,6 +248,21 @@ describe("lagrange interpolate", function () {
       fail("poly result should equal 7");
     }
   });
+  it.only("#should interpolate random secrets correctly", async function () {
+    const degree = Math.ceil(Math.random() * 10);
+    const secret = new BN(generatePrivate());
+    const poly = generateRandomPolynomial(degree, secret);
+    const shares = [];
+    const indexes = [];
+    for (let i = 1; i <= degree + 1; i += 1) {
+      indexes.push(new BN(i));
+      shares.push(poly.polyEval(new BN(i)));
+    }
+    const key = lagrangeInterpolation(shares, indexes);
+    if (key.cmp(secret) !== 0) {
+      fail("lagranged scalar should equal secret");
+    }
+  });
 });
 
 describe("lagrangeInterpolatePolynomial", function () {
