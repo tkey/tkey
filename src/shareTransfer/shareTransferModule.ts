@@ -2,7 +2,7 @@ import { generatePrivate } from "@toruslabs/eccrypto";
 import BN from "bn.js";
 
 import { getPubKeyECC, getPubKeyPoint, ShareStore, toPrivKeyECC } from "../base";
-import { IModule, IThresholdBakApi, ShareTransferStorePointerArgs } from "../baseTypes/aggregateTypes";
+import { IModule, ITKeyApi, ShareTransferStorePointerArgs } from "../baseTypes/aggregateTypes";
 import { decrypt, encrypt } from "../utils";
 import ShareRequest from "./ShareRequest";
 import ShareTransferStorePointer from "./ShareTransferStorePointer";
@@ -10,7 +10,7 @@ import ShareTransferStorePointer from "./ShareTransferStorePointer";
 class ShareTransferModule implements IModule {
   moduleName: string;
 
-  tbSDK: IThresholdBakApi;
+  tbSDK: ITKeyApi;
 
   currentEncKey: BN;
 
@@ -18,7 +18,7 @@ class ShareTransferModule implements IModule {
     this.moduleName = "shareTransfer";
   }
 
-  async initialize(tbSdk: IThresholdBakApi): Promise<void> {
+  async initialize(tbSdk: ITKeyApi): Promise<void> {
     //   this.tbSDK.addRefreshMiddleware(this.moduleName, this.refreshSecurityQuestionsMiddleware.bind(this));
     this.tbSDK = tbSdk;
     const rawShareTransferStorePointer = this.tbSDK.metadata.getGeneralStoreDomain(this.moduleName) as ShareTransferStorePointerArgs;

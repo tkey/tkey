@@ -1,10 +1,10 @@
 import { ShareStoreMap } from "../base";
-import { GenerateNewShareResult, IModule, IThresholdBakApi } from "../baseTypes/aggregateTypes";
+import { GenerateNewShareResult, IModule, ITKeyApi } from "../baseTypes/aggregateTypes";
 declare class SecurityQuestionsModule implements IModule {
     moduleName: string;
-    tbSDK: IThresholdBakApi;
+    tbSDK: ITKeyApi;
     constructor();
-    initialize(tbSDK: IThresholdBakApi): Promise<void>;
+    initialize(tbSDK: ITKeyApi): Promise<void>;
     generateNewShareWithSecurityQuestions(answerString: string, questions: string): Promise<GenerateNewShareResult>;
     getSecurityQuestions(): string;
     inputShareFromSecurityQuestions(answerString: string): Promise<void>;

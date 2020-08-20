@@ -2,7 +2,7 @@ import BN from "bn.js";
 import { keccak256 } from "web3-utils";
 
 import { Share, ShareStore, ShareStoreMap } from "../base";
-import { GenerateNewShareResult, IModule, IThresholdBakApi, SecurityQuestionStoreArgs } from "../baseTypes/aggregateTypes";
+import { GenerateNewShareResult, IModule, ITKeyApi, SecurityQuestionStoreArgs } from "../baseTypes/aggregateTypes";
 import { ecCurve, isEmptyObject } from "../utils";
 import SecurityQuestionStore from "./SecurityQuestionStore";
 
@@ -18,13 +18,13 @@ function answerToUserInputHashBN(answerString) {
 class SecurityQuestionsModule implements IModule {
   moduleName: string;
 
-  tbSDK: IThresholdBakApi;
+  tbSDK: ITKeyApi;
 
   constructor() {
     this.moduleName = "securityQuestions";
   }
 
-  async initialize(tbSDK: IThresholdBakApi): Promise<void> {
+  async initialize(tbSDK: ITKeyApi): Promise<void> {
     this.tbSDK = tbSDK;
     this.tbSDK.addRefreshMiddleware(this.moduleName, SecurityQuestionsModule.refreshSecurityQuestionsMiddleware);
   }

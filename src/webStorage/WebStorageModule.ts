@@ -1,18 +1,18 @@
 import { ShareStore } from "../base";
-import { IModule, IThresholdBakApi } from "../baseTypes/aggregateTypes";
+import { IModule, ITKeyApi } from "../baseTypes/aggregateTypes";
 import { getShareFromChromeFileStorage, storeShareOnFileStorage } from "./ChromeStorageHelpers";
 import { getShareFromLocalStorage, storeShareOnLocalStorage } from "./LocalStorageHelpers";
 
 class WebStorageModule implements IModule {
   moduleName: string;
 
-  tbSDK: IThresholdBakApi;
+  tbSDK: ITKeyApi;
 
   constructor() {
     this.moduleName = "webStorage";
   }
 
-  async initialize(tbSDK: IThresholdBakApi): Promise<void> {
+  async initialize(tbSDK: ITKeyApi): Promise<void> {
     this.tbSDK = tbSDK;
     // this.tbSDK.addRefreshMiddleware(this.moduleName, this.refreshSecurityQuestionsMiddleware.bind(this));
     this.tbSDK.setDeviceStorage(this.storeDeviceShare.bind(this));

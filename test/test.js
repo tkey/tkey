@@ -9,7 +9,7 @@ import fetch from "node-fetch";
 import { keccak256 } from "web3-utils";
 
 import { getPubKeyPoint, Point, Polynomial } from "../src/base";
-import ThresholdBak from "../src/index";
+import ThresholdKey from "../src/index";
 import { generateRandomPolynomial, lagrangeInterpolatePolynomial, lagrangeInterpolation } from "../src/lagrangeInterpolatePolynomial";
 import Metadata from "../src/metadata";
 import SecurityQuestionsModule from "../src/securityQuestions/SecurityQuestionsModule";
@@ -27,15 +27,15 @@ global.fetch = fetch;
 global.atob = atob;
 global.btoa = btoa;
 
-describe("threshold bak", function () {
+describe("tkey", function () {
   let tb;
-  beforeEach("Setup ThresholdBak", async function () {
-    tb = new ThresholdBak({ serviceProvider: defaultSP, storageLayer: defaultSL });
+  beforeEach("Setup ThresholdKey", async function () {
+    tb = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
   });
 
   it("#should be able to reconstruct key when initializing a key", async function () {
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
-    const tb2 = new ThresholdBak({ serviceProvider: defaultSP, storageLayer: defaultSL });
+    const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize();
     tb2.inputShare(resp1.deviceShare);
     const reconstructedKey = await tb2.reconstructKey();
@@ -47,7 +47,7 @@ describe("threshold bak", function () {
     let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
     userInput = userInput.umod(ecCurve.curve.n);
     const resp1 = await tb.initializeNewKey({ userInput, initializeModules: true });
-    const tb2 = new ThresholdBak({ serviceProvider: defaultSP, storageLayer: defaultSL });
+    const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize();
     tb2.inputShare(resp1.userShare);
     const reconstructedKey = await tb2.reconstructKey();
@@ -57,7 +57,7 @@ describe("threshold bak", function () {
   });
   it("#should be able to reshare a key and retrieve from service provider", async function () {
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
-    const tb2 = new ThresholdBak({ serviceProvider: defaultSP, storageLayer: defaultSL });
+    const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize();
     tb2.inputShare(resp1.deviceShare);
     const reconstructedKey = await tb2.reconstructKey();
@@ -65,7 +65,7 @@ describe("threshold bak", function () {
       fail("key should be able to be reconstructed");
     }
     const resp2 = await tb2.generateNewShare();
-    const tb3 = new ThresholdBak({ serviceProvider: defaultSP, storageLayer: defaultSL });
+    const tb3 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb3.initialize();
     tb3.inputShare(resp2.newShareStores[resp2.newShareIndex.toString("hex")]);
     const finalKey = await tb3.reconstructKey();
@@ -77,7 +77,7 @@ describe("threshold bak", function () {
     let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
     userInput = userInput.umod(ecCurve.curve.n);
     const resp1 = await tb.initializeNewKey({ userInput, initializeModules: true });
-    const tb2 = new ThresholdBak({ serviceProvider: defaultSP, storageLayer: defaultSL });
+    const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize(resp1.userShare);
     tb2.inputShare(resp1.deviceShare);
     const reconstructedKey = await tb2.reconstructKey();
@@ -90,7 +90,7 @@ describe("threshold bak", function () {
     userInput = userInput.umod(ecCurve.curve.n);
     const resp1 = await tb.initializeNewKey({ userInput, initializeModules: true });
     const newShares = await tb.generateNewShare();
-    const tb2 = new ThresholdBak({ serviceProvider: defaultSP, storageLayer: defaultSL });
+    const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize(resp1.userShare);
     tb2.inputShare(newShares.newShareStores[resp1.deviceShare.share.shareIndex.toString("hex")]);
     const reconstructedKey = await tb2.reconstructKey();
@@ -103,7 +103,7 @@ describe("threshold bak", function () {
     userInput = userInput.umod(ecCurve.curve.n);
     const resp1 = await tb.initializeNewKey({ userInput, initializeModules: true });
     const newShares = await tb.generateNewShare();
-    const tb2 = new ThresholdBak({ serviceProvider: defaultSP, storageLayer: defaultSL });
+    const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize(resp1.userShare);
     tb2.inputShare(newShares.newShareStores[resp1.deviceShare.share.shareIndex.toString("hex")]);
     const reconstructedKey = await tb2.reconstructKey();
@@ -112,13 +112,13 @@ describe("threshold bak", function () {
     }
 
     const stringified = JSON.stringify(tb2);
-    const tb3 = await ThresholdBak.fromJSON(JSON.parse(stringified), { serviceProvider: defaultSP, storageLayer: defaultSL });
+    const tb3 = await ThresholdKey.fromJSON(JSON.parse(stringified), { serviceProvider: defaultSP, storageLayer: defaultSL });
     const finalKey = await tb3.reconstructKey();
     strictEqual(finalKey.toString("hex"), reconstructedKey.toString("hex"), "Incorrect serialization");
   });
   it("#should be able to reshare a key and retrieve from service provider serialization", async function () {
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
-    const tb2 = new ThresholdBak({ serviceProvider: defaultSP, storageLayer: defaultSL });
+    const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize();
     tb2.inputShare(resp1.deviceShare);
     const reconstructedKey = await tb2.reconstructKey();
@@ -126,7 +126,7 @@ describe("threshold bak", function () {
       fail("key should be able to be reconstructed");
     }
     const resp2 = await tb2.generateNewShare();
-    const tb3 = new ThresholdBak({ serviceProvider: defaultSP, storageLayer: defaultSL });
+    const tb3 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb3.initialize();
     tb3.inputShare(resp2.newShareStores[resp2.newShareIndex.toString("hex")]);
     const finalKey = await tb3.reconstructKey();
@@ -135,18 +135,18 @@ describe("threshold bak", function () {
     }
 
     const stringified = JSON.stringify(tb3);
-    const tb4 = await ThresholdBak.fromJSON(JSON.parse(stringified), { serviceProvider: defaultSP, storageLayer: defaultSL });
+    const tb4 = await ThresholdKey.fromJSON(JSON.parse(stringified), { serviceProvider: defaultSP, storageLayer: defaultSL });
     const finalKeyPostSerialization = await tb4.reconstructKey();
     strictEqual(finalKeyPostSerialization.toString("hex"), finalKey.toString("hex"), "Incorrect serialization");
   });
 });
 
-describe("Threshold Bak reconstruction", function () {
+describe("tkey reconstruction", function () {
   it("#should be able to detect a new user and reconstruct key on initialize", async function () {
     const privKey = new BN(generatePrivate());
     const uniqueSP = new ServiceProviderBase({ postboxKey: privKey.toString("hex") });
     const uniqueSL = new TorusStorageLayer({ serviceProvider: uniqueSP });
-    const tb = new ThresholdBak({ serviceProvider: uniqueSP, storageLayer: uniqueSL });
+    const tb = new ThresholdKey({ serviceProvider: uniqueSP, storageLayer: uniqueSL });
     await tb.initialize();
     const reconstructedKey = await tb.reconstructKey();
     if (tb.privKey.cmp(reconstructedKey) !== 0) {
@@ -248,7 +248,7 @@ describe("lagrange interpolate", function () {
       fail("poly result should equal 7");
     }
   });
-  it.only("#should interpolate random secrets correctly", async function () {
+  it("#should interpolate random secrets correctly", async function () {
     const degree = Math.ceil(Math.random() * 10);
     const secret = new BN(generatePrivate());
     const poly = generateRandomPolynomial(degree, secret);
@@ -299,7 +299,7 @@ describe("lagrangeInterpolatePolynomial", function () {
 describe("SecurityQuestionsModule", function () {
   let tb;
   beforeEach("initialize security questions module", async function () {
-    tb = new ThresholdBak({
+    tb = new ThresholdKey({
       serviceProvider: defaultSP,
       storageLayer: defaultSL,
       modules: { securityQuestions: new SecurityQuestionsModule() },
@@ -308,7 +308,7 @@ describe("SecurityQuestionsModule", function () {
   it("#should be able to reconstruct key and initialize a key with seciurty questions", async function () {
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
     await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
-    const tb2 = new ThresholdBak({
+    const tb2 = new ThresholdKey({
       serviceProvider: defaultSP,
       storageLayer: defaultSL,
       modules: { securityQuestions: new SecurityQuestionsModule() },
@@ -324,7 +324,7 @@ describe("SecurityQuestionsModule", function () {
   it("#should be able to reconstruct key and initialize a key with seciurty questions after refresh", async function () {
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
     await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
-    const tb2 = new ThresholdBak({
+    const tb2 = new ThresholdKey({
       serviceProvider: defaultSP,
       storageLayer: defaultSL,
       modules: { securityQuestions: new SecurityQuestionsModule() },
@@ -343,7 +343,7 @@ describe("SecurityQuestionsModule", function () {
     await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
     await tb.modules.securityQuestions.changeSecurityQuestionAndAnswer("dodo", "who is your cat?");
 
-    const tb2 = new ThresholdBak({
+    const tb2 = new ThresholdKey({
       serviceProvider: defaultSP,
       storageLayer: defaultSL,
       modules: { securityQuestions: new SecurityQuestionsModule() },
@@ -361,7 +361,7 @@ describe("SecurityQuestionsModule", function () {
     await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
     await tb.modules.securityQuestions.changeSecurityQuestionAndAnswer("dodo", "who is your cat?");
 
-    const tb2 = new ThresholdBak({
+    const tb2 = new ThresholdKey({
       serviceProvider: defaultSP,
       storageLayer: defaultSL,
       modules: { securityQuestions: new SecurityQuestionsModule() },
@@ -375,7 +375,7 @@ describe("SecurityQuestionsModule", function () {
     }
 
     const stringified = JSON.stringify(tb2);
-    const tb4 = await ThresholdBak.fromJSON(JSON.parse(stringified), { serviceProvider: defaultSP, storageLayer: defaultSL });
+    const tb4 = await ThresholdKey.fromJSON(JSON.parse(stringified), { serviceProvider: defaultSP, storageLayer: defaultSL });
     const finalKeyPostSerialization = await tb4.reconstructKey();
     strictEqual(finalKeyPostSerialization.toString("hex"), reconstructedKey.toString("hex"), "Incorrect serialization");
   });
@@ -383,13 +383,13 @@ describe("SecurityQuestionsModule", function () {
 
 describe("ShareTransferModule", function () {
   it("#should be able to transfer share via the module", async function () {
-    const tb = new ThresholdBak({
+    const tb = new ThresholdKey({
       serviceProvider: defaultSP,
       storageLayer: defaultSL,
       modules: { shareTransfer: new ShareTransferModule() },
     });
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
-    const tb2 = new ThresholdBak({
+    const tb2 = new ThresholdKey({
       serviceProvider: defaultSP,
       storageLayer: defaultSL,
       modules: { shareTransfer: new ShareTransferModule() },
@@ -417,14 +417,14 @@ describe("ShareTransferModule", function () {
     }
   });
   // it("#should be able to reconstruct key and initialize a key with seciurty questions after refresh", async function () {
-  //   const tb = new ThresholdBak({
+  //   const tb = new ThresholdKey({
   //     serviceProvider: defaultSP,
   //     storageLayer: defaultSL,
   //     modules: { securityQuestions: new SecurityQuestionsModule() },
   //   });
   //   const resp1 = await tb.initializeNewKey({ initializeModules: true });
   //   await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
-  //   const tb2 = new ThresholdBak({
+  //   const tb2 = new ThresholdKey({
   //     serviceProvider: defaultSP,
   //     storageLayer: defaultSL,
   //     modules: { securityQuestions: new SecurityQuestionsModule() },

@@ -7,7 +7,7 @@ export declare type ModuleMap = {
 };
 export interface IModule {
     moduleName: string;
-    initialize(api: IThresholdBakApi): Promise<void>;
+    initialize(api: ITKeyApi): Promise<void>;
 }
 export interface IMetadata extends ISerializable {
     pubKey: Point;
@@ -56,7 +56,7 @@ export declare type KeyDetails = {
     shareDescriptions: ShareDescriptionMap;
     modules: ModuleMap;
 };
-export interface IThresholdBakApi {
+export interface ITKeyApi {
     metadata: IMetadata;
     storageLayer: IStorageLayer;
     catchupToLatestShare(shareStore: ShareStore): Promise<CatchupToLatestShareResult>;
@@ -69,7 +69,7 @@ export interface IThresholdBakApi {
     generateNewShare(): Promise<GenerateNewShareResult>;
     outputShare(shareIndex: BNString): ShareStore;
 }
-export interface IThresholdBak extends IThresholdBakApi, ISerializable {
+export interface ITKey extends ITKeyApi, ISerializable {
     modules: ModuleMap;
     enableLogging: boolean;
     serviceProvider: IServiceProvider;
@@ -88,7 +88,7 @@ export interface IThresholdBak extends IThresholdBakApi, ISerializable {
     setKey(privKey: BN): void;
     getKeyDetails(): KeyDetails;
 }
-export declare type ThresholdBakArgs = {
+export declare type TKeyArgs = {
     enableLogging?: boolean;
     modules?: ModuleMap;
     serviceProvider?: IServiceProvider;

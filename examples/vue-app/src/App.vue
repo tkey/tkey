@@ -26,7 +26,7 @@
 </template>
 
 <script>
-import ThresholdBak from "threshold-bak";
+import ThresholdKey from "threshold-bak";
 import {WebStorageModule, SecurityQuestionsModule} from "threshold-bak";
 
 const GOOGLE = "google";
@@ -206,7 +206,7 @@ export default {
     try {
       const webStorageModule = new WebStorageModule();
       const securityQuestionsModule = new SecurityQuestionsModule();
-      const tbsdk =  new ThresholdBak({directParams: {
+      const tbsdk =  new ThresholdKey({directParams: {
         baseUrl: `${location.origin}/serviceworker`,
         enableLogging: true,
         proxyContractAddress: "0x4023d2a0D330bF11426B12C6144Cfb96B7fa6183", // details for test net

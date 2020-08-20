@@ -6,13 +6,13 @@ import {
   CatchupToLatestShareResult,
   GenerateNewShareResult,
   InitializeNewKeyResult,
-  IThresholdBak,
-  IThresholdBakApi,
+  ITKey,
+  ITKeyApi,
   KeyDetails,
   ModuleMap,
   RefreshMiddlewareMap,
   RefreshSharesResult,
-  ThresholdBakArgs,
+  TKeyArgs,
 } from "./baseTypes/aggregateTypes";
 import { BNString, IServiceProvider, IStorageLayer, PolynomialID, StringifiedType } from "./baseTypes/commonTypes";
 import { generateRandomPolynomial, lagrangeInterpolatePolynomial, lagrangeInterpolation } from "./lagrangeInterpolatePolynomial";
@@ -23,7 +23,7 @@ import { isEmptyObject } from "./utils";
 
 // TODO: handle errors for get and set with retries
 
-class ThresholdBak implements IThresholdBak {
+class ThresholdKey implements ITKey {
   modules: ModuleMap;
 
   enableLogging: boolean;
@@ -42,7 +42,7 @@ class ThresholdBak implements IThresholdBak {
 
   storeDeviceShare: (deviceShareStore: ShareStore) => Promise<void>;
 
-  constructor(args?: ThresholdBakArgs) {
+  constructor(args?: TKeyArgs) {
     const { enableLogging = false, modules = {}, serviceProvider, storageLayer, directParams } = args;
     this.enableLogging = enableLogging;
 
@@ -66,7 +66,7 @@ class ThresholdBak implements IThresholdBak {
     this.storeDeviceShare = undefined;
   }
 
-  getApi(): IThresholdBakApi {
+  getApi(): ITKeyApi {
     return {
       metadata: this.metadata,
       storageLayer: this.storageLayer,
@@ -517,10 +517,10 @@ class ThresholdBak implements IThresholdBak {
     };
   }
 
-  static async fromJSON(value: StringifiedType, args: ThresholdBakArgs): Promise<ThresholdBak> {
+  static async fromJSON(value: StringifiedType, args: TKeyArgs): Promise<ThresholdKey> {
     const { enableLogging, privKey, metadata, shares } = value;
     const { storageLayer, serviceProvider, modules } = args;
-    const tb = new ThresholdBak({ enableLogging, storageLayer, serviceProvider, modules });
+    const tb = new ThresholdKey({ enableLogging, storageLayer, serviceProvider, modules });
     tb.privKey = new BN(privKey, "hex");
     if (metadata) tb.metadata = Metadata.fromJSON(metadata);
 
@@ -541,4 +541,4 @@ class ThresholdBak implements IThresholdBak {
   }
 }
 
-export default ThresholdBak;
+export default ThresholdKey;

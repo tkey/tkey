@@ -1,10 +1,10 @@
 import { ShareStore } from "../base";
-import { IModule, IThresholdBakApi } from "../baseTypes/aggregateTypes";
+import { IModule, ITKeyApi } from "../baseTypes/aggregateTypes";
 declare class WebStorageModule implements IModule {
     moduleName: string;
-    tbSDK: IThresholdBakApi;
+    tbSDK: ITKeyApi;
     constructor();
-    initialize(tbSDK: IThresholdBakApi): Promise<void>;
+    initialize(tbSDK: ITKeyApi): Promise<void>;
     storeDeviceShare(deviceShareStore: ShareStore): Promise<void>;
     inputShareFromWebStorage(): Promise<void>;
 }

@@ -27,7 +27,7 @@ export interface IModule {
   moduleName: string;
   // called to initialize a module on the main TBSDK.
   // currenty called immedietly after the base metadata has been set on the SDK
-  initialize(api: IThresholdBakApi): Promise<void>;
+  initialize(api: ITKeyApi): Promise<void>;
 }
 
 export interface IMetadata extends ISerializable {
@@ -90,7 +90,7 @@ export type KeyDetails = {
   modules: ModuleMap;
 };
 
-export interface IThresholdBakApi {
+export interface ITKeyApi {
   metadata: IMetadata;
   storageLayer: IStorageLayer;
 
@@ -108,7 +108,7 @@ export interface IThresholdBakApi {
   outputShare(shareIndex: BNString): ShareStore;
 }
 
-export interface IThresholdBak extends IThresholdBakApi, ISerializable {
+export interface ITKey extends ITKeyApi, ISerializable {
   modules: ModuleMap;
 
   enableLogging: boolean;
@@ -138,7 +138,7 @@ export interface IThresholdBak extends IThresholdBakApi, ISerializable {
   getKeyDetails(): KeyDetails;
 }
 
-export type ThresholdBakArgs = {
+export type TKeyArgs = {
   enableLogging?: boolean;
   modules?: ModuleMap;
   serviceProvider?: IServiceProvider;

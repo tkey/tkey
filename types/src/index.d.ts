@@ -1,9 +1,9 @@
 import BN from "bn.js";
 import { Polynomial, ScopedStore, ShareStore, ShareStoreMap, ShareStorePolyIDShareIndexMap } from "./base";
-import { CatchupToLatestShareResult, GenerateNewShareResult, InitializeNewKeyResult, IThresholdBak, IThresholdBakApi, KeyDetails, ModuleMap, RefreshMiddlewareMap, RefreshSharesResult, ThresholdBakArgs } from "./baseTypes/aggregateTypes";
+import { CatchupToLatestShareResult, GenerateNewShareResult, InitializeNewKeyResult, ITKey, ITKeyApi, KeyDetails, ModuleMap, RefreshMiddlewareMap, RefreshSharesResult, TKeyArgs } from "./baseTypes/aggregateTypes";
 import { BNString, IServiceProvider, IStorageLayer, PolynomialID, StringifiedType } from "./baseTypes/commonTypes";
 import Metadata from "./metadata";
-declare class ThresholdBak implements IThresholdBak {
+declare class ThresholdKey implements ITKey {
     modules: ModuleMap;
     enableLogging: boolean;
     serviceProvider: IServiceProvider;
@@ -13,8 +13,8 @@ declare class ThresholdBak implements IThresholdBak {
     metadata: Metadata;
     refreshMiddleware: RefreshMiddlewareMap;
     storeDeviceShare: (deviceShareStore: ShareStore) => Promise<void>;
-    constructor(args?: ThresholdBakArgs);
-    getApi(): IThresholdBakApi;
+    constructor(args?: TKeyArgs);
+    getApi(): ITKeyApi;
     initialize(input?: ShareStore): Promise<KeyDetails>;
     private initializeModules;
     catchupToLatestShare(shareStore: ShareStore): Promise<CatchupToLatestShareResult>;
@@ -38,6 +38,6 @@ declare class ThresholdBak implements IThresholdBak {
     addShareDescription(shareIndex: string, description: string, updateMetadata?: boolean): Promise<void>;
     deleteShareDescription(shareIndex: string, description: string, updateMetadata?: boolean): Promise<void>;
     toJSON(): StringifiedType;
-    static fromJSON(value: StringifiedType, args: ThresholdBakArgs): Promise<ThresholdBak>;
+    static fromJSON(value: StringifiedType, args: TKeyArgs): Promise<ThresholdKey>;
 }
-export default ThresholdBak;
+export default ThresholdKey;
