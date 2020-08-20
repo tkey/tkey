@@ -1,5 +1,5 @@
-import { GenerateNewShareResult, IModule, IThresholdBakApi } from "../base/aggregateTypes";
-import { ShareStoreMap } from "../base/ShareStore";
+import { ShareStoreMap } from "../base";
+import { GenerateNewShareResult, IModule, IThresholdBakApi } from "../baseTypes/aggregateTypes";
 declare class SecurityQuestionsModule implements IModule {
     moduleName: string;
     tbSDK: IThresholdBakApi;
@@ -9,6 +9,6 @@ declare class SecurityQuestionsModule implements IModule {
     getSecurityQuestions(): string;
     inputShareFromSecurityQuestions(answerString: string): Promise<void>;
     changeSecurityQuestionAndAnswer(newAnswerString: string, newQuestions: string): Promise<void>;
-    refreshSecurityQuestionsMiddleware(generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap): unknown;
+    static refreshSecurityQuestionsMiddleware(generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap): unknown;
 }
 export default SecurityQuestionsModule;

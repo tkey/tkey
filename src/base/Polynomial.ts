@@ -1,8 +1,8 @@
 import BN from "bn.js";
 
+import { BNString, ISerializable, PolynomialID, StringifiedType } from "../baseTypes/commonTypes";
 import { ecCurve } from "../utils";
 import { getPubKeyPoint } from "./BNUtils";
-import { BNString, PolynomialID } from "./commonTypes";
 import Point from "./Point";
 import PublicPolynomial from "./PublicPolynomial";
 import Share from "./Share";
@@ -12,10 +12,10 @@ export type ShareMap = {
   [x: string]: Share;
 };
 
-class Polynomial {
-  polynomial: Array<BN>;
+class Polynomial implements ISerializable {
+  polynomial: BN[];
 
-  constructor(polynomial: Array<BN>) {
+  constructor(polynomial: BN[]) {
     this.polynomial = polynomial;
   }
 
@@ -38,7 +38,7 @@ class Polynomial {
     return sum;
   }
 
-  generateShares(shareIndexes: Array<BNString>): ShareMap {
+  generateShares(shareIndexes: BNString[]): ShareMap {
     const newShareIndexes = shareIndexes.map((index) => {
       if (typeof index === "number") {
         return new BN(index);
@@ -60,7 +60,7 @@ class Polynomial {
   }
 
   getPublicPolynomial(): PublicPolynomial {
-    const polynomialCommitments: Array<Point> = [];
+    const polynomialCommitments: Point[] = [];
     for (let i = 0; i < this.polynomial.length; i += 1) {
       polynomialCommitments.push(getPubKeyPoint(this.polynomial[i]));
     }
@@ -71,6 +71,17 @@ class Polynomial {
   getPolynomialID(): PolynomialID {
     return this.getPublicPolynomial().getPolynomialID();
   }
+
+  toJSON(): StringifiedType {
+    return {
+      polynomial: this.polynomial.map((x) => x.toString("hex")),
+    };
+  }
+
+  static fromJSON(value: StringifiedType): Polynomial {
+    const { polynomial } = value;
+    return new Polynomial(polynomial.map((x: string) => new BN(x, "hex")));
+  }
 }
 
-export { Polynomial, PublicPolynomial };
+export default Polynomial;

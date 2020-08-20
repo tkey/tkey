@@ -18,12 +18,16 @@ export interface ServiceProviderArgs {
 export interface TorusServiceProviderArgs extends ServiceProviderArgs {
     directParams: DirectWebSDKArgs;
 }
-export interface IPoint {
+export declare type StringifiedType = Record<string, any>;
+export interface ISerializable {
+    toJSON(): StringifiedType;
+}
+export interface IPoint extends ISerializable {
     x: BN;
     y: BN;
     encode(enc: "arr"): Buffer;
 }
-export interface IServiceProvider {
+export interface IServiceProvider extends ISerializable {
     ec: EC;
     enableLogging: boolean;
     postboxKey: BN;
@@ -33,7 +37,7 @@ export interface IServiceProvider {
     retrievePubKeyPoint(): curve.base.BasePoint;
     sign(msg: BNString): string;
 }
-export interface IStorageLayer {
+export interface IStorageLayer extends ISerializable {
     enableLogging: boolean;
     hostUrl: string;
     serviceProvider: IServiceProvider;
@@ -55,5 +59,5 @@ export declare type TorusStorageLayerAPIParams = {
     signature: string;
 };
 export declare type ShareDescriptionMap = {
-    [shareIndexStr: string]: Array<string>;
+    [shareIndexStr: string]: string[];
 };

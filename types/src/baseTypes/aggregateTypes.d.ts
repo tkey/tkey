@@ -1,17 +1,36 @@
 import { DirectWebSDKArgs } from "@toruslabs/torus-direct-web-sdk";
 import BN from "bn.js";
-import Metadata from "../metadata";
-import { BNString, EncryptedMessage, IServiceProvider, IStorageLayer, PolynomialID, ShareDescriptionMap } from "./commonTypes";
-import Point from "./Point";
-import { Polynomial } from "./Polynomial";
-import PublicShare from "./PublicShare";
-import ShareStore, { ScopedStore, ShareStoreMap, ShareStorePolyIDShareIndexMap } from "./ShareStore";
+import { Point, Polynomial, PublicPolynomial, PublicPolynomialMap, PublicShare, PublicSharePolyIDShareIndexMap, ScopedStore, Share, ShareMap, ShareStore, ShareStoreMap, ShareStorePolyIDShareIndexMap } from "../base";
+import { BNString, EncryptedMessage, ISerializable, IServiceProvider, IStorageLayer, PolynomialID, ShareDescriptionMap } from "./commonTypes";
 export declare type ModuleMap = {
     [moduleName: string]: IModule;
 };
 export interface IModule {
     moduleName: string;
     initialize(api: IThresholdBakApi): Promise<void>;
+}
+export interface IMetadata extends ISerializable {
+    pubKey: Point;
+    publicPolynomials: PublicPolynomialMap;
+    publicShares: PublicSharePolyIDShareIndexMap;
+    shareDescriptions: ShareDescriptionMap;
+    polyIDList: PolynomialID[];
+    generalStore: {
+        [moduleName: string]: unknown;
+    };
+    scopedStore: ScopedStore;
+    getShareIndexesForPolynomial(polyID: PolynomialID): Array<string>;
+    getLatestPublicPolynomial(): PublicPolynomial;
+    addPublicPolynomial(publicPolynomial: PublicPolynomial): void;
+    addPublicShare(polynomialID: PolynomialID, publicShare: PublicShare): void;
+    setGeneralStoreDomain(key: string, obj: unknown): void;
+    getGeneralStoreDomain(key: string): unknown;
+    addFromPolynomialAndShares(polynomial: Polynomial, shares: Array<Share> | ShareMap): void;
+    setScopedStore(scopedStore: ScopedStore): void;
+    getEncryptedShare(): ShareStore;
+    addShareDescription(shareIndex: string, description: string): void;
+    deleteShareDescription(shareIndex: string, description: string): void;
+    clone(): IMetadata;
 }
 export declare type InitializeNewKeyResult = {
     privKey: BN;
@@ -20,7 +39,7 @@ export declare type InitializeNewKeyResult = {
 };
 export declare type CatchupToLatestShareResult = {
     latestShare: ShareStore;
-    shareMetadata: Metadata;
+    shareMetadata: IMetadata;
 };
 export declare type GenerateNewShareResult = {
     newShareStores: ShareStoreMap;
@@ -38,7 +57,7 @@ export declare type KeyDetails = {
     modules: ModuleMap;
 };
 export interface IThresholdBakApi {
-    metadata: Metadata;
+    metadata: IMetadata;
     storageLayer: IStorageLayer;
     catchupToLatestShare(shareStore: ShareStore): Promise<CatchupToLatestShareResult>;
     syncShareMetadata(adjustScopedStore?: (ss: ScopedStore) => ScopedStore): Promise<void>;
@@ -46,11 +65,11 @@ export interface IThresholdBakApi {
     setDeviceStorage(storeDeviceStorage: (deviceShareStore: ShareStore) => Promise<void>): void;
     addShareDescription(shareIndex: string, description: string, updateMetadata?: boolean): Promise<void>;
     inputShare(shareStore: ShareStore): void;
-    addRefreshMiddleware(moduleName: string, middleware: (generalStore: unknown) => unknown): void;
+    addRefreshMiddleware(moduleName: string, middleware: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap) => unknown): void;
     generateNewShare(): Promise<GenerateNewShareResult>;
     outputShare(shareIndex: BNString): ShareStore;
 }
-export interface IThresholdBak extends IThresholdBakApi {
+export interface IThresholdBak extends IThresholdBakApi, ISerializable {
     modules: ModuleMap;
     enableLogging: boolean;
     serviceProvider: IServiceProvider;

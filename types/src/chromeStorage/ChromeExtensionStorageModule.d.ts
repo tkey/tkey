@@ -1,5 +1,5 @@
-import { IModule, IThresholdBakApi } from "../base/aggregateTypes";
-import ShareStore from "../base/ShareStore";
+import { ShareStore } from "../base";
+import { IModule, IThresholdBakApi } from "../baseTypes/aggregateTypes";
 export default class ChromeExtensionStorageModule implements IModule {
     moduleName: string;
     tbSDK: IThresholdBakApi;

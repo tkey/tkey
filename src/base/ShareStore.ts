@@ -1,24 +1,26 @@
-import { PolynomialID } from "./commonTypes";
+import { ISerializable, PolynomialID, StringifiedType } from "../baseTypes/commonTypes";
 import Share from "./Share";
 
-class ShareStore {
+class ShareStore implements ISerializable {
   share: Share;
 
   polynomialID: PolynomialID;
 
-  constructor({ share, polynomialID }: ShareStore) {
-    if (share instanceof Share && typeof polynomialID === "string") {
-      this.share = share;
-      this.polynomialID = polynomialID;
-    } else if (typeof share === "object" && typeof polynomialID === "string") {
-      if (!("share" in share) || !("shareIndex" in share)) {
-        throw new TypeError("expected ShareStore input share to have share and shareIndex");
-      }
-      this.share = new Share(share.shareIndex, share.share);
-      this.polynomialID = polynomialID;
-    } else {
-      throw new TypeError("expected ShareStore inputs to be Share and string");
-    }
+  constructor(share: Share, polynomialID: PolynomialID) {
+    this.share = share;
+    this.polynomialID = polynomialID;
+  }
+
+  toJSON(): StringifiedType {
+    return {
+      share: this.share,
+      polynomialID: this.polynomialID.toString(),
+    };
+  }
+
+  static fromJSON(value: StringifiedType): ShareStore {
+    const { share, polynomialID } = value;
+    return new ShareStore(Share.fromJSON(share), polynomialID);
   }
 }
 

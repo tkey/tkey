@@ -1,6 +1,6 @@
 import BN from "bn.js";
 
-import { BNString } from "./commonTypes";
+import { BNString, ISerializable, StringifiedType } from "../baseTypes/commonTypes";
 import Point from "./Point";
 
 // @flow
@@ -12,7 +12,7 @@ type PublicShareShareIndexMap = {
   [shareIndex: string]: PublicShare;
 };
 
-class PublicShare {
+class PublicShare implements ISerializable {
   shareCommitment: Point;
 
   shareIndex: BN;
@@ -20,6 +20,18 @@ class PublicShare {
   constructor(shareIndex: BNString, shareCommitment: Point) {
     this.shareCommitment = new Point(shareCommitment.x, shareCommitment.y);
     this.shareIndex = new BN(shareIndex, "hex");
+  }
+
+  toJSON(): StringifiedType {
+    return {
+      shareCommitment: this.shareCommitment,
+      shareIndex: this.shareIndex.toString("hex"),
+    };
+  }
+
+  static fromJSON(value: StringifiedType): PublicShare {
+    const { shareCommitment, shareIndex } = value;
+    return new PublicShare(shareIndex, Point.fromJSON(shareCommitment));
   }
 }
 

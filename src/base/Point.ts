@@ -1,6 +1,6 @@
 import BN from "bn.js";
 
-import { BNString, IPoint } from "./commonTypes";
+import { BNString, IPoint, StringifiedType } from "../baseTypes/commonTypes";
 
 class Point implements IPoint {
   x: BN;
@@ -20,9 +20,17 @@ class Point implements IPoint {
     throw Error("encoding doesnt exist in Point");
   }
 
-  // toString(): string {
-  //   return `{"x":"${this.x.toString("hex", 32)}","y":"${this.y.toString("hex", 32)}"}`;
-  // }
+  toJSON(): StringifiedType {
+    return {
+      x: this.x.toString("hex"),
+      y: this.y.toString("hex"),
+    };
+  }
+
+  static fromJSON(value: StringifiedType): Point {
+    const { x, y } = value;
+    return new Point(x, y);
+  }
 }
 
 export default Point;

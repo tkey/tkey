@@ -1,6 +1,6 @@
 import BN from "bn.js";
-import { IModule, IThresholdBakApi } from "../base/aggregateTypes";
-import ShareStore from "../base/ShareStore";
+import { ShareStore } from "../base";
+import { IModule, IThresholdBakApi } from "../baseTypes/aggregateTypes";
 import ShareRequest from "./ShareRequest";
 declare class ShareTransferModule implements IModule {
     moduleName: string;

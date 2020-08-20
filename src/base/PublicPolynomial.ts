@@ -1,10 +1,10 @@
-import { PolynomialID } from "./commonTypes";
+import { ISerializable, PolynomialID, StringifiedType } from "../baseTypes/commonTypes";
 import Point from "./Point";
 
-class PublicPolynomial {
-  polynomialCommitments: Array<Point>;
+class PublicPolynomial implements ISerializable {
+  polynomialCommitments: Point[];
 
-  constructor(polynomialCommitments: Array<Point>) {
+  constructor(polynomialCommitments: Point[]) {
     this.polynomialCommitments = polynomialCommitments;
   }
 
@@ -22,6 +22,17 @@ class PublicPolynomial {
       idSeed += nextChunk;
     }
     return idSeed;
+  }
+
+  toJSON(): StringifiedType {
+    return {
+      polynomialCommitments: this.polynomialCommitments,
+    };
+  }
+
+  static fromJSON(value: StringifiedType): PublicPolynomial {
+    const points: Point[] = value.polynomialCommitments.map((x: StringifiedType) => Point.fromJSON(x));
+    return new PublicPolynomial(points);
   }
 }
 

@@ -1,15 +1,21 @@
-/* eslint-disable guard-for-in */
 import stringify from "json-stable-stringify";
 
-import { PolynomialID, ShareDescriptionMap } from "./base/commonTypes";
-import Point from "./base/Point";
-import { Polynomial, ShareMap } from "./base/Polynomial";
-import PublicPolynomial, { PublicPolynomialMap } from "./base/PublicPolynomial";
-import PublicShare, { PublicSharePolyIDShareIndexMap } from "./base/PublicShare";
-import Share from "./base/Share";
-import ShareStore, { ScopedStore } from "./base/ShareStore";
+import {
+  Point,
+  Polynomial,
+  PublicPolynomial,
+  PublicPolynomialMap,
+  PublicShare,
+  PublicSharePolyIDShareIndexMap,
+  ScopedStore,
+  Share,
+  ShareMap,
+  ShareStore,
+} from "./base";
+import { IMetadata } from "./baseTypes/aggregateTypes";
+import { PolynomialID, ShareDescriptionMap, StringifiedType } from "./baseTypes/commonTypes";
 
-class Metadata {
+class Metadata implements IMetadata {
   pubKey: Point;
 
   publicPolynomials: PublicPolynomialMap;
@@ -18,7 +24,7 @@ class Metadata {
 
   shareDescriptions: ShareDescriptionMap;
 
-  polyIDList: Array<PolynomialID>;
+  polyIDList: PolynomialID[];
 
   generalStore: {
     [moduleName: string]: unknown;
@@ -26,44 +32,13 @@ class Metadata {
 
   scopedStore: ScopedStore;
 
-  constructor(input) {
+  constructor(input: Point) {
     this.publicPolynomials = {};
     this.publicShares = {};
     this.generalStore = {};
     this.shareDescriptions = {};
-
-    if (input instanceof Point) {
-      this.pubKey = input;
-      this.polyIDList = [];
-    } else if (typeof input === "object") {
-      // assumed to be JSON.parsed object
-      this.pubKey = new Point(input.pubKey.x, input.pubKey.y);
-      this.polyIDList = input.polyIDList;
-      if (input.generalStore) this.generalStore = input.generalStore;
-      if (input.scopedStore) this.scopedStore = input.scopedStore;
-      if (input.shareDescriptions) this.shareDescriptions = input.shareDescriptions;
-      // for publicPolynomials
-      for (const pubPolyID in input.publicPolynomials) {
-        const pointCommitments = [];
-        input.publicPolynomials[pubPolyID].polynomialCommitments.forEach((commitment) => {
-          pointCommitments.push(new Point(commitment.x, commitment.y));
-        });
-        const publicPolynomial = new PublicPolynomial(pointCommitments);
-        this.publicPolynomials[pubPolyID] = publicPolynomial;
-      }
-      // for publicShares
-      for (const pubPolyID in input.publicShares) {
-        for (const shareIndex in input.publicShares[pubPolyID]) {
-          const newPubShare = new PublicShare(
-            input.publicShares[pubPolyID][shareIndex].shareIndex,
-            new Point(input.publicShares[pubPolyID][shareIndex].shareCommitment.x, input.publicShares[pubPolyID][shareIndex].shareCommitment.y)
-          );
-          this.addPublicShare(pubPolyID, newPubShare);
-        }
-      }
-    } else {
-      throw TypeError("not a valid constructor argument for Metadata");
-    }
+    this.pubKey = input;
+    this.polyIDList = [];
   }
 
   getShareIndexesForPolynomial(polyID: PolynomialID): Array<string> {
@@ -104,7 +79,9 @@ class Metadata {
       }
     } else {
       for (const k in shares) {
-        this.addPublicShare(publicPolynomial.getPolynomialID(), shares[k].getPublicShare());
+        if (Object.prototype.hasOwnProperty.call(shares, k)) {
+          this.addPublicShare(publicPolynomial.getPolynomialID(), shares[k].getPublicShare());
+        }
       }
     }
   }
@@ -133,7 +110,48 @@ class Metadata {
   }
 
   clone(): Metadata {
-    return new Metadata(JSON.parse(stringify(this)));
+    return Metadata.fromJSON(JSON.parse(stringify(this)));
+  }
+
+  toJSON(): StringifiedType {
+    return this;
+  }
+
+  static fromJSON(value: StringifiedType): Metadata {
+    const { pubKey, polyIDList, generalStore, scopedStore, shareDescriptions, publicPolynomials, publicShares } = value;
+    const point = new Point(pubKey.x, pubKey.y);
+    const metadata = new Metadata(point);
+    metadata.polyIDList = polyIDList;
+    if (generalStore) metadata.generalStore = generalStore;
+    if (scopedStore) metadata.scopedStore = scopedStore;
+    if (shareDescriptions) metadata.shareDescriptions = shareDescriptions;
+
+    // for publicPolynomials
+    for (const pubPolyID in publicPolynomials) {
+      if (Object.prototype.hasOwnProperty.call(publicPolynomials, pubPolyID)) {
+        const pointCommitments = [];
+        publicPolynomials[pubPolyID].polynomialCommitments.forEach((commitment) => {
+          pointCommitments.push(new Point(commitment.x, commitment.y));
+        });
+        const publicPolynomial = new PublicPolynomial(pointCommitments);
+        metadata.publicPolynomials[pubPolyID] = publicPolynomial;
+      }
+    }
+    // for publicShares
+    for (const pubPolyID in publicShares) {
+      if (Object.prototype.hasOwnProperty.call(publicShares, pubPolyID)) {
+        for (const shareIndex in publicShares[pubPolyID]) {
+          if (Object.prototype.hasOwnProperty.call(publicShares[pubPolyID], shareIndex)) {
+            const newPubShare = new PublicShare(
+              publicShares[pubPolyID][shareIndex].shareIndex,
+              new Point(publicShares[pubPolyID][shareIndex].shareCommitment.x, publicShares[pubPolyID][shareIndex].shareCommitment.y)
+            );
+            metadata.addPublicShare(pubPolyID, newPubShare);
+          }
+        }
+      }
+    }
+    return metadata;
   }
 }
 

@@ -1,79 +1,7 @@
-/* eslint-disable class-methods-use-this */
-// import Bowser from "bowser"; // ES6 (and TypeScript with --esModuleInterop enabled)
-
-import { IModule, IThresholdBakApi } from "../base/aggregateTypes";
-import ShareStore from "../base/ShareStore";
-
-// Web Specific declarations
-const requestedBytes = 1024 * 1024 * 10; // 10MB
-window.requestFileSystem = window.requestFileSystem || window.webkitRequestFileSystem;
-declare global {
-  interface Navigator {
-    webkitPersistentStorage: {
-      requestQuota: (a, b: (grantedBytes: number) => void, c) => unknown;
-    };
-  }
-}
-function storageAvailable(type) {
-  let storage;
-  try {
-    storage = window[type];
-    const x = "__storage_test__";
-    storage.setItem(x, x);
-    storage.removeItem(x);
-    return true;
-  } catch (e) {
-    return (
-      e instanceof DOMException &&
-      // everything except Firefox
-      (e.code === 22 ||
-        // Firefox
-        e.code === 1014 ||
-        // test name field too, because code might not be present
-        // everything except Firefox
-        e.name === "QuotaExceededError" ||
-        // Firefox
-        e.name === "NS_ERROR_DOM_QUOTA_REACHED") &&
-      // acknowledge QuotaExceededError only if there's something already stored
-      storage &&
-      storage.length !== 0
-    );
-  }
-}
-function download(filename, text) {
-  const element = document.createElement("a");
-  element.setAttribute("href", `data:application/json;charset=utf-8,${encodeURIComponent(text)}`);
-  element.setAttribute("download", filename);
-  element.style.display = "none";
-  document.body.appendChild(element);
-
-  element.click();
-
-  document.body.removeChild(element);
-}
-async function requestQuota(): Promise<number> {
-  return new Promise(function (resolve, reject) {
-    navigator.webkitPersistentStorage.requestQuota(requestedBytes, resolve, reject);
-  });
-}
-async function chromeRequestFileSystem(grantedBytes): Promise<FileSystem> {
-  return new Promise(function (resolve, reject) {
-    window.requestFileSystem(window.PERSISTENT, grantedBytes, resolve, reject);
-  });
-}
-async function getFile(fs: FileSystem, path: string, create: boolean): Promise<FileEntry> {
-  return new Promise(function (resolve, reject) {
-    fs.root.getFile(path, { create }, resolve, reject);
-  });
-}
-async function readFile(fileEntry: FileEntry): Promise<File> {
-  return new Promise(function (resolve, reject) {
-    fileEntry.file(resolve, reject);
-  });
-}
-function derivePubKeyXFromPolyID(polyID: string): string {
-  return polyID.split("|")[0];
-}
+import { ShareStore } from "../base";
+import { IModule, IThresholdBakApi } from "../baseTypes/aggregateTypes";
+import { getShareFromChromeFileStorage, storeShareOnFileStorage } from "./ChromeStorageHelpers";
+import { getShareFromLocalStorage, storeShareOnLocalStorage } from "./LocalStorageHelpers";
 
 class WebStorageModule implements IModule {
   moduleName: string;
@@ -91,8 +19,8 @@ class WebStorageModule implements IModule {
   }
 
   async storeDeviceShare(deviceShareStore: ShareStore): Promise<void> {
-    await this.storeShareOnLocalStorage(deviceShareStore);
-    await this.storeShareOnFileStorage(deviceShareStore);
+    await storeShareOnLocalStorage(deviceShareStore);
+    await storeShareOnFileStorage(deviceShareStore);
     await this.tbSDK.addShareDescription(
       deviceShareStore.share.shareIndex.toString("hex"),
       JSON.stringify({ module: this.moduleName, userAgent: window.navigator.userAgent, dateAdded: Date.now() })
@@ -101,12 +29,12 @@ class WebStorageModule implements IModule {
 
   async inputShareFromWebStorage(): Promise<void> {
     const polyID = this.tbSDK.metadata.getLatestPublicPolynomial().getPolynomialID();
-    let shareStore;
+    let shareStore: ShareStore;
     try {
-      shareStore = await this.getShareFromLocalStorage(polyID);
+      shareStore = await getShareFromLocalStorage(polyID);
     } catch (localErr) {
       try {
-        shareStore = await this.getShareFromChromeFileStorage(polyID);
+        shareStore = await getShareFromChromeFileStorage(polyID);
       } catch (chromeErr) {
         throw Error(`Error inputShareFromWebStorage: ${localErr} and ${chromeErr}`);
       }
@@ -115,68 +43,6 @@ class WebStorageModule implements IModule {
     const latestShareDetails = await this.tbSDK.catchupToLatestShare(castedShareStore);
     if (castedShareStore.polynomialID !== latestShareDetails.latestShare.polynomialID) this.storeDeviceShare(latestShareDetails.latestShare);
     this.tbSDK.inputShare(latestShareDetails.latestShare);
-  }
-
-  async getShareFromChromeFileStorage(polyID: string): Promise<ShareStore> {
-    const fileName = derivePubKeyXFromPolyID(polyID);
-    if (window.requestFileSystem) {
-      const grantedBytes = await requestQuota();
-      const fs = await chromeRequestFileSystem(grantedBytes);
-
-      const fileEntry = await getFile(fs, fileName, true);
-      const file = await readFile(fileEntry);
-      const fileStr = await file.text();
-      return new ShareStore(JSON.parse(fileStr));
-    }
-    throw Error("no requestFileSystem");
-  }
-
-  async getShareFromLocalStorage(polyID: string): Promise<ShareStore> {
-    const fileName = derivePubKeyXFromPolyID(polyID);
-    return new ShareStore(JSON.parse(localStorage.getItem(fileName)));
-  }
-
-  async storeShareOnFileStorage(share: ShareStore): Promise<void> {
-    // if we're on chrome (thus window.requestFileSystem exists) we use it
-    const fileName = `${derivePubKeyXFromPolyID(share.polynomialID)}.json`;
-    const fileStr = JSON.stringify(share);
-    if (window.requestFileSystem) {
-      const grantedBytes = await requestQuota();
-      const fs = await chromeRequestFileSystem(grantedBytes);
-      const fileEntry = await getFile(fs, fileName, true);
-      await new Promise(function (resolve) {
-        fileEntry.createWriter(
-          function (fileWriter) {
-            fileWriter.onwriteend = function (e) {
-              // console.log("stored share on web");
-              resolve(e);
-            };
-
-            fileWriter.onerror = function (e) {
-              throw Error(`Write failed: ${e.toString()}`);
-            };
-
-            const bb = new Blob([fileStr], { type: "application/json" });
-            fileWriter.write(bb);
-          },
-          function (e) {
-            throw Error(`createWriter failed: ${e.toString()}`);
-          }
-        );
-      });
-    } else {
-      // we make the user download a file
-      download(fileName, fileStr);
-    }
-  }
-
-  async storeShareOnLocalStorage(share: ShareStore): Promise<void> {
-    const fileName = derivePubKeyXFromPolyID(share.polynomialID);
-    const fileStr = JSON.stringify(share);
-    if (!storageAvailable("localStorage")) {
-      throw Error("local storage isn't enabled");
-    }
-    localStorage.setItem(fileName, fileStr);
   }
 }
 

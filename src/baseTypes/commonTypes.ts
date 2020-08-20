@@ -24,13 +24,20 @@ export interface TorusServiceProviderArgs extends ServiceProviderArgs {
   directParams: DirectWebSDKArgs;
 }
 
-export interface IPoint {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type StringifiedType = Record<string, any>;
+
+export interface ISerializable {
+  toJSON(): StringifiedType;
+}
+
+export interface IPoint extends ISerializable {
   x: BN;
   y: BN;
   encode(enc: "arr"): Buffer;
 }
 
-export interface IServiceProvider {
+export interface IServiceProvider extends ISerializable {
   ec: EC;
 
   enableLogging: boolean;
@@ -44,7 +51,7 @@ export interface IServiceProvider {
   sign(msg: BNString): string;
 }
 
-export interface IStorageLayer {
+export interface IStorageLayer extends ISerializable {
   enableLogging: boolean;
 
   hostUrl: string;
@@ -72,5 +79,5 @@ export type TorusStorageLayerAPIParams = {
 };
 
 export type ShareDescriptionMap = {
-  [shareIndexStr: string]: Array<string>;
+  [shareIndexStr: string]: string[];
 };

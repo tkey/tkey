@@ -1,10 +1,8 @@
-/* eslint-disable class-methods-use-this */
 import BN from "bn.js";
 import { keccak256 } from "web3-utils";
 
-import { GenerateNewShareResult, IModule, IThresholdBakApi, SecurityQuestionStoreArgs } from "../base/aggregateTypes";
-import Share from "../base/Share";
-import ShareStore, { ShareStoreMap } from "../base/ShareStore";
+import { Share, ShareStore, ShareStoreMap } from "../base";
+import { GenerateNewShareResult, IModule, IThresholdBakApi, SecurityQuestionStoreArgs } from "../baseTypes/aggregateTypes";
 import { ecCurve, isEmptyObject } from "../utils";
 import SecurityQuestionStore from "./SecurityQuestionStore";
 
@@ -28,7 +26,7 @@ class SecurityQuestionsModule implements IModule {
 
   async initialize(tbSDK: IThresholdBakApi): Promise<void> {
     this.tbSDK = tbSDK;
-    this.tbSDK.addRefreshMiddleware(this.moduleName, this.refreshSecurityQuestionsMiddleware.bind(this));
+    this.tbSDK.addRefreshMiddleware(this.moduleName, SecurityQuestionsModule.refreshSecurityQuestionsMiddleware);
   }
 
   async generateNewShareWithSecurityQuestions(answerString: string, questions: string): Promise<GenerateNewShareResult> {
@@ -68,7 +66,7 @@ class SecurityQuestionsModule implements IModule {
     const userInputHash = answerToUserInputHashBN(answerString);
     let share = sqStore.nonce.add(userInputHash);
     share = share.umod(ecCurve.curve.n);
-    const shareStore = new ShareStore({ share: new Share(sqStore.shareIndex, share), polynomialID: sqStore.polynomialID });
+    const shareStore = new ShareStore(new Share(sqStore.shareIndex, share), sqStore.polynomialID);
     // validate if share is correct
     const derivedPublicShare = shareStore.share.getPublicShare();
     if (derivedPublicShare.shareCommitment.x.cmp(sqStore.sqPublicShare.shareCommitment.x) !== 0) {
@@ -102,7 +100,7 @@ class SecurityQuestionsModule implements IModule {
     await this.tbSDK.syncShareMetadata();
   }
 
-  refreshSecurityQuestionsMiddleware(generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap): unknown {
+  static refreshSecurityQuestionsMiddleware(generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap): unknown {
     if (generalStore === undefined || isEmptyObject(generalStore)) {
       return generalStore;
     }
