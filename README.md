@@ -1,4 +1,4 @@
-# tkey
+# tKey
 
 tKey manages private keys using the user’s device, private input, and wallet service provider. As long as a user has access to 2 out of 3 (2/3) of these shares, they will be able to retrieve their private key. For more information, checkout the [technical overview](https://hackmd.io/Tej2tf83SZOxZmz70ObEpg). Before integrating you can also checkout the example site for [tKey](https://vue-tkey.tor.us). 
 
