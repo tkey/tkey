@@ -53,5 +53,5 @@ await tkey.modules.securityQuestions.generateNewShareWithSecurityQuestions("myan
 
 // Creating a password share.
 // Resulting threshold - 2/3.
-await this.tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("mypassword", "what's is your password?");
+await tkey.modules.securityQuestions.generateNewShareWithSecurityQuestions("mypassword", "what's is your password?");
 ```
