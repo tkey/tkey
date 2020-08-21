@@ -184,6 +184,7 @@ export default {
       try {
         await this.tbsdk.modules.securityQuestions.inputShareFromSecurityQuestions(this.answer);
         this.console("succeded inputShareFromSecurityQuestions");
+        console.log(this.tbsdk.getKeyDetails());
       } catch (error) {
         console.error(error, "caught");
       }
