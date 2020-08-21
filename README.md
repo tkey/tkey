@@ -1,6 +1,23 @@
 # tkey
 
-tKey manages private keys using the user’s device, private input, and wallet service provider. As long as a user has access to 2 out of 3 (2/3) of these shares, they will be able to retrieve their private key.
+tKey manages private keys using the user’s device, private input, and wallet service provider. As long as a user has access to 2 out of 3 (2/3) of these shares, they will be able to retrieve their private key. For more information, checkout the [technical overview](https://hackmd.io/Tej2tf83SZOxZmz70ObEpg). Before integrating you can also checkout the example site for [tKey](https://vue-tkey.tor.us). 
+
+The following are steps of how to use the SDK in your application:
+
+## Pre-cursors
+Before including the tKey SDK we first need to setup [directAuth](https://github.com/torusresearch/torus-direct-web-sdk) for the Google logins etc... Below are several steps: 
+
+```npm i @tkey/core```
+
+1. If you're using redirectToOpener, modify the origin of postMessage from "http://localhost:3000" to your hosted domain in redirect.html and sw.js
+
+2. Serve service worker from baseUrl where baseUrl is the one passed while instantiating DirectWebSdk for specific login (example http://localhost:3000/serviceworker/). If you're already using a sw, pls ensure to port over the fetch override from our service worker
+
+3. For browsers where service workers are not supported or if you wish to not use service workers, create and serve redirect page from baseUrl/redirect where baseUrl is the one passed while instantiating DirectWebSdk for specific login ( example http://localhost:3000/serviceworker/)
+
+4. At verifier's interface (where you obtain client id), please use baseUrl/redirect (eg: http://localhost:3000/serviceworker/redirect) as the redirect_uri where baseUrl is the one passed while instantiating DirectWebSdk
+
+Now we can proceed to the basic installation, for your own application reach out to hello@tor.us to get your verifier spun up on the testnet today!!
 
 ## Basic Installation
 
