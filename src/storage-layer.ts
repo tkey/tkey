@@ -85,6 +85,7 @@ class TorusStorageLayer implements IStorageLayer {
       pub_key_Y: pubY,
       set_data: setData,
       signature: sig,
+      namespace: "tkey",
     };
   }
 
