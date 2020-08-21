@@ -5,15 +5,15 @@ tKey manages private keys using the user’s device, private input, and wallet s
 The following are steps of how to use the SDK in your application:
 
 ## Pre-cursors
-Before including the tKey SDK we first need to setup [directAuth](https://github.com/torusresearch/torus-direct-web-sdk) for the Google logins etc... Below are several steps: 
+Before including the tKey SDK, we first need to setup [directAuth](https://github.com/torusresearch/torus-direct-web-sdk) for the Google logins etc... Below are several steps: 
 
 ```npm i @tkey/core```
 
 1. If you're using redirectToOpener, modify the origin of postMessage from "http://localhost:3000" to your hosted domain in redirect.html and sw.js
 
-2. Serve service worker from baseUrl where baseUrl is the one passed while instantiating DirectWebSdk for specific login (example http://localhost:3000/serviceworker/). If you're already using a sw, pls ensure to port over the fetch override from our service worker
+2. Serve service worker from baseUrl where baseUrl is the one passed while instantiating DirectWebSdk for specific login (example http://localhost:3000/serviceworker/). If you're already using a sw, please ensure to port over the fetch override from our service worker
 
-3. For browsers where service workers are not supported or if you wish to not use service workers, create and serve redirect page from baseUrl/redirect where baseUrl is the one passed while instantiating DirectWebSdk for specific login ( example http://localhost:3000/serviceworker/)
+3. For browsers where service workers are not supported or if you wish not to use service workers, create and serve redirect page from baseUrl/redirect where baseUrl is the one passed while instantiating DirectWebSdk for specific login ( example http://localhost:3000/serviceworker/)
 
 4. At verifier's interface (where you obtain client id), please use baseUrl/redirect (eg: http://localhost:3000/serviceworker/redirect) as the redirect_uri where baseUrl is the one passed while instantiating DirectWebSdk
 
