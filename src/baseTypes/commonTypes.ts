@@ -76,6 +76,7 @@ export type TorusStorageLayerAPIParams = {
   pub_key_Y: string;
   set_data: unknown;
   signature: string;
+  namespace: string;
 };
 
 export type ShareDescriptionMap = {

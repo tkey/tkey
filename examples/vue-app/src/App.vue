@@ -3,7 +3,11 @@
     <div>
       <span :style="{ marginRight: '20px' }">verifier:</span>
       <select v-model="selectedVerifier">
-        <option :key="login" v-for="login in Object.keys(verifierMap)" :value="login">{{ verifierMap[login].name }}</option>
+        <option
+          :key="login"
+          v-for="login in Object.keys(verifierMap)"
+          :value="login"
+        >{{ verifierMap[login].name }}</option>
       </select>
     </div>
     <div :style="{ marginTop: '20px' }" v-if="selectedVerifier === 'passwordless'">
@@ -26,8 +30,7 @@
 </template>
 
 <script>
-import ThresholdKey from "threshold-bak";
-import {WebStorageModule, SecurityQuestionsModule} from "threshold-bak";
+import ThresholdKey, { WebStorageModule, SecurityQuestionsModule, TorusServiceProvider, TorusStorageLayer } from "tkey";
 
 const GOOGLE = "google";
 const FACEBOOK = "facebook";
@@ -54,7 +57,7 @@ export default {
       torusdirectsdk: undefined,
       selectedVerifier: "google",
       loginHint: "",
-      answer:"",
+      answer: "",
       verifierMap: {
         [GOOGLE]: {
           name: "Google",
@@ -154,15 +157,15 @@ export default {
         //     },
         //   ],
         // });
-        const initializedDetails = await this.tbsdk.initialize()
-        console.log(initializedDetails)
+        const initializedDetails = await this.tbsdk.initialize();
+        console.log(initializedDetails);
         if (initializedDetails.requiredShares > 0) {
-          await this.tbsdk.modules.webStorage.inputShareFromWebStorage()
+          await this.tbsdk.modules.webStorage.inputShareFromWebStorage();
         }
-        const key = await this.tbsdk.reconstructKey()
+        const key = await this.tbsdk.reconstructKey();
         // await this.tbsdk.initializeNewKey(undefined, true)
-        console.log(key)
-        this.console(key)
+        console.log(key.toString('hex'));
+        this.console(key);
         // this.console(initializedDetails);
       } catch (error) {
         console.error(error, "caught");
@@ -170,32 +173,35 @@ export default {
     },
     async generateNewShareWithSecurityQuestions() {
       try {
-        this.tbsdk.modules.securityQuestions.generateNewShareWithSecurityQuestions(this.answer, "whats your password?")
+        await this.tbsdk.modules.securityQuestions.generateNewShareWithSecurityQuestions(this.answer, "whats your password?");
+        this.console("succeeded generateNewShareWithSecurityQuestions");
+        console.log(this.tbsdk.getKeyDetails());
       } catch (error) {
-        console.error(error, "caught")
+        console.error(error, "caught");
       }
     },
     async inputShareFromSecurityQuestions() {
       try {
-        this.tbsdk.modules.securityQuestions.inputShareFromSecurityQuestions(this.answer);
+        await this.tbsdk.modules.securityQuestions.inputShareFromSecurityQuestions(this.answer);
+        this.console("succeded inputShareFromSecurityQuestions");
       } catch (error) {
-        console.error(error, "caught")
+        console.error(error, "caught");
       }
     },
     async generateNewShare() {
       try {
         const res = await this.tbsdk.generateNewShare();
-        this.console(res)
+        this.console(res);
       } catch (error) {
-        console.error(error, "caught")
+        console.error(error, "caught");
       }
     },
     async initializeNewKey() {
       try {
         const res = await this.tbsdk.initializeNewKey({ initializeModules: false });
-        this.console(res)
+        this.console(res);
       } catch (error) {
-        console.error(error, "caught")
+        console.error(error, "caught");
       }
     },
     console(text) {
@@ -204,17 +210,22 @@ export default {
   },
   async mounted() {
     try {
-      const webStorageModule = new WebStorageModule();
-      const securityQuestionsModule = new SecurityQuestionsModule();
-      const tbsdk =  new ThresholdKey({directParams: {
+      const directParams = {
         baseUrl: `${location.origin}/serviceworker`,
         enableLogging: true,
         proxyContractAddress: "0x4023d2a0D330bF11426B12C6144Cfb96B7fa6183", // details for test net
-        network: "ropsten", // details for test net
-      }, 
-      modules: { "webStorage" : webStorageModule, "securityQuestions":securityQuestionsModule}
+        network: "testnet", // details for test net
+      };
+      const webStorageModule = new WebStorageModule();
+      const securityQuestionsModule = new SecurityQuestionsModule();
+      const serviceProvider = new TorusServiceProvider({ directParams });
+      const storageLayer = new TorusStorageLayer({ hostUrl: "https://metadata.tor.us", serviceProvider });
+      const tbsdk = new ThresholdKey({
+        serviceProvider,
+        storageLayer,
+        modules: { webStorage: webStorageModule, securityQuestions: securityQuestionsModule },
       });
-      const torusdirectsdk = tbsdk.serviceProvider
+      const torusdirectsdk = tbsdk.serviceProvider;
       // { enableLogging = false, modules = {}, serviceProvider, storageLayer, directParams }
       await torusdirectsdk.init({ skipSw: false });
       this.tbsdk = tbsdk;

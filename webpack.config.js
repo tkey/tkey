@@ -4,7 +4,7 @@ const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin");
 
 const pkg = require("./package.json");
 
-const pkgName = "threshold-bak";
+const pkgName = "tkey";
 const libraryName = pkgName.charAt(0).toUpperCase() + pkgName.slice(1);
 
 const packagesToInclude = ["broadcast-channel", "@toruslabs/torus.js", "@toruslabs/fetch-node-details"];
@@ -106,7 +106,7 @@ const cjsConfig = {
     rules: [tsLoader, eslintLoader, babelLoader],
   },
   externals: [...Object.keys(pkg.dependencies), /^(@babel\/runtime)/i],
-  // plugins: [new ForkTsCheckerWebpackPlugin()],
+  plugins: [new ForkTsCheckerWebpackPlugin()],
   node: {
     ...baseConfig.node,
     Buffer: false,

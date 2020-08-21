@@ -57,6 +57,7 @@ export declare type TorusStorageLayerAPIParams = {
     pub_key_Y: string;
     set_data: unknown;
     signature: string;
+    namespace: string;
 };
 export declare type ShareDescriptionMap = {
     [shareIndexStr: string]: string[];
