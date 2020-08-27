@@ -23,7 +23,8 @@ class WebStorageModule implements IModule {
     await storeShareOnFileStorage(deviceShareStore);
     await this.tbSDK.addShareDescription(
       deviceShareStore.share.shareIndex.toString("hex"),
-      JSON.stringify({ module: this.moduleName, userAgent: window.navigator.userAgent, dateAdded: Date.now() })
+      JSON.stringify({ module: this.moduleName, userAgent: window.navigator.userAgent, dateAdded: Date.now() }),
+      true
     );
   }
 
