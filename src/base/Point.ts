@@ -15,7 +15,7 @@ class Point implements IPoint {
   // complies with EC point pub key  encoding api
   encode(enc: "arr"): Buffer {
     if (enc === "arr") {
-      return Buffer.concat([Buffer.from("0x04", "hex"), this.x.toBuffer("be", 32), this.y.toBuffer("be", 32)]);
+      return Buffer.concat([Buffer.from("0x04", "hex"), Buffer.from(this.x.toString("hex"), "hex"), Buffer.from(this.y.toString("hex"), "hex")]);
     }
     throw Error("encoding doesnt exist in Point");
   }
