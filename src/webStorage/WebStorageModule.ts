@@ -1,3 +1,5 @@
+import BN from "bn.js";
+
 import { ShareStore } from "../base";
 import { IModule, ITKeyApi } from "../baseTypes/aggregateTypes";
 import { getShareFromChromeFileStorage, storeShareOnFileStorage } from "./ChromeStorageHelpers";
@@ -20,12 +22,16 @@ class WebStorageModule implements IModule {
 
   async storeDeviceShare(deviceShareStore: ShareStore): Promise<void> {
     await storeShareOnLocalStorage(deviceShareStore);
-    await storeShareOnFileStorage(deviceShareStore);
     await this.tbSDK.addShareDescription(
       deviceShareStore.share.shareIndex.toString("hex"),
       JSON.stringify({ module: this.moduleName, userAgent: window.navigator.userAgent, dateAdded: Date.now() }),
       true
     );
+  }
+
+  async storeDeviceShareOnFileStorage(): Promise<void> {
+    const shareStore = this.tbSDK.outputShare(new BN(2));
+    return storeShareOnFileStorage(shareStore);
   }
 
   async inputShareFromWebStorage(): Promise<void> {
