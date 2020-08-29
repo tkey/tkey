@@ -34,7 +34,7 @@ class WebStorageModule implements IModule {
     return storeShareOnFileStorage(shareStore);
   }
 
-  async inputShareFromWebStorage(): Promise<void> {
+  async getDeviceShare(): Promise<ShareStore> {
     const polyID = this.tbSDK.metadata.getLatestPublicPolynomial().getPolynomialID();
     let shareStore: ShareStore;
     try {
@@ -46,9 +46,13 @@ class WebStorageModule implements IModule {
         throw Error(`Error inputShareFromWebStorage: ${localErr} and ${chromeErr}`);
       }
     }
-    const castedShareStore = shareStore as ShareStore;
-    const latestShareDetails = await this.tbSDK.catchupToLatestShare(castedShareStore);
-    if (castedShareStore.polynomialID !== latestShareDetails.latestShare.polynomialID) this.storeDeviceShare(latestShareDetails.latestShare);
+    return shareStore;
+  }
+
+  async inputShareFromWebStorage(): Promise<void> {
+    const shareStore = await this.getDeviceShare();
+    const latestShareDetails = await this.tbSDK.catchupToLatestShare(shareStore);
+    if (shareStore.polynomialID !== latestShareDetails.latestShare.polynomialID) this.storeDeviceShare(latestShareDetails.latestShare);
     this.tbSDK.inputShare(latestShareDetails.latestShare);
   }
 }
