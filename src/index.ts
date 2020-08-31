@@ -207,7 +207,10 @@ class ThresholdKey implements ITKey {
 
   async generateNewShare(): Promise<GenerateNewShareResult> {
     if (!this.metadata) {
-      throw Error("metadata not found, SDK likely not intialized");
+      throw new Error("metadata not found, SDK likely not intialized");
+    }
+    if (!this.privKey) {
+      throw new Error("private key not available. pls reconstruct key first");
     }
     const pubPoly = this.metadata.getLatestPublicPolynomial();
     const previousPolyID = pubPoly.getPolynomialID();
@@ -224,6 +227,9 @@ class ThresholdKey implements ITKey {
   }
 
   async refreshShares(threshold: number, newShareIndexes: Array<string>, previousPolyID: PolynomialID): Promise<RefreshSharesResult> {
+    if (!this.privKey) {
+      throw new Error("private key not available. pls reconstruct key first");
+    }
     const poly = generateRandomPolynomial(threshold - 1, this.privKey);
     const shares = poly.generateShares(newShareIndexes);
     const existingShareIndexes = this.metadata.getShareIndexesForPolynomial(previousPolyID);
