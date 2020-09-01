@@ -3,7 +3,8 @@ import { IModule, ITKeyApi } from "../baseTypes/aggregateTypes";
 declare class WebStorageModule implements IModule {
     moduleName: string;
     tbSDK: ITKeyApi;
-    constructor();
+    canUseChromeStorage: boolean;
+    constructor(canUseChromeStorage?: boolean);
     initialize(tbSDK: ITKeyApi): Promise<void>;
     storeDeviceShare(deviceShareStore: ShareStore): Promise<void>;
     storeDeviceShareOnFileStorage(): Promise<void>;

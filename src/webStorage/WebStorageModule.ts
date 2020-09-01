@@ -10,8 +10,11 @@ class WebStorageModule implements IModule {
 
   tbSDK: ITKeyApi;
 
-  constructor() {
+  canUseChromeStorage: boolean;
+
+  constructor(canUseChromeStorage = true) {
     this.moduleName = "webStorage";
+    this.canUseChromeStorage = canUseChromeStorage;
   }
 
   async initialize(tbSDK: ITKeyApi): Promise<void> {
@@ -40,11 +43,18 @@ class WebStorageModule implements IModule {
     try {
       shareStore = await getShareFromLocalStorage(polyID);
     } catch (localErr) {
-      try {
-        shareStore = await getShareFromChromeFileStorage(polyID);
-      } catch (chromeErr) {
-        throw Error(`Error inputShareFromWebStorage: ${localErr} and ${chromeErr}`);
+      if (this.canUseChromeStorage) {
+        try {
+          shareStore = await getShareFromChromeFileStorage(polyID);
+        } catch (chromeErr) {
+          if (chromeErr?.message?.includes("storage quota")) {
+            // User has denied access to storage. stop asking for every share
+            this.canUseChromeStorage = false;
+          }
+          throw new Error(`Error inputShareFromWebStorage: ${localErr} and ${chromeErr}`);
+        }
       }
+      throw new Error(`Error inputShareFromWebStorage: ${localErr}`);
     }
     return shareStore;
   }
