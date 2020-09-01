@@ -527,7 +527,7 @@ class ThresholdKey implements ITKey {
     const { enableLogging, privKey, metadata, shares } = value;
     const { storageLayer, serviceProvider, modules } = args;
     const tb = new ThresholdKey({ enableLogging, storageLayer, serviceProvider, modules });
-    tb.privKey = new BN(privKey, "hex");
+    if (privKey) tb.privKey = new BN(privKey, "hex");
     if (metadata) tb.metadata = Metadata.fromJSON(metadata);
 
     for (const key in shares) {
@@ -542,7 +542,7 @@ class ThresholdKey implements ITKey {
       }
     }
     tb.shares = shares;
-    await tb.initializeModules();
+    await tb.initialize();
     return tb;
   }
 }
