@@ -22,7 +22,7 @@ Now we can proceed to the basic installation, for your own application reach out
 ## Basic Installation
 
 ```js
-import { ThresholdBak, SecurityQuestionsModule, ChromeExtensionStorageModule, TorusServiceProvider, TorusStorageLayer } from "threshold-bak";
+import ThresholdKey, { WebStorageModule, SecurityQuestionsModule, TorusServiceProvider, TorusStorageLayer } from "tkey";
 
 // Torus service provider uses directAuth to fetch users private key from the set of Torus nodes. This private key is one of the share in TSS.
 // directAuth requires a deployment of a verifier with your clientId. Reach out to us for verifier deployment.
@@ -49,7 +49,7 @@ const tkey = new ThresholdKey({
 });
 
 // triggers google login.
-await tkey.serviceProvider.directWeb.init({ skipSw: true });
+await tkey.serviceProvider.init({ skipSw: true });
 
 // After google login succeeds, initialise tkey, metadata and its modules. (Minimum one share is required to read from the storage layer. In this case it was google login)
 // In case of web applications, we create another share and store it on browsers local storage. This makes the threshold 2/2. You can use modules to create additional shares
