@@ -48,8 +48,15 @@ const tkey = new ThresholdKey({
   storageLayer
 });
 
-// triggers google login.
 await tkey.serviceProvider.init({ skipSw: true });
+
+// triggers google login.
+await tkey.serviceProvider.triggerLogin({
+  typeOfLogin: "google",
+  name: "Google",
+  clientId: "<GOOGLE_CLIENT_ID>",
+  verifier: "<VERIFIER_NAME>",
+});
 
 // After google login succeeds, initialise tkey, metadata and its modules. (Minimum one share is required to read from the storage layer. In this case it was google login)
 // In case of web applications, we create another share and store it on browsers local storage. This makes the threshold 2/2. You can use modules to create additional shares
