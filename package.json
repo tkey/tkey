@@ -1,6 +1,6 @@
 {
   "name": "@tkey/core",
-  "version": "0.2.0",
+  "version": "1.0.0",
   "description": "Core library for threshold key implementation",
   "main": "dist/tkey.cjs.js",
   "unpkg": "dist/tkey.umd.min.js",
