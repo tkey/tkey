@@ -30,7 +30,7 @@
 </template>
 
 <script>
-import ThresholdKey, { WebStorageModule, SecurityQuestionsModule, TorusServiceProvider, TorusStorageLayer } from "tkey";
+import ThresholdKey, { WebStorageModule, SecurityQuestionsModule, TorusServiceProvider, TorusStorageLayer } from "@tkey/core";
 
 const GOOGLE = "google";
 const FACEBOOK = "facebook";
@@ -157,6 +157,7 @@ export default {
         //     },
         //   ],
         // });
+        
         const initializedDetails = await this.tbsdk.initialize();
         console.log(initializedDetails);
         if (initializedDetails.requiredShares > 0) {
