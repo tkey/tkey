@@ -22,6 +22,7 @@
       <button @click="inputShareFromSecurityQuestions">inputShareFromSecurityQuestions</button>
       <button @click="generateNewShare">generateNewShare</button>
       <button @click="initializeNewKey">initializeNewKey</button>
+      <button @click="reconstructKey">reconstructKey</button>
     </div>
     <div id="console">
       <p></p>
@@ -181,9 +182,18 @@ export default {
         console.error(error, "caught");
       }
     },
+    async reconstructKey(){
+      try {
+        let key = await this.tbsdk.reconstructKey()
+        this.console("private key", key);
+        console.log(this.tbsdk.getKeyDetails());
+      } catch (error) {
+        console.error(error, "caught");
+      }
+    },
     async inputShareFromSecurityQuestions() {
       try {
-        await this.tbsdk.modules.securityQuestions.inputShareFromSecurityQuestions(this.answer);
+        await this.tbsdk.modules.securityQuestions.inputShareFromSecurityQuestions(this.answer, "whats your password?");
         this.console("succeded inputShareFromSecurityQuestions");
         console.log(this.tbsdk.getKeyDetails());
       } catch (error) {
