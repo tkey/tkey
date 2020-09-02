@@ -22,7 +22,7 @@ Now we can proceed to the basic installation, for your own application reach out
 ## Basic Installation
 
 ```js
-import ThresholdKey, { WebStorageModule, SecurityQuestionsModule, TorusServiceProvider, TorusStorageLayer } from "tkey";
+import ThresholdKey, { WebStorageModule, SecurityQuestionsModule, TorusServiceProvider, TorusStorageLayer } from "@tkey/core";
 
 // Torus service provider uses directAuth to fetch users private key from the set of Torus nodes. This private key is one of the share in TSS.
 // directAuth requires a deployment of a verifier with your clientId. Reach out to us for verifier deployment.
