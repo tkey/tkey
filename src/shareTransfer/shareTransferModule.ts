@@ -7,6 +7,11 @@ import { decrypt, encrypt } from "../utils";
 import ShareRequest from "./ShareRequest";
 import ShareTransferStorePointer from "./ShareTransferStorePointer";
 
+// @flow
+export type ShareTransferStore = {
+  [encPubKeyX: string]: ShareRequest;
+};
+
 class ShareTransferModule implements IModule {
   moduleName: string;
 
@@ -33,7 +38,7 @@ class ShareTransferModule implements IModule {
   }
 
   async requestNewShare(callback: (shareStore: ShareStore) => void): Promise<string> {
-    if (this.currentEncKey) throw Error(`Current request already exists ${this.currentEncKey.toString("hex")}`);
+    if (this.currentEncKey) throw new Error(`Current request already exists ${this.currentEncKey.toString("hex")}`);
     this.currentEncKey = new BN(generatePrivate());
     let newShareTransferStore;
     const shareTransferStore = await this.getShareTransferStore();
@@ -87,10 +92,5 @@ class ShareTransferModule implements IModule {
     this.tbSDK.storageLayer.setMetadata(shareTransferStore, shareTransferStorePointer.pointer);
   }
 }
-
-// @flow
-export type ShareTransferStore = {
-  [encPubKeyX: string]: ShareRequest;
-};
 
 export default ShareTransferModule;

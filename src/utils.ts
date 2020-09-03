@@ -41,6 +41,15 @@ function isEmptyObject(obj: unknown): boolean {
   return Object.keys(obj).length === 0 && obj.constructor === Object;
 }
 
+export const isErrorObj = (err: Error): boolean => err && err.stack && err.message !== "";
+
+function prettyPrintError(error: Error): string {
+  if (isErrorObj(error)) {
+    return error.message;
+  }
+  return error.toString();
+}
+
 export {
   // privKeyBnToEcc,
   // privKeyBnToPubKeyECC,
@@ -48,4 +57,5 @@ export {
   encrypt,
   decrypt,
   ecCurve,
+  prettyPrintError,
 };

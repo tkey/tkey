@@ -31,7 +31,7 @@ class SecurityQuestionsModule implements IModule {
 
   async generateNewShareWithSecurityQuestions(answerString: string, questions: string): Promise<GenerateNewShareResult> {
     const rawSqStore = this.tbSDK.metadata.getGeneralStoreDomain(this.moduleName);
-    if (rawSqStore) throw Error("security questions exists, cant replace, maybe change?");
+    if (rawSqStore) throw new Error("security questions exists, cant replace, maybe change?");
 
     const newSharesDetails = await this.tbSDK.generateNewShare();
     await this.tbSDK.addShareDescription(
@@ -61,7 +61,7 @@ class SecurityQuestionsModule implements IModule {
 
   async inputShareFromSecurityQuestions(answerString: string): Promise<void> {
     const rawSqStore = this.tbSDK.metadata.getGeneralStoreDomain(this.moduleName);
-    if (!rawSqStore) throw Error("security questions might not exist/be setup");
+    if (!rawSqStore) throw new Error("security questions might not exist/be setup");
     const sqStore = new SecurityQuestionStore(rawSqStore as SecurityQuestionStoreArgs);
     const userInputHash = answerToUserInputHashBN(answerString);
     let share = sqStore.nonce.add(userInputHash);
@@ -70,7 +70,7 @@ class SecurityQuestionsModule implements IModule {
     // validate if share is correct
     const derivedPublicShare = shareStore.share.getPublicShare();
     if (derivedPublicShare.shareCommitment.x.cmp(sqStore.sqPublicShare.shareCommitment.x) !== 0) {
-      throw Error("wrong password");
+      throw new Error("wrong password");
     }
 
     const latestShareDetails = await this.tbSDK.catchupToLatestShare(shareStore);
@@ -81,7 +81,7 @@ class SecurityQuestionsModule implements IModule {
 
   async changeSecurityQuestionAndAnswer(newAnswerString: string, newQuestions: string): Promise<void> {
     const rawSqStore = this.tbSDK.metadata.getGeneralStoreDomain(this.moduleName);
-    if (!rawSqStore) throw Error("security questions might not exist/be setup");
+    if (!rawSqStore) throw new Error("security questions might not exist/be setup");
     const sqStore = new SecurityQuestionStore(rawSqStore as SecurityQuestionStoreArgs);
 
     const userInputHash = answerToUserInputHashBN(newAnswerString);

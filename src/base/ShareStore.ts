@@ -28,13 +28,13 @@ export type ScopedStore = {
   encryptedShare: ShareStore;
 };
 
-export type ShareStorePolyIDShareIndexMap = {
-  [polynomialID: string]: ShareStoreMap;
-};
-
 // @flow
 export type ShareStoreMap = {
   [shareIndex: string]: ShareStore;
+};
+
+export type ShareStorePolyIDShareIndexMap = {
+  [polynomialID: string]: ShareStoreMap;
 };
 
 export default ShareStore;
