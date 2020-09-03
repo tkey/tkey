@@ -37,6 +37,13 @@ export interface IServiceProvider extends ISerializable {
     retrievePubKeyPoint(): curve.base.BasePoint;
     sign(msg: BNString): string;
 }
+export declare type TorusStorageLayerAPIParams = {
+    pub_key_X: string;
+    pub_key_Y: string;
+    set_data: unknown;
+    signature: string;
+    namespace: string;
+};
 export interface IStorageLayer extends ISerializable {
     enableLogging: boolean;
     hostUrl: string;
@@ -51,13 +58,6 @@ export declare type TorusStorageLayerArgs = {
     enableLogging?: boolean;
     hostUrl?: string;
     serviceProvider: IServiceProvider;
-};
-export declare type TorusStorageLayerAPIParams = {
-    pub_key_X: string;
-    pub_key_Y: string;
-    set_data: unknown;
-    signature: string;
-    namespace: string;
 };
 export declare type ShareDescriptionMap = {
     [shareIndexStr: string]: string[];

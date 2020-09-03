@@ -10,10 +10,10 @@ declare class ShareStore implements ISerializable {
 export declare type ScopedStore = {
     encryptedShare: ShareStore;
 };
-export declare type ShareStorePolyIDShareIndexMap = {
-    [polynomialID: string]: ShareStoreMap;
-};
 export declare type ShareStoreMap = {
     [shareIndex: string]: ShareStore;
+};
+export declare type ShareStorePolyIDShareIndexMap = {
+    [polynomialID: string]: ShareStoreMap;
 };
 export default ShareStore;

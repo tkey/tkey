@@ -2,13 +2,16 @@ import { DirectWebSDKArgs } from "@toruslabs/torus-direct-web-sdk";
 import BN from "bn.js";
 import { Point, Polynomial, PublicPolynomial, PublicPolynomialMap, PublicShare, PublicSharePolyIDShareIndexMap, ScopedStore, Share, ShareMap, ShareStore, ShareStoreMap, ShareStorePolyIDShareIndexMap } from "../base";
 import { BNString, EncryptedMessage, ISerializable, IServiceProvider, IStorageLayer, PolynomialID, ShareDescriptionMap } from "./commonTypes";
-export declare type ModuleMap = {
-    [moduleName: string]: IModule;
-};
 export interface IModule {
     moduleName: string;
     initialize(api: ITKeyApi): Promise<void>;
 }
+export declare type ModuleMap = {
+    [moduleName: string]: IModule;
+};
+export declare type RefreshMiddlewareMap = {
+    [moduleName: string]: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap) => unknown;
+};
 export interface IMetadata extends ISerializable {
     pubKey: Point;
     publicPolynomials: PublicPolynomialMap;
@@ -94,9 +97,6 @@ export declare type TKeyArgs = {
     serviceProvider?: IServiceProvider;
     storageLayer?: IStorageLayer;
     directParams?: DirectWebSDKArgs;
-};
-export declare type RefreshMiddlewareMap = {
-    [moduleName: string]: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap) => unknown;
 };
 export interface SecurityQuestionStoreArgs {
     nonce: BNString;
