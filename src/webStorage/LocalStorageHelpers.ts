@@ -42,5 +42,7 @@ export const getShareFromLocalStorage = async (polyID: string): Promise<ShareSto
   if (!storageAvailable("localStorage")) {
     throw new Error("local storage isn't enabled");
   }
-  return ShareStore.fromJSON(JSON.parse(localStorage.getItem(fileName)));
+  const foundFile = localStorage.getItem(fileName);
+  if (!foundFile) throw new Error("No Share exists in localStorage");
+  return ShareStore.fromJSON(JSON.parse(foundFile));
 };

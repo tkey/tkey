@@ -79,7 +79,7 @@ export function lagrangeInterpolatePolynomial(points: Array<Point>): Polynomial 
 
 export function lagrangeInterpolation(shares: BN[], nodeIndex: BN[]): BN {
   if (shares.length !== nodeIndex.length) {
-    throw Error("shares not equal to nodeIndex length in lagrangeInterpolation");
+    throw new Error("shares not equal to nodeIndex length in lagrangeInterpolation");
   }
   let secret = new BN(0);
   for (let i = 0; i < shares.length; i += 1) {

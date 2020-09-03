@@ -17,18 +17,23 @@ import {
 } from "../base";
 import { BNString, EncryptedMessage, ISerializable, IServiceProvider, IStorageLayer, PolynomialID, ShareDescriptionMap } from "./commonTypes";
 
+export interface IModule {
+  moduleName: string;
+  // called to initialize a module on the main TBSDK.
+  // currenty called immedietly after the base metadata has been set on the SDK
+  // eslint-disable-next-line no-use-before-define
+  initialize(api: ITKeyApi): Promise<void>;
+}
+
 // @flow
 
 export type ModuleMap = {
   [moduleName: string]: IModule;
 };
 
-export interface IModule {
-  moduleName: string;
-  // called to initialize a module on the main TBSDK.
-  // currenty called immedietly after the base metadata has been set on the SDK
-  initialize(api: ITKeyApi): Promise<void>;
-}
+export type RefreshMiddlewareMap = {
+  [moduleName: string]: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap) => unknown;
+};
 
 export interface IMetadata extends ISerializable {
   pubKey: Point;
@@ -144,10 +149,6 @@ export type TKeyArgs = {
   serviceProvider?: IServiceProvider;
   storageLayer?: IStorageLayer;
   directParams?: DirectWebSDKArgs;
-};
-
-export type RefreshMiddlewareMap = {
-  [moduleName: string]: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap) => unknown;
 };
 
 export interface SecurityQuestionStoreArgs {

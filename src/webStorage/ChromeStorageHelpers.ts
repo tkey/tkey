@@ -51,6 +51,9 @@ export const getShareFromChromeFileStorage = async (polyID: string): Promise<Sha
     const fileEntry = await getFile(fs, fileName, true);
     const file = await readFile(fileEntry);
     const fileStr = await file.text();
+    if (!fileStr) {
+      throw new Error("No Share exists in file system");
+    }
     return ShareStore.fromJSON(JSON.parse(fileStr));
   }
   throw new Error("no requestFileSystem");

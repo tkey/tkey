@@ -2,6 +2,7 @@ import BN from "bn.js";
 
 import { ShareStore } from "../base";
 import { IModule, ITKeyApi } from "../baseTypes/aggregateTypes";
+import { prettyPrintError } from "../utils";
 import { getShareFromChromeFileStorage, storeShareOnFileStorage } from "./ChromeStorageHelpers";
 import { getShareFromLocalStorage, storeShareOnLocalStorage } from "./LocalStorageHelpers";
 
@@ -51,10 +52,10 @@ class WebStorageModule implements IModule {
             // User has denied access to storage. stop asking for every share
             this.canUseChromeStorage = false;
           }
-          throw new Error(`Error inputShareFromWebStorage: ${localErr} and ${chromeErr}`);
+          throw new Error(`Error inputShareFromWebStorage: ${prettyPrintError(localErr)} and ${prettyPrintError(chromeErr)}`);
         }
       }
-      throw new Error(`Error inputShareFromWebStorage: ${localErr}`);
+      throw new Error(`Error inputShareFromWebStorage: ${prettyPrintError(localErr)}`);
     }
     return shareStore;
   }

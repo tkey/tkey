@@ -17,7 +17,7 @@ class Point implements IPoint {
     if (enc === "arr") {
       return Buffer.concat([Buffer.from("0x04", "hex"), Buffer.from(this.x.toString("hex"), "hex"), Buffer.from(this.y.toString("hex"), "hex")]);
     }
-    throw Error("encoding doesnt exist in Point");
+    throw new Error("encoding doesnt exist in Point");
   }
 
   toJSON(): StringifiedType {
