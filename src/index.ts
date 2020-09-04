@@ -266,12 +266,12 @@ class ThresholdKey implements ITKey {
 
     // evaluate oldPoly for old shares and set new metadata with encrypted share for new polynomial
     await Promise.all(
-      shareIndexesNeedingEncryption.map((shareIndex) => {
+      shareIndexesNeedingEncryption.map(async (shareIndex) => {
         const m = this.metadata.clone();
         m.setScopedStore({ encryptedShare: newShareStores[shareIndex] });
         const oldShare = oldPoly.polyEval(new BN(shareIndex, "hex"));
         oldShareStores[shareIndex] = new ShareStore(new Share(shareIndex, oldShare), previousPolyID);
-        return this.storageLayer.setMetadata(m, oldShare);
+        await this.storageLayer.setMetadata(m, oldShare);
       })
     );
 
@@ -294,7 +294,7 @@ class ThresholdKey implements ITKey {
     }
 
     await Promise.all(
-      newShareIndexes.map((shareIndex) => {
+      newShareIndexes.map(async (shareIndex) => {
         const m = this.metadata.clone();
         return this.storageLayer.setMetadata(m, newShareStores[shareIndex].share.share);
       })

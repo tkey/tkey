@@ -74,22 +74,22 @@ class ShareTransferModule implements IModule {
     const bufferedShare = Buffer.from(JSON.stringify(shareStore));
     const shareRequest = new ShareRequest(shareTransferStore[encPubKeyX]);
     shareTransferStore[encPubKeyX].encShareInTransit = await encrypt(shareRequest.encPubKey, bufferedShare);
-    this.setShareTransferStore(shareTransferStore);
+    await this.setShareTransferStore(shareTransferStore);
   }
 
   async getShareTransferStore(): Promise<ShareTransferStore> {
     const shareTransferStorePointer = new ShareTransferStorePointer(
       this.tbSDK.metadata.getGeneralStoreDomain(this.moduleName) as ShareTransferStorePointerArgs
     );
-
-    return (await this.tbSDK.storageLayer.getMetadata(shareTransferStorePointer.pointer)) as ShareTransferStore;
+    const value = await this.tbSDK.storageLayer.getMetadata(shareTransferStorePointer.pointer);
+    return value as ShareTransferStore;
   }
 
   async setShareTransferStore(shareTransferStore: ShareTransferStore): Promise<void> {
     const shareTransferStorePointer = new ShareTransferStorePointer(
       this.tbSDK.metadata.getGeneralStoreDomain(this.moduleName) as ShareTransferStorePointerArgs
     );
-    this.tbSDK.storageLayer.setMetadata(shareTransferStore, shareTransferStorePointer.pointer);
+    await this.tbSDK.storageLayer.setMetadata(shareTransferStore, shareTransferStorePointer.pointer);
   }
 }
 
