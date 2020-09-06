@@ -309,7 +309,13 @@ class ThresholdKey implements ITKey {
     return { shareStores: newShareStores };
   }
 
-  async initializeNewKey({ userInput, initializeModules }: { userInput?: BN; initializeModules?: boolean }): Promise<InitializeNewKeyResult> {
+  async initializeNewKey({
+    determinedShare,
+    initializeModules,
+  }: {
+    determinedShare?: BN;
+    initializeModules?: boolean;
+  }): Promise<InitializeNewKeyResult> {
     const tmpPriv = generatePrivate();
     this.setKey(new BN(tmpPriv));
 
@@ -317,9 +323,9 @@ class ThresholdKey implements ITKey {
     // 1 is defined as the serviceProvider share
     const shareIndexes = [new BN(1), new BN(2)];
     let poly: Polynomial;
-    if (userInput) {
+    if (determinedShare) {
       const userShareIndex = new BN(3);
-      poly = generateRandomPolynomial(1, this.privKey, [new Share(userShareIndex, userInput)]);
+      poly = generateRandomPolynomial(1, this.privKey, [new Share(userShareIndex, determinedShare)]);
       shareIndexes.push(userShareIndex);
     } else {
       poly = generateRandomPolynomial(1, this.privKey);
@@ -363,7 +369,7 @@ class ThresholdKey implements ITKey {
       deviceShare: new ShareStore(shares[shareIndexes[1].toString("hex")], poly.getPolynomialID()),
       userShare: undefined,
     };
-    if (userInput) {
+    if (determinedShare) {
       result.userShare = new ShareStore(shares[shareIndexes[2].toString("hex")], poly.getPolynomialID());
     }
     return result;
