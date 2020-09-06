@@ -427,26 +427,4 @@ describe("ShareTransferModule", function () {
       fail("key should be able to be reconstructed");
     }
   });
-  // it("#should be able to reconstruct key and initialize a key with seciurty questions after refresh", async function () {
-  //   const tb = new ThresholdKey({
-  //     serviceProvider: defaultSP,
-  //     storageLayer: defaultSL,
-  //     modules: { securityQuestions: new SecurityQuestionsModule() },
-  //   });
-  //   const resp1 = await tb.initializeNewKey({ initializeModules: true });
-  //   await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
-  //   const tb2 = new ThresholdKey({
-  //     serviceProvider: defaultSP,
-  //     storageLayer: defaultSL,
-  //     modules: { securityQuestions: new SecurityQuestionsModule() },
-  //   });
-  //   await tb.generateNewShare();
-  //   await tb2.initialize();
-
-  //   await tb2.modules.securityQuestions.inputShareFromSecurityQuestions("blublu");
-  //   const reconstructedKey = await tb2.reconstructKey();
-  //   if (resp1.privKey.cmp(reconstructedKey) !== 0) {
-  //     fail("key should be able to be reconstructed");
-  //   }
-  // });
 });

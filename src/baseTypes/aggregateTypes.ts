@@ -19,10 +19,12 @@ import { BNString, EncryptedMessage, ISerializable, IServiceProvider, IStorageLa
 
 export interface IModule {
   moduleName: string;
+  // eslint-disable-next-line no-use-before-define
+  setModuleReferences(api: ITKeyApi): void;
   // called to initialize a module on the main TBSDK.
   // currenty called immedietly after the base metadata has been set on the SDK
   // eslint-disable-next-line no-use-before-define
-  initialize(api: ITKeyApi): Promise<void>;
+  initialize(): Promise<void>;
 }
 
 // @flow

@@ -18,11 +18,13 @@ class WebStorageModule implements IModule {
     this.canUseChromeStorage = canUseChromeStorage;
   }
 
-  async initialize(tbSDK: ITKeyApi): Promise<void> {
+  setModuleReferences(tbSDK: ITKeyApi): void {
     this.tbSDK = tbSDK;
-    // this.tbSDK.addRefreshMiddleware(this.moduleName, this.refreshSecurityQuestionsMiddleware.bind(this));
     this.tbSDK.setDeviceStorage(this.storeDeviceShare.bind(this));
   }
+
+  // eslint-disable-next-line
+  async initialize(): Promise<void> {}
 
   async storeDeviceShare(deviceShareStore: ShareStore): Promise<void> {
     await storeShareOnLocalStorage(deviceShareStore);

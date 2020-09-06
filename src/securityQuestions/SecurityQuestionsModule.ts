@@ -24,10 +24,13 @@ class SecurityQuestionsModule implements IModule {
     this.moduleName = "securityQuestions";
   }
 
-  async initialize(tbSDK: ITKeyApi): Promise<void> {
+  setModuleReferences(tbSDK: ITKeyApi): void {
     this.tbSDK = tbSDK;
     this.tbSDK.addRefreshMiddleware(this.moduleName, SecurityQuestionsModule.refreshSecurityQuestionsMiddleware);
   }
+
+  // eslint-disable-next-line
+  async initialize(): Promise<void> {}
 
   async generateNewShareWithSecurityQuestions(answerString: string, questions: string): Promise<GenerateNewShareResult> {
     const rawSqStore = this.tbSDK.metadata.getGeneralStoreDomain(this.moduleName);

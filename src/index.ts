@@ -64,6 +64,8 @@ class ThresholdKey implements ITKey {
     this.privKey = undefined;
     this.refreshMiddleware = {};
     this.storeDeviceShare = undefined;
+
+    this.setModuleReferences();
   }
 
   getApi(): ITKeyApi {
@@ -116,8 +118,12 @@ class ThresholdKey implements ITKey {
     return this.getKeyDetails();
   }
 
+  private async setModuleReferences() {
+    return Promise.all(Object.keys(this.modules).map((x) => this.modules[x].setModuleReferences(this.getApi())));
+  }
+
   private async initializeModules() {
-    return Promise.all(Object.keys(this.modules).map((x) => this.modules[x].initialize(this.getApi())));
+    return Promise.all(Object.keys(this.modules).map((x) => this.modules[x].initialize()));
   }
 
   async catchupToLatestShare(shareStore: ShareStore): Promise<CatchupToLatestShareResult> {

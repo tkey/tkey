@@ -23,9 +23,11 @@ class ShareTransferModule implements IModule {
     this.moduleName = "shareTransfer";
   }
 
-  async initialize(tbSdk: ITKeyApi): Promise<void> {
-    //   this.tbSDK.addRefreshMiddleware(this.moduleName, this.refreshSecurityQuestionsMiddleware.bind(this));
-    this.tbSDK = tbSdk;
+  setModuleReferences(tbSDK: ITKeyApi): void {
+    this.tbSDK = tbSDK;
+  }
+
+  async initialize(): Promise<void> {
     const rawShareTransferStorePointer = this.tbSDK.metadata.getGeneralStoreDomain(this.moduleName) as ShareTransferStorePointerArgs;
     let shareTransferStorePointer;
     if (!rawShareTransferStorePointer) {
