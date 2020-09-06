@@ -19,9 +19,10 @@ import TorusStorageLayer from "../src/storage-layer";
 import { ecCurve } from "../src/utils";
 
 const PRIVATE_KEY = "e70fb5f5970b363879bc36f54d4fc0ad77863bfd059881159251f50f48863acf";
+const PRIVATE_KEY_2 = "2e6824ef22a58b7b5c8938c38e9debd03611f074244f213943e3fa3047ef2385";
 
 const defaultSP = new ServiceProviderBase({ postboxKey: PRIVATE_KEY });
-const defaultSL = new TorusStorageLayer({ serviceProvider: defaultSP });
+const defaultSL = new TorusStorageLayer({ serviceProvider: defaultSP, hostUrl: "http://localhost:5051" });
 
 global.fetch = fetch;
 global.atob = atob;
@@ -196,6 +197,24 @@ describe("TorusStorageLayer", function () {
     await storageLayer.setMetadata(message, privKeyBN);
     const resp = await storageLayer.getMetadata(privKeyBN);
     deepStrictEqual(resp, message, "set and get message should be equal");
+  });
+  it("#should get or set with array of specified private keys correctly", async function () {
+    const privKey = PRIVATE_KEY;
+    const privKeyBN = new BN(privKey, 16)
+    const tsp = new ServiceProviderBase({ postboxKey: privKey });
+    const storageLayer = new TorusStorageLayer({ enableLogging: true, serviceProvider: tsp });
+    const message = { test: Math.random().toString(36).substring(7) };
+
+    const privKey2 = PRIVATE_KEY_2;
+    const privKeyBN2 = new BN(privKey2, 16)
+    const message2 = { test: Math.random().toString(36).substring(7) };
+
+    await storageLayer.setMetadataBulk([message, message2], [privKeyBN, privKeyBN2]);
+    const resp = await storageLayer.getMetadata(privKeyBN);
+    const resp2 = await storageLayer.getMetadata(privKeyBN2);
+
+    deepStrictEqual(resp, message, "set and get message should be equal");
+    deepStrictEqual(resp2, message2, "set and get message should be equal");
   });
 });
 
@@ -383,6 +402,7 @@ describe("SecurityQuestionsModule", function () {
 
 describe("ShareTransferModule", function () {
   it("#should be able to transfer share via the module", async function () {
+    debugger
     const tb = new ThresholdKey({
       serviceProvider: defaultSP,
       storageLayer: defaultSL,

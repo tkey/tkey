@@ -69,6 +69,8 @@ export interface IStorageLayer extends ISerializable {
 
   setMetadata<T>(input: T, privKey?: BN): Promise<{ message: string }>;
 
+  setMetadataBulk<T>(input: Array<T>, privKey?: Array<BN>): Promise<{ message: string }>;
+
   generateMetadataParams(message: unknown, privKey: BN): TorusStorageLayerAPIParams;
 }
 
