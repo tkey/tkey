@@ -471,7 +471,32 @@ class ThresholdKey implements ITKey {
     const currentPoly = lagrangeInterpolatePolynomial(pointsArr);
     const allExistingShares = currentPoly.generateShares(existingShareIndexes);
 
-    await Promise.all(existingShareIndexes.map((shareIndex) => this.syncSingleShareMetadata(allExistingShares[shareIndex].share, adjustScopedStore)));
+    const shareArray = existingShareIndexes.map((shareIndex) => allExistingShares[shareIndex].share);
+    await this.syncMultipleShareMetadata(shareArray, adjustScopedStore);
+  }
+
+  async syncMultipleShareMetadata(shares: Array<BN>, adjustScopedStore?: (ss: ScopedStore) => ScopedStore): Promise<void> {
+    const newMetadataPromise = shares.map(async (share) => {
+      const newMetadata = this.metadata.clone();
+      let resp: StringifiedType;
+      try {
+        resp = await this.storageLayer.getMetadata(share);
+      } catch (err) {
+        throw new Error(`getMetadata in syncShareMetadata errored: ${prettyPrintError(err)}`);
+      }
+      const specificShareMetadata = Metadata.fromJSON(resp);
+
+      let scopedStoreToBeSet: ScopedStore;
+      if (adjustScopedStore) {
+        scopedStoreToBeSet = adjustScopedStore(specificShareMetadata.scopedStore);
+      } else {
+        scopedStoreToBeSet = specificShareMetadata.scopedStore;
+      }
+      newMetadata.setScopedStore(scopedStoreToBeSet);
+      return newMetadata;
+    });
+    const newMetadata = await Promise.all(newMetadataPromise);
+    await this.storageLayer.setMetadataBulk(newMetadata, shares);
   }
 
   async syncSingleShareMetadata(share: BN, adjustScopedStore?: (ss: ScopedStore) => ScopedStore): Promise<void> {
