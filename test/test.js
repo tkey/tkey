@@ -44,9 +44,9 @@ describe("tkey", function () {
     }
   });
   it("#should be able to reconstruct key when initializing a  with user input", async function () {
-    let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
-    userInput = userInput.umod(ecCurve.curve.n);
-    const resp1 = await tb.initializeNewKey({ userInput, initializeModules: true });
+    let determinedShare = new BN(keccak256("user answer blublu").slice(2), "hex");
+    determinedShare = determinedShare.umod(ecCurve.curve.n);
+    const resp1 = await tb.initializeNewKey({ determinedShare, initializeModules: true });
     const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize();
     tb2.inputShare(resp1.userShare);
