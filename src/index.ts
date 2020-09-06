@@ -82,7 +82,7 @@ class ThresholdKey implements ITKey {
     };
   }
 
-  async initialize(input?: ShareStore): Promise<KeyDetails> {
+  async initialize(input?: ShareStore, importKey?: BN): Promise<KeyDetails> {
     let shareStore: ShareStore;
     if (input instanceof ShareStore) {
       shareStore = input;
@@ -95,7 +95,7 @@ class ThresholdKey implements ITKey {
 
       if (isEmptyObject(rawServiceProviderShare)) {
         // no metadata set, assumes new user
-        await this.initializeNewKey({ initializeModules: true });
+        await this.initializeNewKey({ initializeModules: true, importedKey: importKey });
         return this.getKeyDetails();
       }
       // else we continue with catching up share and metadata
@@ -312,12 +312,18 @@ class ThresholdKey implements ITKey {
   async initializeNewKey({
     determinedShare,
     initializeModules,
+    importedKey,
   }: {
     determinedShare?: BN;
     initializeModules?: boolean;
+    importedKey?: BN;
   }): Promise<InitializeNewKeyResult> {
-    const tmpPriv = generatePrivate();
-    this.setKey(new BN(tmpPriv));
+    if (!importedKey) {
+      const tmpPriv = generatePrivate();
+      this.setKey(new BN(tmpPriv));
+    } else {
+      this.setKey(new BN(importedKey));
+    }
 
     // create a random poly and respective shares
     // 1 is defined as the serviceProvider share
