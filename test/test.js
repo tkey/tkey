@@ -139,6 +139,17 @@ describe("tkey", function () {
     const finalKeyPostSerialization = await tb4.reconstructKey();
     strictEqual(finalKeyPostSerialization.toString("hex"), finalKey.toString("hex"), "Incorrect serialization");
   });
+  it("#should be able to import and reconstruct an imported key", async function () {
+    const importedKey = new BN(generatePrivate());
+    const resp1 = await tb.initializeNewKey({ importedKey, initializeModules: true });
+    const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
+    await tb2.initialize();
+    tb2.inputShare(resp1.deviceShare);
+    const reconstructedKey = await tb2.reconstructKey();
+    if (importedKey.cmp(reconstructedKey) !== 0) {
+      fail("key should be able to be reconstructed");
+    }
+  });
 });
 
 describe("tkey reconstruction", function () {
