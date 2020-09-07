@@ -12,10 +12,12 @@ export default class ChromeExtensionStorageModule implements IModule {
     this.moduleName = "chromeExtensionStorage";
   }
 
-  async initialize(tbSDK: ITKeyApi): Promise<void> {
+  setModuleReferences(tbSDK: ITKeyApi): void {
     this.tbSDK = tbSDK;
     this.tbSDK.setDeviceStorage(this.storeDeviceShare.bind(this));
   }
+  // eslint-disable-next-line
+  async initialize(): Promise<void> {}
 
   async storeDeviceShare(deviceShareStore: ShareStore): Promise<void> {
     await this.storeShareOnChromeExtensionStorage(deviceShareStore);
