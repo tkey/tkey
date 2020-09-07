@@ -101,6 +101,7 @@ export interface ITKeyApi {
   metadata: IMetadata;
   storageLayer: IStorageLayer;
 
+  initialize(input?: ShareStore, importKey?: BN): Promise<KeyDetails>;
   catchupToLatestShare(shareStore: ShareStore): Promise<CatchupToLatestShareResult>;
   syncShareMetadata(adjustScopedStore?: (ss: ScopedStore) => ScopedStore): Promise<void>;
   inputShareSafe(shareStore: ShareStore): Promise<void>;

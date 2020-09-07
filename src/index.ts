@@ -72,6 +72,7 @@ class ThresholdKey implements ITKey {
     return {
       metadata: this.metadata,
       storageLayer: this.storageLayer,
+      initialize: this.initialize.bind(this),
       catchupToLatestShare: this.catchupToLatestShare.bind(this),
       syncShareMetadata: this.syncShareMetadata.bind(this),
       addRefreshMiddleware: this.addRefreshMiddleware.bind(this),
