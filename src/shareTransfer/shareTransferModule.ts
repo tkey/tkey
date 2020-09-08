@@ -91,6 +91,18 @@ class ShareTransferModule implements IModule {
     );
     await this.tbSDK.storageLayer.setMetadata(shareTransferStore, shareTransferStorePointer.pointer);
   }
+
+  async deleteShareTransferStore(encPubKey: string): Promise<void> {
+    const currentShareTransferStore = await this.getShareTransferStore();
+    delete currentShareTransferStore[encPubKey];
+    await this.setShareTransferStore(currentShareTransferStore);
+  }
+
+  async resetShareTransferStore(): Promise<void> {
+    const shareTransferStorePointer = { pointer: new BN(generatePrivate()) };
+    this.tbSDK.metadata.setGeneralStoreDomain(this.moduleName, shareTransferStorePointer);
+    await this.tbSDK.syncShareMetadata();
+  }
 }
 
 export default ShareTransferModule;

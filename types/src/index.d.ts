@@ -32,6 +32,7 @@ declare class ThresholdKey implements ITKey {
     setKey(privKey: BN): void;
     getKeyDetails(): KeyDetails;
     syncShareMetadata(adjustScopedStore?: (ss: ScopedStore) => ScopedStore): Promise<void>;
+    syncMultipleShareMetadata(shares: Array<BN>, adjustScopedStore?: (ss: ScopedStore) => ScopedStore): Promise<void>;
     syncSingleShareMetadata(share: BN, adjustScopedStore?: (ss: ScopedStore) => ScopedStore): Promise<void>;
     addRefreshMiddleware(moduleName: string, middleware: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap) => unknown): void;
     setDeviceStorage(storeDeviceStorage: (deviceShareStore: ShareStore) => Promise<void>): void;

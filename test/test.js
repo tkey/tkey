@@ -435,6 +435,47 @@ describe("ShareTransferModule", function () {
       fail("key should be able to be reconstructed");
     }
   });
+  it("#should be able to delete share transfer from another device", async function () {
+    const tb = new ThresholdKey({
+      serviceProvider: defaultSP,
+      storageLayer: defaultSL,
+      modules: { shareTransfer: new ShareTransferModule() },
+    });
+    const resp1 = await tb.initializeNewKey({ initializeModules: true });
+
+    const tb2 = new ThresholdKey({
+      serviceProvider: defaultSP,
+      storageLayer: defaultSL,
+      modules: { shareTransfer: new ShareTransferModule() },
+    });
+    await tb2.initialize();
+
+    // usually should be called in callback, but mocha does not allow
+    const encKey = await tb.modules.shareTransfer.requestNewShare();
+    const encKey2 = await tb2.modules.shareTransfer.requestNewShare();
+    await tb2.modules.shareTransfer.deleteShareTransferStore(encKey) // delete 1st request from 2nd 
+    const newRequests = await tb2.modules.shareTransfer.getShareTransferStore()
+    if(!(encKey2 in newRequests)) {
+      fail("Unable to delete share transfer request")
+    }
+  })
+  it("#should be able to reset share transfer store", async function () {
+    const tb2 = new ThresholdKey({
+      serviceProvider: defaultSP,
+      storageLayer: defaultSL,
+      modules: { shareTransfer: new ShareTransferModule() },
+    });
+    await tb2.initialize();
+
+    // usually should be called in callback, but mocha does not allow
+    await tb2.modules.shareTransfer.requestNewShare();
+    await tb2.modules.shareTransfer.resetShareTransferStore()
+    const newRequests = await tb2.modules.shareTransfer.getShareTransferStore()
+    // console.log(currentRequests, newRequests)
+    if (Object.keys(newRequests).length !== 0) {
+      fail("Unable to reset share store")
+    }
+  })
   // it("#should be able to reconstruct key and initialize a key with seciurty questions after refresh", async function () {
   //   const tb = new ThresholdKey({
   //     serviceProvider: defaultSP,

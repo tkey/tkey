@@ -16,5 +16,7 @@ declare class ShareTransferModule implements IModule {
     approveRequest(encPubKeyX: string, shareStore: ShareStore): Promise<void>;
     getShareTransferStore(): Promise<ShareTransferStore>;
     setShareTransferStore(shareTransferStore: ShareTransferStore): Promise<void>;
+    deleteShareTransferStore(encPubKey: string): Promise<void>;
+    resetShareTransferStore(): Promise<boolean>;
 }
 export default ShareTransferModule;
