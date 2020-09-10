@@ -39,7 +39,7 @@ class ShareTransferModule implements IModule {
     }
   }
 
-  async requestNewShare(callback?: (shareStore: ShareStore) => void): Promise<string> {
+  async requestNewShare(availableShareIndexes: Array<string>, callback?: (shareStore: ShareStore) => void): Promise<string> {
     if (this.currentEncKey) throw new Error(`Current request already exists ${this.currentEncKey.toString("hex")}`);
     this.currentEncKey = new BN(generatePrivate());
     let newShareTransferStore;
@@ -50,7 +50,11 @@ class ShareTransferModule implements IModule {
       newShareTransferStore = {};
     }
     const encPubKeyX = getPubKeyPoint(this.currentEncKey).x.toString("hex");
-    newShareTransferStore[encPubKeyX] = new ShareRequest({ encPubKey: getPubKeyECC(this.currentEncKey), encShareInTransit: undefined });
+    newShareTransferStore[encPubKeyX] = new ShareRequest({
+      encPubKey: getPubKeyECC(this.currentEncKey),
+      encShareInTransit: undefined,
+      availableShareIndexes,
+    });
     await this.setShareTransferStore(newShareTransferStore);
     // watcher
     if (callback) {
@@ -79,6 +83,12 @@ class ShareTransferModule implements IModule {
     const shareRequest = new ShareRequest(shareTransferStore[encPubKeyX]);
     shareTransferStore[encPubKeyX].encShareInTransit = await encrypt(shareRequest.encPubKey, bufferedShare);
     await this.setShareTransferStore(shareTransferStore);
+    delete this.currentEncKey;
+  }
+
+  async approveRequestWithShareIndex(encPubKeyX: string, shareIndex: string): Promise<void> {
+    const deviceShare = this.tbSDK.outputShare(shareIndex);
+    return this.approveRequest(encPubKeyX, deviceShare);
   }
 
   async getShareTransferStore(): Promise<ShareTransferStore> {

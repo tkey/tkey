@@ -417,13 +417,57 @@ describe("ShareTransferModule", function () {
 
     // usually should be called in callback, but mocha does not allow
     const pubkey = await tb2.modules.shareTransfer.requestNewShare();
-
+    
     // eslint-disable-next-line promise/param-names
     await new Promise((res) => {
       setTimeout(res, 200);
     });
     const result = await tb.generateNewShare();
     await tb.modules.shareTransfer.approveRequest(pubkey, result.newShareStores[result.newShareIndex.toString("hex")]);
+
+    await tb2.modules.shareTransfer.startRequestStatusCheck(pubkey)
+    // eslint-disable-next-line promise/param-names
+    await new Promise((res) => {
+      setTimeout(res, 1001);
+    });
+
+    const reconstructedKey = await tb2.reconstructKey();
+    if (resp1.privKey.cmp(reconstructedKey) !== 0) {
+      fail("key should be able to be reconstructed");
+    }
+  });
+  it("#should be able to transfer device share", async function () {
+    const tb = new ThresholdKey({
+      serviceProvider: defaultSP,
+      storageLayer: defaultSL,
+      modules: { shareTransfer: new ShareTransferModule() },
+    });
+    const resp1 = await tb.initializeNewKey({ initializeModules: true });
+    // console.log(resp1, tb)
+
+    const tb2 = new ThresholdKey({
+      serviceProvider: defaultSP,
+      storageLayer: defaultSL,
+      modules: { shareTransfer: new ShareTransferModule() },
+    });
+    await tb2.initialize();
+    let latestPolynomial = tb2.metadata.getLatestPublicPolynomial()
+    let latestPolynomialId = latestPolynomial.getPolynomialID()
+    let currentShareIndexes = Object.keys(tb2.shares[latestPolynomialId])
+    // console.log("curentShareIndexes", currentShareIndexes)
+
+    // usually should be called in callback, but mocha does not allow
+    const pubkey = await tb2.modules.shareTransfer.requestNewShare(currentShareIndexes);
+
+    // eslint-disable-next-line promise/param-names
+    await new Promise((res) => {
+      setTimeout(res, 200);
+    });
+    // const result = await tb.generateNewShare();
+    // await tb.modules.shareTransfer.approveRequest(pubkey, result.newShareStores[result.newShareIndex.toString("hex")]);
+    await tb.modules.shareTransfer.approveRequestWithShareIndex(pubkey, "2")
+
+    await tb2.modules.shareTransfer.startRequestStatusCheck(pubkey)
 
     // eslint-disable-next-line promise/param-names
     await new Promise((res) => {
@@ -453,25 +497,24 @@ describe("ShareTransferModule", function () {
     // usually should be called in callback, but mocha does not allow
     const encKey = await tb.modules.shareTransfer.requestNewShare();
     const encKey2 = await tb2.modules.shareTransfer.requestNewShare();
-    await tb2.modules.shareTransfer.deleteShareTransferStore(encKey) // delete 1st request from 2nd 
+    await tb.modules.shareTransfer.deleteShareTransferStore(encKey2) // delete 1st request from 2nd 
     const newRequests = await tb2.modules.shareTransfer.getShareTransferStore()
-    if(!(encKey2 in newRequests)) {
+    // console.log(newRequests)
+    if(encKey2 in newRequests) {
       fail("Unable to delete share transfer request")
     }
   })
   it("#should be able to reset share transfer store", async function () {
-    const tb2 = new ThresholdKey({
+    const tb = new ThresholdKey({
       serviceProvider: defaultSP,
       storageLayer: defaultSL,
       modules: { shareTransfer: new ShareTransferModule() },
     });
-    await tb2.initialize();
+    await tb.initializeNewKey({ initializeModules: true });
 
-    // usually should be called in callback, but mocha does not allow
-    await tb2.modules.shareTransfer.requestNewShare();
-    await tb2.modules.shareTransfer.resetShareTransferStore()
-    const newRequests = await tb2.modules.shareTransfer.getShareTransferStore()
-    // console.log(currentRequests, newRequests)
+    const encKey = await tb.modules.shareTransfer.requestNewShare();
+    await tb.modules.shareTransfer.resetShareTransferStore()
+    const newRequests = await tb.modules.shareTransfer.getShareTransferStore()
     if (Object.keys(newRequests).length !== 0) {
       fail("Unable to reset share store")
     }

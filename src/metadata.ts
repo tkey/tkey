@@ -94,6 +94,10 @@ class Metadata implements IMetadata {
     return this.scopedStore.encryptedShare;
   }
 
+  getShareDescription(): ShareDescriptionMap {
+    return this.shareDescriptions;
+  }
+
   addShareDescription(shareIndex: string, description: string): void {
     if (this.shareDescriptions[shareIndex]) {
       this.shareDescriptions[shareIndex].push(description);

@@ -61,6 +61,7 @@ export interface IMetadata extends ISerializable {
   addFromPolynomialAndShares(polynomial: Polynomial, shares: Array<Share> | ShareMap): void;
   setScopedStore(scopedStore: ScopedStore): void;
   getEncryptedShare(): ShareStore;
+  getShareDescription(): ShareDescriptionMap;
   addShareDescription(shareIndex: string, description: string): void;
   deleteShareDescription(shareIndex: string, description: string): void;
   clone(): IMetadata;
@@ -174,6 +175,6 @@ export type BufferObj = {
 
 export interface ShareRequestArgs {
   encPubKey: unknown;
-
   encShareInTransit: EncryptedMessage;
+  availableShareIndexes: Array<string>;
 }
