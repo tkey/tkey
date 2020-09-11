@@ -8,7 +8,9 @@ class ShareRequest {
 
   availableShareIndexes: Array<string>;
 
-  constructor({ encPubKey, encShareInTransit, availableShareIndexes }: ShareRequestArgs) {
+  userAgent: string;
+
+  constructor({ encPubKey, encShareInTransit, availableShareIndexes, userAgent }: ShareRequestArgs) {
     const testEncPubKey = encPubKey as BufferObj;
     if (testEncPubKey.type === "Buffer") {
       this.encPubKey = Buffer.from(testEncPubKey.data);
@@ -17,6 +19,7 @@ class ShareRequest {
     }
     this.availableShareIndexes = availableShareIndexes;
     this.encShareInTransit = encShareInTransit;
+    this.userAgent = userAgent;
   }
 }
 

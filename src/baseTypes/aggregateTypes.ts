@@ -177,4 +177,5 @@ export interface ShareRequestArgs {
   encPubKey: unknown;
   encShareInTransit: EncryptedMessage;
   availableShareIndexes: Array<string>;
+  userAgent: string;
 }

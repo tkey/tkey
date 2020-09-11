@@ -39,7 +39,7 @@ class ShareTransferModule implements IModule {
     }
   }
 
-  async requestNewShare(availableShareIndexes: Array<string>, callback?: (shareStore: ShareStore) => void): Promise<string> {
+  async requestNewShare(userAgent: string, availableShareIndexes: Array<string>, callback?: (shareStore: ShareStore) => void): Promise<string> {
     if (this.currentEncKey) throw new Error(`Current request already exists ${this.currentEncKey.toString("hex")}`);
     this.currentEncKey = new BN(generatePrivate());
     let newShareTransferStore;
@@ -54,6 +54,7 @@ class ShareTransferModule implements IModule {
       encPubKey: getPubKeyECC(this.currentEncKey),
       encShareInTransit: undefined,
       availableShareIndexes,
+      userAgent,
     });
     await this.setShareTransferStore(newShareTransferStore);
     // watcher
