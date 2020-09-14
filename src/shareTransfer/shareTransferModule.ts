@@ -19,6 +19,8 @@ class ShareTransferModule implements IModule {
 
   currentEncKey: BN;
 
+  requestStatusCheckId: any;
+
   constructor() {
     this.moduleName = "shareTransfer";
   }
@@ -37,7 +39,7 @@ class ShareTransferModule implements IModule {
     }
   }
 
-  async requestNewShare(callback: (shareStore: ShareStore) => void): Promise<string> {
+  async requestNewShare(userAgent: string, availableShareIndexes: Array<string>, callback?: (shareStore: ShareStore) => void): Promise<string> {
     if (this.currentEncKey) throw new Error(`Current request already exists ${this.currentEncKey.toString("hex")}`);
     this.currentEncKey = new BN(generatePrivate());
     let newShareTransferStore;
@@ -48,19 +50,26 @@ class ShareTransferModule implements IModule {
       newShareTransferStore = {};
     }
     const encPubKeyX = getPubKeyPoint(this.currentEncKey).x.toString("hex");
-    newShareTransferStore[encPubKeyX] = new ShareRequest({ encPubKey: getPubKeyECC(this.currentEncKey), encShareInTransit: undefined });
+    newShareTransferStore[encPubKeyX] = new ShareRequest({
+      encPubKey: getPubKeyECC(this.currentEncKey),
+      encShareInTransit: undefined,
+      availableShareIndexes,
+      userAgent,
+    });
     await this.setShareTransferStore(newShareTransferStore);
     // watcher
-    const timerID = setInterval(async () => {
-      const latestShareTransferStore = await this.getShareTransferStore();
-      if (latestShareTransferStore[encPubKeyX].encShareInTransit) {
-        const shareStoreBuf = await decrypt(toPrivKeyECC(this.currentEncKey), latestShareTransferStore[encPubKeyX].encShareInTransit);
-        const receivedShare = ShareStore.fromJSON(JSON.parse(shareStoreBuf.toString()));
-        await this.tbSDK.inputShareSafe(receivedShare);
-        if (callback) callback(receivedShare);
-        clearInterval(timerID);
-      }
-    }, 1000);
+    if (callback) {
+      const timerID = setInterval(async () => {
+        const latestShareTransferStore = await this.getShareTransferStore();
+        if (latestShareTransferStore[encPubKeyX].encShareInTransit) {
+          const shareStoreBuf = await decrypt(toPrivKeyECC(this.currentEncKey), latestShareTransferStore[encPubKeyX].encShareInTransit);
+          const receivedShare = ShareStore.fromJSON(JSON.parse(shareStoreBuf.toString()));
+          await this.tbSDK.inputShareSafe(receivedShare);
+          if (callback) callback(receivedShare);
+          clearInterval(timerID);
+        }
+      }, 1000);
+    }
     return encPubKeyX;
   }
 
@@ -75,6 +84,12 @@ class ShareTransferModule implements IModule {
     const shareRequest = new ShareRequest(shareTransferStore[encPubKeyX]);
     shareTransferStore[encPubKeyX].encShareInTransit = await encrypt(shareRequest.encPubKey, bufferedShare);
     await this.setShareTransferStore(shareTransferStore);
+    delete this.currentEncKey;
+  }
+
+  async approveRequestWithShareIndex(encPubKeyX: string, shareIndex: string): Promise<void> {
+    const deviceShare = this.tbSDK.outputShare(shareIndex);
+    return this.approveRequest(encPubKeyX, deviceShare);
   }
 
   async getShareTransferStore(): Promise<ShareTransferStore> {
@@ -90,6 +105,43 @@ class ShareTransferModule implements IModule {
       this.tbSDK.metadata.getGeneralStoreDomain(this.moduleName) as ShareTransferStorePointerArgs
     );
     await this.tbSDK.storageLayer.setMetadata(shareTransferStore, shareTransferStorePointer.pointer);
+  }
+
+  async startRequestStatusCheck(encPubKeyX: string): Promise<ShareStore> {
+    // watcher
+    return new Promise((resolve, reject) => {
+      this.requestStatusCheckId = setInterval(async () => {
+        try {
+          const latestShareTransferStore = await this.getShareTransferStore();
+          if (latestShareTransferStore[encPubKeyX].encShareInTransit) {
+            const shareStoreBuf = await decrypt(toPrivKeyECC(this.currentEncKey), latestShareTransferStore[encPubKeyX].encShareInTransit);
+            const receivedShare = ShareStore.fromJSON(JSON.parse(shareStoreBuf.toString()));
+            await this.tbSDK.inputShareSafe(receivedShare);
+            resolve(receivedShare);
+            clearInterval(this.requestStatusCheckId);
+          }
+        } catch (err) {
+          clearInterval(this.requestStatusCheckId);
+          reject(err);
+        }
+      }, 1000);
+    });
+  }
+
+  async cancelRequestStatusCheck(): Promise<void> {
+    clearInterval(this.requestStatusCheckId);
+  }
+
+  async deleteShareTransferStore(encPubKey: string): Promise<void> {
+    const currentShareTransferStore = await this.getShareTransferStore();
+    delete currentShareTransferStore[encPubKey];
+    await this.setShareTransferStore(currentShareTransferStore);
+  }
+
+  async resetShareTransferStore(): Promise<void> {
+    const shareTransferStorePointer = { pointer: new BN(generatePrivate()) };
+    this.tbSDK.metadata.setGeneralStoreDomain(this.moduleName, shareTransferStorePointer);
+    await this.tbSDK.syncShareMetadata();
   }
 }
 

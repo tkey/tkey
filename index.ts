@@ -3,7 +3,7 @@ import ThresholdKey from "./src/index";
 import SecurityQuestionsModule from "./src/securityQuestions/SecurityQuestionsModule";
 import ServiceProviderBase from "./src/serviceProvider/ServiceProviderBase";
 import TorusServiceProvider from "./src/serviceProvider/TorusServiceProvider";
-import ShareTransfer from "./src/shareTransfer/shareTransferModule";
+import ShareTransferModule from "./src/shareTransfer/shareTransferModule";
 import TorusStorageLayer from "./src/storage-layer";
 import WebStorageModule from "./src/webStorage/WebStorageModule";
 
@@ -16,5 +16,5 @@ export {
   ChromeExtensionStorageModule,
   SecurityQuestionsModule,
   TorusStorageLayer,
-  ShareTransfer,
+  ShareTransferModule,
 };

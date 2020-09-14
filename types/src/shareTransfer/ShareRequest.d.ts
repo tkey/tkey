@@ -4,6 +4,8 @@ import { EncryptedMessage } from "../baseTypes/commonTypes";
 declare class ShareRequest {
     encPubKey: Buffer;
     encShareInTransit: EncryptedMessage;
-    constructor({ encPubKey, encShareInTransit }: ShareRequestArgs);
+    availableShareIndexes: Array<string>;
+    userAgent: string;
+    constructor({ encPubKey, encShareInTransit, availableShareIndexes, userAgent }: ShareRequestArgs);
 }
 export default ShareRequest;

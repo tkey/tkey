@@ -6,14 +6,20 @@ class ShareRequest {
 
   encShareInTransit: EncryptedMessage;
 
-  constructor({ encPubKey, encShareInTransit }: ShareRequestArgs) {
+  availableShareIndexes: Array<string>;
+
+  userAgent: string;
+
+  constructor({ encPubKey, encShareInTransit, availableShareIndexes, userAgent }: ShareRequestArgs) {
     const testEncPubKey = encPubKey as BufferObj;
     if (testEncPubKey.type === "Buffer") {
       this.encPubKey = Buffer.from(testEncPubKey.data);
     } else {
       this.encPubKey = (encPubKey as unknown) as Buffer;
     }
+    this.availableShareIndexes = availableShareIndexes;
     this.encShareInTransit = encShareInTransit;
+    this.userAgent = userAgent;
   }
 }
 
