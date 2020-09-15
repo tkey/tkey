@@ -9,6 +9,9 @@ declare class TorusStorageLayer implements IStorageLayer {
     setMetadata<T>(input: T, privKey?: BN): Promise<{
         message: string;
     }>;
+    setMetadataBulk<T>(input: Array<T>, privKey?: Array<BN>): Promise<{
+        message: string;
+    }>;
     generateMetadataParams(message: unknown, privKey?: BN): TorusStorageLayerAPIParams;
     toJSON(): StringifiedType;
     static fromJSON(value: StringifiedType): TorusStorageLayer;

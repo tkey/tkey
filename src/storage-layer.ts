@@ -59,6 +59,23 @@ class TorusStorageLayer implements IStorageLayer {
     return post<{ message: string }>(`${this.hostUrl}/set`, metadataParams);
   }
 
+  async setMetadataBulk<T>(input: Array<T>, privKey?: Array<BN>): Promise<{ message: string }> {
+    const encryptedDetailsArray = input.map(async (el, i) => {
+      const bufferMetadata = Buffer.from(stringify(el));
+      let encryptedDetails: EncryptedMessage;
+      if (privKey[i]) {
+        encryptedDetails = await encrypt(getPubKeyECC(privKey[i]), bufferMetadata);
+      } else {
+        encryptedDetails = await this.serviceProvider.encrypt(bufferMetadata);
+      }
+      const serializedEncryptedDetails = btoa(stringify(encryptedDetails));
+      const metadataParams = this.generateMetadataParams(serializedEncryptedDetails, privKey[i]);
+      return metadataParams;
+    });
+    const finalMetadataParams = await Promise.all(encryptedDetailsArray);
+    return post<{ message: string }>(`${this.hostUrl}/bulk_set`, { shares: finalMetadataParams });
+  }
+
   generateMetadataParams(message: unknown, privKey?: BN): TorusStorageLayerAPIParams {
     let sig: string;
     let pubX: string;

@@ -19,9 +19,10 @@ import TorusStorageLayer from "../src/storage-layer";
 import { ecCurve } from "../src/utils";
 
 const PRIVATE_KEY = "e70fb5f5970b363879bc36f54d4fc0ad77863bfd059881159251f50f48863acf";
+const PRIVATE_KEY_2 = "2e6824ef22a58b7b5c8938c38e9debd03611f074244f213943e3fa3047ef2385";
 
 const defaultSP = new ServiceProviderBase({ postboxKey: PRIVATE_KEY });
-const defaultSL = new TorusStorageLayer({ serviceProvider: defaultSP });
+const defaultSL = new TorusStorageLayer({ serviceProvider: defaultSP, hostUrl: "http://localhost:5051" });
 
 global.fetch = fetch;
 global.atob = atob;
@@ -208,6 +209,24 @@ describe("TorusStorageLayer", function () {
     const resp = await storageLayer.getMetadata(privKeyBN);
     deepStrictEqual(resp, message, "set and get message should be equal");
   });
+  it("#should get or set with array of specified private keys correctly", async function () {
+    const privKey = PRIVATE_KEY;
+    const privKeyBN = new BN(privKey, 16);
+    const tsp = new ServiceProviderBase({ postboxKey: privKey });
+    const storageLayer = new TorusStorageLayer({ enableLogging: true, serviceProvider: tsp });
+    const message = { test: Math.random().toString(36).substring(7) };
+
+    const privKey2 = PRIVATE_KEY_2;
+    const privKeyBN2 = new BN(privKey2, 16);
+    const message2 = { test: Math.random().toString(36).substring(7) };
+
+    await storageLayer.setMetadataBulk([message, message2], [privKeyBN, privKeyBN2]);
+    const resp = await storageLayer.getMetadata(privKeyBN);
+    const resp2 = await storageLayer.getMetadata(privKeyBN2);
+
+    deepStrictEqual(resp, message, "set and get message should be equal");
+    deepStrictEqual(resp2, message2, "set and get message should be equal");
+  });
 });
 
 describe("polynomial", function () {
@@ -316,7 +335,7 @@ describe("SecurityQuestionsModule", function () {
       modules: { securityQuestions: new SecurityQuestionsModule() },
     });
   });
-  it("#should be able to reconstruct key and initialize a key with seciurty questions", async function () {
+  it("#should be able to reconstruct key and initialize a key with security questions", async function () {
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
     await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
     const tb2 = new ThresholdKey({
@@ -332,7 +351,7 @@ describe("SecurityQuestionsModule", function () {
       fail("key should be able to be reconstructed");
     }
   });
-  it("#should be able to reconstruct key and initialize a key with seciurty questions after refresh", async function () {
+  it("#should be able to reconstruct key and initialize a key with security questions after refresh", async function () {
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
     await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
     const tb2 = new ThresholdKey({
@@ -409,13 +428,57 @@ describe("ShareTransferModule", function () {
 
     // usually should be called in callback, but mocha does not allow
     const pubkey = await tb2.modules.shareTransfer.requestNewShare();
-
+    
     // eslint-disable-next-line promise/param-names
     await new Promise((res) => {
       setTimeout(res, 200);
     });
     const result = await tb.generateNewShare();
     await tb.modules.shareTransfer.approveRequest(pubkey, result.newShareStores[result.newShareIndex.toString("hex")]);
+
+    await tb2.modules.shareTransfer.startRequestStatusCheck(pubkey)
+    // eslint-disable-next-line promise/param-names
+    await new Promise((res) => {
+      setTimeout(res, 1001);
+    });
+
+    const reconstructedKey = await tb2.reconstructKey();
+    if (resp1.privKey.cmp(reconstructedKey) !== 0) {
+      fail("key should be able to be reconstructed");
+    }
+  });
+  it("#should be able to transfer device share", async function () {
+    const tb = new ThresholdKey({
+      serviceProvider: defaultSP,
+      storageLayer: defaultSL,
+      modules: { shareTransfer: new ShareTransferModule() },
+    });
+    const resp1 = await tb.initializeNewKey({ initializeModules: true });
+    // console.log(resp1, tb)
+
+    const tb2 = new ThresholdKey({
+      serviceProvider: defaultSP,
+      storageLayer: defaultSL,
+      modules: { shareTransfer: new ShareTransferModule() },
+    });
+    await tb2.initialize();
+    let latestPolynomial = tb2.metadata.getLatestPublicPolynomial()
+    let latestPolynomialId = latestPolynomial.getPolynomialID()
+    let currentShareIndexes = Object.keys(tb2.shares[latestPolynomialId])
+    // console.log("curentShareIndexes", currentShareIndexes)
+
+    // usually should be called in callback, but mocha does not allow
+    const pubkey = await tb2.modules.shareTransfer.requestNewShare(currentShareIndexes);
+
+    // eslint-disable-next-line promise/param-names
+    await new Promise((res) => {
+      setTimeout(res, 200);
+    });
+    // const result = await tb.generateNewShare();
+    // await tb.modules.shareTransfer.approveRequest(pubkey, result.newShareStores[result.newShareIndex.toString("hex")]);
+    await tb.modules.shareTransfer.approveRequestWithShareIndex(pubkey, "2")
+
+    await tb2.modules.shareTransfer.startRequestStatusCheck(pubkey)
 
     // eslint-disable-next-line promise/param-names
     await new Promise((res) => {
@@ -427,4 +490,66 @@ describe("ShareTransferModule", function () {
       fail("key should be able to be reconstructed");
     }
   });
+  it("#should be able to delete share transfer from another device", async function () {
+    const tb = new ThresholdKey({
+      serviceProvider: defaultSP,
+      storageLayer: defaultSL,
+      modules: { shareTransfer: new ShareTransferModule() },
+    });
+    const resp1 = await tb.initializeNewKey({ initializeModules: true });
+
+    const tb2 = new ThresholdKey({
+      serviceProvider: defaultSP,
+      storageLayer: defaultSL,
+      modules: { shareTransfer: new ShareTransferModule() },
+    });
+    await tb2.initialize();
+
+    // usually should be called in callback, but mocha does not allow
+    const encKey = await tb.modules.shareTransfer.requestNewShare();
+    const encKey2 = await tb2.modules.shareTransfer.requestNewShare();
+    await tb.modules.shareTransfer.deleteShareTransferStore(encKey2) // delete 1st request from 2nd 
+    const newRequests = await tb2.modules.shareTransfer.getShareTransferStore()
+    // console.log(newRequests)
+    if(encKey2 in newRequests) {
+      fail("Unable to delete share transfer request")
+    }
+  })
+  it("#should be able to reset share transfer store", async function () {
+    const tb = new ThresholdKey({
+      serviceProvider: defaultSP,
+      storageLayer: defaultSL,
+      modules: { shareTransfer: new ShareTransferModule() },
+    });
+    await tb.initializeNewKey({ initializeModules: true });
+
+    const encKey = await tb.modules.shareTransfer.requestNewShare();
+    await tb.modules.shareTransfer.resetShareTransferStore()
+    const newRequests = await tb.modules.shareTransfer.getShareTransferStore()
+    if (Object.keys(newRequests).length !== 0) {
+      fail("Unable to reset share store")
+    }
+  })
+  // it("#should be able to reconstruct key and initialize a key with security questions after refresh", async function () {
+  //   const tb = new ThresholdKey({
+  //     serviceProvider: defaultSP,
+  //     storageLayer: defaultSL,
+  //     modules: { securityQuestions: new SecurityQuestionsModule() },
+  //   });
+  //   const resp1 = await tb.initializeNewKey({ initializeModules: true });
+  //   await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
+  //   const tb2 = new ThresholdKey({
+  //     serviceProvider: defaultSP,
+  //     storageLayer: defaultSL,
+  //     modules: { securityQuestions: new SecurityQuestionsModule() },
+  //   });
+  //   await tb.generateNewShare();
+  //   await tb2.initialize();
+
+  //   await tb2.modules.securityQuestions.inputShareFromSecurityQuestions("blublu");
+  //   const reconstructedKey = await tb2.reconstructKey();
+  //   if (resp1.privKey.cmp(reconstructedKey) !== 0) {
+  //     fail("key should be able to be reconstructed");
+  //   }
+  // });
 });
