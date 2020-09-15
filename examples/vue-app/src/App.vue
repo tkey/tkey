@@ -9,17 +9,28 @@
     <div :style="{ marginTop: '20px' }" v-if="selectedVerifier === 'passwordless'">
       <input type="email" v-model="loginHint" placeholder="Enter your email" />
     </div>
+    
     <div :style="{ marginTop: '20px' }">
-      <input v-model="answer" placeholder="enter your answer" />
-    </div>
-    <div :style="{ marginTop: '20px' }">
+      <h4>Login and resets</h4>
       <button @click="triggerLogin(true)">Login with Torus and initialize tkey</button>
-      <button @click="generateNewShareWithSecurityQuestions">Create a new password</button>
-      <button @click="inputShareFromSecurityQuestions">Add password</button>
-      <!-- <button @click="generateNewShare">generateNewShare</button> -->
       <button @click="initializeNewKey">Create new tkey</button>
       <button @click="reconstructKey">Reconstuct tkey</button>
       <button @click="getKeyDetails">Get tkey details</button>
+      <button @click="getSDKObject">Get tkey object</button>
+      <br>
+      <h4>Add and removing shares</h4>
+      <div :style="{ margin: '20px' }">
+        <input v-model="answer" placeholder="enter your answer" />
+      </div>
+      <button @click="generateNewShareWithSecurityQuestions">Create a new password</button>
+      <button @click="inputShareFromSecurityQuestions">Add password</button>
+      <!-- <button @click="generateNewShare">generateNewShare</button> -->
+      <br>
+      <h4>Share Transer</h4>
+      <button @click="checkShareRequests"> Check share requests </button>
+      <button @click="requestShare"> Request Share </button>
+      <button @click="approveShareRequest"> Approve request </button>
+      <button @click="resetShareRequests"> Reset share request store </button>
     </div>
     <div id="console">
       <p></p>
@@ -28,7 +39,8 @@
 </template>
 
 <script>
-import ThresholdKey, { WebStorageModule, SecurityQuestionsModule, TorusServiceProvider, TorusStorageLayer } from "@tkey/core";
+import ThresholdKey, { WebStorageModule, SecurityQuestionsModule, TorusStorageLayer, TorusServiceProvider, ShareTransferModule } from "@tkey/core";
+// import ServiceProviderBase from '../../../src/serviceProvider/ServiceProviderBase';
 
 const GOOGLE = "google";
 const FACEBOOK = "facebook";
@@ -121,6 +133,19 @@ export default {
       console.log(this.tbsdk.getKeyDetails());
       return this.tbsdk.getKeyDetails()
     },
+    getLatestPolynomialDetails(){
+      let latestPolynomial = this.tbsdk.metadata.getLatestPublicPolynomial()
+      let latestPolynomialId = latestPolynomial.getPolynomialID()
+      let indexes = this.tbsdk.metadata.getShareIndexesForPolynomial(latestPolynomialId)
+      console.log(latestPolynomial, latestPolynomialId, indexes)
+    },
+    getSDKObject(){
+      // let latestPolynomial = this.tbsdk.metadata.getLatestPublicPolynomial()
+      // let latestPolynomialId = latestPolynomial.getPolynomialID()
+      // let indexes = this.tbsdk.metadata.getShareIndexesForPolynomial(latestPolynomialId)
+      // console.log(latestPolynomial, latestPolynomialId, indexes)
+      console.log(this.tbsdk)
+    },
     passwordValidation(v) {
       return v.length >= 10
       // return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\dA-Za-z]).\S{10,}$/.test(v)
@@ -177,10 +202,6 @@ export default {
           }
         }
 
-        // if (initializedDetails.requiredShares > 0) {
-        //   await this.tbsdk.modules.webStorage.inputShareFromWebStorage();
-        // }
-
         const key = await this.tbsdk.reconstructKey();
         // await this.tbsdk.initializeNewKey(undefined, true)
         console.log(key.toString("hex"));
@@ -221,6 +242,52 @@ export default {
         console.error(error, "caught");
       }
     },
+    async checkShareRequests(){
+      try{
+        const result = await this.tbsdk.modules.shareTransfer.getShareTransferStore()
+        const requests = await this.tbsdk.modules.shareTransfer.lookForRequests()
+        console.log(result, requests)
+      }catch(err){
+        console.log(err)
+      }
+    },
+    async resetShareRequests(){
+      try{
+        await this.tbsdk.modules.shareTransfer.resetShareTransferStore()
+        this.console("Reset share transfer store successfully")
+      }catch(err){
+        console.log(err)
+      }
+    },
+    async approveShareRequest(){
+      try{
+        const result = await this.tbsdk.modules.shareTransfer.getShareTransferStore()
+        const requests = await this.tbsdk.modules.shareTransfer.lookForRequests()
+        let shareToShare
+        try{
+          shareToShare = await this.tbsdk.modules.webStorage.getDeviceShare()
+        }catch(err){
+          console.error("No on device share found. Generating a new share")
+          const newShare = await this.tbsdk.generateNewShare()
+          shareToShare = newShare.newShareStores[newShare.newShareIndex.toString("hex")]
+        }
+        console.log(result, requests, this.tbsdk)
+
+        await this.tbsdk.modules.shareTransfer.approveRequest(requests[0], shareToShare)
+        // await this.tbsdk.modules.shareTransfer.deleteShareTransferStore(requests[0]) // delete old share requests
+        this.console("approved")
+      }catch(err){
+        console.error(err)
+      }
+    },
+    async requestShare(){
+      try{
+        const result = await this.tbsdk.modules.shareTransfer.requestNewShare()
+        console.log(result)
+      }catch(err){
+        console.error(err)
+      }
+    },
     async reconstructKey() {
       try {
         let key = await this.tbsdk.reconstructKey();
@@ -258,7 +325,7 @@ export default {
         await this.triggerLogin(false);
         const res = await this.tbsdk.initializeNewKey({ initializeModules: true });
         this.console(res);
-        console.log("new tkey", res.toString('hex'))
+        console.log("new tkey", res)
       } catch (error) {
         console.error(error, "caught");
       }
@@ -275,18 +342,20 @@ export default {
       };
       const webStorageModule = new WebStorageModule();
       const securityQuestionsModule = new SecurityQuestionsModule();
+      const shareTransferModule = new ShareTransferModule()
       const serviceProvider = new TorusServiceProvider({ directParams });
-      const storageLayer = new TorusStorageLayer({ hostUrl: "https://metadata.tor.us", serviceProvider });
+      // const serviceProviderBase = new ServiceProviderBase({postboxKey:"f1f02ee186749cfe1ef8f957fc3d7a5b7128f979bacc10ab3b2a811d4f990852"})
+      const storageLayer = new TorusStorageLayer({ hostUrl: "https://metadata.tor.us", serviceProvider: serviceProvider });
       const tbsdk = new ThresholdKey({
-        serviceProvider,
+        serviceProvider: serviceProvider,
         storageLayer,
-        modules: { webStorage: webStorageModule, securityQuestions: securityQuestionsModule }
+        modules: { webStorage: webStorageModule, securityQuestions: securityQuestionsModule, shareTransfer: shareTransferModule }
       });
-      // const torusdirectsdk = tbsdk.serviceProvider;
+      const torusdirectsdk = tbsdk.serviceProvider;
       // { enableLogging = false, modules = {}, serviceProvider, storageLayer, directParams }
       await tbsdk.serviceProvider.init({ skipSw: false });
       this.tbsdk = tbsdk;
-      // this.torusdirectsdk = torusdirectsdk;
+      this.torusdirectsdk = torusdirectsdk;
     }
   },
   async mounted() {
