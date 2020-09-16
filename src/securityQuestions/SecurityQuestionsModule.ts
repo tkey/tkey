@@ -33,7 +33,8 @@ class SecurityQuestionsModule implements IModule {
   async initialize(): Promise<void> {}
 
   async generateNewShareWithSecurityQuestions(answerString: string, questions: string): Promise<GenerateNewShareResult> {
-    const rawSqStore = this.tbSDK.metadata.getGeneralStoreDomain(this.moduleName);
+    const metadata = this.tbSDK.getMetadata();
+    const rawSqStore = metadata.getGeneralStoreDomain(this.moduleName);
     if (rawSqStore) throw new Error("security questions exists, cant replace, maybe change?");
 
     const newSharesDetails = await this.tbSDK.generateNewShare();
@@ -52,18 +53,21 @@ class SecurityQuestionsModule implements IModule {
       shareIndex: newShareStore.share.shareIndex,
       polynomialID: newShareStore.polynomialID,
     });
-    this.tbSDK.metadata.setGeneralStoreDomain(this.moduleName, sqStore);
+    metadata.setGeneralStoreDomain(this.moduleName, sqStore);
     await this.tbSDK.syncShareMetadata();
     return newSharesDetails;
   }
 
   getSecurityQuestions(): string {
-    const sqStore = new SecurityQuestionStore(this.tbSDK.metadata.getGeneralStoreDomain(this.moduleName) as SecurityQuestionStoreArgs);
+    const metadata = this.tbSDK.getMetadata();
+    const sqStore = new SecurityQuestionStore(metadata.getGeneralStoreDomain(this.moduleName) as SecurityQuestionStoreArgs);
     return sqStore.questions;
   }
 
   async inputShareFromSecurityQuestions(answerString: string): Promise<void> {
-    const rawSqStore = this.tbSDK.metadata.getGeneralStoreDomain(this.moduleName);
+    const metadata = this.tbSDK.getMetadata();
+    const rawSqStore = metadata.getGeneralStoreDomain(this.moduleName);
+    // const rawSqStore = this.tbSDK.getMetadata().getGeneralStoreDomain(this.moduleName);
     if (!rawSqStore) throw new Error("security questions might not exist/be setup");
     const sqStore = new SecurityQuestionStore(rawSqStore as SecurityQuestionStoreArgs);
     const userInputHash = answerToUserInputHashBN(answerString);
@@ -83,7 +87,9 @@ class SecurityQuestionsModule implements IModule {
   }
 
   async changeSecurityQuestionAndAnswer(newAnswerString: string, newQuestions: string): Promise<void> {
-    const rawSqStore = this.tbSDK.metadata.getGeneralStoreDomain(this.moduleName);
+    const metadata = this.tbSDK.getMetadata();
+    const rawSqStore = metadata.getGeneralStoreDomain(this.moduleName);
+    // const rawSqStore = this.tbSDK.getMetadata().getGeneralStoreDomain(this.moduleName);
     if (!rawSqStore) throw new Error("security questions might not exist/be setup");
     const sqStore = new SecurityQuestionStore(rawSqStore as SecurityQuestionStoreArgs);
 
@@ -99,7 +105,7 @@ class SecurityQuestionsModule implements IModule {
       shareIndex: sqStore.shareIndex,
       questions: newQuestions,
     });
-    await this.tbSDK.metadata.setGeneralStoreDomain(this.moduleName, newSqStore);
+    await metadata.setGeneralStoreDomain(this.moduleName, newSqStore);
     await this.tbSDK.syncShareMetadata();
   }
 

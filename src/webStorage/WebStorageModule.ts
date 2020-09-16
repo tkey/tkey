@@ -41,7 +41,8 @@ class WebStorageModule implements IModule {
   }
 
   async getDeviceShare(): Promise<ShareStore> {
-    const polyID = this.tbSDK.metadata.getLatestPublicPolynomial().getPolynomialID();
+    const metadata = this.tbSDK.getMetadata();
+    const polyID = metadata.getLatestPublicPolynomial().getPolynomialID();
     let shareStore: ShareStore;
     try {
       shareStore = await getShareFromLocalStorage(polyID);

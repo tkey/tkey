@@ -99,9 +99,9 @@ export type KeyDetails = {
 };
 
 export interface ITKeyApi {
-  metadata: IMetadata;
   storageLayer: IStorageLayer;
 
+  getMetadata(): IMetadata;
   initialize(input?: ShareStore, importKey?: BN): Promise<KeyDetails>;
   catchupToLatestShare(shareStore: ShareStore): Promise<CatchupToLatestShareResult>;
   syncShareMetadata(adjustScopedStore?: (ss: ScopedStore) => ScopedStore): Promise<void>;

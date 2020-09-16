@@ -70,7 +70,7 @@ class ThresholdKey implements ITKey {
 
   getApi(): ITKeyApi {
     return {
-      metadata: this.metadata,
+      getMetadata: this.getMetadata.bind(this),
       storageLayer: this.storageLayer,
       initialize: this.initialize.bind(this),
       catchupToLatestShare: this.catchupToLatestShare.bind(this),
@@ -83,6 +83,10 @@ class ThresholdKey implements ITKey {
       outputShare: this.outputShare.bind(this),
       setDeviceStorage: this.setDeviceStorage.bind(this),
     };
+  }
+
+  getMetadata() {
+    return this.metadata;
   }
 
   async initialize(input?: ShareStore, importKey?: BN): Promise<KeyDetails> {
@@ -114,7 +118,7 @@ class ThresholdKey implements ITKey {
     // now that we have metadata we set the requirements for reconstruction
 
     // initialize modules
-    this.setModuleReferences();
+    // this.setModuleReferences();
     await this.initializeModules();
 
     return this.getKeyDetails();
@@ -377,7 +381,6 @@ class ThresholdKey implements ITKey {
     }
     this.metadata = metadata;
 
-    this.setModuleReferences();
     // initialize modules
     if (initializeModules) {
       await this.initializeModules();

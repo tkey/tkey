@@ -134,15 +134,16 @@ export default {
       return this.tbsdk.getKeyDetails()
     },
     getLatestPolynomialDetails(){
-      let latestPolynomial = this.tbsdk.metadata.getLatestPublicPolynomial()
+      const metadata = this.tbSDK.getMetadata()
+      let latestPolynomial = thismetadata.getLatestPublicPolynomial()
       let latestPolynomialId = latestPolynomial.getPolynomialID()
-      let indexes = this.tbsdk.metadata.getShareIndexesForPolynomial(latestPolynomialId)
+      let indexes = thismetadata.getShareIndexesForPolynomial(latestPolynomialId)
       console.log(latestPolynomial, latestPolynomialId, indexes)
     },
     getSDKObject(){
-      // let latestPolynomial = this.tbsdk.metadata.getLatestPublicPolynomial()
+      // let latestPolynomial = thismetadata.getLatestPublicPolynomial()
       // let latestPolynomialId = latestPolynomial.getPolynomialID()
-      // let indexes = this.tbsdk.metadata.getShareIndexesForPolynomial(latestPolynomialId)
+      // let indexes = thismetadata.getShareIndexesForPolynomial(latestPolynomialId)
       // console.log(latestPolynomial, latestPolynomialId, indexes)
       console.log(this.tbsdk)
     },
