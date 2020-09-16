@@ -115,6 +115,8 @@ export interface ITKeyApi {
   ): void;
   generateNewShare(): Promise<GenerateNewShareResult>;
   outputShare(shareIndex: BNString): ShareStore;
+  encrypt(data: Buffer): Promise<EncryptedMessage>;
+  decrypt(encryptedMesage: EncryptedMessage): Promise<Buffer>;
 }
 
 export interface ITKey extends ITKeyApi, ISerializable {
@@ -165,6 +167,10 @@ export interface SecurityQuestionStoreArgs {
   polynomialID: PolynomialID;
 
   questions: string;
+}
+
+export interface SeedPhraseStoreArgs {
+  seedPhrase: string;
 }
 
 export interface ShareTransferStorePointerArgs {

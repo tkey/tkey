@@ -38,10 +38,6 @@ class SecurityQuestionsModule implements IModule {
     if (rawSqStore) throw new Error("security questions exists, cant replace, maybe change?");
 
     const newSharesDetails = await this.tbSDK.generateNewShare();
-    await this.tbSDK.addShareDescription(
-      newSharesDetails.newShareIndex.toString("hex"),
-      JSON.stringify({ module: this.moduleName, questions, dateAdded: Date.now() })
-    );
     const newShareStore = newSharesDetails.newShareStores[newSharesDetails.newShareIndex.toString("hex")];
     const userInputHash = answerToUserInputHashBN(answerString);
     let nonce = newShareStore.share.share.sub(userInputHash);
@@ -54,7 +50,11 @@ class SecurityQuestionsModule implements IModule {
       polynomialID: newShareStore.polynomialID,
     });
     metadata.setGeneralStoreDomain(this.moduleName, sqStore);
-    await this.tbSDK.syncShareMetadata();
+    await this.tbSDK.addShareDescription(
+      newSharesDetails.newShareIndex.toString("hex"),
+      JSON.stringify({ module: this.moduleName, questions, dateAdded: Date.now() }),
+      true // sync metadata
+    );
     return newSharesDetails;
   }
 
@@ -67,7 +67,6 @@ class SecurityQuestionsModule implements IModule {
   async inputShareFromSecurityQuestions(answerString: string): Promise<void> {
     const metadata = this.tbSDK.getMetadata();
     const rawSqStore = metadata.getGeneralStoreDomain(this.moduleName);
-    // const rawSqStore = this.tbSDK.getMetadata().getGeneralStoreDomain(this.moduleName);
     if (!rawSqStore) throw new Error("security questions might not exist/be setup");
     const sqStore = new SecurityQuestionStore(rawSqStore as SecurityQuestionStoreArgs);
     const userInputHash = answerToUserInputHashBN(answerString);
@@ -89,7 +88,6 @@ class SecurityQuestionsModule implements IModule {
   async changeSecurityQuestionAndAnswer(newAnswerString: string, newQuestions: string): Promise<void> {
     const metadata = this.tbSDK.getMetadata();
     const rawSqStore = metadata.getGeneralStoreDomain(this.moduleName);
-    // const rawSqStore = this.tbSDK.getMetadata().getGeneralStoreDomain(this.moduleName);
     if (!rawSqStore) throw new Error("security questions might not exist/be setup");
     const sqStore = new SecurityQuestionStore(rawSqStore as SecurityQuestionStoreArgs);
 

@@ -1,7 +1,18 @@
 import { generatePrivate } from "@toruslabs/eccrypto";
 import BN from "bn.js";
 
-import { getPubKeyPoint, Point, Polynomial, ScopedStore, Share, ShareStore, ShareStoreMap, ShareStorePolyIDShareIndexMap } from "./base";
+import {
+  getPubKeyECC,
+  getPubKeyPoint,
+  Point,
+  Polynomial,
+  ScopedStore,
+  Share,
+  ShareStore,
+  ShareStoreMap,
+  ShareStorePolyIDShareIndexMap,
+  toPrivKeyECC,
+} from "./base";
 import {
   CatchupToLatestShareResult,
   GenerateNewShareResult,
@@ -14,12 +25,12 @@ import {
   RefreshSharesResult,
   TKeyArgs,
 } from "./baseTypes/aggregateTypes";
-import { BNString, IServiceProvider, IStorageLayer, PolynomialID, StringifiedType } from "./baseTypes/commonTypes";
+import { BNString, EncryptedMessage, IServiceProvider, IStorageLayer, PolynomialID, StringifiedType } from "./baseTypes/commonTypes";
 import { generateRandomPolynomial, lagrangeInterpolatePolynomial, lagrangeInterpolation } from "./lagrangeInterpolatePolynomial";
 import Metadata from "./metadata";
 import TorusServiceProvider from "./serviceProvider/TorusServiceProvider";
 import TorusStorageLayer from "./storage-layer";
-import { isEmptyObject, prettyPrintError } from "./utils";
+import { decrypt, encrypt, isEmptyObject, prettyPrintError } from "./utils";
 
 // TODO: handle errors for get and set with retries
 
@@ -65,7 +76,7 @@ class ThresholdKey implements ITKey {
     this.refreshMiddleware = {};
     this.storeDeviceShare = undefined;
 
-    this.setModuleReferences();
+    this.setModuleReferences(); // Providing ITKeyApi access to modules
   }
 
   getApi(): ITKeyApi {
@@ -82,11 +93,16 @@ class ThresholdKey implements ITKey {
       inputShareSafe: this.inputShareSafe.bind(this),
       outputShare: this.outputShare.bind(this),
       setDeviceStorage: this.setDeviceStorage.bind(this),
+      encrypt: this.encrypt.bind(this),
+      decrypt: this.decrypt.bind(this),
     };
   }
 
   getMetadata() {
-    return this.metadata;
+    if (typeof this.metadata !== "undefined") {
+      return this.metadata;
+    }
+    throw new Error("metadata undefined");
   }
 
   async initialize(input?: ShareStore, importKey?: BN): Promise<KeyDetails> {
@@ -416,7 +432,7 @@ class ThresholdKey implements ITKey {
     this.shares[ss.polynomialID][ss.share.shareIndex.toString("hex")] = ss;
   }
 
-  // inputs a share ensuring that the share is the latest share AND metadata is udpated to its latest state
+  // inputs a share ensuring that the share is the latest share AND metadata is updated to its latest state
   async inputShareSafe(shareStore: ShareStore): Promise<void> {
     let ss;
     if (shareStore instanceof ShareStore) {
@@ -569,6 +585,18 @@ class ThresholdKey implements ITKey {
     if (updateMetadata) {
       await this.syncShareMetadata();
     }
+  }
+
+  // reconstuctionCompleted() {
+  //   return typeof this.privKey === "undefined"
+  // }
+
+  async encrypt(data: Buffer): Promise<EncryptedMessage> {
+    return encrypt(getPubKeyECC(this.privKey), data);
+  }
+
+  async decrypt(encryptedMessage: EncryptedMessage): Promise<Buffer> {
+    return decrypt(toPrivKeyECC(this.privKey), encryptedMessage);
   }
 
   toJSON(): StringifiedType {
