@@ -1,6 +1,6 @@
 // import bip39 from "bip39";
-import { mnemonicToSeedSync, validateMnemonic } from "bip39";
-import BN from "bn.js";
+import { validateMnemonic } from "bip39";
+// import BN from "bn.js";
 import stringify from "json-stable-stringify";
 
 import { IModule, ITKeyApi, SeedPhraseStoreArgs } from "../baseTypes/aggregateTypes";
@@ -31,16 +31,16 @@ class SeedPhraseModule implements IModule {
       throw new Error("invalid mnemonic");
     }
 
-    const seed = new BN(mnemonicToSeedSync(seedPhrase));
+    // const seed = new BN(seedPhrase);
     // const moddedSeed = seed.umod(ecCurve.curve.n);
     // if (seed.cmp(moddedSeed) !== 0) {
     //   throw new Error("seed phrase not in secp256k1 curve group, you're really unlucky");
     // }
 
     const metadata = this.tbSDK.getMetadata();
-    const seedPhraseBuffer = Buffer.from(seed.toString("hex"));
+    const seedPhraseBuffer = Buffer.from(seedPhrase);
     const encrpytedSeedPhraseBuffer = await this.tbSDK.encrypt(seedPhraseBuffer);
-    const newSeedPhraseStore = new SeedPhraseStore({ seedPhrase: stringify(encrpytedSeedPhraseBuffer) });
+    const newSeedPhraseStore = new SeedPhraseStore({ seedPhrase: btoa(stringify(encrpytedSeedPhraseBuffer)) });
     metadata.setGeneralStoreDomain(this.moduleName, newSeedPhraseStore);
     await this.tbSDK.syncShareMetadata();
     // return this.tbSDK.initialize(undefined, seed);
@@ -51,7 +51,7 @@ class SeedPhraseModule implements IModule {
     const rawSeedPhraseStore = metadata.getGeneralStoreDomain(this.moduleName);
     if (!rawSeedPhraseStore) throw new Error("Seed Phrase doesn't exist");
     const seedPhraseStore = new SeedPhraseStore(rawSeedPhraseStore as SeedPhraseStoreArgs);
-    const encryptedMessage = JSON.parse(seedPhraseStore.seedPhrase);
+    const encryptedMessage = JSON.parse(atob(seedPhraseStore.seedPhrase));
     const decryptedSeedPhrase = await this.tbSDK.decrypt(encryptedMessage);
     return decryptedSeedPhrase;
   }

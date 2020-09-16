@@ -532,7 +532,7 @@ describe("ShareTransferModule", function () {
     }
   })
 
-  describe.only("ShareTransferModule", function () { 
+  describe("ShareTransferModule", function () { 
     it("#it should get and set seed phrase store", async function () {
       const tb = new ThresholdKey({
         serviceProvider: defaultSP,
@@ -551,7 +551,9 @@ describe("ShareTransferModule", function () {
       tb2.inputShare(resp1.deviceShare)
       await tb2.reconstructKey()
       const testSP = await tb2.modules.seedPhrase.getSeedPhraseStore()
-      console.log(testSP.toString('utf8'))
+      if (testSP.toString('utf8') !== "seed sock milk update focus rotate barely fade car face mechanic mercy") {
+        fail("unable to get/set seed phrase")
+      }
     })
   })
   // it("#should be able to reconstruct key and initialize a key with security questions after refresh", async function () {
