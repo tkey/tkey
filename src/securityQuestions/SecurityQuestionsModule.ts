@@ -24,20 +24,20 @@ class SecurityQuestionsModule implements IModule {
     this.moduleName = "securityQuestions";
   }
 
-  async initialize(tbSDK: ITKeyApi): Promise<void> {
+  setModuleReferences(tbSDK: ITKeyApi): void {
     this.tbSDK = tbSDK;
     this.tbSDK.addRefreshMiddleware(this.moduleName, SecurityQuestionsModule.refreshSecurityQuestionsMiddleware);
   }
 
+  // eslint-disable-next-line
+  async initialize(): Promise<void> {}
+
   async generateNewShareWithSecurityQuestions(answerString: string, questions: string): Promise<GenerateNewShareResult> {
-    const rawSqStore = this.tbSDK.metadata.getGeneralStoreDomain(this.moduleName);
+    const metadata = this.tbSDK.getMetadata();
+    const rawSqStore = metadata.getGeneralStoreDomain(this.moduleName);
     if (rawSqStore) throw new Error("security questions exists, cant replace, maybe change?");
 
     const newSharesDetails = await this.tbSDK.generateNewShare();
-    await this.tbSDK.addShareDescription(
-      newSharesDetails.newShareIndex.toString("hex"),
-      JSON.stringify({ module: this.moduleName, questions, dateAdded: Date.now() })
-    );
     const newShareStore = newSharesDetails.newShareStores[newSharesDetails.newShareIndex.toString("hex")];
     const userInputHash = answerToUserInputHashBN(answerString);
     let nonce = newShareStore.share.share.sub(userInputHash);
@@ -49,18 +49,24 @@ class SecurityQuestionsModule implements IModule {
       shareIndex: newShareStore.share.shareIndex,
       polynomialID: newShareStore.polynomialID,
     });
-    this.tbSDK.metadata.setGeneralStoreDomain(this.moduleName, sqStore);
-    await this.tbSDK.syncShareMetadata();
+    metadata.setGeneralStoreDomain(this.moduleName, sqStore);
+    await this.tbSDK.addShareDescription(
+      newSharesDetails.newShareIndex.toString("hex"),
+      JSON.stringify({ module: this.moduleName, questions, dateAdded: Date.now() }),
+      true // sync metadata
+    );
     return newSharesDetails;
   }
 
   getSecurityQuestions(): string {
-    const sqStore = new SecurityQuestionStore(this.tbSDK.metadata.getGeneralStoreDomain(this.moduleName) as SecurityQuestionStoreArgs);
+    const metadata = this.tbSDK.getMetadata();
+    const sqStore = new SecurityQuestionStore(metadata.getGeneralStoreDomain(this.moduleName) as SecurityQuestionStoreArgs);
     return sqStore.questions;
   }
 
   async inputShareFromSecurityQuestions(answerString: string): Promise<void> {
-    const rawSqStore = this.tbSDK.metadata.getGeneralStoreDomain(this.moduleName);
+    const metadata = this.tbSDK.getMetadata();
+    const rawSqStore = metadata.getGeneralStoreDomain(this.moduleName);
     if (!rawSqStore) throw new Error("security questions might not exist/be setup");
     const sqStore = new SecurityQuestionStore(rawSqStore as SecurityQuestionStoreArgs);
     const userInputHash = answerToUserInputHashBN(answerString);
@@ -80,7 +86,8 @@ class SecurityQuestionsModule implements IModule {
   }
 
   async changeSecurityQuestionAndAnswer(newAnswerString: string, newQuestions: string): Promise<void> {
-    const rawSqStore = this.tbSDK.metadata.getGeneralStoreDomain(this.moduleName);
+    const metadata = this.tbSDK.getMetadata();
+    const rawSqStore = metadata.getGeneralStoreDomain(this.moduleName);
     if (!rawSqStore) throw new Error("security questions might not exist/be setup");
     const sqStore = new SecurityQuestionStore(rawSqStore as SecurityQuestionStoreArgs);
 
@@ -96,7 +103,7 @@ class SecurityQuestionsModule implements IModule {
       shareIndex: sqStore.shareIndex,
       questions: newQuestions,
     });
-    await this.tbSDK.metadata.setGeneralStoreDomain(this.moduleName, newSqStore);
+    await metadata.setGeneralStoreDomain(this.moduleName, newSqStore);
     await this.tbSDK.syncShareMetadata();
   }
 

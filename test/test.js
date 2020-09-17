@@ -16,6 +16,7 @@ import SecurityQuestionsModule from "../src/securityQuestions/SecurityQuestionsM
 import ServiceProviderBase from "../src/serviceProvider/ServiceProviderBase";
 import ShareTransferModule from "../src/shareTransfer/shareTransferModule";
 import TorusStorageLayer from "../src/storage-layer";
+import SeedPhraseModule from "../src/seedPhrase/SeedPhraseModule"
 import { ecCurve } from "../src/utils";
 
 const PRIVATE_KEY = "e70fb5f5970b363879bc36f54d4fc0ad77863bfd059881159251f50f48863acf";
@@ -45,9 +46,9 @@ describe("tkey", function () {
     }
   });
   it("#should be able to reconstruct key when initializing a  with user input", async function () {
-    let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
-    userInput = userInput.umod(ecCurve.curve.n);
-    const resp1 = await tb.initializeNewKey({ userInput, initializeModules: true });
+    let determinedShare = new BN(keccak256("user answer blublu").slice(2), "hex");
+    determinedShare = determinedShare.umod(ecCurve.curve.n);
+    const resp1 = await tb.initializeNewKey({ determinedShare, initializeModules: true });
     const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize();
     tb2.inputShare(resp1.userShare);
@@ -139,6 +140,17 @@ describe("tkey", function () {
     const tb4 = await ThresholdKey.fromJSON(JSON.parse(stringified), { serviceProvider: defaultSP, storageLayer: defaultSL });
     const finalKeyPostSerialization = await tb4.reconstructKey();
     strictEqual(finalKeyPostSerialization.toString("hex"), finalKey.toString("hex"), "Incorrect serialization");
+  });
+  it("#should be able to import and reconstruct an imported key", async function () {
+    const importedKey = new BN(generatePrivate());
+    const resp1 = await tb.initializeNewKey({ importedKey, initializeModules: true });
+    const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
+    await tb2.initialize();
+    tb2.inputShare(resp1.deviceShare);
+    const reconstructedKey = await tb2.reconstructKey();
+    if (importedKey.cmp(reconstructedKey) !== 0) {
+      fail("key should be able to be reconstructed");
+    }
   });
 });
 
@@ -324,7 +336,7 @@ describe("SecurityQuestionsModule", function () {
       modules: { securityQuestions: new SecurityQuestionsModule() },
     });
   });
-  it("#should be able to reconstruct key and initialize a key with seciurty questions", async function () {
+  it("#should be able to reconstruct key and initialize a key with security questions", async function () {
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
     await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
     const tb2 = new ThresholdKey({
@@ -340,7 +352,7 @@ describe("SecurityQuestionsModule", function () {
       fail("key should be able to be reconstructed");
     }
   });
-  it("#should be able to reconstruct key and initialize a key with seciurty questions after refresh", async function () {
+  it("#should be able to reconstruct key and initialize a key with security questions after refresh", async function () {
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
     await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
     const tb2 = new ThresholdKey({
@@ -519,7 +531,32 @@ describe("ShareTransferModule", function () {
       fail("Unable to reset share store")
     }
   })
-  // it("#should be able to reconstruct key and initialize a key with seciurty questions after refresh", async function () {
+
+  describe("ShareTransferModule", function () { 
+    it("#it should get and set seed phrase store", async function () {
+      const tb = new ThresholdKey({
+        serviceProvider: defaultSP,
+        storageLayer: defaultSL,
+        modules: { seedPhrase: new SeedPhraseModule() },
+      });
+      const resp1 = await tb.initializeNewKey({ initializeModules: true });
+      await tb.modules.seedPhrase.addSeedPhrase("seed sock milk update focus rotate barely fade car face mechanic mercy")
+
+      const tb2 = new ThresholdKey({
+        serviceProvider: defaultSP,
+        storageLayer: defaultSL,
+        modules: { seedPhrase: new SeedPhraseModule() },
+      });
+      await tb2.initialize();
+      tb2.inputShare(resp1.deviceShare)
+      await tb2.reconstructKey()
+      const testSP = await tb2.modules.seedPhrase.getSeedPhraseStore()
+      if (testSP.toString('utf8') !== "seed sock milk update focus rotate barely fade car face mechanic mercy") {
+        fail("unable to get/set seed phrase")
+      }
+    })
+  })
+  // it("#should be able to reconstruct key and initialize a key with security questions after refresh", async function () {
   //   const tb = new ThresholdKey({
   //     serviceProvider: defaultSP,
   //     storageLayer: defaultSL,

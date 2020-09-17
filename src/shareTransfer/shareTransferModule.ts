@@ -25,14 +25,17 @@ class ShareTransferModule implements IModule {
     this.moduleName = "shareTransfer";
   }
 
-  async initialize(tbSdk: ITKeyApi): Promise<void> {
-    //   this.tbSDK.addRefreshMiddleware(this.moduleName, this.refreshSecurityQuestionsMiddleware.bind(this));
-    this.tbSDK = tbSdk;
-    const rawShareTransferStorePointer = this.tbSDK.metadata.getGeneralStoreDomain(this.moduleName) as ShareTransferStorePointerArgs;
+  setModuleReferences(tbSDK: ITKeyApi): void {
+    this.tbSDK = tbSDK;
+  }
+
+  async initialize(): Promise<void> {
+    const metadata = this.tbSDK.getMetadata();
+    const rawShareTransferStorePointer = metadata.getGeneralStoreDomain(this.moduleName) as ShareTransferStorePointerArgs;
     let shareTransferStorePointer;
     if (!rawShareTransferStorePointer) {
       shareTransferStorePointer = { pointer: new BN(generatePrivate()) };
-      this.tbSDK.metadata.setGeneralStoreDomain(this.moduleName, shareTransferStorePointer);
+      metadata.setGeneralStoreDomain(this.moduleName, shareTransferStorePointer);
       await this.tbSDK.syncShareMetadata();
     } else {
       shareTransferStorePointer = new ShareTransferStorePointer(rawShareTransferStorePointer);
@@ -93,17 +96,15 @@ class ShareTransferModule implements IModule {
   }
 
   async getShareTransferStore(): Promise<ShareTransferStore> {
-    const shareTransferStorePointer = new ShareTransferStorePointer(
-      this.tbSDK.metadata.getGeneralStoreDomain(this.moduleName) as ShareTransferStorePointerArgs
-    );
+    const metadata = this.tbSDK.getMetadata();
+    const shareTransferStorePointer = new ShareTransferStorePointer(metadata.getGeneralStoreDomain(this.moduleName) as ShareTransferStorePointerArgs);
     const value = await this.tbSDK.storageLayer.getMetadata(shareTransferStorePointer.pointer);
     return value as ShareTransferStore;
   }
 
   async setShareTransferStore(shareTransferStore: ShareTransferStore): Promise<void> {
-    const shareTransferStorePointer = new ShareTransferStorePointer(
-      this.tbSDK.metadata.getGeneralStoreDomain(this.moduleName) as ShareTransferStorePointerArgs
-    );
+    const metadata = this.tbSDK.getMetadata();
+    const shareTransferStorePointer = new ShareTransferStorePointer(metadata.getGeneralStoreDomain(this.moduleName) as ShareTransferStorePointerArgs);
     await this.tbSDK.storageLayer.setMetadata(shareTransferStore, shareTransferStorePointer.pointer);
   }
 
@@ -139,8 +140,9 @@ class ShareTransferModule implements IModule {
   }
 
   async resetShareTransferStore(): Promise<void> {
+    const metadata = this.tbSDK.getMetadata();
     const shareTransferStorePointer = { pointer: new BN(generatePrivate()) };
-    this.tbSDK.metadata.setGeneralStoreDomain(this.moduleName, shareTransferStorePointer);
+    metadata.setGeneralStoreDomain(this.moduleName, shareTransferStorePointer);
     await this.tbSDK.syncShareMetadata();
   }
 }

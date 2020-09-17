@@ -1,7 +1,18 @@
 import { generatePrivate } from "@toruslabs/eccrypto";
 import BN from "bn.js";
 
-import { getPubKeyPoint, Point, Polynomial, ScopedStore, Share, ShareStore, ShareStoreMap, ShareStorePolyIDShareIndexMap } from "./base";
+import {
+  getPubKeyECC,
+  getPubKeyPoint,
+  Point,
+  Polynomial,
+  ScopedStore,
+  Share,
+  ShareStore,
+  ShareStoreMap,
+  ShareStorePolyIDShareIndexMap,
+  toPrivKeyECC,
+} from "./base";
 import {
   CatchupToLatestShareResult,
   GenerateNewShareResult,
@@ -14,12 +25,12 @@ import {
   RefreshSharesResult,
   TKeyArgs,
 } from "./baseTypes/aggregateTypes";
-import { BNString, IServiceProvider, IStorageLayer, PolynomialID, StringifiedType } from "./baseTypes/commonTypes";
+import { BNString, EncryptedMessage, IServiceProvider, IStorageLayer, PolynomialID, StringifiedType } from "./baseTypes/commonTypes";
 import { generateRandomPolynomial, lagrangeInterpolatePolynomial, lagrangeInterpolation } from "./lagrangeInterpolatePolynomial";
 import Metadata from "./metadata";
 import TorusServiceProvider from "./serviceProvider/TorusServiceProvider";
 import TorusStorageLayer from "./storage-layer";
-import { isEmptyObject, prettyPrintError } from "./utils";
+import { decrypt, encrypt, isEmptyObject, prettyPrintError } from "./utils";
 
 // TODO: handle errors for get and set with retries
 
@@ -64,12 +75,15 @@ class ThresholdKey implements ITKey {
     this.privKey = undefined;
     this.refreshMiddleware = {};
     this.storeDeviceShare = undefined;
+
+    this.setModuleReferences(); // Providing ITKeyApi access to modules
   }
 
   getApi(): ITKeyApi {
     return {
-      metadata: this.metadata,
+      getMetadata: this.getMetadata.bind(this),
       storageLayer: this.storageLayer,
+      initialize: this.initialize.bind(this),
       catchupToLatestShare: this.catchupToLatestShare.bind(this),
       syncShareMetadata: this.syncShareMetadata.bind(this),
       addRefreshMiddleware: this.addRefreshMiddleware.bind(this),
@@ -79,10 +93,19 @@ class ThresholdKey implements ITKey {
       inputShareSafe: this.inputShareSafe.bind(this),
       outputShare: this.outputShare.bind(this),
       setDeviceStorage: this.setDeviceStorage.bind(this),
+      encrypt: this.encrypt.bind(this),
+      decrypt: this.decrypt.bind(this),
     };
   }
 
-  async initialize(input?: ShareStore): Promise<KeyDetails> {
+  getMetadata() {
+    if (typeof this.metadata !== "undefined") {
+      return this.metadata;
+    }
+    throw new Error("metadata undefined");
+  }
+
+  async initialize(input?: ShareStore, importKey?: BN): Promise<KeyDetails> {
     let shareStore: ShareStore;
     if (input instanceof ShareStore) {
       shareStore = input;
@@ -95,7 +118,7 @@ class ThresholdKey implements ITKey {
 
       if (isEmptyObject(rawServiceProviderShare)) {
         // no metadata set, assumes new user
-        await this.initializeNewKey({ initializeModules: true });
+        await this.initializeNewKey({ initializeModules: true, importedKey: importKey });
         return this.getKeyDetails();
       }
       // else we continue with catching up share and metadata
@@ -111,13 +134,18 @@ class ThresholdKey implements ITKey {
     // now that we have metadata we set the requirements for reconstruction
 
     // initialize modules
+    // this.setModuleReferences();
     await this.initializeModules();
 
     return this.getKeyDetails();
   }
 
+  private setModuleReferences() {
+    Object.keys(this.modules).map((x) => this.modules[x].setModuleReferences(this.getApi()));
+  }
+
   private async initializeModules() {
-    return Promise.all(Object.keys(this.modules).map((x) => this.modules[x].initialize(this.getApi())));
+    return Promise.all(Object.keys(this.modules).map((x) => this.modules[x].initialize()));
   }
 
   async catchupToLatestShare(shareStore: ShareStore): Promise<CatchupToLatestShareResult> {
@@ -312,17 +340,29 @@ class ThresholdKey implements ITKey {
     return { shareStores: newShareStores };
   }
 
-  async initializeNewKey({ userInput, initializeModules }: { userInput?: BN; initializeModules?: boolean }): Promise<InitializeNewKeyResult> {
-    const tmpPriv = generatePrivate();
-    this.setKey(new BN(tmpPriv));
+  async initializeNewKey({
+    determinedShare,
+    initializeModules,
+    importedKey,
+  }: {
+    determinedShare?: BN;
+    initializeModules?: boolean;
+    importedKey?: BN;
+  }): Promise<InitializeNewKeyResult> {
+    if (!importedKey) {
+      const tmpPriv = generatePrivate();
+      this.setKey(new BN(tmpPriv));
+    } else {
+      this.setKey(new BN(importedKey));
+    }
 
     // create a random poly and respective shares
     // 1 is defined as the serviceProvider share
     const shareIndexes = [new BN(1), new BN(2)];
     let poly: Polynomial;
-    if (userInput) {
+    if (determinedShare) {
       const userShareIndex = new BN(3);
-      poly = generateRandomPolynomial(1, this.privKey, [new Share(userShareIndex, userInput)]);
+      poly = generateRandomPolynomial(1, this.privKey, [new Share(userShareIndex, determinedShare)]);
       shareIndexes.push(userShareIndex);
     } else {
       poly = generateRandomPolynomial(1, this.privKey);
@@ -371,7 +411,7 @@ class ThresholdKey implements ITKey {
       deviceShare: new ShareStore(shares[shareIndexes[1].toString("hex")], poly.getPolynomialID()),
       userShare: undefined,
     };
-    if (userInput) {
+    if (determinedShare) {
       result.userShare = new ShareStore(shares[shareIndexes[2].toString("hex")], poly.getPolynomialID());
     }
     return result;
@@ -392,7 +432,7 @@ class ThresholdKey implements ITKey {
     this.shares[ss.polynomialID][ss.share.shareIndex.toString("hex")] = ss;
   }
 
-  // inputs a share ensuring that the share is the latest share AND metadata is udpated to its latest state
+  // inputs a share ensuring that the share is the latest share AND metadata is updated to its latest state
   async inputShareSafe(shareStore: ShareStore): Promise<void> {
     let ss;
     if (shareStore instanceof ShareStore) {
@@ -545,6 +585,18 @@ class ThresholdKey implements ITKey {
     if (updateMetadata) {
       await this.syncShareMetadata();
     }
+  }
+
+  // reconstuctionCompleted() {
+  //   return typeof this.privKey === "undefined"
+  // }
+
+  async encrypt(data: Buffer): Promise<EncryptedMessage> {
+    return encrypt(getPubKeyECC(this.privKey), data);
+  }
+
+  async decrypt(encryptedMessage: EncryptedMessage): Promise<Buffer> {
+    return decrypt(toPrivKeyECC(this.privKey), encryptedMessage);
   }
 
   toJSON(): StringifiedType {

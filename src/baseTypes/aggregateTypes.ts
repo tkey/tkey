@@ -19,10 +19,12 @@ import { BNString, EncryptedMessage, ISerializable, IServiceProvider, IStorageLa
 
 export interface IModule {
   moduleName: string;
+  // eslint-disable-next-line no-use-before-define
+  setModuleReferences(api: ITKeyApi): void;
   // called to initialize a module on the main TBSDK.
   // currenty called immedietly after the base metadata has been set on the SDK
   // eslint-disable-next-line no-use-before-define
-  initialize(api: ITKeyApi): Promise<void>;
+  initialize(): Promise<void>;
 }
 
 // @flow
@@ -97,9 +99,10 @@ export type KeyDetails = {
 };
 
 export interface ITKeyApi {
-  metadata: IMetadata;
   storageLayer: IStorageLayer;
 
+  getMetadata(): IMetadata;
+  initialize(input?: ShareStore, importKey?: BN): Promise<KeyDetails>;
   catchupToLatestShare(shareStore: ShareStore): Promise<CatchupToLatestShareResult>;
   syncShareMetadata(adjustScopedStore?: (ss: ScopedStore) => ScopedStore): Promise<void>;
   inputShareSafe(shareStore: ShareStore): Promise<void>;
@@ -112,6 +115,8 @@ export interface ITKeyApi {
   ): void;
   generateNewShare(): Promise<GenerateNewShareResult>;
   outputShare(shareIndex: BNString): ShareStore;
+  encrypt(data: Buffer): Promise<EncryptedMessage>;
+  decrypt(encryptedMesage: EncryptedMessage): Promise<Buffer>;
 }
 
 export interface ITKey extends ITKeyApi, ISerializable {
@@ -162,6 +167,10 @@ export interface SecurityQuestionStoreArgs {
   polynomialID: PolynomialID;
 
   questions: string;
+}
+
+export interface SeedPhraseStoreArgs {
+  seedPhrase: string;
 }
 
 export interface ShareTransferStorePointerArgs {
