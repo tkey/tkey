@@ -531,62 +531,66 @@ describe("ShareTransferModule", function () {
       fail("Unable to reset share store");
     }
   });
+});
 
-  describe("TkeyModule", function () {
-    it("#it should get and set tkey store", async function () {
-      const tb = new ThresholdKey({
-        serviceProvider: defaultSP,
-        storageLayer: defaultSL,
-        modules: { tkey: new TkeyModule() },
-      });
-      const resp1 = await tb.initializeNewKey({ initializeModules: true });
-      await tb.modules.tkey.addData({
-        seedPhrase: "seed sock milk update focus rotate barely fade car face mechanic mercy",
-        privateKeys: ["0x127987128739", "0x123123131232222"],
-        randomObject: {
-          a: [10],
-        },
-      });
-
-      const tb2 = new ThresholdKey({
-        serviceProvider: defaultSP,
-        storageLayer: defaultSL,
-        modules: { tkey: new TkeyModule() },
-      });
-      await tb2.initialize();
-      tb2.inputShare(resp1.deviceShare);
-      await tb2.reconstructKey();
-      const testSP = await tb2.modules.tkey.getData();
-
-      deepEqual(testSP, {
-        seedPhrase: "seed sock milk update focus rotate barely fade car face mechanic mercy",
-        privateKeys: ["0x127987128739", "0x123123131232222"],
-        randomObject: {
-          a: [10],
-        },
-      });
+describe("TkeyModule", function () {
+  it("#should get and set tkey store", async function () {
+    const tb = new ThresholdKey({
+      serviceProvider: defaultSP,
+      storageLayer: defaultSL,
+      modules: { tkey: new TkeyModule() },
     });
-    it("#it should delete seed phrase store", async function () {
-      const tb = new ThresholdKey({
-        serviceProvider: defaultSP,
-        storageLayer: defaultSL,
-        modules: { tkey: new TkeyModule() },
-      });
-      const resp1 = await tb.initializeNewKey({ initializeModules: true });
-      await tb.modules.tkey.addData({ seedPhrase: "seed sock milk update focus rotate barely fade car face mechanic mercy" });
-
-      const tb2 = new ThresholdKey({
-        serviceProvider: defaultSP,
-        storageLayer: defaultSL,
-        modules: { tkey: new TkeyModule() },
-      });
-      await tb2.initialize();
-      tb2.inputShare(resp1.deviceShare);
-      await tb2.reconstructKey();
-      await tb2.modules.tkey.deleteKey();
-
-      const el = await tb2.modules.tkey.getData();
-      equal(el.seedPhrase, undefined);
+    const resp1 = await tb.initializeNewKey({ initializeModules: true });
+    await tb.modules.tkey.setData({
+      seedPhrase: "seed sock milk update focus rotate barely fade car face mechanic mercy",
+      privateKeys: ["0x127987128739", "0x123123131232222"],
+      randomObject: {
+        a: [10],
+      },
     });
+
+    await tb.modules.tkey.setData({
+      seedPhrase: "seed sock milk update focus",
+    });
+
+    const tb2 = new ThresholdKey({
+      serviceProvider: defaultSP,
+      storageLayer: defaultSL,
+      modules: { tkey: new TkeyModule() },
+    });
+    await tb2.initialize();
+    tb2.inputShare(resp1.deviceShare);
+    await tb2.reconstructKey();
+    const getData1 = await tb2.modules.tkey.getData();
+
+    deepEqual(getData1, {
+      seedPhrase: "seed sock milk update focus",
+      privateKeys: ["0x127987128739", "0x123123131232222"],
+      randomObject: {
+        a: [10],
+      },
+    });
+  });
+  it("#should delete key value", async function () {
+    const tb = new ThresholdKey({
+      serviceProvider: defaultSP,
+      storageLayer: defaultSL,
+      modules: { tkey: new TkeyModule() },
+    });
+    const resp1 = await tb.initializeNewKey({ initializeModules: true });
+    await tb.modules.tkey.setData({ seedPhrase: "seed sock milk update focus rotate barely fade car face mechanic mercy" });
+
+    const tb2 = new ThresholdKey({
+      serviceProvider: defaultSP,
+      storageLayer: defaultSL,
+      modules: { tkey: new TkeyModule() },
+    });
+    await tb2.initialize();
+    tb2.inputShare(resp1.deviceShare);
+    await tb2.reconstructKey();
+    await tb2.modules.tkey.deleteKey();
+
+    const el = await tb2.modules.tkey.getData();
+    equal(el.seedPhrase, undefined);
   });
 });

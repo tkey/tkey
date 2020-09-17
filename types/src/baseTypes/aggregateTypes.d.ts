@@ -111,8 +111,11 @@ export interface SecurityQuestionStoreArgs {
     polynomialID: PolynomialID;
     questions: string;
 }
+export interface TkeyStoreDataArgs {
+    [key: string]: string;
+}
 export interface TkeyStoreArgs {
-    seedPhrase: string;
+    data: TkeyStoreDataArgs;
 }
 export interface ShareTransferStorePointerArgs {
     pointer: BNString;

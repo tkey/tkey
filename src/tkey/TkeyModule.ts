@@ -24,7 +24,7 @@ class TkeyModule implements IModule {
   // eslint-disable-next-line
   async initialize(): Promise<void> {}
 
-  async addData(data: unknown): Promise<void> {
+  async setData(data: unknown): Promise<void> {
     const metadata = this.tbSDK.getMetadata();
     let rawTkeyStore = metadata.getGeneralStoreDomain(this.moduleName);
     if (!rawTkeyStore) {
@@ -52,7 +52,7 @@ class TkeyModule implements IModule {
     Object.keys(newData).forEach((el, index) => {
       newData[el] = stringify(encryptedDataArray[index]);
     });
-    tkeyStore.data = newData as TkeyStoreDataArgs;
+    tkeyStore.data = Object.assign(tkeyStore.data, newData as TkeyStoreDataArgs);
 
     // update metadatStore
     metadata.setGeneralStoreDomain(this.moduleName, tkeyStore);

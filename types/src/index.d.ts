@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import BN from "bn.js";
 import { Polynomial, ScopedStore, ShareStore, ShareStoreMap, ShareStorePolyIDShareIndexMap } from "./base";
-import { CatchupToLatestShareResult, GenerateNewShareResult, InitializeNewKeyResult, ITKey, ITKeyApi, KeyDetails, ModuleMap, RefreshMiddlewareMap, RefreshSharesResult, TKeyArgs } from "./baseTypes/aggregateTypes";
+import { CatchupToLatestShareResult, GenerateNewShareResult, IMetadata, InitializeNewKeyResult, ITKey, ITKeyApi, KeyDetails, ModuleMap, RefreshMiddlewareMap, RefreshSharesResult, TKeyArgs } from "./baseTypes/aggregateTypes";
 import { BNString, EncryptedMessage, IServiceProvider, IStorageLayer, PolynomialID, StringifiedType } from "./baseTypes/commonTypes";
 import Metadata from "./metadata";
 declare class ThresholdKey implements ITKey {
@@ -16,7 +16,7 @@ declare class ThresholdKey implements ITKey {
     storeDeviceShare: (deviceShareStore: ShareStore) => Promise<void>;
     constructor(args?: TKeyArgs);
     getApi(): ITKeyApi;
-    getMetadata(): Metadata;
+    getMetadata(): IMetadata;
     initialize(input?: ShareStore, importKey?: BN): Promise<KeyDetails>;
     private setModuleReferences;
     private initializeModules;
