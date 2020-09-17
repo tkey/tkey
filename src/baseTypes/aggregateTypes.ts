@@ -169,9 +169,12 @@ export interface SecurityQuestionStoreArgs {
   questions: string;
 }
 
+export interface TkeyStoreDataArgs {
+  [key: string]: string;
+}
+
 export interface TkeyStoreArgs {
-  seedPhrase?: string;
-  privateKeys?: Array<string>;
+  data: TkeyStoreDataArgs;
 }
 
 export interface ShareTransferStorePointerArgs {

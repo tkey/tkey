@@ -1,9 +1,10 @@
-// import bip39 from "bip39";
-import { validateMnemonic } from "bip39";
+// // import bip39 from "bip39";
+// import { validateMnemonic } from "bip39";
+// import { debug } from "console";
 // import BN from "bn.js";
 import stringify from "json-stable-stringify";
 
-import { IModule, ITKeyApi, TkeyStoreArgs } from "../baseTypes/aggregateTypes";
+import { IModule, ITKeyApi, TkeyStoreArgs, TkeyStoreDataArgs } from "../baseTypes/aggregateTypes";
 // import { ecCurve } from "../utils";
 import TkeyStore from "./TkeyStore";
 
@@ -23,93 +24,83 @@ class TkeyModule implements IModule {
   // eslint-disable-next-line
   async initialize(): Promise<void> {}
 
-  async addSeedPhrase(seedPhrase: string): Promise<void> {
-    if (!(seedPhrase.trim().split(/\s+/g).length >= 12 && seedPhrase.trim().split(/\s+/g).length % 3 === 0)) {
-      throw new Error("invalid number of words in seed phrase");
-    }
-    if (!validateMnemonic(seedPhrase)) {
-      throw new Error("invalid mnemonic");
-    }
-
+  async addData(data: unknown): Promise<void> {
     const metadata = this.tbSDK.getMetadata();
     let rawTkeyStore = metadata.getGeneralStoreDomain(this.moduleName);
     if (!rawTkeyStore) {
-      metadata.setGeneralStoreDomain(this.moduleName, new TkeyStore({}));
+      metadata.setGeneralStoreDomain(this.moduleName, new TkeyStore({ data: {} }));
       rawTkeyStore = metadata.getGeneralStoreDomain(this.moduleName);
     }
     const tkeyStore = new TkeyStore(rawTkeyStore as TkeyStoreArgs);
-    const seedPhraseBuffer = Buffer.from(seedPhrase);
-    const encrpytedSeedPhraseBuffer = await this.tbSDK.encrypt(seedPhraseBuffer);
-    tkeyStore.seedPhrase = btoa(stringify(encrpytedSeedPhraseBuffer));
 
-    // const newSeedPhraseStore = new TkeyStore({ seedPhrase: btoa(stringify(encrpytedSeedPhraseBuffer)) });
+    // Encryption promises
+    const newData = data;
+    const newEncryptedPromises = Object.keys(newData).map((el) => {
+      const value = JSON.stringify(data[el]);
+      const newBuffer = Buffer.from(value);
+      return this.tbSDK.encrypt(newBuffer);
+    });
+
+    let encryptedDataArray;
+    try {
+      encryptedDataArray = await Promise.all(newEncryptedPromises);
+    } catch (err) {
+      throw new Error("Unable to encrypt data");
+    }
+
+    // Type cast as dictionary
+    Object.keys(newData).forEach((el, index) => {
+      newData[el] = stringify(encryptedDataArray[index]);
+    });
+    tkeyStore.data = newData as TkeyStoreDataArgs;
+
+    // update metadatStore
     metadata.setGeneralStoreDomain(this.moduleName, tkeyStore);
     await this.tbSDK.syncShareMetadata();
   }
 
-  async deleteSeedPhrase(): Promise<void> {
+  async deleteKey(): Promise<void> {
     const metadata = this.tbSDK.getMetadata();
     const rawTkeyStore = metadata.getGeneralStoreDomain(this.moduleName);
     if (!rawTkeyStore) {
       throw new Error("Tkey store does not exist. Unable to delete seed hrase");
     }
     const tkeyStore = new TkeyStore(rawTkeyStore as TkeyStoreArgs);
-    tkeyStore.seedPhrase = undefined;
+    delete tkeyStore.data.seedPhrase;
     metadata.setGeneralStoreDomain(this.moduleName, tkeyStore);
     await this.tbSDK.syncShareMetadata();
   }
 
-  // async addPrivateKeys(privateKeys: Array<string>): Promise<void> {
-  //   const metadata = this.tbSDK.getMetadata();
-  //   let rawTkeyStore = metadata.getGeneralStoreDomain(this.moduleName);
-  //   if (!rawTkeyStore) {
-  //     metadata.setGeneralStoreDomain(this.moduleName, new TkeyStore({}));
-  //     rawTkeyStore = metadata.getGeneralStoreDomain(this.moduleName);
-  //   }
-  //   const tkeyStore = new TkeyStore(rawTkeyStore as TkeyStoreArgs);
-  //   const currentPrivateKeys = tkeyStore.privateKeys;
-  //   if (currentPrivateKeys) privateKeys.concat(currentPrivateKeys);
-  //   const privateKeysBuffer = Buffer.from(privateKeys);
-  //   const encrpytedPrivateKeysBuffer = await this.tbSDK.encrypt(privateKeysBuffer);
-  //   tkeyStore.privateKeys = btoa(stringify(encrpytedPrivateKeysBuffer));
-
-  //   // const newSeedPhraseStore = new TkeyStore({ seedPhrase: btoa(stringify(encrpytedSeedPhraseBuffer)) });
-  //   metadata.setGeneralStoreDomain(this.moduleName, tkeyStore);
-  //   await this.tbSDK.syncShareMetadata();
-  // }
-
-  async getSeedPhraseFromTkeyStore(): Promise<Buffer> {
+  async getData(): Promise<TkeyStoreDataArgs> {
     const metadata = this.tbSDK.getMetadata();
     const rawTkeyStore = metadata.getGeneralStoreDomain(this.moduleName);
     if (!rawTkeyStore) throw new Error("tkey store doesn't exist");
     const tkeyStore = new TkeyStore(rawTkeyStore as TkeyStoreArgs);
 
-    const { seedPhrase } = tkeyStore;
-    if (!seedPhrase) throw new Error("Seed phrase does not exist.");
+    // Decryption promises
+    const { data } = tkeyStore;
+    const newData = data;
+    const newDecryptionPromises = Object.keys(newData).map((el) => {
+      const toDecrypt = JSON.parse(newData[el]);
+      return this.tbSDK.decrypt(toDecrypt);
+    });
 
-    const encryptedMessage = JSON.parse(atob(seedPhrase));
-    const decryptedSeedPhrase = await this.tbSDK.decrypt(encryptedMessage);
-    return decryptedSeedPhrase;
+    let decryptedDataArray;
+    try {
+      decryptedDataArray = await Promise.all(newDecryptionPromises);
+    } catch (err) {
+      throw new Error("Unable to encrypt data");
+    }
+
+    // JSON parsing
+    Object.keys(newData).forEach((el, index) => {
+      newData[el] = JSON.parse(decryptedDataArray[index]);
+    });
+
+    // typeCasting
+    tkeyStore.data = newData as TkeyStoreDataArgs;
+    return tkeyStore.data;
   }
-
-  // async getPrivateKeysFromTkeyStore(): Promise<Buffer> {
-  //   const metadata = this.tbSDK.getMetadata();
-  //   const rawTkeyStore = metadata.getGeneralStoreDomain(this.moduleName);
-  //   if (!rawTkeyStore) throw new Error("tkey store doesn't exist");
-  //   const tkeyStore = new TkeyStore(rawTkeyStore as TkeyStoreArgs);
-
-  //   const { privateKeys } = tkeyStore;
-  //   if (!privateKeys) throw new Error("Seed phrase does not exist.");
-
-  //   const encryptedMessage = JSON.parse(atob(privateKeys));
-  //   const decryptedSeedPhrase = await this.tbSDK.decrypt(encryptedMessage);
-  //   return decryptedSeedPhrase;
-  // }
-
-  // getPrivateKeys(number?: number) {
-  //   // This requires importing ethjs/hd wallet, should be implemented outside the library
-  //   // const seedPhraseStore = this.getSeedPhraseStore()
-  // }
 }
 
 export default TkeyModule;

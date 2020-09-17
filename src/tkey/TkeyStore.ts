@@ -1,28 +1,23 @@
-import { TkeyStoreArgs } from "../baseTypes/aggregateTypes";
+import { TkeyStoreArgs, TkeyStoreDataArgs } from "../baseTypes/aggregateTypes";
 import { ISerializable, StringifiedType } from "../baseTypes/commonTypes";
 
 class TkeyStore implements ISerializable {
-  seedPhrase?: string;
+  data: TkeyStoreDataArgs;
 
-  privateKeys?: Array<string>;
-
-  constructor({ seedPhrase, privateKeys }: TkeyStoreArgs) {
-    this.seedPhrase = seedPhrase;
-    this.privateKeys = privateKeys;
+  constructor({ data }: TkeyStoreArgs) {
+    this.data = data;
   }
 
   toJSON(): StringifiedType {
     return {
-      seedPhrase: this.seedPhrase,
-      privateKeys: this.privateKeys,
+      data: this.data,
     };
   }
 
   static fromJSON(value: StringifiedType): TkeyStore {
-    const { seedPhrase, privateKeys } = value;
+    const { data } = value;
     return new TkeyStore({
-      seedPhrase,
-      privateKeys,
+      data,
     });
   }
 }
