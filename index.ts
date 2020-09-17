@@ -5,7 +5,7 @@ import ServiceProviderBase from "./src/serviceProvider/ServiceProviderBase";
 import TorusServiceProvider from "./src/serviceProvider/TorusServiceProvider";
 import ShareTransferModule from "./src/shareTransfer/shareTransferModule";
 import TorusStorageLayer from "./src/storage-layer";
-import TkeyModule from "./src/tkey/TkeyModule";
+import TkeyModule from "./src/tkeyModule/TkeyModule";
 import WebStorageModule from "./src/webStorage/WebStorageModule";
 
 export default ThresholdKey;

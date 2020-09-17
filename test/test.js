@@ -16,7 +16,7 @@ import SecurityQuestionsModule from "../src/securityQuestions/SecurityQuestionsM
 import ServiceProviderBase from "../src/serviceProvider/ServiceProviderBase";
 import ShareTransferModule from "../src/shareTransfer/shareTransferModule";
 import TorusStorageLayer from "../src/storage-layer";
-import TkeyModule from "../src/tkey/TkeyModule";
+import TkeyModule from "../src/tkeyModule/TkeyModule";
 import { ecCurve } from "../src/utils";
 
 const PRIVATE_KEY = "e70fb5f5970b363879bc36f54d4fc0ad77863bfd059881159251f50f48863acf";
