@@ -1,10 +1,12 @@
+/// <reference types="node" />
 import { DirectWebSDKArgs } from "@toruslabs/torus-direct-web-sdk";
 import BN from "bn.js";
 import { Point, Polynomial, PublicPolynomial, PublicPolynomialMap, PublicShare, PublicSharePolyIDShareIndexMap, ScopedStore, Share, ShareMap, ShareStore, ShareStoreMap, ShareStorePolyIDShareIndexMap } from "../base";
 import { BNString, EncryptedMessage, ISerializable, IServiceProvider, IStorageLayer, PolynomialID, ShareDescriptionMap } from "./commonTypes";
 export interface IModule {
     moduleName: string;
-    initialize(api: ITKeyApi): Promise<void>;
+    setModuleReferences(api: ITKeyApi): void;
+    initialize(): Promise<void>;
 }
 export declare type ModuleMap = {
     [moduleName: string]: IModule;
@@ -61,8 +63,9 @@ export declare type KeyDetails = {
     modules: ModuleMap;
 };
 export interface ITKeyApi {
-    metadata: IMetadata;
     storageLayer: IStorageLayer;
+    getMetadata(): IMetadata;
+    initialize(input?: ShareStore, importKey?: BN): Promise<KeyDetails>;
     catchupToLatestShare(shareStore: ShareStore): Promise<CatchupToLatestShareResult>;
     syncShareMetadata(adjustScopedStore?: (ss: ScopedStore) => ScopedStore): Promise<void>;
     inputShareSafe(shareStore: ShareStore): Promise<void>;
@@ -72,6 +75,8 @@ export interface ITKeyApi {
     addRefreshMiddleware(moduleName: string, middleware: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap) => unknown): void;
     generateNewShare(): Promise<GenerateNewShareResult>;
     outputShare(shareIndex: BNString): ShareStore;
+    encrypt(data: Buffer): Promise<EncryptedMessage>;
+    decrypt(encryptedMesage: EncryptedMessage): Promise<Buffer>;
 }
 export interface ITKey extends ITKeyApi, ISerializable {
     modules: ModuleMap;
@@ -105,6 +110,9 @@ export interface SecurityQuestionStoreArgs {
     sqPublicShare: PublicShare;
     polynomialID: PolynomialID;
     questions: string;
+}
+export interface TkeyStoreArgs {
+    seedPhrase: string;
 }
 export interface ShareTransferStorePointerArgs {
     pointer: BNString;

@@ -16,7 +16,7 @@ import SecurityQuestionsModule from "../src/securityQuestions/SecurityQuestionsM
 import ServiceProviderBase from "../src/serviceProvider/ServiceProviderBase";
 import ShareTransferModule from "../src/shareTransfer/shareTransferModule";
 import TorusStorageLayer from "../src/storage-layer";
-import SeedPhraseModule from "../src/seedPhrase/SeedPhraseModule"
+import TkeyModule from "../src/tkey/TkeyModule"
 import { ecCurve } from "../src/utils";
 
 const PRIVATE_KEY = "e70fb5f5970b363879bc36f54d4fc0ad77863bfd059881159251f50f48863acf";
@@ -532,25 +532,25 @@ describe("ShareTransferModule", function () {
     }
   })
 
-  describe("ShareTransferModule", function () { 
+  describe("TkeyModule", function () { 
     it("#it should get and set seed phrase store", async function () {
       const tb = new ThresholdKey({
         serviceProvider: defaultSP,
         storageLayer: defaultSL,
-        modules: { seedPhrase: new SeedPhraseModule() },
+        modules: { tkey: new TkeyModule() },
       });
       const resp1 = await tb.initializeNewKey({ initializeModules: true });
-      await tb.modules.seedPhrase.addSeedPhrase("seed sock milk update focus rotate barely fade car face mechanic mercy")
+      await tb.modules.tkey.addSeedPhrase("seed sock milk update focus rotate barely fade car face mechanic mercy")
 
       const tb2 = new ThresholdKey({
         serviceProvider: defaultSP,
         storageLayer: defaultSL,
-        modules: { seedPhrase: new SeedPhraseModule() },
+        modules: { tkey: new TkeyModule() },
       });
       await tb2.initialize();
       tb2.inputShare(resp1.deviceShare)
       await tb2.reconstructKey()
-      const testSP = await tb2.modules.seedPhrase.getSeedPhraseStore()
+      const testSP = await tb2.modules.tkey.getSeedPhraseStore()
       if (testSP.toString('utf8') !== "seed sock milk update focus rotate barely fade car face mechanic mercy") {
         fail("unable to get/set seed phrase")
       }

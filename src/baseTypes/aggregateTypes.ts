@@ -169,7 +169,7 @@ export interface SecurityQuestionStoreArgs {
   questions: string;
 }
 
-export interface SeedPhraseStoreArgs {
+export interface TkeyStoreArgs {
   seedPhrase: string;
 }
 

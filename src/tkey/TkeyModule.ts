@@ -3,17 +3,17 @@ import { validateMnemonic } from "bip39";
 // import BN from "bn.js";
 import stringify from "json-stable-stringify";
 
-import { IModule, ITKeyApi, SeedPhraseStoreArgs } from "../baseTypes/aggregateTypes";
+import { IModule, ITKeyApi, TkeyStoreArgs } from "../baseTypes/aggregateTypes";
 // import { ecCurve } from "../utils";
-import SeedPhraseStore from "./SeedPhraseStore";
+import TkeyStore from "./TkeyStore";
 
-class SeedPhraseModule implements IModule {
+class TkeyModule implements IModule {
   moduleName: string;
 
   tbSDK: ITKeyApi;
 
   constructor() {
-    this.moduleName = "seedPhrase";
+    this.moduleName = "tkeyModule";
   }
 
   setModuleReferences(tbSDK: ITKeyApi): void {
@@ -40,7 +40,7 @@ class SeedPhraseModule implements IModule {
     const metadata = this.tbSDK.getMetadata();
     const seedPhraseBuffer = Buffer.from(seedPhrase);
     const encrpytedSeedPhraseBuffer = await this.tbSDK.encrypt(seedPhraseBuffer);
-    const newSeedPhraseStore = new SeedPhraseStore({ seedPhrase: btoa(stringify(encrpytedSeedPhraseBuffer)) });
+    const newSeedPhraseStore = new TkeyStore({ seedPhrase: btoa(stringify(encrpytedSeedPhraseBuffer)) });
     metadata.setGeneralStoreDomain(this.moduleName, newSeedPhraseStore);
     await this.tbSDK.syncShareMetadata();
     // return this.tbSDK.initialize(undefined, seed);
@@ -50,7 +50,7 @@ class SeedPhraseModule implements IModule {
     const metadata = this.tbSDK.getMetadata();
     const rawSeedPhraseStore = metadata.getGeneralStoreDomain(this.moduleName);
     if (!rawSeedPhraseStore) throw new Error("Seed Phrase doesn't exist");
-    const seedPhraseStore = new SeedPhraseStore(rawSeedPhraseStore as SeedPhraseStoreArgs);
+    const seedPhraseStore = new TkeyStore(rawSeedPhraseStore as TkeyStoreArgs);
     const encryptedMessage = JSON.parse(atob(seedPhraseStore.seedPhrase));
     const decryptedSeedPhrase = await this.tbSDK.decrypt(encryptedMessage);
     return decryptedSeedPhrase;
@@ -62,4 +62,4 @@ class SeedPhraseModule implements IModule {
   // }
 }
 
-export default SeedPhraseModule;
+export default TkeyModule;

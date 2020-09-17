@@ -1,11 +1,11 @@
 import ChromeExtensionStorageModule from "./src/chromeStorage/ChromeExtensionStorageModule";
 import ThresholdKey from "./src/index";
 import SecurityQuestionsModule from "./src/securityQuestions/SecurityQuestionsModule";
-import SeedPhraseModule from "./src/seedPhrase/SeedPhraseModule";
 import ServiceProviderBase from "./src/serviceProvider/ServiceProviderBase";
 import TorusServiceProvider from "./src/serviceProvider/TorusServiceProvider";
 import ShareTransferModule from "./src/shareTransfer/shareTransferModule";
 import TorusStorageLayer from "./src/storage-layer";
+import TkeyModule from "./src/tkey/TkeyModule";
 import WebStorageModule from "./src/webStorage/WebStorageModule";
 
 export default ThresholdKey;
@@ -18,5 +18,5 @@ export {
   SecurityQuestionsModule,
   TorusStorageLayer,
   ShareTransferModule,
-  SeedPhraseModule,
+  TkeyModule,
 };

@@ -1,7 +1,8 @@
+/// <reference types="node" />
 import BN from "bn.js";
 import { Polynomial, ScopedStore, ShareStore, ShareStoreMap, ShareStorePolyIDShareIndexMap } from "./base";
 import { CatchupToLatestShareResult, GenerateNewShareResult, InitializeNewKeyResult, ITKey, ITKeyApi, KeyDetails, ModuleMap, RefreshMiddlewareMap, RefreshSharesResult, TKeyArgs } from "./baseTypes/aggregateTypes";
-import { BNString, IServiceProvider, IStorageLayer, PolynomialID, StringifiedType } from "./baseTypes/commonTypes";
+import { BNString, EncryptedMessage, IServiceProvider, IStorageLayer, PolynomialID, StringifiedType } from "./baseTypes/commonTypes";
 import Metadata from "./metadata";
 declare class ThresholdKey implements ITKey {
     modules: ModuleMap;
@@ -15,16 +16,19 @@ declare class ThresholdKey implements ITKey {
     storeDeviceShare: (deviceShareStore: ShareStore) => Promise<void>;
     constructor(args?: TKeyArgs);
     getApi(): ITKeyApi;
-    initialize(input?: ShareStore): Promise<KeyDetails>;
+    getMetadata(): Metadata;
+    initialize(input?: ShareStore, importKey?: BN): Promise<KeyDetails>;
+    private setModuleReferences;
     private initializeModules;
     catchupToLatestShare(shareStore: ShareStore): Promise<CatchupToLatestShareResult>;
     reconstructKey(): Promise<BN>;
     reconstructLatestPoly(): Polynomial;
     generateNewShare(): Promise<GenerateNewShareResult>;
     refreshShares(threshold: number, newShareIndexes: Array<string>, previousPolyID: PolynomialID): Promise<RefreshSharesResult>;
-    initializeNewKey({ userInput, initializeModules }: {
-        userInput?: BN;
+    initializeNewKey({ determinedShare, initializeModules, importedKey, }: {
+        determinedShare?: BN;
         initializeModules?: boolean;
+        importedKey?: BN;
     }): Promise<InitializeNewKeyResult>;
     inputShare(shareStore: ShareStore): void;
     inputShareSafe(shareStore: ShareStore): Promise<void>;
@@ -38,6 +42,8 @@ declare class ThresholdKey implements ITKey {
     setDeviceStorage(storeDeviceStorage: (deviceShareStore: ShareStore) => Promise<void>): void;
     addShareDescription(shareIndex: string, description: string, updateMetadata?: boolean): Promise<void>;
     deleteShareDescription(shareIndex: string, description: string, updateMetadata?: boolean): Promise<void>;
+    encrypt(data: Buffer): Promise<EncryptedMessage>;
+    decrypt(encryptedMessage: EncryptedMessage): Promise<Buffer>;
     toJSON(): StringifiedType;
     static fromJSON(value: StringifiedType, args: TKeyArgs): Promise<ThresholdKey>;
 }
