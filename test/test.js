@@ -1,5 +1,5 @@
 import { generatePrivate } from "@toruslabs/eccrypto";
-import { deepEqual, deepStrictEqual, fail, strictEqual } from "assert";
+import { deepEqual, deepStrictEqual, fail, strictEqual, throws } from "assert";
 // const { privKeyBnToPubKeyECC }  from "../src/utils";
 import atob from "atob";
 import BN from "bn.js";
@@ -16,7 +16,7 @@ import SecurityQuestionsModule from "../src/securityQuestions/SecurityQuestionsM
 import ServiceProviderBase from "../src/serviceProvider/ServiceProviderBase";
 import ShareTransferModule from "../src/shareTransfer/shareTransferModule";
 import TorusStorageLayer from "../src/storage-layer";
-import TkeyModule from "../src/tkey/TkeyModule"
+import TkeyModule from "../src/tkey/TkeyModule";
 import { ecCurve } from "../src/utils";
 
 const PRIVATE_KEY = "e70fb5f5970b363879bc36f54d4fc0ad77863bfd059881159251f50f48863acf";
@@ -429,7 +429,7 @@ describe("ShareTransferModule", function () {
 
     // usually should be called in callback, but mocha does not allow
     const pubkey = await tb2.modules.shareTransfer.requestNewShare();
-    
+
     // eslint-disable-next-line promise/param-names
     await new Promise((res) => {
       setTimeout(res, 200);
@@ -437,7 +437,7 @@ describe("ShareTransferModule", function () {
     const result = await tb.generateNewShare();
     await tb.modules.shareTransfer.approveRequest(pubkey, result.newShareStores[result.newShareIndex.toString("hex")]);
 
-    await tb2.modules.shareTransfer.startRequestStatusCheck(pubkey)
+    await tb2.modules.shareTransfer.startRequestStatusCheck(pubkey);
     // eslint-disable-next-line promise/param-names
     await new Promise((res) => {
       setTimeout(res, 1001);
@@ -463,9 +463,9 @@ describe("ShareTransferModule", function () {
       modules: { shareTransfer: new ShareTransferModule() },
     });
     await tb2.initialize();
-    let latestPolynomial = tb2.metadata.getLatestPublicPolynomial()
-    let latestPolynomialId = latestPolynomial.getPolynomialID()
-    let currentShareIndexes = Object.keys(tb2.shares[latestPolynomialId])
+    const latestPolynomial = tb2.metadata.getLatestPublicPolynomial();
+    const latestPolynomialId = latestPolynomial.getPolynomialID();
+    const currentShareIndexes = Object.keys(tb2.shares[latestPolynomialId]);
     // console.log("curentShareIndexes", currentShareIndexes)
 
     // usually should be called in callback, but mocha does not allow
@@ -477,9 +477,9 @@ describe("ShareTransferModule", function () {
     });
     // const result = await tb.generateNewShare();
     // await tb.modules.shareTransfer.approveRequest(pubkey, result.newShareStores[result.newShareIndex.toString("hex")]);
-    await tb.modules.shareTransfer.approveRequestWithShareIndex(pubkey, "2")
+    await tb.modules.shareTransfer.approveRequestWithShareIndex(pubkey, "2");
 
-    await tb2.modules.shareTransfer.startRequestStatusCheck(pubkey)
+    await tb2.modules.shareTransfer.startRequestStatusCheck(pubkey);
 
     // eslint-disable-next-line promise/param-names
     await new Promise((res) => {
@@ -509,13 +509,13 @@ describe("ShareTransferModule", function () {
     // usually should be called in callback, but mocha does not allow
     const encKey = await tb.modules.shareTransfer.requestNewShare();
     const encKey2 = await tb2.modules.shareTransfer.requestNewShare();
-    await tb.modules.shareTransfer.deleteShareTransferStore(encKey2) // delete 1st request from 2nd 
-    const newRequests = await tb2.modules.shareTransfer.getShareTransferStore()
+    await tb.modules.shareTransfer.deleteShareTransferStore(encKey2); // delete 1st request from 2nd
+    const newRequests = await tb2.modules.shareTransfer.getShareTransferStore();
     // console.log(newRequests)
-    if(encKey2 in newRequests) {
-      fail("Unable to delete share transfer request")
+    if (encKey2 in newRequests) {
+      fail("Unable to delete share transfer request");
     }
-  })
+  });
   it("#should be able to reset share transfer store", async function () {
     const tb = new ThresholdKey({
       serviceProvider: defaultSP,
@@ -525,14 +525,14 @@ describe("ShareTransferModule", function () {
     await tb.initializeNewKey({ initializeModules: true });
 
     const encKey = await tb.modules.shareTransfer.requestNewShare();
-    await tb.modules.shareTransfer.resetShareTransferStore()
-    const newRequests = await tb.modules.shareTransfer.getShareTransferStore()
+    await tb.modules.shareTransfer.resetShareTransferStore();
+    const newRequests = await tb.modules.shareTransfer.getShareTransferStore();
     if (Object.keys(newRequests).length !== 0) {
-      fail("Unable to reset share store")
+      fail("Unable to reset share store");
     }
-  })
+  });
 
-  describe("TkeyModule", function () { 
+  describe.only("TkeyModule", function () {
     it("#it should get and set seed phrase store", async function () {
       const tb = new ThresholdKey({
         serviceProvider: defaultSP,
@@ -540,7 +540,7 @@ describe("ShareTransferModule", function () {
         modules: { tkey: new TkeyModule() },
       });
       const resp1 = await tb.initializeNewKey({ initializeModules: true });
-      await tb.modules.tkey.addSeedPhrase("seed sock milk update focus rotate barely fade car face mechanic mercy")
+      await tb.modules.tkey.addSeedPhrase("seed sock milk update focus rotate barely fade car face mechanic mercy");
 
       const tb2 = new ThresholdKey({
         serviceProvider: defaultSP,
@@ -548,14 +548,36 @@ describe("ShareTransferModule", function () {
         modules: { tkey: new TkeyModule() },
       });
       await tb2.initialize();
-      tb2.inputShare(resp1.deviceShare)
-      await tb2.reconstructKey()
-      const testSP = await tb2.modules.tkey.getSeedPhraseStore()
-      if (testSP.toString('utf8') !== "seed sock milk update focus rotate barely fade car face mechanic mercy") {
-        fail("unable to get/set seed phrase")
+      tb2.inputShare(resp1.deviceShare);
+      await tb2.reconstructKey();
+      const testSP = await tb2.modules.tkey.getSeedPhraseFromTkeyStore();
+      if (testSP.toString("utf8") !== "seed sock milk update focus rotate barely fade car face mechanic mercy") {
+        fail("unable to get/set seed phrase");
       }
-    })
-  })
+    });
+    it("#it should delete seed phrase store", async function () {
+      const tb = new ThresholdKey({
+        serviceProvider: defaultSP,
+        storageLayer: defaultSL,
+        modules: { tkey: new TkeyModule() },
+      });
+      const resp1 = await tb.initializeNewKey({ initializeModules: true });
+      await tb.modules.tkey.addSeedPhrase("seed sock milk update focus rotate barely fade car face mechanic mercy");
+
+      const tb2 = new ThresholdKey({
+        serviceProvider: defaultSP,
+        storageLayer: defaultSL,
+        modules: { tkey: new TkeyModule() },
+      });
+      await tb2.initialize();
+      tb2.inputShare(resp1.deviceShare);
+      await tb2.reconstructKey();
+      await tb2.modules.tkey.deleteSeedPhrase();
+
+      const el = await tb2.modules.tkey.getSeedPhraseFromTkeyStore();
+      throws(el, new Error("Seed phrase does not exist."));
+    });
+  });
   // it("#should be able to reconstruct key and initialize a key with security questions after refresh", async function () {
   //   const tb = new ThresholdKey({
   //     serviceProvider: defaultSP,

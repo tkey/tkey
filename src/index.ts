@@ -16,6 +16,7 @@ import {
 import {
   CatchupToLatestShareResult,
   GenerateNewShareResult,
+  IMetadata,
   InitializeNewKeyResult,
   ITKey,
   ITKeyApi,
@@ -98,7 +99,7 @@ class ThresholdKey implements ITKey {
     };
   }
 
-  getMetadata() {
+  getMetadata(): IMetadata {
     if (typeof this.metadata !== "undefined") {
       return this.metadata;
     }

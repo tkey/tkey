@@ -170,7 +170,8 @@ export interface SecurityQuestionStoreArgs {
 }
 
 export interface TkeyStoreArgs {
-  seedPhrase: string;
+  seedPhrase?: string;
+  privateKeys?: Array<string>;
 }
 
 export interface ShareTransferStorePointerArgs {
