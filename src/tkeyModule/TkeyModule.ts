@@ -4,11 +4,11 @@
 // import BN from "bn.js";
 import stringify from "json-stable-stringify";
 
-import { IModule, ITKeyApi, TkeyStoreArgs, TkeyStoreDataArgs } from "../baseTypes/aggregateTypes";
+import { ISubTkeyModule, ITKeyApi, TkeyStoreArgs, TkeyStoreDataArgs } from "../baseTypes/aggregateTypes";
 // import { ecCurve } from "../utils";
 import TkeyStore from "./TkeyStore";
 
-class TkeyModule implements IModule {
+class TkeyModule implements ISubTkeyModule {
   moduleName: string;
 
   tbSDK: ITKeyApi;
@@ -71,7 +71,7 @@ class TkeyModule implements IModule {
     await this.tbSDK.syncShareMetadata();
   }
 
-  async getData(): Promise<TkeyStoreDataArgs> {
+  async getData(keys: Array<string>): Promise<TkeyStoreDataArgs> {
     const metadata = this.tbSDK.getMetadata();
     const rawTkeyStore = metadata.getGeneralStoreDomain(this.moduleName);
     if (!rawTkeyStore) throw new Error("tkey store doesn't exist");
@@ -80,8 +80,17 @@ class TkeyModule implements IModule {
     // Decryption promises
     const { data } = tkeyStore;
     const newData = data;
-    const newDecryptionPromises = Object.keys(newData).map((el) => {
-      const toDecrypt = JSON.parse(newData[el]);
+
+    // Filter tkey store
+    const filtered = Object.keys(newData)
+      .filter((key) => keys.includes(key))
+      .reduce((obj, key) => {
+        obj[key] = newData[key];
+        return obj;
+      }, {});
+
+    const newDecryptionPromises = Object.keys(filtered).map((el) => {
+      const toDecrypt = JSON.parse(filtered[el]);
       return this.tbSDK.decrypt(toDecrypt);
     });
 
@@ -93,12 +102,12 @@ class TkeyModule implements IModule {
     }
 
     // JSON parsing
-    Object.keys(newData).forEach((el, index) => {
-      newData[el] = JSON.parse(decryptedDataArray[index]);
+    Object.keys(filtered).forEach((el, index) => {
+      filtered[el] = JSON.parse(decryptedDataArray[index]);
     });
 
     // typeCasting
-    tkeyStore.data = newData as TkeyStoreDataArgs;
+    tkeyStore.data = filtered as TkeyStoreDataArgs;
     return tkeyStore.data;
   }
 }

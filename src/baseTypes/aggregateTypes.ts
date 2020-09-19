@@ -192,3 +192,9 @@ export interface ShareRequestArgs {
   availableShareIndexes: Array<string>;
   userAgent: string;
 }
+
+export interface ISubTkeyModule extends IModule {
+  setData(data: unknown): Promise<void>;
+  deleteKey(): Promise<void>;
+  getData(keys: Array<string>): Promise<TkeyStoreDataArgs>;
+}

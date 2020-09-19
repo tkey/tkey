@@ -16,6 +16,8 @@ import SecurityQuestionsModule from "../src/securityQuestions/SecurityQuestionsM
 import ServiceProviderBase from "../src/serviceProvider/ServiceProviderBase";
 import ShareTransferModule from "../src/shareTransfer/shareTransferModule";
 import TorusStorageLayer from "../src/storage-layer";
+import PrivateKeysModule from "../src/tkeyModule/PrivateKeys/PrivateKeys";
+import SeedPhraseModule from "../src/tkeyModule/SeedPhrase/SeedPhrase";
 import TkeyModule from "../src/tkeyModule/TkeyModule";
 import { ecCurve } from "../src/utils";
 
@@ -533,44 +535,74 @@ describe("ShareTransferModule", function () {
   });
 });
 
-describe("TkeyModule", function () {
-  it("#should get and set tkey store", async function () {
+describe.only("TkeyModule", function () {
+  it("#should get and set seed phrase", async function () {
     const tb = new ThresholdKey({
       serviceProvider: defaultSP,
       storageLayer: defaultSL,
-      modules: { tkey: new TkeyModule() },
+      modules: { seedPhrase: new SeedPhraseModule() },
     });
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
-    await tb.modules.tkey.setData({
-      seedPhrase: "seed sock milk update focus rotate barely fade car face mechanic mercy",
-      privateKeys: ["0x127987128739", "0x123123131232222"],
-      randomObject: {
-        a: [10],
-      },
-    });
+    await tb.modules.seedPhrase.setSeedPhrase("seed sock milk update focus rotate barely fade car face mechanic mercy");
 
-    await tb.modules.tkey.setData({
-      seedPhrase: "seed sock milk update focus",
-    });
+    await tb.modules.seedPhrase.setSeedPhrase("seed sock milk update focus");
 
     const tb2 = new ThresholdKey({
       serviceProvider: defaultSP,
       storageLayer: defaultSL,
-      modules: { tkey: new TkeyModule() },
+      modules: { seedPhrase: new SeedPhraseModule() },
     });
     await tb2.initialize();
     tb2.inputShare(resp1.deviceShare);
     await tb2.reconstructKey();
-    const getData1 = await tb2.modules.tkey.getData();
+    const seedPhraseObject = await tb2.modules.seedPhrase.getSeedPhrase();
 
-    deepEqual(getData1, {
-      seedPhrase: "seed sock milk update focus",
-      privateKeys: ["0x127987128739", "0x123123131232222"],
-      randomObject: {
-        a: [10],
-      },
+    deepEqual(seedPhraseObject, {
+      seedPhraseModule: "seed sock milk update focus",
     });
   });
+  it("#should be able to derive keys", async function () {
+    const tb = new ThresholdKey({
+      serviceProvider: defaultSP,
+      storageLayer: defaultSL,
+      modules: { seedPhrase: new SeedPhraseModule() },
+    });
+    await tb.initializeNewKey({ initializeModules: true });
+    await tb.modules.seedPhrase.setSeedPhrase("good fantasy regret man coyote twice absorb multiply head rubber mystery luggage crater finger shove");
+    const actualPrivateKeys = [
+      "4bd0041b7654a9b16a7268a5de7982f2422b15635c4fd170c140dc4897624390",
+      "1ea6edde61c750ec02896e9ac7fe9ac0b48a3630594fdf52ad5305470a2635c0",
+      "7749e59f398c5ccc01f3131e00abd1d061a03ae2ae59c49bebcee61d419f7cf0",
+      "1a99651a0aab297997bb3374451a2c40c927fab93903c1957fa9444bc4e2c770",
+      "220dad2d2bbb8bc2f731981921a49ee6059ef9d1e5d55ee203527a3157fb7284",
+    ];
+    await tb.modules.seedPhrase.getSeedPhrase();
+    const wallets = await tb.modules.seedPhrase.getAccounts(actualPrivateKeys.length);
+    const privateKeysArray = wallets.map((value) => {
+      return value._privKey.toString("hex");
+    });
+    deepEqual(actualPrivateKeys, privateKeysArray);
+  });
+
+  it("#should be able to get/set private keys", async function () {
+    const tb = new ThresholdKey({
+      serviceProvider: defaultSP,
+      storageLayer: defaultSL,
+      modules: { privateKeysModule: new PrivateKeysModule() },
+    });
+    await tb.initializeNewKey({ initializeModules: true });
+    const actualPrivateKeys = [
+      "4bd0041b7654a9b16a7268a5de7982f2422b15635c4fd170c140dc4897624390",
+      "1ea6edde61c750ec02896e9ac7fe9ac0b48a3630594fdf52ad5305470a2635c0",
+      "7749e59f398c5ccc01f3131e00abd1d061a03ae2ae59c49bebcee61d419f7cf0",
+      "1a99651a0aab297997bb3374451a2c40c927fab93903c1957fa9444bc4e2c770",
+      "220dad2d2bbb8bc2f731981921a49ee6059ef9d1e5d55ee203527a3157fb7284",
+    ];
+    await tb.modules.privateKeysModule.setPrivateKeys(actualPrivateKeys);
+    const keys = await tb.modules.privateKeysModule.getPrivateKeys();
+    deepEqual(actualPrivateKeys, keys.privateKeysModule);
+  });
+
   it("#should delete key value", async function () {
     const tb = new ThresholdKey({
       serviceProvider: defaultSP,
