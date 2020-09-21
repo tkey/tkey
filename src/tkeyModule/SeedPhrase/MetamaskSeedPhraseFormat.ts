@@ -1,10 +1,10 @@
+import { post } from "@toruslabs/http-helpers";
 import bip39 from "bip39";
 import BN from "bn.js";
-import * as HDkey from "hdkey";
-import normalize from "../../utils"
-import { post } from "@toruslabs/http-helpers";
+import HDNode, * as HDkey from "hdkey";
 
 import { ISeedPhraseFormat, ISeedPhraseStore, MetamaskSeedPhraseStore } from "../../baseTypes/aggregateTypes";
+import normalize from "../../utils";
 
 class MetamaskSeedPhraseFormat implements ISeedPhraseFormat {
   seedPhraseType: string;
@@ -12,6 +12,8 @@ class MetamaskSeedPhraseFormat implements ISeedPhraseFormat {
   hdPathString: string;
 
   type: string;
+
+  root: HDNode;
 
   constructor() {
     this.hdPathString = `m/44'/60'/0'/0`;
@@ -36,12 +38,12 @@ class MetamaskSeedPhraseFormat implements ISeedPhraseFormat {
     const { seedPhrase } = mmStore;
     const seed = bip39.mnemonicToSeedSync(seedPhrase);
     const hdkey = HDkey.fromMasterSeed(seed);
-    const root = hdkey.derive(this.hdPathString);
+    this.root = hdkey.derive(this.hdPathString);
 
     const numOfWallets = mmStore.numberOfWallets;
     const wallets = [];
     for (let i = 0; i < numOfWallets; i += 1) {
-      const child = root.deriveChild(i);
+      const child = this.root.deriveChild(i);
       const wallet = child.getWallet();
       wallets.push(wallet);
     }
@@ -51,23 +53,34 @@ class MetamaskSeedPhraseFormat implements ISeedPhraseFormat {
     // });
   }
 
-  createSeedPhraseStore(seedPhrase: string): Promise<MetamaskSeedPhraseStore> {
+  async createSeedPhraseStore(seedPhrase: string): Promise<MetamaskSeedPhraseStore> {
     //   // include check for keys with money here and log on the seedPhrase module
     //   // data.seedPhraseModule.numberOfKeys = 14
     // }
 
-    let numberOfWallets = 0
-    let lastBalance
+    let numberOfWallets = 0;
+    let lastBalance;
     // seek out the first zero balance
-    while (lastBalance !== '0x0') {
-      lastBalance = await post("https://api.infura.io/v1/jsonrpc/mainnet", { "jsonrpc":"2.0","method":"eth_getBalance","params": ["0xc94770007dda54cF92009BFF0dE90c06F603a09f", "latest"],"id":1})
+    while (lastBalance !== "0x0") {
+      const wallet = this.root.deriveChild(numberOfWallets);
+      const pubkey = wallet._pubkey;
+      // eslint-disable-next-line no-await-in-loop
+      lastBalance = await post("https://api.infura.io/v1/jsonrpc/mainnet", {
+        jsonrpc: "2.0",
+        method: "eth_getBalance",
+        params: [pubkey, "latest"],
+        id: 1,
+      });
+      numberOfWallets += 1;
     }
-    
-    let store = {
+
+    const store = {
       seedPhraseType: this.type,
-      seedPhrase: seedPhrase,
-      numberOfWallets: number;
-    }
+      seedPhrase,
+      numberOfWallets,
+    };
+
+    return store as MetamaskSeedPhraseStore;
   }
 }
 export default MetamaskSeedPhraseFormat;
