@@ -50,6 +50,26 @@ function prettyPrintError(error: Error): string {
   return error.toString();
 }
 
+function normalize(input: number | string): string {
+  if (!input) {
+    return undefined;
+  }
+  let hexString;
+
+  if (typeof input === "number") {
+    hexString = input.toString(16);
+    if (hexString.length % 2) {
+      hexString = `0${hexString}`;
+    }
+  }
+
+  if (typeof input === "string") {
+    hexString = input.toLowerCase();
+  }
+
+  return `0x${hexString}`;
+}
+
 export {
   // privKeyBnToEcc,
   // privKeyBnToPubKeyECC,
@@ -58,4 +78,5 @@ export {
   decrypt,
   ecCurve,
   prettyPrintError,
+  normalize,
 };

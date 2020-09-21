@@ -1,5 +1,8 @@
 import bip39 from "bip39";
+import BN from "bn.js";
 import * as HDkey from "hdkey";
+import normalize from "../../utils"
+import { post } from "@toruslabs/http-helpers";
 
 import { ISeedPhraseFormat, ISeedPhraseStore, MetamaskSeedPhraseStore } from "../../baseTypes/aggregateTypes";
 
@@ -33,7 +36,7 @@ class MetamaskSeedPhraseFormat implements ISeedPhraseFormat {
     const { seedPhrase } = mmStore;
     const seed = bip39.mnemonicToSeedSync(seedPhrase);
     const hdkey = HDkey.fromMasterSeed(seed);
-    const root = hdkey.derivePath(this.hdPathString);
+    const root = hdkey.derive(this.hdPathString);
 
     const numOfWallets = mmStore.numberOfWallets;
     const wallets = [];
@@ -42,34 +45,29 @@ class MetamaskSeedPhraseFormat implements ISeedPhraseFormat {
       const wallet = child.getWallet();
       wallets.push(wallet);
     }
-    const hexWallets = wallet.map((w) => {
-      return new BN(sigUtil.normalize(w.getAddress().toString("hex")), "hex");
-    });
+    return wallets;
+    // const hexWallets = wallet.map((w) => {
+    //   return new BN(sigUtil.normalize(w.getAddress().toString("hex")), "hex");
+    // });
   }
 
-  formSeedPhraseStore(seedPhrase: string): Promise<ISeedPhraseStore> {
+  createSeedPhraseStore(seedPhrase: string): Promise<MetamaskSeedPhraseStore> {
     //   // include check for keys with money here and log on the seedPhrase module
     //   // data.seedPhraseModule.numberOfKeys = 14
     // }
+
+    let numberOfWallets = 0
+    let lastBalance
+    // seek out the first zero balance
+    while (lastBalance !== '0x0') {
+      lastBalance = await post("https://api.infura.io/v1/jsonrpc/mainnet", { "jsonrpc":"2.0","method":"eth_getBalance","params": ["0xc94770007dda54cF92009BFF0dE90c06F603a09f", "latest"],"id":1})
+    }
+    
+    let store = {
+      seedPhraseType: this.type,
+      seedPhrase: seedPhrase,
+      numberOfWallets: number;
+    }
   }
 }
-
-const normarlize = function (input: : number | string) : string{
-    if (!input) {
-        return undefined;
-      }
-    
-      if (typeof input === 'number') {
-        const buffer = ethUtil.toBuffer(input);
-        input = ethUtil.bufferToHex(buffer);
-      }
-    
-      if (typeof input !== 'string') {
-        let msg = 'eth-sig-util.normalize() requires hex string or integer input.';
-        msg += ` received ${typeof input}: ${input}`;
-        throw new Error(msg);
-      }
-    
-      return ethUtil.addHexPrefix(input.toLowerCase());
-} 
 export default MetamaskSeedPhraseFormat;

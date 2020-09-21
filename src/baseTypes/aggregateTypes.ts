@@ -222,5 +222,5 @@ export interface ISeedPhraseFormat {
   seedPhraseType: string;
   validateSeedPhrase(seedPhrase: string): boolean;
   deriveKeysFromSeedPhrase(seedPhraseStore: ISeedPhraseStore): Array<BN>;
-  formSeedPhraseStore(seedPhrase: string): Promise<ISeedPhraseStore>;
+  createSeedPhraseStore(seedPhrase: string): Promise<ISeedPhraseStore>;
 }

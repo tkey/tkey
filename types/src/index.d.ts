@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import BN from "bn.js";
 import { Polynomial, ScopedStore, ShareStore, ShareStoreMap, ShareStorePolyIDShareIndexMap } from "./base";
-import { CatchupToLatestShareResult, GenerateNewShareResult, IMetadata, InitializeNewKeyResult, ITKey, ITKeyApi, KeyDetails, ModuleMap, RefreshMiddlewareMap, RefreshSharesResult, TKeyArgs } from "./baseTypes/aggregateTypes";
+import { CatchupToLatestShareResult, GenerateNewShareResult, IMetadata, InitializeNewKeyResult, ITKey, ITKeyApi, KeyDetails, ModuleMap, RefreshMiddlewareMap, RefreshSharesResult, TKeyArgs, TkeyStoreDataArgs } from "./baseTypes/aggregateTypes";
 import { BNString, EncryptedMessage, IServiceProvider, IStorageLayer, PolynomialID, StringifiedType } from "./baseTypes/commonTypes";
 import Metadata from "./metadata";
 declare class ThresholdKey implements ITKey {
@@ -11,6 +11,7 @@ declare class ThresholdKey implements ITKey {
     storageLayer: IStorageLayer;
     shares: ShareStorePolyIDShareIndexMap;
     privKey: BN;
+    tkeyStoreModuleName: string;
     metadata: Metadata;
     refreshMiddleware: RefreshMiddlewareMap;
     storeDeviceShare: (deviceShareStore: ShareStore) => Promise<void>;
@@ -44,6 +45,9 @@ declare class ThresholdKey implements ITKey {
     deleteShareDescription(shareIndex: string, description: string, updateMetadata?: boolean): Promise<void>;
     encrypt(data: Buffer): Promise<EncryptedMessage>;
     decrypt(encryptedMessage: EncryptedMessage): Promise<Buffer>;
+    setData(data: unknown): Promise<void>;
+    deleteKey(): Promise<void>;
+    getData(keys: Array<string>): Promise<TkeyStoreDataArgs>;
     toJSON(): StringifiedType;
     static fromJSON(value: StringifiedType, args: TKeyArgs): Promise<ThresholdKey>;
 }

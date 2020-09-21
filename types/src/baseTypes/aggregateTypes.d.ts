@@ -62,41 +62,6 @@ export declare type KeyDetails = {
     shareDescriptions: ShareDescriptionMap;
     modules: ModuleMap;
 };
-export interface ITKeyApi {
-    storageLayer: IStorageLayer;
-    getMetadata(): IMetadata;
-    initialize(input?: ShareStore, importKey?: BN): Promise<KeyDetails>;
-    catchupToLatestShare(shareStore: ShareStore): Promise<CatchupToLatestShareResult>;
-    syncShareMetadata(adjustScopedStore?: (ss: ScopedStore) => ScopedStore): Promise<void>;
-    inputShareSafe(shareStore: ShareStore): Promise<void>;
-    setDeviceStorage(storeDeviceStorage: (deviceShareStore: ShareStore) => Promise<void>): void;
-    addShareDescription(shareIndex: string, description: string, updateMetadata?: boolean): Promise<void>;
-    inputShare(shareStore: ShareStore): void;
-    addRefreshMiddleware(moduleName: string, middleware: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap) => unknown): void;
-    generateNewShare(): Promise<GenerateNewShareResult>;
-    outputShare(shareIndex: BNString): ShareStore;
-    encrypt(data: Buffer): Promise<EncryptedMessage>;
-    decrypt(encryptedMesage: EncryptedMessage): Promise<Buffer>;
-}
-export interface ITKey extends ITKeyApi, ISerializable {
-    modules: ModuleMap;
-    enableLogging: boolean;
-    serviceProvider: IServiceProvider;
-    shares: ShareStorePolyIDShareIndexMap;
-    privKey: BN;
-    refreshMiddleware: RefreshMiddlewareMap;
-    initialize(input: ShareStore): Promise<KeyDetails>;
-    reconstructKey(): Promise<BN>;
-    reconstructLatestPoly(): Polynomial;
-    refreshShares(threshold: number, newShareIndexes: Array<string>, previousPolyID: PolynomialID): Promise<RefreshSharesResult>;
-    initializeNewKey(params: {
-        userInput?: BN;
-        initializeModules?: boolean;
-    }): Promise<InitializeNewKeyResult>;
-    syncSingleShareMetadata(share: BN, adjustScopedStore?: (ss: ScopedStore) => ScopedStore): Promise<void>;
-    setKey(privKey: BN): void;
-    getKeyDetails(): KeyDetails;
-}
 export declare type TKeyArgs = {
     enableLogging?: boolean;
     modules?: ModuleMap;
@@ -129,4 +94,52 @@ export interface ShareRequestArgs {
     encShareInTransit: EncryptedMessage;
     availableShareIndexes: Array<string>;
     userAgent: string;
+}
+export interface ISubTkeyModule extends IModule {
+    setData(data: unknown): Promise<void>;
+    deleteKey(): Promise<void>;
+    getData(keys: Array<string>): Promise<TkeyStoreDataArgs>;
+}
+export interface ITKeyApi {
+    storageLayer: IStorageLayer;
+    getMetadata(): IMetadata;
+    initialize(input?: ShareStore, importKey?: BN): Promise<KeyDetails>;
+    catchupToLatestShare(shareStore: ShareStore): Promise<CatchupToLatestShareResult>;
+    syncShareMetadata(adjustScopedStore?: (ss: ScopedStore) => ScopedStore): Promise<void>;
+    inputShareSafe(shareStore: ShareStore): Promise<void>;
+    setDeviceStorage(storeDeviceStorage: (deviceShareStore: ShareStore) => Promise<void>): void;
+    addShareDescription(shareIndex: string, description: string, updateMetadata?: boolean): Promise<void>;
+    inputShare(shareStore: ShareStore): void;
+    addRefreshMiddleware(moduleName: string, middleware: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap) => unknown): void;
+    generateNewShare(): Promise<GenerateNewShareResult>;
+    outputShare(shareIndex: BNString): ShareStore;
+    encrypt(data: Buffer): Promise<EncryptedMessage>;
+    decrypt(encryptedMesage: EncryptedMessage): Promise<Buffer>;
+    getData(keys: Array<string>): Promise<TkeyStoreDataArgs>;
+    deleteKey(): Promise<void>;
+    setData(data: unknown): Promise<void>;
+}
+export interface ITKey extends ITKeyApi, ISerializable {
+    modules: ModuleMap;
+    enableLogging: boolean;
+    serviceProvider: IServiceProvider;
+    shares: ShareStorePolyIDShareIndexMap;
+    privKey: BN;
+    refreshMiddleware: RefreshMiddlewareMap;
+    initialize(input: ShareStore): Promise<KeyDetails>;
+    reconstructKey(): Promise<BN>;
+    reconstructLatestPoly(): Polynomial;
+    refreshShares(threshold: number, newShareIndexes: Array<string>, previousPolyID: PolynomialID): Promise<RefreshSharesResult>;
+    initializeNewKey(params: {
+        userInput?: BN;
+        initializeModules?: boolean;
+    }): Promise<InitializeNewKeyResult>;
+    syncSingleShareMetadata(share: BN, adjustScopedStore?: (ss: ScopedStore) => ScopedStore): Promise<void>;
+    setKey(privKey: BN): void;
+    getKeyDetails(): KeyDetails;
+    encrypt(data: Buffer): Promise<EncryptedMessage>;
+    decrypt(encryptedMesage: EncryptedMessage): Promise<Buffer>;
+    getData(keys: Array<string>): Promise<TkeyStoreDataArgs>;
+    deleteKey(): Promise<void>;
+    setData(data: unknown): Promise<void>;
 }
