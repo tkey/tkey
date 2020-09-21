@@ -3,8 +3,6 @@
 import HdKeyring from "eth-hd-keyring";
 
 import { IModule, ISubTkeyModule, ITKeyApi, TkeyStoreDataArgs } from "../../baseTypes/aggregateTypes";
-// import { ecCurve } from "../utils";
-import TkeyModule from "../TkeyModule";
 
 class SeedPhraseModule implements IModule {
   moduleName: string;
@@ -19,19 +17,17 @@ class SeedPhraseModule implements IModule {
 
   setModuleReferences(tbSDK: ITKeyApi): void {
     this.tbSDK = tbSDK;
-    this.tkeyModule = new TkeyModule();
-    this.tkeyModule.setModuleReferences(tbSDK);
   }
 
   // eslint-disable-next-line
   async initialize(): Promise<void> {}
 
   async setSeedPhrase(seedPhrase: string): Promise<void> {
-    await this.tkeyModule.setData({ seedPhraseModule: seedPhrase });
+    await this.tbSDK.setData({ seedPhraseModule: seedPhrase });
   }
 
   async getSeedPhrase(): Promise<TkeyStoreDataArgs> {
-    const seedPhrase = await this.tkeyModule.getData([this.moduleName]);
+    const seedPhrase = await this.tbSDK.getData([this.moduleName]);
     return seedPhrase;
   }
 
