@@ -119,7 +119,7 @@ export interface SecurityQuestionStoreArgs {
 }
 
 export interface TkeyStoreDataArgs {
-  [key: string]: string;
+  [key: string]: unknown;
 }
 
 export interface TkeyStoreArgs {
@@ -206,4 +206,21 @@ export interface ITKey extends ITKeyApi, ISerializable {
   getData(keys: Array<string>): Promise<TkeyStoreDataArgs>;
   deleteKey(): Promise<void>;
   setData(data: unknown): Promise<void>;
+}
+
+export interface ISeedPhraseStore {
+  seedPhraseType: string;
+  seedPhrase: string;
+}
+export type MetamaskSeedPhraseStore = {
+  seedPhraseType: string;
+  seedPhrase: string;
+  numberOfWallets: number;
+};
+
+export interface ISeedPhraseFormat {
+  seedPhraseType: string;
+  validateSeedPhrase(seedPhrase: string): boolean;
+  deriveKeysFromSeedPhrase(seedPhraseStore: ISeedPhraseStore): Array<BN>;
+  formSeedPhraseStore(seedPhrase: string): Promise<ISeedPhraseStore>;
 }
