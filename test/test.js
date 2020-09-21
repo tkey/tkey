@@ -17,6 +17,7 @@ import ServiceProviderBase from "../src/serviceProvider/ServiceProviderBase";
 import ShareTransferModule from "../src/shareTransfer/shareTransferModule";
 import TorusStorageLayer from "../src/storage-layer";
 import PrivateKeysModule from "../src/tkeyModule/PrivateKeys/PrivateKeys";
+import MetamaskSeedPhraseFormat from "../src/tkeyModule/SeedPhrase/MetamaskSeedPhraseFormat";
 import SeedPhraseModule from "../src/tkeyModule/SeedPhrase/SeedPhrase";
 import TkeyModule from "../src/tkeyModule/TkeyModule";
 import { ecCurve } from "../src/utils";
@@ -540,7 +541,7 @@ describe.only("TkeyModule", function () {
     const tb = new ThresholdKey({
       serviceProvider: defaultSP,
       storageLayer: defaultSL,
-      modules: { seedPhrase: new SeedPhraseModule() },
+      modules: { seedPhrase: new SeedPhraseModule([new MetamaskSeedPhraseFormat()]) },
     });
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
     await tb.modules.seedPhrase.setSeedPhrase("seed sock milk update focus rotate barely fade car face mechanic mercy");
@@ -550,7 +551,7 @@ describe.only("TkeyModule", function () {
     const tb2 = new ThresholdKey({
       serviceProvider: defaultSP,
       storageLayer: defaultSL,
-      modules: { seedPhrase: new SeedPhraseModule() },
+      modules: { seedPhrase: new SeedPhraseModule([new MetamaskSeedPhraseFormat()]) },
     });
     await tb2.initialize();
     tb2.inputShare(resp1.deviceShare);
@@ -565,7 +566,7 @@ describe.only("TkeyModule", function () {
     const tb = new ThresholdKey({
       serviceProvider: defaultSP,
       storageLayer: defaultSL,
-      modules: { seedPhrase: new SeedPhraseModule() },
+      modules: { seedPhrase: new SeedPhraseModule([new MetamaskSeedPhraseFormat()]) },
     });
     await tb.initializeNewKey({ initializeModules: true });
     await tb.modules.seedPhrase.setSeedPhrase("good fantasy regret man coyote twice absorb multiply head rubber mystery luggage crater finger shove");

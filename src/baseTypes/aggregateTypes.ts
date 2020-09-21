@@ -37,6 +37,10 @@ export type RefreshMiddlewareMap = {
   [moduleName: string]: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap) => unknown;
 };
 
+export type ReconstructKeyMiddlewareMap = {
+  [moduleName: string]: () => Promise<Array<BN>>;
+};
+
 export interface IMetadata extends ISerializable {
   pubKey: Point;
 
@@ -163,6 +167,7 @@ export interface ITKeyApi {
     moduleName: string,
     middleware: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap) => unknown
   ): void;
+  addReconstructKeyMiddleware(moduleName: string, middleware: () => Promise<Array<BN>>): void;
   generateNewShare(): Promise<GenerateNewShareResult>;
   outputShare(shareIndex: BNString): ShareStore;
   encrypt(data: Buffer): Promise<EncryptedMessage>;
@@ -185,9 +190,11 @@ export interface ITKey extends ITKeyApi, ISerializable {
 
   refreshMiddleware: RefreshMiddlewareMap;
 
+  reconstructKeyMiddleware: ReconstructKeyMiddlewareMap;
+
   initialize(input: ShareStore): Promise<KeyDetails>;
 
-  reconstructKey(): Promise<BN>;
+  reconstructKey(): Promise<Array<BN>>;
 
   reconstructLatestPoly(): Polynomial;
 

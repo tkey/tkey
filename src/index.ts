@@ -23,6 +23,7 @@ import {
   ITKeyApi,
   KeyDetails,
   ModuleMap,
+  ReconstructKeyMiddlewareMap,
   RefreshMiddlewareMap,
   RefreshSharesResult,
   TKeyArgs,
@@ -58,6 +59,8 @@ class ThresholdKey implements ITKey {
 
   refreshMiddleware: RefreshMiddlewareMap;
 
+  reconstructKeyMiddleware: ReconstructKeyMiddlewareMap;
+
   storeDeviceShare: (deviceShareStore: ShareStore) => Promise<void>;
 
   constructor(args?: TKeyArgs) {
@@ -81,6 +84,7 @@ class ThresholdKey implements ITKey {
     this.shares = {};
     this.privKey = undefined;
     this.refreshMiddleware = {};
+    this.reconstructKeyMiddleware = {};
     this.storeDeviceShare = undefined;
 
     this.tkeyStoreModuleName = "tkeyStoreModule";
@@ -95,6 +99,7 @@ class ThresholdKey implements ITKey {
       catchupToLatestShare: this.catchupToLatestShare.bind(this),
       syncShareMetadata: this.syncShareMetadata.bind(this),
       addRefreshMiddleware: this.addRefreshMiddleware.bind(this),
+      addReconstructKeyMiddleware: this.addReconstructKeyMiddleware.bind(this),
       addShareDescription: this.addShareDescription.bind(this),
       generateNewShare: this.generateNewShare.bind(this),
       inputShare: this.inputShare.bind(this),
@@ -177,7 +182,7 @@ class ThresholdKey implements ITKey {
     }
   }
 
-  async reconstructKey(): Promise<BN> {
+  async reconstructKey(): Promise<Array<BN>> {
     if (!this.metadata) {
       throw new Error("metadata not found, SDK likely not intialized");
     }
@@ -225,7 +230,18 @@ class ThresholdKey implements ITKey {
     }
     const privKey = lagrangeInterpolation(shareArr, shareIndexArr);
     this.setKey(privKey);
-    return this.privKey;
+
+    // retireve/reconstruct extra keys that live on metadata
+    let allKeys = [this.privKey];
+    for (const moduleName in this.reconstructKeyMiddleware) {
+      if (Object.prototype.hasOwnProperty.call(this.reconstructKeyMiddleware, moduleName)) {
+        // eslint-disable-next-line no-await-in-loop
+        const extraKeys = await this.reconstructKeyMiddleware[moduleName]();
+        allKeys = allKeys.concat(extraKeys);
+      }
+    }
+
+    return allKeys;
   }
 
   reconstructLatestPoly(): Polynomial {
@@ -390,7 +406,7 @@ class ThresholdKey implements ITKey {
     try {
       await this.storageLayer.setMetadata(shareStore);
     } catch (err) {
-      throw new Error(`setMetadata errored: ${prettyPrintError(err)}`);
+      throw new Error(`setMetadata errored: ${JSON.stringify(err)}`);
     }
 
     const metadataToPush = [];
@@ -575,6 +591,10 @@ class ThresholdKey implements ITKey {
     middleware: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap) => unknown
   ): void {
     this.refreshMiddleware[moduleName] = middleware;
+  }
+
+  addReconstructKeyMiddleware(moduleName: string, middleware: () => Promise<Array<BN>>): void {
+    this.reconstructKeyMiddleware[moduleName] = middleware;
   }
 
   setDeviceStorage(storeDeviceStorage: (deviceShareStore: ShareStore) => Promise<void>): void {

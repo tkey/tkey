@@ -1,7 +1,6 @@
 // import * as HdKeyring from "eth-hd-keyring";
 
 import BN from "bn.js";
-import HdKeyring from "eth-hd-keyring";
 
 import { IModule, ISeedPhraseFormat, ISeedPhraseStore, ITKeyApi } from "../../baseTypes/aggregateTypes";
 
@@ -12,12 +11,14 @@ class SeedPhraseModule implements IModule {
 
   seedPhraseFormats: Array<ISeedPhraseFormat>;
 
-  constructor() {
+  constructor(seedPhraseFormats: Array<ISeedPhraseFormat>) {
     this.moduleName = "seedPhraseModule";
+    this.seedPhraseFormats = seedPhraseFormats;
   }
 
   setModuleReferences(tbSDK: ITKeyApi): void {
     this.tbSDK = tbSDK;
+    this.tbSDK.addReconstructKeyMiddleware(this.moduleName, this.getAccounts);
   }
 
   // eslint-disable-next-line
@@ -43,7 +44,7 @@ class SeedPhraseModule implements IModule {
     return seedPhrase.seedPhraseModule as ISeedPhraseStore;
   }
 
-  async getAccounts(numberOfAccounts = 1): Promise<Array<BN>> {
+  async getAccounts(): Promise<Array<BN>> {
     const seedPhraseStore = await this.getSeedPhrase();
     const filteredTypes = this.seedPhraseFormats.filter((format) => format.seedPhraseType === seedPhraseStore.seedPhraseType);
     if (filteredTypes[0]) {
