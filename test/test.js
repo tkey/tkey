@@ -41,6 +41,13 @@ function compareBNArray(a, b, message) {
   });
 }
 
+function compareReconstructedKeys(a, b, message) {
+  // eslint-disable-next-line no-unused-expressions
+  a.privKey.cmp(b.privKey) !== 0 ? fail(message) : undefined;
+  compareBNArray(a.seedPhrase, b.seedPhrase, message);
+  compareBNArray(a.allKeys, b.allKeys, message);
+}
+
 describe("tkey", function () {
   let tb;
   beforeEach("Setup ThresholdKey", async function () {
@@ -571,11 +578,9 @@ describe("TkeyModule", function () {
       storageLayer: defaultSL,
       modules: { seedPhrase: new SeedPhraseModule([metamaskSeedPhraseFormat]) },
     });
-    // debugger;
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
     await tb.modules.seedPhrase.setSeedPhrase("seed sock milk update focus rotate barely fade car face mechanic mercy", "HD Key Tree");
 
-    // await tb.modules.seedPhrase.setSeedPhrase("seed sock milk update focus");
     const metamaskSeedPhraseFormat2 = new MetamaskSeedPhraseFormat("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68");
     const tb2 = new ThresholdKey({
       serviceProvider: defaultSP,
@@ -584,14 +589,12 @@ describe("TkeyModule", function () {
     });
     await tb2.initialize();
     tb2.inputShare(resp1.deviceShare);
-    await tb2.reconstructKey();
-    // console.log(tb2.privKey);
-    const seedPhraseObject = await tb2.modules.seedPhrase.getSeedPhrase();
-
-    deepEqual(seedPhraseObject, {
-      numberOfWallets: 1,
-      seedPhrase: "seed sock milk update focus rotate barely fade car face mechanic mercy",
-      seedPhraseType: "HD Key Tree",
+    const reconstuctedKey = await tb2.reconstructKey();
+    // console.log(reconstuctedKey);
+    compareReconstructedKeys(reconstuctedKey, {
+      privKey: resp1.privKey,
+      seedPhrase: [new BN("70dc3117300011918e26b02176945cc15c3d548cf49fd8418d97f93af699e46", "hex")],
+      allKeys: [resp1.privKey, new BN("70dc3117300011918e26b02176945cc15c3d548cf49fd8418d97f93af699e46", "hex")],
     });
   });
   it("#should be able to derive keys", async function () {

@@ -16,6 +16,7 @@ class SeedPhraseModule implements IModule {
 
   setModuleReferences(tbSDK: ITKeyApi): void {
     this.tbSDK = tbSDK;
+    this.tbSDK.addReconstructKeyMiddleware(this.moduleName, this.getAccounts.bind(this));
   }
 
   // eslint-disable-next-line
@@ -48,7 +49,6 @@ class SeedPhraseModule implements IModule {
       const format = filteredTypes[0];
       return format.deriveKeysFromSeedPhrase(seedPhraseStore);
     }
-
     throw new Error("Format for seedPhraseType does not exist");
   }
 }
