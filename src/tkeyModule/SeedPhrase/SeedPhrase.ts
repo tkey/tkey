@@ -1,6 +1,6 @@
 import BN from "bn.js";
 
-import { IModule, ISeedPhraseFormat, ISeedPhraseStore, ITKeyApi } from "../../baseTypes/aggregateTypes";
+import { IModule, ISeedPhraseFormat, ISeedPhraseStore, ITKeyApi, TkeyStoreDataArgs } from "../../baseTypes/aggregateTypes";
 
 class SeedPhraseModule implements IModule {
   moduleName: string;
@@ -38,16 +38,25 @@ class SeedPhraseModule implements IModule {
   }
 
   async getSeedPhrase(): Promise<ISeedPhraseStore> {
-    const seedPhrase = await this.tbSDK.getData([this.moduleName]);
-    return seedPhrase.seedPhraseModule as ISeedPhraseStore;
+    let seedPhrase: TkeyStoreDataArgs;
+    try {
+      seedPhrase = await this.tbSDK.getData([this.moduleName]);
+      return seedPhrase.seedPhraseModule as ISeedPhraseStore;
+    } catch (err) {
+      return err;
+    }
   }
 
   async getAccounts(): Promise<Array<BN>> {
-    const seedPhraseStore = await this.getSeedPhrase();
-    const filteredTypes = this.seedPhraseFormats.filter((format) => format.seedPhraseType === seedPhraseStore.seedPhraseType);
-    if (filteredTypes[0]) {
-      const format = filteredTypes[0];
-      return format.deriveKeysFromSeedPhrase(seedPhraseStore);
+    try {
+      const seedPhraseStore = await this.getSeedPhrase();
+      const filteredTypes = this.seedPhraseFormats.filter((format) => format.seedPhraseType === seedPhraseStore.seedPhraseType);
+      if (filteredTypes[0]) {
+        const format = filteredTypes[0];
+        return format.deriveKeysFromSeedPhrase(seedPhraseStore);
+      }
+    } catch (err) {
+      return [];
     }
     throw new Error("Format for seedPhraseType does not exist");
   }
