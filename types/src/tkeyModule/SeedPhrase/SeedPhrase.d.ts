@@ -1,13 +1,14 @@
-import { IModule, ISubTkeyModule, ITKeyApi, TkeyStoreDataArgs } from "../../baseTypes/aggregateTypes";
+import BN from "bn.js";
+import { IModule, ISeedPhraseFormat, ISeedPhraseStore, ITKeyApi } from "../../baseTypes/aggregateTypes";
 declare class SeedPhraseModule implements IModule {
     moduleName: string;
     tbSDK: ITKeyApi;
-    tkeyModule: ISubTkeyModule;
-    constructor();
+    seedPhraseFormats: Array<ISeedPhraseFormat>;
+    constructor(formats: Array<ISeedPhraseFormat>);
     setModuleReferences(tbSDK: ITKeyApi): void;
     initialize(): Promise<void>;
-    setSeedPhrase(seedPhrase: string): Promise<void>;
-    getSeedPhrase(): Promise<TkeyStoreDataArgs>;
-    getAccounts(numberOfAccounts?: number): Promise<Array<string>>;
+    setSeedPhrase(seedPhrase: string, seedPhraseType: string): Promise<void>;
+    getSeedPhrase(): Promise<ISeedPhraseStore>;
+    getAccounts(): Promise<Array<BN>>;
 }
 export default SeedPhraseModule;

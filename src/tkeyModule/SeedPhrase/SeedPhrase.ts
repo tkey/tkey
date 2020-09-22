@@ -1,5 +1,3 @@
-// import * as HdKeyring from "eth-hd-keyring";
-
 import BN from "bn.js";
 
 import { IModule, ISeedPhraseFormat, ISeedPhraseStore, ITKeyApi } from "../../baseTypes/aggregateTypes";
@@ -11,14 +9,13 @@ class SeedPhraseModule implements IModule {
 
   seedPhraseFormats: Array<ISeedPhraseFormat>;
 
-  constructor(seedPhraseFormats: Array<ISeedPhraseFormat>) {
+  constructor(formats: Array<ISeedPhraseFormat>) {
     this.moduleName = "seedPhraseModule";
-    this.seedPhraseFormats = seedPhraseFormats;
+    this.seedPhraseFormats = formats;
   }
 
   setModuleReferences(tbSDK: ITKeyApi): void {
     this.tbSDK = tbSDK;
-    this.tbSDK.addReconstructKeyMiddleware(this.moduleName, this.getAccounts);
   }
 
   // eslint-disable-next-line
@@ -53,20 +50,6 @@ class SeedPhraseModule implements IModule {
     }
 
     throw new Error("Format for seedPhraseType does not exist");
-
-    // for (let i = 0; i < this.seedPhraseFormats.length; i += 1) {
-    //   const format = this.seedPhraseFormats[i];
-    //   if (format.seedPhraseType === seedPhraseStore.seedPhraseType) {
-    //     return format.deriveKeysFromSeedPhrase(seedPhraseStore);
-    //   }
-    // }
-
-    // const seedPhraseString = seedPhraseStore[this.moduleName];
-    // const keyring = await new HdKeyring({
-    //   mnemonic: seedPhraseString,
-    //   numberOfAccounts,
-    // });
-    // return keyring.wallets;
   }
 }
 

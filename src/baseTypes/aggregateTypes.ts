@@ -79,6 +79,12 @@ export type InitializeNewKeyResult = {
   userShare?: ShareStore;
 };
 
+export type ReconstructedKeyResult = {
+  privKey: BN;
+  seedPhrase?: BN[];
+  allKeys?: BN[];
+};
+
 export type CatchupToLatestShareResult = {
   latestShare: ShareStore;
   shareMetadata: IMetadata;
@@ -194,7 +200,7 @@ export interface ITKey extends ITKeyApi, ISerializable {
 
   initialize(input: ShareStore): Promise<KeyDetails>;
 
-  reconstructKey(): Promise<Array<BN>>;
+  reconstructKey(): Promise<ReconstructedKeyResult>;
 
   reconstructLatestPoly(): Polynomial;
 

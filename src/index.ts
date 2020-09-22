@@ -23,6 +23,7 @@ import {
   ITKeyApi,
   KeyDetails,
   ModuleMap,
+  ReconstructedKeyResult,
   ReconstructKeyMiddlewareMap,
   RefreshMiddlewareMap,
   RefreshSharesResult,
@@ -182,7 +183,7 @@ class ThresholdKey implements ITKey {
     }
   }
 
-  async reconstructKey(): Promise<Array<BN>> {
+  async reconstructKey(): Promise<ReconstructedKeyResult> {
     if (!this.metadata) {
       throw new Error("metadata not found, SDK likely not intialized");
     }
@@ -231,17 +232,25 @@ class ThresholdKey implements ITKey {
     const privKey = lagrangeInterpolation(shareArr, shareIndexArr);
     this.setKey(privKey);
 
+    const returnObject = {
+      privKey,
+    } as ReconstructedKeyResult;
+
     // retireve/reconstruct extra keys that live on metadata
-    let allKeys = [this.privKey];
-    for (const moduleName in this.reconstructKeyMiddleware) {
-      if (Object.prototype.hasOwnProperty.call(this.reconstructKeyMiddleware, moduleName)) {
-        // eslint-disable-next-line no-await-in-loop
-        const extraKeys = await this.reconstructKeyMiddleware[moduleName]();
-        allKeys = allKeys.concat(extraKeys);
+    if (Object.keys(this.reconstructKeyMiddleware).length !== 0) {
+      let allKeys = [];
+      for (const moduleName in this.reconstructKeyMiddleware) {
+        if (Object.prototype.hasOwnProperty.call(this.reconstructKeyMiddleware, moduleName)) {
+          // eslint-disable-next-line no-await-in-loop
+          const extraKeys = await this.reconstructKeyMiddleware[moduleName]();
+          allKeys = allKeys.concat(extraKeys);
+        }
       }
+      returnObject.seedPhrase = allKeys;
+      returnObject.allKeys = [privKey].concat(allKeys);
     }
 
-    return allKeys;
+    return returnObject;
   }
 
   reconstructLatestPoly(): Polynomial {
@@ -504,6 +513,10 @@ class ThresholdKey implements ITKey {
 
   setKey(privKey: BN): void {
     this.privKey = privKey;
+  }
+
+  getKey(): Array<BN> {
+    return [this.privKey];
   }
 
   getKeyDetails(): KeyDetails {

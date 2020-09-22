@@ -14,6 +14,9 @@ export declare type ModuleMap = {
 export declare type RefreshMiddlewareMap = {
     [moduleName: string]: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap) => unknown;
 };
+export declare type ReconstructKeyMiddlewareMap = {
+    [moduleName: string]: () => Promise<Array<BN>>;
+};
 export interface IMetadata extends ISerializable {
     pubKey: Point;
     publicPolynomials: PublicPolynomialMap;
@@ -42,6 +45,11 @@ export declare type InitializeNewKeyResult = {
     privKey: BN;
     deviceShare?: ShareStore;
     userShare?: ShareStore;
+};
+export declare type ReconstructedKeyResult = {
+    privKey: BN;
+    seedPhrase?: BN[];
+    allKeys?: BN[];
 };
 export declare type CatchupToLatestShareResult = {
     latestShare: ShareStore;
@@ -77,7 +85,7 @@ export interface SecurityQuestionStoreArgs {
     questions: string;
 }
 export interface TkeyStoreDataArgs {
-    [key: string]: string;
+    [key: string]: unknown;
 }
 export interface TkeyStoreArgs {
     data: TkeyStoreDataArgs;
@@ -111,6 +119,7 @@ export interface ITKeyApi {
     addShareDescription(shareIndex: string, description: string, updateMetadata?: boolean): Promise<void>;
     inputShare(shareStore: ShareStore): void;
     addRefreshMiddleware(moduleName: string, middleware: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap) => unknown): void;
+    addReconstructKeyMiddleware(moduleName: string, middleware: () => Promise<Array<BN>>): void;
     generateNewShare(): Promise<GenerateNewShareResult>;
     outputShare(shareIndex: BNString): ShareStore;
     encrypt(data: Buffer): Promise<EncryptedMessage>;
@@ -126,8 +135,9 @@ export interface ITKey extends ITKeyApi, ISerializable {
     shares: ShareStorePolyIDShareIndexMap;
     privKey: BN;
     refreshMiddleware: RefreshMiddlewareMap;
+    reconstructKeyMiddleware: ReconstructKeyMiddlewareMap;
     initialize(input: ShareStore): Promise<KeyDetails>;
-    reconstructKey(): Promise<BN>;
+    reconstructKey(): Promise<ReconstructedKeyResult>;
     reconstructLatestPoly(): Polynomial;
     refreshShares(threshold: number, newShareIndexes: Array<string>, previousPolyID: PolynomialID): Promise<RefreshSharesResult>;
     initializeNewKey(params: {
@@ -142,4 +152,19 @@ export interface ITKey extends ITKeyApi, ISerializable {
     getData(keys: Array<string>): Promise<TkeyStoreDataArgs>;
     deleteKey(): Promise<void>;
     setData(data: unknown): Promise<void>;
+}
+export interface ISeedPhraseStore {
+    seedPhraseType: string;
+    seedPhrase: string;
+}
+export declare type MetamaskSeedPhraseStore = {
+    seedPhraseType: string;
+    seedPhrase: string;
+    numberOfWallets: number;
+};
+export interface ISeedPhraseFormat {
+    seedPhraseType: string;
+    validateSeedPhrase(seedPhrase: string): boolean;
+    deriveKeysFromSeedPhrase(seedPhraseStore: ISeedPhraseStore): Array<BN>;
+    createSeedPhraseStore(seedPhrase: string): Promise<ISeedPhraseStore>;
 }
