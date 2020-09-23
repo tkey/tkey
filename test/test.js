@@ -60,8 +60,6 @@ describe("tkey", function () {
     await tb2.initialize();
     tb2.inputShare(resp1.deviceShare);
     const reconstructedKey = await tb2.reconstructKey();
-    // compareBNArray(resp1.privKey, reconstructedKey, "key should be able to be reconstructed");
-    // strictEqual(resp1.privKey, reconstructedKey);
     if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
       fail("key should be able to be reconstructed");
     }
