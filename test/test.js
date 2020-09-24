@@ -540,7 +540,6 @@ describe("ShareTransferModule", function () {
     await tb2.initialize();
 
     // usually should be called in callback, but mocha does not allow
-    await tb.modules.shareTransfer.requestNewShare();
     const encKey2 = await tb2.modules.shareTransfer.requestNewShare();
     await tb.modules.shareTransfer.deleteShareTransferStore(encKey2); // delete 1st request from 2nd
     const newRequests = await tb2.modules.shareTransfer.getShareTransferStore();
@@ -557,7 +556,6 @@ describe("ShareTransferModule", function () {
     });
     await tb.initializeNewKey({ initializeModules: true });
 
-    await tb.modules.shareTransfer.requestNewShare();
     await tb.modules.shareTransfer.resetShareTransferStore();
     const newRequests = await tb.modules.shareTransfer.getShareTransferStore();
     if (Object.keys(newRequests).length !== 0) {
@@ -566,7 +564,7 @@ describe("ShareTransferModule", function () {
   });
 });
 
-describe("TkeyModule", function () {
+describe("TkeyStore", function () {
   it("#should get/set seed phrase", async function () {
     const metamaskSeedPhraseFormat = new MetamaskSeedPhraseFormat("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68");
     const tb = new ThresholdKey({
