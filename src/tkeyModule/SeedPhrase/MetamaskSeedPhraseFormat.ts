@@ -31,10 +31,7 @@ class MetamaskSeedPhraseFormat implements ISeedPhraseFormat {
     if (wordCount % 3 !== 0 || wordCount > 24 || wordCount < 12) {
       return false;
     }
-    if (!validateMnemonic(seedPhrase)) {
-      return false;
-    }
-    return true;
+    return validateMnemonic(seedPhrase);
   }
 
   deriveKeysFromSeedPhrase(seedPhraseStore: ISeedPhraseStore): Array<BN> {
@@ -73,13 +70,11 @@ class MetamaskSeedPhraseFormat implements ISeedPhraseFormat {
       numberOfWallets += 1;
     }
 
-    const store = {
+    return {
       seedPhraseType: this.seedPhraseType,
       seedPhrase,
       numberOfWallets,
     };
-
-    return store as MetamaskSeedPhraseStore;
   }
 }
 export default MetamaskSeedPhraseFormat;

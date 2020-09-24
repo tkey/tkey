@@ -7,9 +7,9 @@ class SeedPhraseModule implements IModule {
 
   tbSDK: ITKeyApi;
 
-  seedPhraseFormats: Array<ISeedPhraseFormat>;
+  seedPhraseFormats: ISeedPhraseFormat[];
 
-  constructor(formats: Array<ISeedPhraseFormat>) {
+  constructor(formats: ISeedPhraseFormat[]) {
     this.moduleName = "seedPhraseModule";
     this.seedPhraseFormats = formats;
   }
@@ -25,25 +25,18 @@ class SeedPhraseModule implements IModule {
   async setSeedPhrase(seedPhrase: string, seedPhraseType: string): Promise<void> {
     const data = {};
     const format = this.seedPhraseFormats.find((el) => el.seedPhraseType === seedPhraseType);
+    if (!format) {
+      throw new Error("Seed phrase type is not supported");
+    }
     if (!format.validateSeedPhrase(seedPhrase)) {
-      return Promise.reject(new Error(`Seed phrase is invalid for ${seedPhraseType}`));
+      throw new Error(`Seed phrase is invalid for ${seedPhraseType}`);
     }
-    try {
-      data[seedPhraseType] = await format.createSeedPhraseStore(seedPhrase);
-    } catch (err) {
-      throw new Error("Format for seedPhraseType does not exist");
-    }
+    data[seedPhraseType] = await format.createSeedPhraseStore(seedPhrase);
     return this.tbSDK.setData(this.moduleName, data);
   }
 
   async getSeedPhrase(key: string): Promise<ISeedPhraseStore> {
-    let seedPhrase: ISeedPhraseStore;
-    try {
-      seedPhrase = await this.tbSDK.getData(this.moduleName, key);
-      return seedPhrase as ISeedPhraseStore;
-    } catch (err) {
-      return err;
-    }
+    return this.tbSDK.getData(this.moduleName, key);
   }
 
   async getAccounts(): Promise<Array<BN>> {
@@ -55,15 +48,12 @@ class SeedPhraseModule implements IModule {
       const seedPhrases = await Promise.all(promisesArray);
 
       // Derive keys for all formats.
-      const derivedKeys = this.seedPhraseFormats
-        .map((el, index) => {
-          return el.deriveKeysFromSeedPhrase(seedPhrases[index]);
-        })
-        .flat(1);
-      return derivedKeys;
+      return this.seedPhraseFormats.reduce((acc, x, index) => {
+        acc.push(...x.deriveKeysFromSeedPhrase(seedPhrases[index]));
+        return acc;
+      }, []);
     } catch (err) {
       return [];
-      // throw new Error("Format for seedPhraseType does not exist");
     }
   }
 }

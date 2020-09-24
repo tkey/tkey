@@ -83,7 +83,7 @@ class Metadata implements IMetadata {
     return this.tkeyStore[key];
   }
 
-  addFromPolynomialAndShares(polynomial: Polynomial, shares: Array<Share> | ShareMap): void {
+  addFromPolynomialAndShares(polynomial: Polynomial, shares: Share[] | ShareMap): void {
     const publicPolynomial = polynomial.getPublicPolynomial();
     this.addPublicPolynomial(publicPolynomial);
     if (Array.isArray(shares)) {
