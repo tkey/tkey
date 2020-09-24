@@ -19,6 +19,7 @@ import {
   GenerateNewShareResult,
   IMetadata,
   InitializeNewKeyResult,
+  ISeedPhraseStore,
   ITKey,
   ITKeyApi,
   KeyDetails,
@@ -28,15 +29,13 @@ import {
   RefreshMiddlewareMap,
   RefreshSharesResult,
   TKeyArgs,
-  TkeyStoreArgs,
-  TkeyStoreDataArgs,
 } from "./baseTypes/aggregateTypes";
 import { BNString, EncryptedMessage, IServiceProvider, IStorageLayer, PolynomialID, StringifiedType } from "./baseTypes/commonTypes";
 import { generateRandomPolynomial, lagrangeInterpolatePolynomial, lagrangeInterpolation } from "./lagrangeInterpolatePolynomial";
 import Metadata from "./metadata";
 import TorusServiceProvider from "./serviceProvider/TorusServiceProvider";
 import TorusStorageLayer from "./storage-layer";
-import TkeyStore from "./tkeyModule/TkeyStore";
+// import TkeyStore from "./tkeyModule/TkeyStore";
 import { decrypt, encrypt, isEmptyObject, prettyPrintError } from "./utils";
 
 // TODO: handle errors for get and set with retries
@@ -645,14 +644,16 @@ class ThresholdKey implements ITKey {
     return decrypt(toPrivKeyECC(this.privKey), encryptedMessage);
   }
 
-  async setData(data: unknown): Promise<void> {
+  async setData(moduleName: string, data: unknown): Promise<void> {
     const { metadata } = this;
-    let rawTkeyStore = metadata.getTkeyStoreDomain(this.tkeyStoreModuleName);
-    if (!rawTkeyStore) {
-      metadata.setTkeyStoreDomain(this.tkeyStoreModuleName, new TkeyStore({ data: {} }));
-      rawTkeyStore = metadata.getTkeyStoreDomain(this.tkeyStoreModuleName);
-    }
-    const tkeyStore = new TkeyStore(rawTkeyStore as TkeyStoreArgs);
+    const rawTkeyStore = metadata.getTkeyStoreDomain(this.tkeyStoreModuleName) || {};
+    rawTkeyStore[moduleName] = {};
+    // if (!rawTkeyStore) {
+    //   let data =
+    //   metadata.setTkeyStoreDomain(this.tkeyStoreModuleName, new TkeyStore({ data: {} }));
+    //   rawTkeyStore = metadata.getTkeyStoreDomain(this.tkeyStoreModuleName);
+    // }
+    // const tkeyStore = new TkeyStore(rawTkeyStore as TkeyStoreArgs);
 
     // Encryption promises
     const newData = data;
@@ -672,64 +673,70 @@ class ThresholdKey implements ITKey {
     // Type cast as dictionary
     Object.keys(newData).forEach((el, index) => {
       newData[el] = stringify(encryptedDataArray[index]);
+      rawTkeyStore[moduleName][el] = newData[el];
     });
-    tkeyStore.data = Object.assign(tkeyStore.data, newData as TkeyStoreDataArgs);
+    // tkeyStore.data = Object.assign(tkeyStore.data, newData as TkeyStoreDataArgs);
 
     // update metadatStore
-    metadata.setTkeyStoreDomain(this.tkeyStoreModuleName, tkeyStore);
+    metadata.setTkeyStoreDomain(this.tkeyStoreModuleName, rawTkeyStore);
     await this.syncShareMetadata();
   }
 
-  async deleteKey(): Promise<void> {
+  async deleteKey(moduleName: string, key: string): Promise<void> {
     const { metadata } = this;
     const rawTkeyStore = metadata.getTkeyStoreDomain(this.tkeyStoreModuleName);
     if (!rawTkeyStore) {
       throw new Error("Tkey store does not exist. Unable to delete seed hrase");
     }
-    const tkeyStore = new TkeyStore(rawTkeyStore as TkeyStoreArgs);
-    delete tkeyStore.data.seedPhrase;
-    metadata.setTkeyStoreDomain(this.tkeyStoreModuleName, tkeyStore);
+    const moduleStore = rawTkeyStore[moduleName];
+    const keyStore = moduleStore[key];
+    delete keyStore[key];
+    metadata.setTkeyStoreDomain(this.tkeyStoreModuleName, keyStore);
     await this.syncShareMetadata();
   }
 
-  async getData(keys: Array<string>): Promise<TkeyStoreDataArgs> {
+  async getData(moduleName: string, key: string): Promise<ISeedPhraseStore> {
     const { metadata } = this;
     const rawTkeyStore = metadata.getTkeyStoreDomain(this.tkeyStoreModuleName);
     if (!rawTkeyStore) throw new Error("tkey store doesn't exist");
-    const tkeyStore = new TkeyStore(rawTkeyStore as TkeyStoreArgs);
-
+    const moduleStore = rawTkeyStore[moduleName];
+    const keyStore = moduleStore[key];
+    const decryptedKeyStore = await this.decrypt(JSON.parse(keyStore));
+    const newString = decryptedKeyStore.toString();
+    const tkeyStoreData = JSON.parse(newString.toString()) as ISeedPhraseStore;
+    return tkeyStoreData;
     // Decryption promises
-    const { data } = tkeyStore;
-    const newData = data;
+    //   const { data } = tkeyStore;
+    //   const newData = data;
 
-    // Filter tkey store
-    const filtered = Object.keys(newData)
-      .filter((key) => keys.includes(key))
-      .reduce((obj, key) => {
-        obj[key] = newData[key];
-        return obj;
-      }, {});
+    //   // Filter tkey store
+    //   const filtered = Object.keys(newData)
+    //     .filter((key) => keys.includes(key))
+    //     .reduce((obj, key) => {
+    //       obj[key] = newData[key];
+    //       return obj;
+    //     }, {});
 
-    const newDecryptionPromises = Object.keys(filtered).map((el) => {
-      const toDecrypt = JSON.parse(filtered[el]);
-      return this.decrypt(toDecrypt);
-    });
+    //   const newDecryptionPromises = Object.keys(filtered).map((el) => {
+    //     const toDecrypt = JSON.parse(filtered[el]);
+    //     return this.decrypt(toDecrypt);
+    //   });
 
-    let decryptedDataArray;
-    try {
-      decryptedDataArray = await Promise.all(newDecryptionPromises);
-    } catch (err) {
-      throw new Error("Unable to encrypt data");
-    }
+    //   let decryptedDataArray;
+    //   try {
+    //     decryptedDataArray = await Promise.all(newDecryptionPromises);
+    //   } catch (err) {
+    //     throw new Error("Unable to encrypt data");
+    //   }
 
-    // JSON parsing
-    Object.keys(filtered).forEach((el, index) => {
-      filtered[el] = JSON.parse(decryptedDataArray[index]);
-    });
+    //   // JSON parsing
+    //   Object.keys(filtered).forEach((el, index) => {
+    //     filtered[el] = JSON.parse(decryptedDataArray[index]);
+    //   });
 
-    // typeCasting
-    tkeyStore.data = filtered as TkeyStoreDataArgs;
-    return tkeyStore.data;
+    //   // typeCasting
+    //   tkeyStore.data = filtered as TkeyStoreDataArgs;
+    //   return tkeyStore.data;
   }
 
   toJSON(): StringifiedType {

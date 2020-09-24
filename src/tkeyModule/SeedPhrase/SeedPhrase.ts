@@ -1,6 +1,6 @@
 import BN from "bn.js";
 
-import { IModule, ISeedPhraseFormat, ISeedPhraseStore, ITKeyApi, TkeyStoreDataArgs } from "../../baseTypes/aggregateTypes";
+import { IModule, ISeedPhraseFormat, ISeedPhraseStore, ITKeyApi } from "../../baseTypes/aggregateTypes";
 
 class SeedPhraseModule implements IModule {
   moduleName: string;
@@ -23,25 +23,25 @@ class SeedPhraseModule implements IModule {
   async initialize(): Promise<void> {}
 
   async setSeedPhrase(seedPhrase: string, seedPhraseType: string): Promise<void> {
-    const data = { seedPhraseModule: {} };
+    const data = {};
     const filteredTypes = this.seedPhraseFormats.filter((format) => format.seedPhraseType === seedPhraseType);
     if (filteredTypes[0]) {
       const format = filteredTypes[0];
       if (!format.validateSeedPhrase(seedPhrase)) {
         return Promise.reject(new Error(`Seed phrase is invalid for ${seedPhraseType}`));
       }
-      data.seedPhraseModule = await format.createSeedPhraseStore(seedPhrase);
+      data[seedPhraseType] = await format.createSeedPhraseStore(seedPhrase);
     } else {
       throw new Error("Format for seedPhraseType does not exist");
     }
-    return this.tbSDK.setData(data);
+    return this.tbSDK.setData(this.moduleName, data);
   }
 
-  async getSeedPhrase(): Promise<ISeedPhraseStore> {
-    let seedPhrase: TkeyStoreDataArgs;
+  async getSeedPhrase(key: string): Promise<ISeedPhraseStore> {
+    let seedPhrase: ISeedPhraseStore;
     try {
-      seedPhrase = await this.tbSDK.getData([this.moduleName]);
-      return seedPhrase.seedPhraseModule as ISeedPhraseStore;
+      seedPhrase = await this.tbSDK.getData(this.moduleName, key);
+      return seedPhrase as ISeedPhraseStore;
     } catch (err) {
       return err;
     }
@@ -49,16 +49,23 @@ class SeedPhraseModule implements IModule {
 
   async getAccounts(): Promise<Array<BN>> {
     try {
-      const seedPhraseStore = await this.getSeedPhrase();
-      const filteredTypes = this.seedPhraseFormats.filter((format) => format.seedPhraseType === seedPhraseStore.seedPhraseType);
-      if (filteredTypes[0]) {
-        const format = filteredTypes[0];
-        return format.deriveKeysFromSeedPhrase(seedPhraseStore);
-      }
+      // Get seed phrases for all available formats from tkeystore
+      const promisesArray = this.seedPhraseFormats.map((el) => {
+        return this.getSeedPhrase(el.seedPhraseType);
+      });
+      const seedPhrases = await Promise.all(promisesArray);
+
+      // Derive keys for all formats.
+      const derivedKeys = this.seedPhraseFormats
+        .map((el, index) => {
+          return el.deriveKeysFromSeedPhrase(seedPhrases[index]);
+        })
+        .flat(1);
+      return derivedKeys;
     } catch (err) {
       return [];
+      // throw new Error("Format for seedPhraseType does not exist");
     }
-    throw new Error("Format for seedPhraseType does not exist");
   }
 }
 

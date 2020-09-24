@@ -1,25 +1,23 @@
-import { TkeyStoreArgs, TkeyStoreDataArgs } from "../baseTypes/aggregateTypes";
-import { ISerializable, StringifiedType } from "../baseTypes/commonTypes";
+// import { TkeyStoreArgs, TkeyStoreDataArgs } from "../baseTypes/aggregateTypes";
+// import { ISerializable, StringifiedType } from "../baseTypes/commonTypes";
 
-class TkeyStore implements ISerializable {
-  data: TkeyStoreDataArgs;
+// class TkeyStore implements ISerializable {
+//   constructor({ data }: TkeyStoreArgs) {
+//     Object.keys(data).forEach((el) => {
+//       this[el] = data[el];
+//     });
+//   }
 
-  constructor({ data }: TkeyStoreArgs) {
-    this.data = data;
-  }
+//   toJSON(): StringifiedType {
+//     return this;
+//   }
 
-  toJSON(): StringifiedType {
-    return {
-      data: this.data,
-    };
-  }
+//   static fromJSON(value: StringifiedType): TkeyStore {
+//     const { data } = value;
+//     return new TkeyStore({
+//       this,
+//     });
+//   }
+// }
 
-  static fromJSON(value: StringifiedType): TkeyStore {
-    const { data } = value;
-    return new TkeyStore({
-      data,
-    });
-  }
-}
-
-export default TkeyStore;
+// export default TkeyStore;

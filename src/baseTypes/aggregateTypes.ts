@@ -158,10 +158,27 @@ export interface ShareRequestArgs {
   userAgent: string;
 }
 
+export interface ISeedPhraseStore {
+  seedPhraseType: string;
+  seedPhrase: string;
+}
+export type MetamaskSeedPhraseStore = {
+  seedPhraseType: string;
+  seedPhrase: string;
+  numberOfWallets: number;
+};
+
+export interface ISeedPhraseFormat {
+  seedPhraseType: string;
+  validateSeedPhrase(seedPhrase: string): boolean;
+  deriveKeysFromSeedPhrase(seedPhraseStore: ISeedPhraseStore): Array<BN>;
+  createSeedPhraseStore(seedPhrase: string): Promise<ISeedPhraseStore>;
+}
+
 export interface ISubTkeyModule extends IModule {
-  setData(data: unknown): Promise<void>;
-  deleteKey(): Promise<void>;
-  getData(keys: Array<string>): Promise<TkeyStoreDataArgs>;
+  setData(moduleName: string, data: unknown): Promise<void>;
+  deleteKey(moduleName: string, key: string);
+  getData(moduleName: string, key: string): Promise<ISeedPhraseStore>;
 }
 
 export interface ITKeyApi {
@@ -184,9 +201,9 @@ export interface ITKeyApi {
   outputShare(shareIndex: BNString): ShareStore;
   encrypt(data: Buffer): Promise<EncryptedMessage>;
   decrypt(encryptedMesage: EncryptedMessage): Promise<Buffer>;
-  getData(keys: Array<string>): Promise<TkeyStoreDataArgs>;
-  deleteKey(): Promise<void>;
-  setData(data: unknown): Promise<void>;
+  getData(moduleName: string, key: string): Promise<ISeedPhraseStore>;
+  deleteKey(moduleName: string, key: string);
+  setData(moduleName: string, data: unknown): Promise<void>;
 }
 
 export interface ITKey extends ITKeyApi, ISerializable {
@@ -222,24 +239,7 @@ export interface ITKey extends ITKeyApi, ISerializable {
 
   encrypt(data: Buffer): Promise<EncryptedMessage>;
   decrypt(encryptedMesage: EncryptedMessage): Promise<Buffer>;
-  getData(keys: Array<string>): Promise<TkeyStoreDataArgs>;
-  deleteKey(): Promise<void>;
-  setData(data: unknown): Promise<void>;
-}
-
-export interface ISeedPhraseStore {
-  seedPhraseType: string;
-  seedPhrase: string;
-}
-export type MetamaskSeedPhraseStore = {
-  seedPhraseType: string;
-  seedPhrase: string;
-  numberOfWallets: number;
-};
-
-export interface ISeedPhraseFormat {
-  seedPhraseType: string;
-  validateSeedPhrase(seedPhrase: string): boolean;
-  deriveKeysFromSeedPhrase(seedPhraseStore: ISeedPhraseStore): Array<BN>;
-  createSeedPhraseStore(seedPhrase: string): Promise<ISeedPhraseStore>;
+  getData(moduleName: string, key: string): Promise<ISeedPhraseStore>;
+  deleteKey(moduleName: string, key: string);
+  setData(moduleName: string, data: unknown): Promise<void>;
 }

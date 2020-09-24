@@ -1,5 +1,5 @@
 import { generatePrivate } from "@toruslabs/eccrypto";
-import { deepEqual, deepStrictEqual, equal, fail, strictEqual } from "assert";
+import { deepEqual, deepStrictEqual, fail, strictEqual } from "assert";
 // const { privKeyBnToPubKeyECC }  from "../src/utils";
 import atob from "atob";
 import BN from "bn.js";
@@ -16,10 +16,8 @@ import SecurityQuestionsModule from "../src/securityQuestions/SecurityQuestionsM
 import ServiceProviderBase from "../src/serviceProvider/ServiceProviderBase";
 import ShareTransferModule from "../src/shareTransfer/ShareTransferModule";
 import TorusStorageLayer from "../src/storage-layer";
-import PrivateKeysModule from "../src/tkeyModule/PrivateKeys/PrivateKeys";
 import MetamaskSeedPhraseFormat from "../src/tkeyModule/SeedPhrase/MetamaskSeedPhraseFormat";
 import SeedPhraseModule from "../src/tkeyModule/SeedPhrase/SeedPhrase";
-import TkeyModule from "../src/tkeyModule/TkeyModule";
 import { ecCurve } from "../src/utils";
 
 const PRIVATE_KEY = "e70fb5f5970b363879bc36f54d4fc0ad77863bfd059881159251f50f48863acf";
@@ -605,50 +603,28 @@ describe("TkeyModule", function () {
     await tb.modules.seedPhrase.setSeedPhrase("seed sock milk update focus rotate barely fade car face mechanic mercy", "HD Key Tree");
     const actualPrivateKeys = [new BN("70dc3117300011918e26b02176945cc15c3d548cf49fd8418d97f93af699e46", "hex")];
     const derivedKeys = await tb.modules.seedPhrase.getAccounts();
+    // console.log(derivedKeys);
     compareBNArray(actualPrivateKeys, derivedKeys, "key should be same");
     // derivedKeys = derivedKeys.map((el) => el.toString("hex"));
     // deepEqual(actualPrivateKeys, derivedKeys);
   });
 
-  it("#should be able to get/set private keys", async function () {
-    const tb = new ThresholdKey({
-      serviceProvider: defaultSP,
-      storageLayer: defaultSL,
-      modules: { privateKeysModule: new PrivateKeysModule() },
-    });
-    await tb.initializeNewKey({ initializeModules: true });
-    const actualPrivateKeys = [
-      "4bd0041b7654a9b16a7268a5de7982f2422b15635c4fd170c140dc4897624390",
-      "1ea6edde61c750ec02896e9ac7fe9ac0b48a3630594fdf52ad5305470a2635c0",
-      "7749e59f398c5ccc01f3131e00abd1d061a03ae2ae59c49bebcee61d419f7cf0",
-      "1a99651a0aab297997bb3374451a2c40c927fab93903c1957fa9444bc4e2c770",
-      "220dad2d2bbb8bc2f731981921a49ee6059ef9d1e5d55ee203527a3157fb7284",
-    ];
-    await tb.modules.privateKeysModule.setPrivateKeys(actualPrivateKeys);
-    const keys = await tb.modules.privateKeysModule.getPrivateKeys();
-    deepEqual(actualPrivateKeys, keys.privateKeysModule);
-  });
-
-  it("#should delete key value", async function () {
-    const tb = new ThresholdKey({
-      serviceProvider: defaultSP,
-      storageLayer: defaultSL,
-      modules: { tkey: new TkeyModule() },
-    });
-    const resp1 = await tb.initializeNewKey({ initializeModules: true });
-    await tb.modules.tkey.setData({ seedPhrase: "seed sock milk update focus rotate barely fade car face mechanic mercy" });
-
-    const tb2 = new ThresholdKey({
-      serviceProvider: defaultSP,
-      storageLayer: defaultSL,
-      modules: { tkey: new TkeyModule() },
-    });
-    await tb2.initialize();
-    tb2.inputShare(resp1.deviceShare);
-    await tb2.reconstructKey();
-    await tb2.modules.tkey.deleteKey();
-
-    const el = await tb2.modules.tkey.getData();
-    equal(el.seedPhrase, undefined);
-  });
+  // it("#should be able to get/set private keys", async function () {
+  //   const tb = new ThresholdKey({
+  //     serviceProvider: defaultSP,
+  //     storageLayer: defaultSL,
+  //     modules: { privateKeysModule: new PrivateKeysModule() },
+  //   });
+  //   await tb.initializeNewKey({ initializeModules: true });
+  //   const actualPrivateKeys = [
+  //     "4bd0041b7654a9b16a7268a5de7982f2422b15635c4fd170c140dc4897624390",
+  //     "1ea6edde61c750ec02896e9ac7fe9ac0b48a3630594fdf52ad5305470a2635c0",
+  //     "7749e59f398c5ccc01f3131e00abd1d061a03ae2ae59c49bebcee61d419f7cf0",
+  //     "1a99651a0aab297997bb3374451a2c40c927fab93903c1957fa9444bc4e2c770",
+  //     "220dad2d2bbb8bc2f731981921a49ee6059ef9d1e5d55ee203527a3157fb7284",
+  //   ];
+  //   await tb.modules.privateKeysModule.setPrivateKeys(actualPrivateKeys);
+  //   const keys = await tb.modules.privateKeysModule.getPrivateKeys();
+  //   deepEqual(actualPrivateKeys, keys.privateKeysModule);
+  // });
 });
