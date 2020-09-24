@@ -5,9 +5,8 @@ import ServiceProviderBase from "./src/serviceProvider/ServiceProviderBase";
 import TorusServiceProvider from "./src/serviceProvider/TorusServiceProvider";
 import ShareTransferModule from "./src/shareTransfer/shareTransferModule";
 import TorusStorageLayer from "./src/storage-layer";
-import MetamaskSeedPhraseFormat from "./src/tkeyModule/SeedPhrase/MetamaskSeedPhraseFormat";
-import SeedPhraseModule from "./src/tkeyModule/SeedPhrase/SeedPhrase";
-import TkeyModule from "./src/tkeyModule/TkeyModule";
+import MetamaskSeedPhraseFormat from "./src/tkeyModule/seedPhrase/MetamaskSeedPhraseFormat";
+import SeedPhraseModule from "./src/tkeyModule/seedPhrase/SeedPhrase";
 import WebStorageModule from "./src/webStorage/WebStorageModule";
 
 export default ThresholdKey;
@@ -20,7 +19,6 @@ export {
   SecurityQuestionsModule,
   TorusStorageLayer,
   ShareTransferModule,
-  TkeyModule,
   SeedPhraseModule,
   MetamaskSeedPhraseFormat,
 };

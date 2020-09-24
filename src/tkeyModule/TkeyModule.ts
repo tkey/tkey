@@ -24,7 +24,7 @@
 //   // eslint-disable-next-line
 //   async initialize(): Promise<void> {}
 
-//   async setData(data: unknown): Promise<void> {
+//   async setTKeyStore(data: unknown): Promise<void> {
 //     const metadata = this.tbSDK.getMetadata();
 //     let rawTkeyStore = metadata.getGeneralStoreDomain(this.moduleName);
 //     if (!rawTkeyStore) {
@@ -71,7 +71,7 @@
 //     await this.tbSDK.syncShareMetadata();
 //   }
 
-//   async getData(keys: Array<string>): Promise<TkeyStoreDataArgs> {
+//   async getTKeyStore(keys: Array<string>): Promise<TkeyStoreDataArgs> {
 //     const metadata = this.tbSDK.getMetadata();
 //     const rawTkeyStore = metadata.getGeneralStoreDomain(this.moduleName);
 //     if (!rawTkeyStore) throw new Error("tkey store doesn't exist");

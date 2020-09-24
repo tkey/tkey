@@ -33,13 +33,13 @@ class SeedPhraseModule implements IModule {
     } catch (err) {
       throw new Error("Format for seedPhraseType does not exist");
     }
-    return this.tbSDK.setData(this.moduleName, data);
+    return this.tbSDK.setTKeyStore(this.moduleName, data);
   }
 
   async getSeedPhrase(key: string): Promise<ISeedPhraseStore> {
     let seedPhrase: ISeedPhraseStore;
     try {
-      seedPhrase = await this.tbSDK.getData(this.moduleName, key);
+      seedPhrase = await this.tbSDK.getTKeyStore(this.moduleName, key);
       return seedPhrase as ISeedPhraseStore;
     } catch (err) {
       return err;

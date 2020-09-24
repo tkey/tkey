@@ -5,8 +5,8 @@ declare class TkeyModule implements ISubTkeyModule {
     constructor();
     setModuleReferences(tbSDK: ITKeyApi): void;
     initialize(): Promise<void>;
-    setData(data: unknown): Promise<void>;
+    setTKeyStore(data: unknown): Promise<void>;
     deleteKey(): Promise<void>;
-    getData(keys: Array<string>): Promise<TkeyStoreDataArgs>;
+    getTKeyStore(keys: Array<string>): Promise<TkeyStoreDataArgs>;
 }
 export default TkeyModule;
