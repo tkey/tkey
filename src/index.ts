@@ -229,6 +229,11 @@ class ThresholdKey implements ITKey {
       shareIndexArr.push(this.shares[pubPolyID][polyShares[i]].share.shareIndex);
     }
     const privKey = lagrangeInterpolation(shareArr, shareIndexArr);
+    // check that priv key regenerated is correct
+    const reconstructedPubKey = getPubKeyPoint(privKey);
+    if (this.metadata.pubKey.x.cmp(reconstructedPubKey.x) !== 0) {
+      throw new Error(`reconstructed key is not pub key`);
+    }
     this.setKey(privKey);
 
     const returnObject = {
