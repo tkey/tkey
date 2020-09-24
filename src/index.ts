@@ -98,7 +98,7 @@ class ThresholdKey implements ITKey {
     };
   }
 
-  getMetadata() {
+  getMetadata(): Metadata {
     if (typeof this.metadata !== "undefined") {
       return this.metadata;
     }
