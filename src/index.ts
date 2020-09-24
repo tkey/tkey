@@ -635,7 +635,29 @@ class ThresholdKey implements ITKey {
     }
   }
 
-  // TkeyStore methods
+  //
+  /**
+   * TkeyStore methods
+   * Example: 
+    {
+      ...metadata,
+      generalStore:{
+          securityQuestion:{}
+          shareTransfer: {}
+      },
+      tkeyStore:{
+          seedPhrases:{
+              "hdKeyTree":{}
+              "someOtherFormat":{}
+          },
+          privateKeys:{
+              "somePrivateKeyFormat":{}
+          }
+      }
+    }
+   * @param data
+   */
+
   async encrypt(data: Buffer): Promise<EncryptedMessage> {
     return encrypt(getPubKeyECC(this.privKey), data);
   }
@@ -648,12 +670,6 @@ class ThresholdKey implements ITKey {
     const { metadata } = this;
     const rawTkeyStore = metadata.getTkeyStoreDomain(this.tkeyStoreModuleName) || {};
     rawTkeyStore[moduleName] = {};
-    // if (!rawTkeyStore) {
-    //   let data =
-    //   metadata.setTkeyStoreDomain(this.tkeyStoreModuleName, new TkeyStore({ data: {} }));
-    //   rawTkeyStore = metadata.getTkeyStoreDomain(this.tkeyStoreModuleName);
-    // }
-    // const tkeyStore = new TkeyStore(rawTkeyStore as TkeyStoreArgs);
 
     // Encryption promises
     const newData = data;
@@ -675,7 +691,6 @@ class ThresholdKey implements ITKey {
       newData[el] = stringify(encryptedDataArray[index]);
       rawTkeyStore[moduleName][el] = newData[el];
     });
-    // tkeyStore.data = Object.assign(tkeyStore.data, newData as TkeyStoreDataArgs);
 
     // update metadatStore
     metadata.setTkeyStoreDomain(this.tkeyStoreModuleName, rawTkeyStore);
@@ -696,47 +711,20 @@ class ThresholdKey implements ITKey {
   }
 
   async getData(moduleName: string, key: string): Promise<ISeedPhraseStore> {
+    // Get tkey domain
     const { metadata } = this;
     const rawTkeyStore = metadata.getTkeyStoreDomain(this.tkeyStoreModuleName);
     if (!rawTkeyStore) throw new Error("tkey store doesn't exist");
+
+    // get module store
     const moduleStore = rawTkeyStore[moduleName];
     const keyStore = moduleStore[key];
+
+    // decrypt and parsing
     const decryptedKeyStore = await this.decrypt(JSON.parse(keyStore));
     const newString = decryptedKeyStore.toString();
     const tkeyStoreData = JSON.parse(newString.toString()) as ISeedPhraseStore;
     return tkeyStoreData;
-    // Decryption promises
-    //   const { data } = tkeyStore;
-    //   const newData = data;
-
-    //   // Filter tkey store
-    //   const filtered = Object.keys(newData)
-    //     .filter((key) => keys.includes(key))
-    //     .reduce((obj, key) => {
-    //       obj[key] = newData[key];
-    //       return obj;
-    //     }, {});
-
-    //   const newDecryptionPromises = Object.keys(filtered).map((el) => {
-    //     const toDecrypt = JSON.parse(filtered[el]);
-    //     return this.decrypt(toDecrypt);
-    //   });
-
-    //   let decryptedDataArray;
-    //   try {
-    //     decryptedDataArray = await Promise.all(newDecryptionPromises);
-    //   } catch (err) {
-    //     throw new Error("Unable to encrypt data");
-    //   }
-
-    //   // JSON parsing
-    //   Object.keys(filtered).forEach((el, index) => {
-    //     filtered[el] = JSON.parse(decryptedDataArray[index]);
-    //   });
-
-    //   // typeCasting
-    //   tkeyStore.data = filtered as TkeyStoreDataArgs;
-    //   return tkeyStore.data;
   }
 
   toJSON(): StringifiedType {
