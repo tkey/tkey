@@ -7,13 +7,14 @@ import {
   PublicPolynomialMap,
   PublicShare,
   PublicSharePolyIDShareIndexMap,
-  ScopedStore,
   Share,
   ShareMap,
   ShareStore,
+  toPrivKeyECC,
 } from "./base";
 import { IMetadata } from "./baseTypes/aggregateTypes";
-import { PolynomialID, ShareDescriptionMap, StringifiedType } from "./baseTypes/commonTypes";
+import { EncryptedMessage, PolynomialID, ShareDescriptionMap, StringifiedType } from "./baseTypes/commonTypes";
+import { decrypt } from "./utils";
 
 class Metadata implements IMetadata {
   pubKey: Point;
@@ -34,13 +35,16 @@ class Metadata implements IMetadata {
     [moduleName: string]: unknown;
   };
 
-  scopedStore: ScopedStore;
+  scopedStore: {
+    [moduleName: string]: unknown;
+  };
 
   constructor(input: Point) {
     this.publicPolynomials = {};
     this.publicShares = {};
     this.generalStore = {};
     this.tkeyStore = {};
+    this.scopedStore = {};
     this.shareDescriptions = {};
     this.pubKey = input;
     this.polyIDList = [];
@@ -99,12 +103,18 @@ class Metadata implements IMetadata {
     }
   }
 
-  setScopedStore(scopedStore: ScopedStore): void {
-    this.scopedStore = scopedStore;
+  setScopedStore(domain: string, data: unknown): void {
+    this.scopedStore[domain] = data;
   }
 
-  getEncryptedShare(): ShareStore {
-    return this.scopedStore.encryptedShare;
+  async getEncryptedShare(shareStore: ShareStore): Promise<ShareStore> {
+    const pubShare = shareStore.share.getPublicShare();
+    const encryptedShare = this.scopedStore[pubShare.shareCommitment.x.toString("hex")];
+    if (!encryptedShare) {
+      throw new Error(`no encrypted share for share store exists:  ${shareStore}`);
+    }
+    const rawDecrypted = await decrypt(toPrivKeyECC(shareStore.share.share), encryptedShare as EncryptedMessage);
+    return ShareStore.fromJSON(JSON.parse(rawDecrypted.toString()));
   }
 
   getShareDescription(): ShareDescriptionMap {

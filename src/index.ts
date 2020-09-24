@@ -337,16 +337,23 @@ class ThresholdKey implements ITKey {
       newShareStores[shareIndexHex] = new ShareStore(shares[shareIndexHex], polyID);
     });
 
+    // evaluate oldPoly for old shares and create new metadata with encrypted shares for new polynomial
+
     // evaluate oldPoly for old shares and set new metadata with encrypted share for new polynomial
     const metadataToPush = [];
-    const sharesToPush = shareIndexesNeedingEncryption.map((shareIndex) => {
-      const m = this.metadata.clone();
-      m.setScopedStore({ encryptedShare: newShareStores[shareIndex] });
-      metadataToPush.push(m);
-      const oldShare = oldPoly.polyEval(new BN(shareIndex, "hex"));
-      oldShareStores[shareIndex] = new ShareStore(new Share(shareIndex, oldShare), previousPolyID);
-      return oldShare;
-    });
+    const m = this.metadata.clone();
+    const newScopedStore = {};
+    const sharesToPush = await Promise.all(
+      shareIndexesNeedingEncryption.map(async (shareIndex) => {
+        const oldShare = oldPoly.polyEval(new BN(shareIndex, "hex"));
+        const encryptedShare = await encrypt(getPubKeyECC(oldShare), Buffer.from(JSON.stringify(newShareStores[shareIndex])));
+        newScopedStore[getPubKeyPoint(oldShare).x.toString("hex")] = encryptedShare;
+        oldShareStores[shareIndex] = new ShareStore(new Share(shareIndex, oldShare), previousPolyID);
+        return oldShare;
+      })
+    );
+    m.setScopedStore(newScopedStore as ScopedStore);
+
     await this.storageLayer.setMetadataBulk(metadataToPush, sharesToPush);
 
     // set share for serviceProvider encrytion
@@ -370,8 +377,8 @@ class ThresholdKey implements ITKey {
     // await Promise.all(
     const newShareMetadataToPush = [];
     const newShareStoreSharesToPush = newShareIndexes.map((shareIndex) => {
-      const m = this.metadata.clone();
-      newShareMetadataToPush.push(m);
+      const me = this.metadata.clone();
+      newShareMetadataToPush.push(me);
       return newShareStores[shareIndex].share.share;
     });
     await this.storageLayer.setMetadataBulk(newShareMetadataToPush, newShareStoreSharesToPush);
