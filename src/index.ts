@@ -1,5 +1,6 @@
 import { generatePrivate } from "@toruslabs/eccrypto";
 import BN from "bn.js";
+import stringify from "json-stable-stringify";
 
 import {
   getPubKeyECC,
@@ -16,11 +17,15 @@ import {
 import {
   CatchupToLatestShareResult,
   GenerateNewShareResult,
+  IMetadata,
   InitializeNewKeyResult,
+  ISeedPhraseStore,
   ITKey,
   ITKeyApi,
   KeyDetails,
   ModuleMap,
+  ReconstructedKeyResult,
+  ReconstructKeyMiddlewareMap,
   RefreshMiddlewareMap,
   RefreshSharesResult,
   TKeyArgs,
@@ -30,6 +35,7 @@ import { generateRandomPolynomial, lagrangeInterpolatePolynomial, lagrangeInterp
 import Metadata from "./metadata";
 import TorusServiceProvider from "./serviceProvider/TorusServiceProvider";
 import TorusStorageLayer from "./storage-layer";
+// import TkeyStore from "./tkeyModule/TkeyStore";
 import { decrypt, encrypt, isEmptyObject, prettyPrintError } from "./utils";
 
 // TODO: handle errors for get and set with retries
@@ -47,9 +53,13 @@ class ThresholdKey implements ITKey {
 
   privKey: BN;
 
+  tkeyStoreModuleName: string;
+
   metadata: Metadata;
 
   refreshMiddleware: RefreshMiddlewareMap;
+
+  reconstructKeyMiddleware: ReconstructKeyMiddlewareMap;
 
   storeDeviceShare: (deviceShareStore: ShareStore) => Promise<void>;
 
@@ -74,8 +84,10 @@ class ThresholdKey implements ITKey {
     this.shares = {};
     this.privKey = undefined;
     this.refreshMiddleware = {};
+    this.reconstructKeyMiddleware = {};
     this.storeDeviceShare = undefined;
 
+    this.tkeyStoreModuleName = "tkeyStoreModule";
     this.setModuleReferences(); // Providing ITKeyApi access to modules
   }
 
@@ -87,6 +99,7 @@ class ThresholdKey implements ITKey {
       catchupToLatestShare: this.catchupToLatestShare.bind(this),
       syncShareMetadata: this.syncShareMetadata.bind(this),
       addRefreshMiddleware: this.addRefreshMiddleware.bind(this),
+      addReconstructKeyMiddleware: this.addReconstructKeyMiddleware.bind(this),
       addShareDescription: this.addShareDescription.bind(this),
       generateNewShare: this.generateNewShare.bind(this),
       inputShare: this.inputShare.bind(this),
@@ -95,10 +108,13 @@ class ThresholdKey implements ITKey {
       setDeviceStorage: this.setDeviceStorage.bind(this),
       encrypt: this.encrypt.bind(this),
       decrypt: this.decrypt.bind(this),
+      getTKeyStore: this.getTKeyStore.bind(this),
+      setTKeyStore: this.setTKeyStore.bind(this),
+      deleteKey: this.deleteKey.bind(this),
     };
   }
 
-  getMetadata(): Metadata {
+  getMetadata(): IMetadata {
     if (typeof this.metadata !== "undefined") {
       return this.metadata;
     }
@@ -166,7 +182,7 @@ class ThresholdKey implements ITKey {
     }
   }
 
-  async reconstructKey(): Promise<BN> {
+  async reconstructKey(): Promise<ReconstructedKeyResult> {
     if (!this.metadata) {
       throw new Error("metadata not found, SDK likely not intialized");
     }
@@ -214,7 +230,31 @@ class ThresholdKey implements ITKey {
     }
     const privKey = lagrangeInterpolation(shareArr, shareIndexArr);
     this.setKey(privKey);
-    return this.privKey;
+
+    const returnObject = {
+      privKey,
+    } as ReconstructedKeyResult;
+
+    // retireve/reconstruct extra keys that live on metadata
+    if (Object.keys(this.reconstructKeyMiddleware).length !== 0) {
+      let allKeys = [];
+      for (const moduleName in this.reconstructKeyMiddleware) {
+        if (Object.prototype.hasOwnProperty.call(this.reconstructKeyMiddleware, moduleName)) {
+          try {
+            // eslint-disable-next-line no-await-in-loop
+            const extraKeys = await this.reconstructKeyMiddleware[moduleName]();
+            allKeys = allKeys.concat(extraKeys);
+          } catch (err) {
+            // eslint-disable-next-line no-unused-expressions
+            undefined;
+          }
+        }
+      }
+      returnObject.seedPhrase = allKeys;
+      returnObject.allKeys = [privKey].concat(allKeys);
+    }
+
+    return returnObject;
   }
 
   reconstructLatestPoly(): Polynomial {
@@ -379,7 +419,7 @@ class ThresholdKey implements ITKey {
     try {
       await this.storageLayer.setMetadata(shareStore);
     } catch (err) {
-      throw new Error(`setMetadata errored: ${prettyPrintError(err)}`);
+      throw new Error(`setMetadata errored: ${JSON.stringify(err)}`);
     }
 
     const metadataToPush = [];
@@ -479,6 +519,10 @@ class ThresholdKey implements ITKey {
     this.privKey = privKey;
   }
 
+  getKey(): Array<BN> {
+    return [this.privKey];
+  }
+
   getKeyDetails(): KeyDetails {
     const poly = this.metadata.getLatestPublicPolynomial();
     const requiredShares = poly.getThreshold() - Object.keys(this.shares[poly.getPolynomialID()]).length;
@@ -566,6 +610,10 @@ class ThresholdKey implements ITKey {
     this.refreshMiddleware[moduleName] = middleware;
   }
 
+  addReconstructKeyMiddleware(moduleName: string, middleware: () => Promise<Array<BN>>): void {
+    this.reconstructKeyMiddleware[moduleName] = middleware;
+  }
+
   setDeviceStorage(storeDeviceStorage: (deviceShareStore: ShareStore) => Promise<void>): void {
     if (this.storeDeviceShare) {
       throw new Error("storeDeviceShare already set");
@@ -587,16 +635,73 @@ class ThresholdKey implements ITKey {
     }
   }
 
-  // reconstuctionCompleted() {
-  //   return typeof this.privKey === "undefined"
-  // }
-
   async encrypt(data: Buffer): Promise<EncryptedMessage> {
     return encrypt(getPubKeyECC(this.privKey), data);
   }
 
   async decrypt(encryptedMessage: EncryptedMessage): Promise<Buffer> {
     return decrypt(toPrivKeyECC(this.privKey), encryptedMessage);
+  }
+
+  async setTKeyStore(moduleName: string, data: unknown): Promise<void> {
+    const { metadata } = this;
+    const rawTkeyStore = metadata.getTkeyStoreDomain(this.tkeyStoreModuleName) || {};
+    rawTkeyStore[moduleName] = {};
+
+    // Encryption promises
+    const newData = data;
+    const newEncryptedPromises = Object.keys(newData).map((el) => {
+      const value = JSON.stringify(data[el]);
+      const newBuffer = Buffer.from(value);
+      return this.encrypt(newBuffer);
+    });
+
+    let encryptedDataArray;
+    try {
+      encryptedDataArray = await Promise.all(newEncryptedPromises);
+    } catch (err) {
+      throw new Error("Unable to encrypt data");
+    }
+
+    // Type cast as dictionary
+    Object.keys(newData).forEach((el, index) => {
+      newData[el] = stringify(encryptedDataArray[index]);
+      rawTkeyStore[moduleName][el] = newData[el];
+    });
+
+    // update metadatStore
+    metadata.setTkeyStoreDomain(this.tkeyStoreModuleName, rawTkeyStore);
+    await this.syncShareMetadata();
+  }
+
+  async deleteKey(moduleName: string, key: string): Promise<void> {
+    const { metadata } = this;
+    const rawTkeyStore = metadata.getTkeyStoreDomain(this.tkeyStoreModuleName);
+    if (!rawTkeyStore) {
+      throw new Error("Tkey store does not exist. Unable to delete seed hrase");
+    }
+    const moduleStore = rawTkeyStore[moduleName];
+    const keyStore = moduleStore[key];
+    delete keyStore[key];
+    metadata.setTkeyStoreDomain(this.tkeyStoreModuleName, keyStore);
+    await this.syncShareMetadata();
+  }
+
+  async getTKeyStore(moduleName: string, key: string): Promise<ISeedPhraseStore> {
+    // Get tkey domain
+    const { metadata } = this;
+    const rawTkeyStore = metadata.getTkeyStoreDomain(this.tkeyStoreModuleName);
+    if (!rawTkeyStore) throw new Error("tkey store doesn't exist");
+
+    // get module store
+    const moduleStore = rawTkeyStore[moduleName];
+    const keyStore = moduleStore[key];
+
+    // decrypt and parsing
+    const decryptedKeyStore = await this.decrypt(JSON.parse(keyStore));
+    const newString = decryptedKeyStore.toString();
+    const tkeyStoreData = JSON.parse(newString.toString()) as ISeedPhraseStore;
+    return tkeyStoreData;
   }
 
   toJSON(): StringifiedType {
