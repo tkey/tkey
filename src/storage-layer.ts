@@ -80,11 +80,11 @@ class TorusStorageLayer implements IStorageLayer {
     let sig: string;
     let pubX: string;
     let pubY: string;
-    const setData = {
+    const setTKeyStore = {
       data: message,
       timestamp: new BN(~~(Date.now() / 1000)).toString(16),
     };
-    const hash = keccak256(stringify(setData)).slice(2);
+    const hash = keccak256(stringify(setTKeyStore)).slice(2);
     if (privKey) {
       const unparsedSig = toPrivKeyEC(privKey).sign(hash);
       sig = Buffer.from(unparsedSig.r.toString(16, 64) + unparsedSig.s.toString(16, 64) + new BN(0).toString(16, 2), "hex").toString("base64");
@@ -100,7 +100,7 @@ class TorusStorageLayer implements IStorageLayer {
     return {
       pub_key_X: pubX,
       pub_key_Y: pubY,
-      set_data: setData,
+      set_data: setTKeyStore,
       signature: sig,
       namespace: "tkey",
     };

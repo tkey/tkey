@@ -13,9 +13,10 @@ import ThresholdKey from "../src/index";
 import { generateRandomPolynomial, lagrangeInterpolatePolynomial, lagrangeInterpolation } from "../src/lagrangeInterpolatePolynomial";
 import Metadata from "../src/metadata";
 import SecurityQuestionsModule from "../src/securityQuestions/SecurityQuestionsModule";
-import SeedPhraseModule from "../src/seedPhrase/SeedPhraseModule";
+import MetamaskSeedPhraseFormat from "../src/seedPhrase/MetamaskSeedPhraseFormat";
+import SeedPhraseModule from "../src/seedPhrase/SeedPhrase";
 import ServiceProviderBase from "../src/serviceProvider/ServiceProviderBase";
-import ShareTransferModule from "../src/shareTransfer/shareTransferModule";
+import ShareTransferModule from "../src/shareTransfer/ShareTransferModule";
 import TorusStorageLayer from "../src/storage-layer";
 import { ecCurve } from "../src/utils";
 
@@ -29,6 +30,22 @@ global.fetch = fetch;
 global.atob = atob;
 global.btoa = btoa;
 
+function compareBNArray(a, b, message) {
+  return a.map((el, index) => {
+    // console.log(el, b[index], el.cmp(b[index]));
+    // eslint-disable-next-line no-unused-expressions
+    el.cmp(b[index]) !== 0 ? fail(message) : undefined;
+    return 0;
+  });
+}
+
+function compareReconstructedKeys(a, b, message) {
+  // eslint-disable-next-line no-unused-expressions
+  a.privKey.cmp(b.privKey) !== 0 ? fail(message) : undefined;
+  compareBNArray(a.seedPhrase, b.seedPhrase, message);
+  compareBNArray(a.allKeys, b.allKeys, message);
+}
+
 describe("tkey", function () {
   let tb;
   beforeEach("Setup ThresholdKey", async function () {
@@ -41,7 +58,7 @@ describe("tkey", function () {
     await tb2.initialize();
     tb2.inputShare(resp1.deviceShare);
     const reconstructedKey = await tb2.reconstructKey();
-    if (resp1.privKey.cmp(reconstructedKey) !== 0) {
+    if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
       fail("key should be able to be reconstructed");
     }
   });
@@ -53,7 +70,8 @@ describe("tkey", function () {
     await tb2.initialize();
     tb2.inputShare(resp1.userShare);
     const reconstructedKey = await tb2.reconstructKey();
-    if (resp1.privKey.cmp(reconstructedKey) !== 0) {
+    // compareBNArray(resp1.privKey, reconstructedKey, "key should be able to be reconstructed");
+    if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
       fail("key should be able to be reconstructed");
     }
   });
@@ -63,7 +81,8 @@ describe("tkey", function () {
     await tb2.initialize();
     tb2.inputShare(resp1.deviceShare);
     const reconstructedKey = await tb2.reconstructKey();
-    if (resp1.privKey.cmp(reconstructedKey) !== 0) {
+    // compareBNArray(resp1.privKey, reconstructedKey, "key should be able to be reconstructed");
+    if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
       fail("key should be able to be reconstructed");
     }
     const resp2 = await tb2.generateNewShare();
@@ -71,7 +90,8 @@ describe("tkey", function () {
     await tb3.initialize();
     tb3.inputShare(resp2.newShareStores[resp2.newShareIndex.toString("hex")]);
     const finalKey = await tb3.reconstructKey();
-    if (resp1.privKey.cmp(finalKey) !== 0) {
+    // compareBNArray(resp1.privKey, finalKey, "key should be able to be reconstructed after adding new share");
+    if (resp1.privKey.cmp(finalKey.privKey) !== 0) {
       fail("key should be able to be reconstructed after adding new share");
     }
   });
@@ -83,7 +103,8 @@ describe("tkey", function () {
     await tb2.initialize(resp1.userShare);
     tb2.inputShare(resp1.deviceShare);
     const reconstructedKey = await tb2.reconstructKey();
-    if (resp1.privKey.cmp(reconstructedKey) !== 0) {
+    // compareBNArray(resp1.privKey, reconstructedKey, "key should be able to be reconstructed");
+    if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
       fail("key should be able to be reconstructed");
     }
   });
@@ -96,7 +117,8 @@ describe("tkey", function () {
     await tb2.initialize(resp1.userShare);
     tb2.inputShare(newShares.newShareStores[resp1.deviceShare.share.shareIndex.toString("hex")]);
     const reconstructedKey = await tb2.reconstructKey();
-    if (resp1.privKey.cmp(reconstructedKey) !== 0) {
+    // compareBNArray(resp1.privKey, reconstructedKey, "key should be able to be reconstructed");
+    if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
       fail("key should be able to be reconstructed");
     }
   });
@@ -109,7 +131,8 @@ describe("tkey", function () {
     await tb2.initialize(resp1.userShare);
     tb2.inputShare(newShares.newShareStores[resp1.deviceShare.share.shareIndex.toString("hex")]);
     const reconstructedKey = await tb2.reconstructKey();
-    if (resp1.privKey.cmp(reconstructedKey) !== 0) {
+    // compareBNArray(resp1.privKey, reconstructedKey, "key should be able to be reconstructed");
+    if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
       fail("key should be able to be reconstructed");
     }
 
@@ -124,7 +147,8 @@ describe("tkey", function () {
     await tb2.initialize();
     tb2.inputShare(resp1.deviceShare);
     const reconstructedKey = await tb2.reconstructKey();
-    if (resp1.privKey.cmp(reconstructedKey) !== 0) {
+    // compareBNArray(resp1.privKey, reconstructedKey, "key should be able to be reconstructed");
+    if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
       fail("key should be able to be reconstructed");
     }
     const resp2 = await tb2.generateNewShare();
@@ -132,7 +156,8 @@ describe("tkey", function () {
     await tb3.initialize();
     tb3.inputShare(resp2.newShareStores[resp2.newShareIndex.toString("hex")]);
     const finalKey = await tb3.reconstructKey();
-    if (resp1.privKey.cmp(finalKey) !== 0) {
+    // compareBNArray(resp1.privKey, finalKey, "key should be able to be reconstructed");
+    if (resp1.privKey.cmp(finalKey.privKey) !== 0) {
       fail("key should be able to be reconstructed after adding new share");
     }
 
@@ -148,7 +173,8 @@ describe("tkey", function () {
     await tb2.initialize();
     tb2.inputShare(resp1.deviceShare);
     const reconstructedKey = await tb2.reconstructKey();
-    if (importedKey.cmp(reconstructedKey) !== 0) {
+    // compareBNArray([importedKey], reconstructedKey, "key should be able to be reconstructed");
+    if (importedKey.cmp(reconstructedKey.privKey) !== 0) {
       fail("key should be able to be reconstructed");
     }
   });
@@ -162,7 +188,8 @@ describe("tkey reconstruction", function () {
     const tb = new ThresholdKey({ serviceProvider: uniqueSP, storageLayer: uniqueSL });
     await tb.initialize();
     const reconstructedKey = await tb.reconstructKey();
-    if (tb.privKey.cmp(reconstructedKey) !== 0) {
+    // compareBNArray(tb.getKey(), reconstructedKey, "key should be able to be reconstructed");
+    if (tb.privKey.cmp(reconstructedKey.privKey) !== 0) {
       fail("key should be able to be reconstructed");
     }
   });
@@ -348,7 +375,8 @@ describe("SecurityQuestionsModule", function () {
 
     await tb2.modules.securityQuestions.inputShareFromSecurityQuestions("blublu");
     const reconstructedKey = await tb2.reconstructKey();
-    if (resp1.privKey.cmp(reconstructedKey) !== 0) {
+    // compareBNArray(resp1.privKey, reconstructedKey, "key should be able to be reconstructed");
+    if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
       fail("key should be able to be reconstructed");
     }
   });
@@ -365,7 +393,8 @@ describe("SecurityQuestionsModule", function () {
 
     await tb2.modules.securityQuestions.inputShareFromSecurityQuestions("blublu");
     const reconstructedKey = await tb2.reconstructKey();
-    if (resp1.privKey.cmp(reconstructedKey) !== 0) {
+    // compareBNArray(resp1.privKey, reconstructedKey, "key should be able to be reconstructed");
+    if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
       fail("key should be able to be reconstructed");
     }
   });
@@ -383,7 +412,8 @@ describe("SecurityQuestionsModule", function () {
 
     await tb2.modules.securityQuestions.inputShareFromSecurityQuestions("dodo");
     const reconstructedKey = await tb2.reconstructKey();
-    if (resp1.privKey.cmp(reconstructedKey) !== 0) {
+    // compareBNArray(resp1.privKey, reconstructedKey, "key should be able to be reconstructed");
+    if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
       fail("key should be able to be reconstructed");
     }
   });
@@ -401,7 +431,8 @@ describe("SecurityQuestionsModule", function () {
 
     await tb2.modules.securityQuestions.inputShareFromSecurityQuestions("dodo");
     const reconstructedKey = await tb2.reconstructKey();
-    if (resp1.privKey.cmp(reconstructedKey) !== 0) {
+    // compareBNArray(resp1.privKey, reconstructedKey, "key should be able to be reconstructed");
+    if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
       fail("key should be able to be reconstructed");
     }
 
@@ -431,20 +462,21 @@ describe("ShareTransferModule", function () {
     const pubkey = await tb2.modules.shareTransfer.requestNewShare();
 
     // eslint-disable-next-line promise/param-names
-    await new Promise((res) => {
-      setTimeout(res, 200);
-    });
+    // await new Promise((res) => {
+    //   setTimeout(res, 200);
+    // });
     const result = await tb.generateNewShare();
     await tb.modules.shareTransfer.approveRequest(pubkey, result.newShareStores[result.newShareIndex.toString("hex")]);
 
     await tb2.modules.shareTransfer.startRequestStatusCheck(pubkey);
     // eslint-disable-next-line promise/param-names
-    await new Promise((res) => {
-      setTimeout(res, 1001);
-    });
+    // await new Promise((res) => {
+    //   setTimeout(res, 1001);
+    // });
 
     const reconstructedKey = await tb2.reconstructKey();
-    if (resp1.privKey.cmp(reconstructedKey) !== 0) {
+    // compareBNArray(resp1.privKey, reconstructedKey.privKey, "key should be able to be reconstructed");
+    if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
       fail("key should be able to be reconstructed");
     }
   });
@@ -487,7 +519,8 @@ describe("ShareTransferModule", function () {
     });
 
     const reconstructedKey = await tb2.reconstructKey();
-    if (resp1.privKey.cmp(reconstructedKey) !== 0) {
+    // compareBNArray(resp1.privKey, reconstructedKey, "key should be able to be reconstructed");
+    if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
       fail("key should be able to be reconstructed");
     }
   });
@@ -507,7 +540,6 @@ describe("ShareTransferModule", function () {
     await tb2.initialize();
 
     // usually should be called in callback, but mocha does not allow
-    // const encKey = await tb.modules.shareTransfer.requestNewShare();
     const encKey2 = await tb2.modules.shareTransfer.requestNewShare();
     await tb.modules.shareTransfer.deleteShareTransferStore(encKey2); // delete 1st request from 2nd
     const newRequests = await tb2.modules.shareTransfer.getShareTransferStore();
@@ -524,58 +556,73 @@ describe("ShareTransferModule", function () {
     });
     await tb.initializeNewKey({ initializeModules: true });
 
-    // const encKey = await tb.modules.shareTransfer.requestNewShare();
     await tb.modules.shareTransfer.resetShareTransferStore();
     const newRequests = await tb.modules.shareTransfer.getShareTransferStore();
     if (Object.keys(newRequests).length !== 0) {
       fail("Unable to reset share store");
     }
   });
+});
 
-  describe("ShareTransferModule", function () {
-    it("#it should get and set seed phrase store", async function () {
-      const tb = new ThresholdKey({
-        serviceProvider: defaultSP,
-        storageLayer: defaultSL,
-        modules: { seedPhrase: new SeedPhraseModule() },
-      });
-      const resp1 = await tb.initializeNewKey({ initializeModules: true });
-      await tb.modules.seedPhrase.addSeedPhrase("seed sock milk update focus rotate barely fade car face mechanic mercy");
+describe("TkeyStore", function () {
+  it("#should get/set seed phrase", async function () {
+    const metamaskSeedPhraseFormat = new MetamaskSeedPhraseFormat("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68");
+    const tb = new ThresholdKey({
+      serviceProvider: defaultSP,
+      storageLayer: defaultSL,
+      modules: { seedPhrase: new SeedPhraseModule([metamaskSeedPhraseFormat]) },
+    });
+    const resp1 = await tb.initializeNewKey({ initializeModules: true });
+    await tb.modules.seedPhrase.setSeedPhrase("seed sock milk update focus rotate barely fade car face mechanic mercy", "HD Key Tree");
 
-      const tb2 = new ThresholdKey({
-        serviceProvider: defaultSP,
-        storageLayer: defaultSL,
-        modules: { seedPhrase: new SeedPhraseModule() },
-      });
-      await tb2.initialize();
-      tb2.inputShare(resp1.deviceShare);
-      await tb2.reconstructKey();
-      const testSP = await tb2.modules.seedPhrase.getSeedPhraseStore();
-      if (testSP.toString("utf8") !== "seed sock milk update focus rotate barely fade car face mechanic mercy") {
-        fail("unable to get/set seed phrase");
-      }
+    const metamaskSeedPhraseFormat2 = new MetamaskSeedPhraseFormat("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68");
+    const tb2 = new ThresholdKey({
+      serviceProvider: defaultSP,
+      storageLayer: defaultSL,
+      modules: { seedPhrase: new SeedPhraseModule([metamaskSeedPhraseFormat2]) },
+    });
+    await tb2.initialize();
+    tb2.inputShare(resp1.deviceShare);
+    const reconstuctedKey = await tb2.reconstructKey();
+    // console.log(reconstuctedKey);
+    compareReconstructedKeys(reconstuctedKey, {
+      privKey: resp1.privKey,
+      seedPhrase: [new BN("70dc3117300011918e26b02176945cc15c3d548cf49fd8418d97f93af699e46", "hex")],
+      allKeys: [resp1.privKey, new BN("70dc3117300011918e26b02176945cc15c3d548cf49fd8418d97f93af699e46", "hex")],
     });
   });
-  // it("#should be able to reconstruct key and initialize a key with security questions after refresh", async function () {
+  it("#should be able to derive keys", async function () {
+    const tb = new ThresholdKey({
+      serviceProvider: defaultSP,
+      storageLayer: defaultSL,
+      modules: { seedPhrase: new SeedPhraseModule([new MetamaskSeedPhraseFormat("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68")]) },
+    });
+    await tb.initializeNewKey({ initializeModules: true });
+    await tb.modules.seedPhrase.setSeedPhrase("seed sock milk update focus rotate barely fade car face mechanic mercy", "HD Key Tree");
+    const actualPrivateKeys = [new BN("70dc3117300011918e26b02176945cc15c3d548cf49fd8418d97f93af699e46", "hex")];
+    const derivedKeys = await tb.modules.seedPhrase.getAccounts();
+    // console.log(derivedKeys);
+    compareBNArray(actualPrivateKeys, derivedKeys, "key should be same");
+    // derivedKeys = derivedKeys.map((el) => el.toString("hex"));
+    // deepEqual(actualPrivateKeys, derivedKeys);
+  });
+
+  // it("#should be able to get/set private keys", async function () {
   //   const tb = new ThresholdKey({
   //     serviceProvider: defaultSP,
   //     storageLayer: defaultSL,
-  //     modules: { securityQuestions: new SecurityQuestionsModule() },
+  //     modules: { privateKeysModule: new PrivateKeysModule() },
   //   });
-  //   const resp1 = await tb.initializeNewKey({ initializeModules: true });
-  //   await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
-  //   const tb2 = new ThresholdKey({
-  //     serviceProvider: defaultSP,
-  //     storageLayer: defaultSL,
-  //     modules: { securityQuestions: new SecurityQuestionsModule() },
-  //   });
-  //   await tb.generateNewShare();
-  //   await tb2.initialize();
-
-  //   await tb2.modules.securityQuestions.inputShareFromSecurityQuestions("blublu");
-  //   const reconstructedKey = await tb2.reconstructKey();
-  //   if (resp1.privKey.cmp(reconstructedKey) !== 0) {
-  //     fail("key should be able to be reconstructed");
-  //   }
+  //   await tb.initializeNewKey({ initializeModules: true });
+  //   const actualPrivateKeys = [
+  //     "4bd0041b7654a9b16a7268a5de7982f2422b15635c4fd170c140dc4897624390",
+  //     "1ea6edde61c750ec02896e9ac7fe9ac0b48a3630594fdf52ad5305470a2635c0",
+  //     "7749e59f398c5ccc01f3131e00abd1d061a03ae2ae59c49bebcee61d419f7cf0",
+  //     "1a99651a0aab297997bb3374451a2c40c927fab93903c1957fa9444bc4e2c770",
+  //     "220dad2d2bbb8bc2f731981921a49ee6059ef9d1e5d55ee203527a3157fb7284",
+  //   ];
+  //   await tb.modules.privateKeysModule.setPrivateKeys(actualPrivateKeys);
+  //   const keys = await tb.modules.privateKeysModule.getPrivateKeys();
+  //   deepEqual(actualPrivateKeys, keys.privateKeysModule);
   // });
 });

@@ -4,7 +4,8 @@ declare class SecurityQuestionsModule implements IModule {
     moduleName: string;
     tbSDK: ITKeyApi;
     constructor();
-    initialize(tbSDK: ITKeyApi): Promise<void>;
+    setModuleReferences(tbSDK: ITKeyApi): void;
+    initialize(): Promise<void>;
     generateNewShareWithSecurityQuestions(answerString: string, questions: string): Promise<GenerateNewShareResult>;
     getSecurityQuestions(): string;
     inputShareFromSecurityQuestions(answerString: string): Promise<void>;

@@ -1,10 +1,11 @@
 /// <reference types="node" />
 import { ec as EC } from "elliptic";
 import { EncryptedMessage } from "./baseTypes/commonTypes";
-declare const ecCurve: EC;
-declare function encrypt(publicKey: Buffer, msg: Buffer): Promise<EncryptedMessage>;
-declare function decrypt(privKey: Buffer, msg: EncryptedMessage): Promise<Buffer>;
-declare function isEmptyObject(obj: unknown): boolean;
+export declare const ecCurve: EC;
+export declare function encrypt(publicKey: Buffer, msg: Buffer): Promise<EncryptedMessage>;
+export declare function decrypt(privKey: Buffer, msg: EncryptedMessage): Promise<Buffer>;
+export declare function isEmptyObject(obj: unknown): boolean;
 export declare const isErrorObj: (err: Error) => boolean;
-declare function prettyPrintError(error: Error): string;
-export { isEmptyObject, encrypt, decrypt, ecCurve, prettyPrintError, };
+export declare function prettyPrintError(error: Error): string;
+export declare function generateAddressFromPublicKey(publicKey: Buffer): string;
+export declare function normalize(input: number | string): string;

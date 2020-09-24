@@ -1,5 +1,6 @@
 import { decrypt as ecDecrypt, encrypt as ecEncrypt } from "@toruslabs/eccrypto";
 import { ec as EC } from "elliptic";
+import { keccak256, toChecksumAddress } from "web3-utils";
 
 import { EncryptedMessage } from "./baseTypes/commonTypes";
 
@@ -11,11 +12,11 @@ import { EncryptedMessage } from "./baseTypes/commonTypes";
 //   return getPublic(privKeyBnToEcc(bnPrivKey));
 // };
 
-const ecCurve = new EC("secp256k1");
+export const ecCurve = new EC("secp256k1");
 
 // Wrappers around ECC encrypt/decrypt to use the hex serialization
 // TODO: refactor to take BN
-async function encrypt(publicKey: Buffer, msg: Buffer): Promise<EncryptedMessage> {
+export async function encrypt(publicKey: Buffer, msg: Buffer): Promise<EncryptedMessage> {
   const encryptedDetails = await ecEncrypt(publicKey, msg);
 
   return {
@@ -26,7 +27,7 @@ async function encrypt(publicKey: Buffer, msg: Buffer): Promise<EncryptedMessage
   };
 }
 
-async function decrypt(privKey: Buffer, msg: EncryptedMessage): Promise<Buffer> {
+export async function decrypt(privKey: Buffer, msg: EncryptedMessage): Promise<Buffer> {
   const bufferEncDetails = {
     ciphertext: Buffer.from(msg.ciphertext, "hex"),
     ephemPublicKey: Buffer.from(msg.ephemPublicKey, "hex"),
@@ -37,25 +38,52 @@ async function decrypt(privKey: Buffer, msg: EncryptedMessage): Promise<Buffer> 
   return ecDecrypt(privKey, bufferEncDetails);
 }
 
-function isEmptyObject(obj: unknown): boolean {
+export function isEmptyObject(obj: unknown): boolean {
   return Object.keys(obj).length === 0 && obj.constructor === Object;
 }
 
 export const isErrorObj = (err: Error): boolean => err && err.stack && err.message !== "";
 
-function prettyPrintError(error: Error): string {
+export function prettyPrintError(error: Error): string {
   if (isErrorObj(error)) {
     return error.message;
   }
   return error.toString();
 }
 
-export {
-  // privKeyBnToEcc,
-  // privKeyBnToPubKeyECC,
-  isEmptyObject,
-  encrypt,
-  decrypt,
-  ecCurve,
-  prettyPrintError,
-};
+export function generateAddressFromPublicKey(publicKey: Buffer): string {
+  const ethAddressLower = `0x${keccak256(publicKey.toString("hex")).slice(64 - 38)}`;
+  return toChecksumAddress(ethAddressLower);
+}
+
+export function normalize(input: number | string): string {
+  if (!input) {
+    return undefined;
+  }
+  let hexString;
+
+  if (typeof input === "number") {
+    hexString = input.toString(16);
+    if (hexString.length % 2) {
+      hexString = `0${hexString}`;
+    }
+  }
+
+  if (typeof input === "string") {
+    hexString = input.toLowerCase();
+  }
+
+  return `0x${hexString}`;
+}
+
+// export {
+//   // privKeyBnToEcc,
+//   // privKeyBnToPubKeyECC,
+//   isEmptyObject,
+//   encrypt,
+//   decrypt,
+//   ecCurve,
+//   prettyPrintError,
+//   normalize,
+//   generateAddressFromPrivKey,
+// };
