@@ -13,11 +13,11 @@ import ThresholdKey from "../src/index";
 import { generateRandomPolynomial, lagrangeInterpolatePolynomial, lagrangeInterpolation } from "../src/lagrangeInterpolatePolynomial";
 import Metadata from "../src/metadata";
 import SecurityQuestionsModule from "../src/securityQuestions/SecurityQuestionsModule";
+import MetamaskSeedPhraseFormat from "../src/seedPhrase/MetamaskSeedPhraseFormat";
+import SeedPhraseModule from "../src/seedPhrase/SeedPhrase";
 import ServiceProviderBase from "../src/serviceProvider/ServiceProviderBase";
 import ShareTransferModule from "../src/shareTransfer/ShareTransferModule";
 import TorusStorageLayer from "../src/storage-layer";
-import MetamaskSeedPhraseFormat from "../src/tkeyModule/SeedPhrase/MetamaskSeedPhraseFormat";
-import SeedPhraseModule from "../src/tkeyModule/SeedPhrase/SeedPhrase";
 import { ecCurve } from "../src/utils";
 
 const PRIVATE_KEY = "e70fb5f5970b363879bc36f54d4fc0ad77863bfd059881159251f50f48863acf";

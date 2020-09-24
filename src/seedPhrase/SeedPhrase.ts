@@ -1,6 +1,6 @@
 import BN from "bn.js";
 
-import { IModule, ISeedPhraseFormat, ISeedPhraseStore, ITKeyApi } from "../../baseTypes/aggregateTypes";
+import { IModule, ISeedPhraseFormat, ISeedPhraseStore, ITKeyApi } from "../baseTypes/aggregateTypes";
 
 class SeedPhraseModule implements IModule {
   moduleName: string;

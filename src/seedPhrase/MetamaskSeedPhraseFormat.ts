@@ -6,8 +6,8 @@ import { provider } from "web3-core";
 import Web3Eth from "web3-eth";
 import { fromWei } from "web3-utils";
 
-import { ISeedPhraseFormat, ISeedPhraseStore, MetamaskSeedPhraseStore } from "../../baseTypes/aggregateTypes";
-import { generateAddressFromPublicKey } from "../../utils";
+import { ISeedPhraseFormat, ISeedPhraseStore, MetamaskSeedPhraseStore } from "../baseTypes/aggregateTypes";
+import { generateAddressFromPublicKey } from "../utils";
 
 class MetamaskSeedPhraseFormat implements ISeedPhraseFormat {
   seedPhraseType: string;
