@@ -635,29 +635,6 @@ class ThresholdKey implements ITKey {
     }
   }
 
-  //
-  /**
-   * TkeyStore methods
-   * Example: 
-    {
-      ...metadata,
-      generalStore:{
-          securityQuestion:{}
-          shareTransfer: {}
-      },
-      tkeyStore:{
-          seedPhrases:{
-              "hdKeyTree":{}
-              "someOtherFormat":{}
-          },
-          privateKeys:{
-              "somePrivateKeyFormat":{}
-          }
-      }
-    }
-   * @param data
-   */
-
   async encrypt(data: Buffer): Promise<EncryptedMessage> {
     return encrypt(getPubKeyECC(this.privKey), data);
   }
