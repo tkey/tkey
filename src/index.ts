@@ -647,10 +647,10 @@ class ThresholdKey implements ITKey {
 
   async setData(data: unknown): Promise<void> {
     const { metadata } = this;
-    let rawTkeyStore = metadata.getGeneralStoreDomain(this.tkeyStoreModuleName);
+    let rawTkeyStore = metadata.getTkeyStoreDomain(this.tkeyStoreModuleName);
     if (!rawTkeyStore) {
-      metadata.setGeneralStoreDomain(this.tkeyStoreModuleName, new TkeyStore({ data: {} }));
-      rawTkeyStore = metadata.getGeneralStoreDomain(this.tkeyStoreModuleName);
+      metadata.setTkeyStoreDomain(this.tkeyStoreModuleName, new TkeyStore({ data: {} }));
+      rawTkeyStore = metadata.getTkeyStoreDomain(this.tkeyStoreModuleName);
     }
     const tkeyStore = new TkeyStore(rawTkeyStore as TkeyStoreArgs);
 
@@ -676,25 +676,25 @@ class ThresholdKey implements ITKey {
     tkeyStore.data = Object.assign(tkeyStore.data, newData as TkeyStoreDataArgs);
 
     // update metadatStore
-    metadata.setGeneralStoreDomain(this.tkeyStoreModuleName, tkeyStore);
+    metadata.setTkeyStoreDomain(this.tkeyStoreModuleName, tkeyStore);
     await this.syncShareMetadata();
   }
 
   async deleteKey(): Promise<void> {
     const { metadata } = this;
-    const rawTkeyStore = metadata.getGeneralStoreDomain(this.tkeyStoreModuleName);
+    const rawTkeyStore = metadata.getTkeyStoreDomain(this.tkeyStoreModuleName);
     if (!rawTkeyStore) {
       throw new Error("Tkey store does not exist. Unable to delete seed hrase");
     }
     const tkeyStore = new TkeyStore(rawTkeyStore as TkeyStoreArgs);
     delete tkeyStore.data.seedPhrase;
-    metadata.setGeneralStoreDomain(this.tkeyStoreModuleName, tkeyStore);
+    metadata.setTkeyStoreDomain(this.tkeyStoreModuleName, tkeyStore);
     await this.syncShareMetadata();
   }
 
   async getData(keys: Array<string>): Promise<TkeyStoreDataArgs> {
     const { metadata } = this;
-    const rawTkeyStore = metadata.getGeneralStoreDomain(this.tkeyStoreModuleName);
+    const rawTkeyStore = metadata.getTkeyStoreDomain(this.tkeyStoreModuleName);
     if (!rawTkeyStore) throw new Error("tkey store doesn't exist");
     const tkeyStore = new TkeyStore(rawTkeyStore as TkeyStoreArgs);
 

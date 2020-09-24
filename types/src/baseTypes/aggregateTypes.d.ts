@@ -26,6 +26,9 @@ export interface IMetadata extends ISerializable {
     generalStore: {
         [moduleName: string]: unknown;
     };
+    tkeyStore: {
+        [moduleName: string]: unknown;
+    };
     scopedStore: ScopedStore;
     getShareIndexesForPolynomial(polyID: PolynomialID): Array<string>;
     getLatestPublicPolynomial(): PublicPolynomial;
@@ -33,6 +36,8 @@ export interface IMetadata extends ISerializable {
     addPublicShare(polynomialID: PolynomialID, publicShare: PublicShare): void;
     setGeneralStoreDomain(key: string, obj: unknown): void;
     getGeneralStoreDomain(key: string): unknown;
+    setTkeyStoreDomain(key: string, obj: unknown): void;
+    getTkeyStoreDomain(key: string): unknown;
     addFromPolynomialAndShares(polynomial: Polynomial, shares: Array<Share> | ShareMap): void;
     setScopedStore(scopedStore: ScopedStore): void;
     getEncryptedShare(): ShareStore;

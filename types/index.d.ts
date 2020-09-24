@@ -3,7 +3,7 @@ import ThresholdKey from "./src/index";
 import SecurityQuestionsModule from "./src/securityQuestions/SecurityQuestionsModule";
 import ServiceProviderBase from "./src/serviceProvider/ServiceProviderBase";
 import TorusServiceProvider from "./src/serviceProvider/TorusServiceProvider";
-import ShareTransferModule from "./src/shareTransfer/shareTransferModule";
+import ShareTransferModule from "./src/shareTransfer/ShareTransferModule";
 import TorusStorageLayer from "./src/storage-layer";
 import MetamaskSeedPhraseFormat from "./src/tkeyModule/SeedPhrase/MetamaskSeedPhraseFormat";
 import SeedPhraseModule from "./src/tkeyModule/SeedPhrase/SeedPhrase";

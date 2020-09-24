@@ -14,7 +14,7 @@ import { generateRandomPolynomial, lagrangeInterpolatePolynomial, lagrangeInterp
 import Metadata from "../src/metadata";
 import SecurityQuestionsModule from "../src/securityQuestions/SecurityQuestionsModule";
 import ServiceProviderBase from "../src/serviceProvider/ServiceProviderBase";
-import ShareTransferModule from "../src/shareTransfer/shareTransferModule";
+import ShareTransferModule from "../src/shareTransfer/ShareTransferModule";
 import TorusStorageLayer from "../src/storage-layer";
 import PrivateKeysModule from "../src/tkeyModule/PrivateKeys/PrivateKeys";
 import MetamaskSeedPhraseFormat from "../src/tkeyModule/SeedPhrase/MetamaskSeedPhraseFormat";
@@ -464,17 +464,17 @@ describe("ShareTransferModule", function () {
     const pubkey = await tb2.modules.shareTransfer.requestNewShare();
 
     // eslint-disable-next-line promise/param-names
-    await new Promise((res) => {
-      setTimeout(res, 200);
-    });
+    // await new Promise((res) => {
+    //   setTimeout(res, 200);
+    // });
     const result = await tb.generateNewShare();
     await tb.modules.shareTransfer.approveRequest(pubkey, result.newShareStores[result.newShareIndex.toString("hex")]);
 
     await tb2.modules.shareTransfer.startRequestStatusCheck(pubkey);
     // eslint-disable-next-line promise/param-names
-    await new Promise((res) => {
-      setTimeout(res, 1001);
-    });
+    // await new Promise((res) => {
+    //   setTimeout(res, 1001);
+    // });
 
     const reconstructedKey = await tb2.reconstructKey();
     // compareBNArray(resp1.privKey, reconstructedKey.privKey, "key should be able to be reconstructed");

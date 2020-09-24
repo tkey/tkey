@@ -30,12 +30,17 @@ class Metadata implements IMetadata {
     [moduleName: string]: unknown;
   };
 
+  tkeyStore: {
+    [moduleName: string]: unknown;
+  };
+
   scopedStore: ScopedStore;
 
   constructor(input: Point) {
     this.publicPolynomials = {};
     this.publicShares = {};
     this.generalStore = {};
+    this.tkeyStore = {};
     this.shareDescriptions = {};
     this.pubKey = input;
     this.polyIDList = [];
@@ -68,6 +73,14 @@ class Metadata implements IMetadata {
 
   getGeneralStoreDomain(key: string): unknown {
     return this.generalStore[key];
+  }
+
+  setTkeyStoreDomain(key: string, obj: unknown): void {
+    this.tkeyStore[key] = obj;
+  }
+
+  getTkeyStoreDomain(key: string): unknown {
+    return this.tkeyStore[key];
   }
 
   addFromPolynomialAndShares(polynomial: Polynomial, shares: Array<Share> | ShareMap): void {
@@ -122,11 +135,12 @@ class Metadata implements IMetadata {
   }
 
   static fromJSON(value: StringifiedType): Metadata {
-    const { pubKey, polyIDList, generalStore, scopedStore, shareDescriptions, publicPolynomials, publicShares } = value;
+    const { pubKey, polyIDList, generalStore, tkeyStore, scopedStore, shareDescriptions, publicPolynomials, publicShares } = value;
     const point = new Point(pubKey.x, pubKey.y);
     const metadata = new Metadata(point);
     metadata.polyIDList = polyIDList;
     if (generalStore) metadata.generalStore = generalStore;
+    if (tkeyStore) metadata.tkeyStore = tkeyStore;
     if (scopedStore) metadata.scopedStore = scopedStore;
     if (shareDescriptions) metadata.shareDescriptions = shareDescriptions;
 

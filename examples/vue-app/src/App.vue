@@ -205,7 +205,7 @@ export default {
 
         const key = await this.tbsdk.reconstructKey();
         // await this.tbsdk.initializeNewKey(undefined, true)
-        console.log(key.toString("hex"));
+        console.log(key.privKey.toString("hex"));
         this.console(key);
 
         // this.console(initializedDetails);
@@ -292,8 +292,8 @@ export default {
     async reconstructKey() {
       try {
         let key = await this.tbsdk.reconstructKey();
-        this.console("private key, " + key.toString("hex"));
-        console.log(key.toString("hex"), this.tbsdk.getKeyDetails());
+        this.console("private key, " + JSON.stringify(key));
+        console.log(JSON.stringify(key), this.tbsdk.getKeyDetails());
       } catch (error) {
         console.error(error, "caught");
       }
