@@ -223,8 +223,8 @@ describe("TorusStorageLayer", function () {
     const tsp = new ServiceProviderBase({ postboxKey: privKey });
     const storageLayer = new TorusStorageLayer({ enableLogging: true, serviceProvider: tsp });
     const message = { test: Math.random().toString(36).substring(7) };
-    await storageLayer.setMetadata(message);
-    const resp = await storageLayer.getMetadata();
+    await storageLayer.setMetadata(message, tsp.postboxKey);
+    const resp = await storageLayer.getMetadata(tsp.postboxKey);
     deepStrictEqual(resp, message, "set and get message should be equal");
   });
   it("#should get or set with specified private key correctly", async function () {

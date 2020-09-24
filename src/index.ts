@@ -130,7 +130,7 @@ class ThresholdKey implements ITKey {
     } else if (!input) {
       // default to use service provider
       // first we see if a share has been kept for us
-      const rawServiceProviderShare = await this.storageLayer.getMetadata<{ message?: string }>();
+      const rawServiceProviderShare = await this.storageLayer.getMetadata<{ message?: string }>(this.serviceProvider.postboxKey);
 
       if (rawServiceProviderShare.message === KEY_NOT_FOUND) {
         // no metadata set, assumes new user
@@ -351,7 +351,7 @@ class ThresholdKey implements ITKey {
 
     // set share for serviceProvider encrytion
     if (shareIndexesNeedingEncryption.includes("1")) {
-      await this.storageLayer.setMetadata(newShareStores["1"]);
+      await this.storageLayer.setMetadata(newShareStores["1"], this.serviceProvider.postboxKey);
       // TODO: handle failure gracefully
     }
 
@@ -403,7 +403,8 @@ class ThresholdKey implements ITKey {
 
     // create a random poly and respective shares
     // 1 is defined as the serviceProvider share
-    const shareIndexes = [new BN(1), new BN(2)];
+    const shareIndexForDeviceStorage = generatePrivate();
+    const shareIndexes = [new BN(1), new BN(shareIndexForDeviceStorage)];
     let poly: Polynomial;
     if (determinedShare) {
       const userShareIndex = new BN(3);
@@ -422,7 +423,7 @@ class ThresholdKey implements ITKey {
     // store torus share on metadata
     const shareStore = new ShareStore(serviceProviderShare, poly.getPolynomialID());
     try {
-      await this.storageLayer.setMetadata(shareStore);
+      await this.storageLayer.setMetadata(shareStore, this.serviceProvider.postboxKey);
     } catch (err) {
       throw new Error(`setMetadata errored: ${JSON.stringify(err)}`);
     }
