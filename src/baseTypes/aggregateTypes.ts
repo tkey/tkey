@@ -231,8 +231,6 @@ export interface ITKey extends ITKeyApi, ISerializable {
 
   initializeNewKey(params: { userInput?: BN; initializeModules?: boolean }): Promise<InitializeNewKeyResult>;
 
-  syncSingleShareMetadata(share: BN, adjustScopedStore?: (ss: ScopedStore) => ScopedStore): Promise<void>;
-
   setKey(privKey: BN): void;
 
   getKeyDetails(): KeyDetails;

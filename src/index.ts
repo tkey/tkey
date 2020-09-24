@@ -588,26 +588,6 @@ class ThresholdKey implements ITKey {
     await this.storageLayer.setMetadataBulk(newMetadata, shares);
   }
 
-  async syncSingleShareMetadata(share: BN, adjustScopedStore?: (ss: ScopedStore) => ScopedStore): Promise<void> {
-    const newMetadata = this.metadata.clone();
-    let resp: StringifiedType;
-    try {
-      resp = await this.storageLayer.getMetadata(share);
-    } catch (err) {
-      throw new Error(`getMetadata in syncShareMetadata errored: ${prettyPrintError(err)}`);
-    }
-    const specificShareMetadata = Metadata.fromJSON(resp);
-
-    let scopedStoreToBeSet: ScopedStore;
-    if (adjustScopedStore) {
-      scopedStoreToBeSet = adjustScopedStore(specificShareMetadata.scopedStore);
-    } else {
-      scopedStoreToBeSet = specificShareMetadata.scopedStore;
-    }
-    newMetadata.setScopedStore(scopedStoreToBeSet);
-    await this.storageLayer.setMetadata(newMetadata, share);
-  }
-
   addRefreshMiddleware(
     moduleName: string,
     middleware: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap) => unknown
