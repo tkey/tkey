@@ -12,7 +12,7 @@ import {
   TorusStorageLayerAPIParams,
   TorusStorageLayerArgs,
 } from "./baseTypes/commonTypes";
-import { decrypt, encrypt } from "./utils";
+import { decrypt, encrypt, KEY_NOT_FOUND } from "./utils";
 
 class TorusStorageLayer implements IStorageLayer {
   enableLogging: boolean;
@@ -32,7 +32,7 @@ class TorusStorageLayer implements IStorageLayer {
     const metadataResponse = await post<{ message: string }>(`${this.hostUrl}/get`, keyDetails);
     // returns empty object if object
     if (metadataResponse.message === "") {
-      return {} as T;
+      return Object.create({ message: KEY_NOT_FOUND }) as T;
     }
     const encryptedMessage = JSON.parse(atob(metadataResponse.message));
 

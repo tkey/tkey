@@ -36,7 +36,7 @@ import Metadata from "./metadata";
 import TorusServiceProvider from "./serviceProvider/TorusServiceProvider";
 import TorusStorageLayer from "./storage-layer";
 // import TkeyStore from "./tkeyModule/TkeyStore";
-import { decrypt, encrypt, isEmptyObject, prettyPrintError } from "./utils";
+import { decrypt, encrypt, KEY_NOT_FOUND, prettyPrintError } from "./utils";
 
 // TODO: handle errors for get and set with retries
 
@@ -130,9 +130,9 @@ class ThresholdKey implements ITKey {
     } else if (!input) {
       // default to use service provider
       // first we see if a share has been kept for us
-      const rawServiceProviderShare = await this.storageLayer.getMetadata();
+      const rawServiceProviderShare = await this.storageLayer.getMetadata<{ message?: string }>();
 
-      if (isEmptyObject(rawServiceProviderShare)) {
+      if (rawServiceProviderShare.message === KEY_NOT_FOUND) {
         // no metadata set, assumes new user
         await this.initializeNewKey({ initializeModules: true, importedKey: importKey });
         return this.getKeyDetails();
