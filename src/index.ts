@@ -108,8 +108,8 @@ class ThresholdKey implements ITKey {
       setDeviceStorage: this.setDeviceStorage.bind(this),
       encrypt: this.encrypt.bind(this),
       decrypt: this.decrypt.bind(this),
-      getData: this.getData.bind(this),
-      setData: this.setData.bind(this),
+      getTKeyStore: this.getTKeyStore.bind(this),
+      setTKeyStore: this.setTKeyStore.bind(this),
       deleteKey: this.deleteKey.bind(this),
     };
   }
@@ -635,29 +635,6 @@ class ThresholdKey implements ITKey {
     }
   }
 
-  //
-  /**
-   * TkeyStore methods
-   * Example: 
-    {
-      ...metadata,
-      generalStore:{
-          securityQuestion:{}
-          shareTransfer: {}
-      },
-      tkeyStore:{
-          seedPhrases:{
-              "hdKeyTree":{}
-              "someOtherFormat":{}
-          },
-          privateKeys:{
-              "somePrivateKeyFormat":{}
-          }
-      }
-    }
-   * @param data
-   */
-
   async encrypt(data: Buffer): Promise<EncryptedMessage> {
     return encrypt(getPubKeyECC(this.privKey), data);
   }
@@ -666,7 +643,7 @@ class ThresholdKey implements ITKey {
     return decrypt(toPrivKeyECC(this.privKey), encryptedMessage);
   }
 
-  async setData(moduleName: string, data: unknown): Promise<void> {
+  async setTKeyStore(moduleName: string, data: unknown): Promise<void> {
     const { metadata } = this;
     const rawTkeyStore = metadata.getTkeyStoreDomain(this.tkeyStoreModuleName) || {};
     rawTkeyStore[moduleName] = {};
@@ -710,7 +687,7 @@ class ThresholdKey implements ITKey {
     await this.syncShareMetadata();
   }
 
-  async getData(moduleName: string, key: string): Promise<ISeedPhraseStore> {
+  async getTKeyStore(moduleName: string, key: string): Promise<ISeedPhraseStore> {
     // Get tkey domain
     const { metadata } = this;
     const rawTkeyStore = metadata.getTkeyStoreDomain(this.tkeyStoreModuleName);

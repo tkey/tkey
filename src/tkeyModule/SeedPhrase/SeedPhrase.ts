@@ -32,11 +32,11 @@ class SeedPhraseModule implements IModule {
       throw new Error(`Seed phrase is invalid for ${seedPhraseType}`);
     }
     data[seedPhraseType] = await format.createSeedPhraseStore(seedPhrase);
-    return this.tbSDK.setData(this.moduleName, data);
+    return this.tbSDK.setTKeyStore(this.moduleName, data);
   }
 
   async getSeedPhrase(key: string): Promise<ISeedPhraseStore> {
-    return this.tbSDK.getData(this.moduleName, key);
+    return this.tbSDK.getTKeyStore(this.moduleName, key);
   }
 
   async getAccounts(): Promise<Array<BN>> {

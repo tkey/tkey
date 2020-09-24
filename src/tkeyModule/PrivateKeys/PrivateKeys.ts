@@ -23,11 +23,11 @@
 //   async initialize(): Promise<void> {}
 
 //   async setPrivateKeys(privateKeys: Array<string>): Promise<void> {
-//     await this.tkeyModule.setData({ privateKeysModule: privateKeys });
+//     await this.tkeyModule.setTKeyStore({ privateKeysModule: privateKeys });
 //   }
 
 //   async getPrivateKeys(): Promise<TkeyStoreDataArgs> {
-//     const seedPhrase = await this.tkeyModule.getData([this.moduleName]);
+//     const seedPhrase = await this.tkeyModule.getTKeyStoreStore([this.moduleName]);
 //     return seedPhrase;
 //   }
 // }

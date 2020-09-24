@@ -109,9 +109,9 @@ export interface ShareRequestArgs {
     userAgent: string;
 }
 export interface ISubTkeyModule extends IModule {
-    setData(data: unknown): Promise<void>;
+    setTKeyStore(data: unknown): Promise<void>;
     deleteKey(): Promise<void>;
-    getData(keys: Array<string>): Promise<TkeyStoreDataArgs>;
+    getTKeyStore(keys: Array<string>): Promise<TkeyStoreDataArgs>;
 }
 export interface ITKeyApi {
     storageLayer: IStorageLayer;
@@ -129,9 +129,9 @@ export interface ITKeyApi {
     outputShare(shareIndex: BNString): ShareStore;
     encrypt(data: Buffer): Promise<EncryptedMessage>;
     decrypt(encryptedMesage: EncryptedMessage): Promise<Buffer>;
-    getData(keys: Array<string>): Promise<TkeyStoreDataArgs>;
+    getTKeyStore(keys: Array<string>): Promise<TkeyStoreDataArgs>;
     deleteKey(): Promise<void>;
-    setData(data: unknown): Promise<void>;
+    setTKeyStore(data: unknown): Promise<void>;
 }
 export interface ITKey extends ITKeyApi, ISerializable {
     modules: ModuleMap;
@@ -154,9 +154,9 @@ export interface ITKey extends ITKeyApi, ISerializable {
     getKeyDetails(): KeyDetails;
     encrypt(data: Buffer): Promise<EncryptedMessage>;
     decrypt(encryptedMesage: EncryptedMessage): Promise<Buffer>;
-    getData(keys: Array<string>): Promise<TkeyStoreDataArgs>;
+    getTKeyStore(keys: Array<string>): Promise<TkeyStoreDataArgs>;
     deleteKey(): Promise<void>;
-    setData(data: unknown): Promise<void>;
+    setTKeyStore(data: unknown): Promise<void>;
 }
 export interface ISeedPhraseStore {
     seedPhraseType: string;

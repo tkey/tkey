@@ -20,7 +20,6 @@ export {
   SecurityQuestionsModule,
   TorusStorageLayer,
   ShareTransferModule,
-  // TkeyModule,
   SeedPhraseModule,
   MetamaskSeedPhraseFormat,
 };
