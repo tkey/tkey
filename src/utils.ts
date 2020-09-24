@@ -76,6 +76,8 @@ export function normalize(input: number | string): string {
   return `0x${hexString}`;
 }
 
+export const KEY_NOT_FOUND = "KEY_NOT_FOUND";
+
 // export {
 //   // privKeyBnToEcc,
 //   // privKeyBnToPubKeyECC,
