@@ -52,6 +52,7 @@ class ShareTransferModule implements IModule {
     } else {
       newShareTransferStore = {};
     }
+
     const encPubKeyX = getPubKeyPoint(this.currentEncKey).x.toString("hex");
     newShareTransferStore[encPubKeyX] = new ShareRequest({
       encPubKey: getPubKeyECC(this.currentEncKey),
@@ -81,9 +82,22 @@ class ShareTransferModule implements IModule {
     return Object.keys(shareTransferStore);
   }
 
-  async approveRequest(encPubKeyX: string, shareStore: ShareStore): Promise<void> {
+  async approveRequest(encPubKeyX: string, shareStore?: ShareStore): Promise<void> {
     const shareTransferStore = await this.getShareTransferStore();
-    const bufferedShare = Buffer.from(JSON.stringify(shareStore));
+    let bufferedShare;
+    if (shareStore) {
+      bufferedShare = Buffer.from(JSON.stringify(shareStore));
+    } else {
+      const store = new ShareRequest(shareTransferStore[encPubKeyX]);
+      const { availableShareIndexes } = store;
+      const metadata = this.tbSDK.getMetadata();
+      const latestPolynomial = metadata.getLatestPublicPolynomial();
+      const latestPolynomialId = latestPolynomial.getPolynomialID();
+      const indexes = metadata.getShareIndexesForPolynomial(latestPolynomialId);
+      const filtered = indexes.filter((el) => !availableShareIndexes.includes(el));
+      const share = this.tbSDK.outputShare(filtered[0]);
+      bufferedShare = Buffer.from(JSON.stringify(share));
+    }
     const shareRequest = new ShareRequest(shareTransferStore[encPubKeyX]);
     shareTransferStore[encPubKeyX].encShareInTransit = await encrypt(shareRequest.encPubKey, bufferedShare);
     await this.setShareTransferStore(shareTransferStore);
@@ -108,7 +122,7 @@ class ShareTransferModule implements IModule {
     await this.tbSDK.storageLayer.setMetadata(shareTransferStore, shareTransferStorePointer.pointer);
   }
 
-  async startRequestStatusCheck(encPubKeyX: string): Promise<ShareStore> {
+  async startRequestStatusCheck(encPubKeyX: string, deleteRequestAfterCompletion: boolean): Promise<ShareStore> {
     // watcher
     return new Promise((resolve, reject) => {
       this.requestStatusCheckId = setInterval(async () => {
@@ -118,6 +132,9 @@ class ShareTransferModule implements IModule {
             const shareStoreBuf = await decrypt(toPrivKeyECC(this.currentEncKey), latestShareTransferStore[encPubKeyX].encShareInTransit);
             const receivedShare = ShareStore.fromJSON(JSON.parse(shareStoreBuf.toString()));
             await this.tbSDK.inputShareSafe(receivedShare);
+            if (deleteRequestAfterCompletion) {
+              await this.deleteShareTransferStore(encPubKeyX);
+            }
             resolve(receivedShare);
             clearInterval(this.requestStatusCheckId);
           }

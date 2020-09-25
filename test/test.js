@@ -475,7 +475,6 @@ describe("ShareTransferModule", function () {
     // });
 
     const reconstructedKey = await tb2.reconstructKey();
-    // compareBNArray(resp1.privKey, reconstructedKey.privKey, "key should be able to be reconstructed");
     if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
       fail("key should be able to be reconstructed");
     }
@@ -487,7 +486,6 @@ describe("ShareTransferModule", function () {
       modules: { shareTransfer: new ShareTransferModule() },
     });
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
-    // console.log(resp1, tb)
 
     const tb2 = new ThresholdKey({
       serviceProvider: defaultSP,
@@ -495,31 +493,22 @@ describe("ShareTransferModule", function () {
       modules: { shareTransfer: new ShareTransferModule() },
     });
     await tb2.initialize();
-    const latestPolynomial = tb2.metadata.getLatestPublicPolynomial();
-    const latestPolynomialId = latestPolynomial.getPolynomialID();
-    const currentShareIndexes = Object.keys(tb2.shares[latestPolynomialId]);
-    // console.log("curentShareIndexes", currentShareIndexes)
-
+    const currentShareIndexes = tb2.getCurrentShareIndexes();
     // usually should be called in callback, but mocha does not allow
-    const pubkey = await tb2.modules.shareTransfer.requestNewShare(currentShareIndexes);
+    const pubkey = await tb2.modules.shareTransfer.requestNewShare("unit test", currentShareIndexes);
+
+    const requests = await tb.modules.shareTransfer.getShareTransferStore();
+    const pubkey2 = Object.keys(requests)[0];
+    await tb.modules.shareTransfer.approveRequest(pubkey2);
+
+    await tb2.modules.shareTransfer.startRequestStatusCheck(pubkey, true);
 
     // eslint-disable-next-line promise/param-names
-    await new Promise((res) => {
-      setTimeout(res, 200);
-    });
-    // const result = await tb.generateNewShare();
-    // await tb.modules.shareTransfer.approveRequest(pubkey, result.newShareStores[result.newShareIndex.toString("hex")]);
-    await tb.modules.shareTransfer.approveRequestWithShareIndex(pubkey, "2");
-
-    await tb2.modules.shareTransfer.startRequestStatusCheck(pubkey);
-
-    // eslint-disable-next-line promise/param-names
-    await new Promise((res) => {
-      setTimeout(res, 1001);
-    });
+    // await new Promise((res) => {
+    //   setTimeout(res, 1001);
+    // });
 
     const reconstructedKey = await tb2.reconstructKey();
-    // compareBNArray(resp1.privKey, reconstructedKey, "key should be able to be reconstructed");
     if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
       fail("key should be able to be reconstructed");
     }
@@ -601,10 +590,7 @@ describe("TkeyStore", function () {
     await tb.modules.seedPhrase.setSeedPhrase("seed sock milk update focus rotate barely fade car face mechanic mercy", "HD Key Tree");
     const actualPrivateKeys = [new BN("70dc3117300011918e26b02176945cc15c3d548cf49fd8418d97f93af699e46", "hex")];
     const derivedKeys = await tb.modules.seedPhrase.getAccounts();
-    // console.log(derivedKeys);
     compareBNArray(actualPrivateKeys, derivedKeys, "key should be same");
-    // derivedKeys = derivedKeys.map((el) => el.toString("hex"));
-    // deepEqual(actualPrivateKeys, derivedKeys);
   });
 
   // it("#should be able to get/set private keys", async function () {

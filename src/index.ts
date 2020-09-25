@@ -407,7 +407,8 @@ class ThresholdKey implements ITKey {
     const shareIndexes = [new BN(1), new BN(shareIndexForDeviceStorage)];
     let poly: Polynomial;
     if (determinedShare) {
-      const userShareIndex = new BN(3);
+      const shareIndexForDeterminedShare = generatePrivate();
+      const userShareIndex = new BN(shareIndexForDeterminedShare);
       poly = generateRandomPolynomial(1, this.privKey, [new Share(userShareIndex, determinedShare)]);
       shareIndexes.push(userShareIndex);
     } else {
@@ -527,6 +528,13 @@ class ThresholdKey implements ITKey {
 
   getKey(): Array<BN> {
     return [this.privKey];
+  }
+
+  getCurrentShareIndexes(): Array<string> {
+    const latestPolynomial = this.metadata.getLatestPublicPolynomial();
+    const latestPolynomialId = latestPolynomial.getPolynomialID();
+    const currentShareIndexes = Object.keys(this.shares[latestPolynomialId]);
+    return currentShareIndexes;
   }
 
   getKeyDetails(): KeyDetails {
