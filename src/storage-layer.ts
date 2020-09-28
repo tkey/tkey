@@ -27,6 +27,10 @@ class TorusStorageLayer implements IStorageLayer {
     this.serviceProvider = serviceProvider;
   }
 
+  /**
+   *  Get metadata for a key
+   * @param privKey If not provided, it will use service provider's share for decryption
+   */
   async getMetadata<T>(privKey?: BN): Promise<T> {
     const keyDetails = this.generateMetadataParams({}, privKey);
     const metadataResponse = await post<{ message: string }>(`${this.hostUrl}/get`, keyDetails);
@@ -46,6 +50,11 @@ class TorusStorageLayer implements IStorageLayer {
     return JSON.parse(decrypted.toString()) as T;
   }
 
+  /**
+   * Set Metadata for a key
+   * @param input data to post
+   * @param privKey If not provided, it will use service provider's share for encryption
+   */
   async setMetadata<T>(input: T, privKey?: BN): Promise<{ message: string }> {
     const bufferMetadata = Buffer.from(stringify(input));
     let encryptedDetails: EncryptedMessage;
@@ -59,6 +68,11 @@ class TorusStorageLayer implements IStorageLayer {
     return post<{ message: string }>(`${this.hostUrl}/set`, metadataParams);
   }
 
+  /**
+   * Set Metadata for keys
+   * @param input data to post
+   * @param privKey If not provided, it will use service provider's share for encryption
+   */
   async setMetadataBulk<T>(input: Array<T>, privKey?: Array<BN>): Promise<{ message: string }> {
     const encryptedDetailsArray = input.map(async (el, i) => {
       const bufferMetadata = Buffer.from(stringify(el));

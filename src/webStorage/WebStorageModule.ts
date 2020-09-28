@@ -2,6 +2,7 @@ import BN from "bn.js";
 
 import { ShareStore } from "../base";
 import { IModule, ITKeyApi } from "../baseTypes/aggregateTypes";
+import { BNString } from "../baseTypes/commonTypes";
 import { prettyPrintError } from "../utils";
 import { getShareFromChromeFileStorage, storeShareOnFileStorage } from "./ChromeStorageHelpers";
 import { getShareFromLocalStorage, storeShareOnLocalStorage } from "./LocalStorageHelpers";
@@ -35,8 +36,8 @@ class WebStorageModule implements IModule {
     );
   }
 
-  async storeDeviceShareOnFileStorage(): Promise<void> {
-    const shareStore = this.tbSDK.outputShare(new BN(2));
+  async storeDeviceShareOnFileStorage(shareIndex: BNString): Promise<void> {
+    const shareStore = this.tbSDK.outputShare(new BN(shareIndex));
     return storeShareOnFileStorage(shareStore);
   }
 

@@ -15,11 +15,11 @@ declare class ShareTransferModule implements IModule {
     initialize(): Promise<void>;
     requestNewShare(userAgent: string, availableShareIndexes: Array<string>, callback?: (shareStore: ShareStore) => void): Promise<string>;
     lookForRequests(): Promise<Array<string>>;
-    approveRequest(encPubKeyX: string, shareStore: ShareStore): Promise<void>;
+    approveRequest(encPubKeyX: string, shareStore?: ShareStore): Promise<void>;
     approveRequestWithShareIndex(encPubKeyX: string, shareIndex: string): Promise<void>;
     getShareTransferStore(): Promise<ShareTransferStore>;
     setShareTransferStore(shareTransferStore: ShareTransferStore): Promise<void>;
-    startRequestStatusCheck(encPubKeyX: string): Promise<ShareStore>;
+    startRequestStatusCheck(encPubKeyX: string, deleteRequestAfterCompletion: boolean): Promise<ShareStore>;
     cancelRequestStatusCheck(): Promise<void>;
     deleteShareTransferStore(encPubKey: string): Promise<void>;
     resetShareTransferStore(): Promise<void>;

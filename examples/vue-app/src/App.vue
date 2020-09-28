@@ -39,7 +39,7 @@
 </template>
 
 <script>
-import ThresholdKey, { WebStorageModule, SecurityQuestionsModule, TorusStorageLayer, TorusServiceProvider, ShareTransferModule } from "@tkey/core";
+import ThresholdKey, { WebStorageModule, SecurityQuestionsModule, TorusStorageLayer, ServiceProviderBase, ShareTransferModule } from "@tkey/core";
 // import ServiceProviderBase from '../../../src/serviceProvider/ServiceProviderBase';
 
 const GOOGLE = "google";
@@ -216,14 +216,14 @@ export default {
     async triggerLogin(initTkeyFlag) {
       try {
         if (!this.tbsdk.serviceProvider) return;
-        const jwtParams = this.loginToConnectionMap[this.selectedVerifier] || {};
-        const { typeOfLogin, clientId, verifier } = this.verifierMap[this.selectedVerifier];
-        await this.tbsdk.serviceProvider.triggerLogin({
-          typeOfLogin,
-          verifier,
-          clientId,
-          jwtParams
-        });
+        // const jwtParams = this.loginToConnectionMap[this.selectedVerifier] || {};
+        // const { typeOfLogin, clientId, verifier } = this.verifierMap[this.selectedVerifier];
+        // await this.tbsdk.serviceProvider.triggerLogin({
+        //   typeOfLogin,
+        //   verifier,
+        //   clientId,
+        //   jwtParams
+        // });
 
         if(initTkeyFlag) this.initializeAndReconstruct()
       } catch (error) {
@@ -335,26 +335,26 @@ export default {
       document.querySelector("#console>p").innerHTML = typeof text === "object" ? JSON.stringify(text) : text;
     },
     async initTkey(){
-      const directParams = {
-        baseUrl: `${location.origin}/serviceworker`,
-        enableLogging: true,
-        proxyContractAddress: "0x4023d2a0D330bF11426B12C6144Cfb96B7fa6183", // details for test net
-        network: "testnet" // details for test net
-      };
+      // const directParams = {
+      //   baseUrl: `${location.origin}/serviceworker`,
+      //   enableLogging: true,
+      //   proxyContractAddress: "0x4023d2a0D330bF11426B12C6144Cfb96B7fa6183", // details for test net
+      //   network: "testnet" // details for test net
+      // };
       const webStorageModule = new WebStorageModule();
       const securityQuestionsModule = new SecurityQuestionsModule();
       const shareTransferModule = new ShareTransferModule()
-      const serviceProvider = new TorusServiceProvider({ directParams });
-      // const serviceProviderBase = new ServiceProviderBase({postboxKey:"f1f02ee186749cfe1ef8f957fc3d7a5b7128f979bacc10ab3b2a811d4f990852"})
-      const storageLayer = new TorusStorageLayer({ hostUrl: "https://metadata.tor.us", serviceProvider: serviceProvider });
+      // const serviceProvider = new TorusServiceProvider({ directParams });
+      const serviceProviderBase = new ServiceProviderBase({postboxKey:"f1f02ee186749cfe1ef8f957fc3d7a5b7128f979bacc10ab3b2a811d4f990852"})
+      const storageLayer = new TorusStorageLayer({ hostUrl: "https://metadata.tor.us", serviceProvider: serviceProviderBase });
       const tbsdk = new ThresholdKey({
-        serviceProvider: serviceProvider,
+        serviceProvider: serviceProviderBase,
         storageLayer,
         modules: { webStorage: webStorageModule, securityQuestions: securityQuestionsModule, shareTransfer: shareTransferModule }
       });
       const torusdirectsdk = tbsdk.serviceProvider;
       // { enableLogging = false, modules = {}, serviceProvider, storageLayer, directParams }
-      await tbsdk.serviceProvider.init({ skipSw: false });
+      // await tbsdk.serviceProvider.init({ skipSw: false });
       this.tbsdk = tbsdk;
       this.torusdirectsdk = torusdirectsdk;
     }
