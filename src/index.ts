@@ -7,7 +7,6 @@ import {
   getPubKeyPoint,
   Point,
   Polynomial,
-  ScopedStore,
   Share,
   ShareStore,
   ShareStoreMap,
@@ -175,7 +174,7 @@ class ThresholdKey implements ITKey {
     let nextShare: ShareStore;
     try {
       shareMetadata = Metadata.fromJSON(metadata);
-      nextShare = shareMetadata.getEncryptedShare();
+      nextShare = await shareMetadata.getEncryptedShare(shareStore);
       return this.catchupToLatestShare(nextShare);
     } catch (err) {
       return { latestShare: shareStore, shareMetadata };
@@ -352,7 +351,7 @@ class ThresholdKey implements ITKey {
         return oldShare;
       })
     );
-    m.setScopedStore(newScopedStore as ScopedStore);
+    m.setScopedStore("encryptedShares", newScopedStore);
 
     await this.storageLayer.setMetadataBulk(metadataToPush, sharesToPush);
 
@@ -550,7 +549,7 @@ class ThresholdKey implements ITKey {
 
   // Module functions
 
-  async syncShareMetadata(adjustScopedStore?: (ss: ScopedStore) => ScopedStore): Promise<void> {
+  async syncShareMetadata(adjustScopedStore?: (ss: unknown) => unknown): Promise<void> {
     const pubPoly = this.metadata.getLatestPublicPolynomial();
     const pubPolyID = pubPoly.getPolynomialID();
     const existingShareIndexes = this.metadata.getShareIndexesForPolynomial(pubPolyID);
@@ -571,7 +570,7 @@ class ThresholdKey implements ITKey {
     await this.syncMultipleShareMetadata(shareArray, adjustScopedStore);
   }
 
-  async syncMultipleShareMetadata(shares: Array<BN>, adjustScopedStore?: (ss: ScopedStore) => ScopedStore): Promise<void> {
+  async syncMultipleShareMetadata(shares: Array<BN>, adjustScopedStore?: (ss: unknown) => unknown): Promise<void> {
     const newMetadataPromise = shares.map(async (share) => {
       const newMetadata = this.metadata.clone();
       let resp: StringifiedType;
@@ -582,13 +581,13 @@ class ThresholdKey implements ITKey {
       }
       const specificShareMetadata = Metadata.fromJSON(resp);
 
-      let scopedStoreToBeSet: ScopedStore;
+      let scopedStoreToBeSet;
       if (adjustScopedStore) {
         scopedStoreToBeSet = adjustScopedStore(specificShareMetadata.scopedStore);
       } else {
         scopedStoreToBeSet = specificShareMetadata.scopedStore;
       }
-      newMetadata.setScopedStore(scopedStoreToBeSet);
+      newMetadata.scopedStore = scopedStoreToBeSet;
       return newMetadata;
     });
     const newMetadata = await Promise.all(newMetadataPromise);
