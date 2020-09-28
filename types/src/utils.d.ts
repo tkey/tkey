@@ -9,3 +9,4 @@ export declare const isErrorObj: (err: Error) => boolean;
 export declare function prettyPrintError(error: Error): string;
 export declare function generateAddressFromPublicKey(publicKey: Buffer): string;
 export declare function normalize(input: number | string): string;
+export declare const KEY_NOT_FOUND = "KEY_NOT_FOUND";

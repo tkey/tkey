@@ -5,11 +5,11 @@ declare class TorusStorageLayer implements IStorageLayer {
     hostUrl: string;
     serviceProvider: IServiceProvider;
     constructor({ enableLogging, hostUrl, serviceProvider }: TorusStorageLayerArgs);
-    getMetadata<T>(privKey?: BN): Promise<T>;
-    setMetadata<T>(input: T, privKey?: BN): Promise<{
+    getMetadata<T>(privKey: BN): Promise<T>;
+    setMetadata<T>(input: T, privKey: BN): Promise<{
         message: string;
     }>;
-    setMetadataBulk<T>(input: Array<T>, privKey?: Array<BN>): Promise<{
+    setMetadataBulk<T>(input: Array<T>, privKey: Array<BN>): Promise<{
         message: string;
     }>;
     generateMetadataParams(message: unknown, privKey?: BN): TorusStorageLayerAPIParams;

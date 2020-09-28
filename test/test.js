@@ -444,7 +444,7 @@ describe("SecurityQuestionsModule", function () {
 });
 
 describe("ShareTransferModule", function () {
-  it("#should be able to transfer share via the module", async function () {
+  it.only("#should be able to transfer share via the module", async function () {
     const tb = new ThresholdKey({
       serviceProvider: defaultSP,
       storageLayer: defaultSL,

@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import BN from "bn.js";
 import { Polynomial, ScopedStore, ShareStore, ShareStoreMap, ShareStorePolyIDShareIndexMap } from "./base";
-import { CatchupToLatestShareResult, GenerateNewShareResult, IMetadata, InitializeNewKeyResult, ITKey, ITKeyApi, KeyDetails, ModuleMap, ReconstructedKeyResult, ReconstructKeyMiddlewareMap, RefreshMiddlewareMap, RefreshSharesResult, TKeyArgs, TkeyStoreDataArgs } from "./baseTypes/aggregateTypes";
+import { CatchupToLatestShareResult, GenerateNewShareResult, IMetadata, InitializeNewKeyResult, ISeedPhraseStore, ITKey, ITKeyApi, KeyDetails, ModuleMap, ReconstructedKeyResult, ReconstructKeyMiddlewareMap, RefreshMiddlewareMap, RefreshSharesResult, TKeyArgs } from "./baseTypes/aggregateTypes";
 import { BNString, EncryptedMessage, IServiceProvider, IStorageLayer, PolynomialID, StringifiedType } from "./baseTypes/commonTypes";
 import Metadata from "./metadata";
 declare class ThresholdKey implements ITKey {
@@ -37,10 +37,10 @@ declare class ThresholdKey implements ITKey {
     outputShare(shareIndex: BNString): ShareStore;
     setKey(privKey: BN): void;
     getKey(): Array<BN>;
+    getCurrentShareIndexes(): Array<string>;
     getKeyDetails(): KeyDetails;
     syncShareMetadata(adjustScopedStore?: (ss: ScopedStore) => ScopedStore): Promise<void>;
     syncMultipleShareMetadata(shares: Array<BN>, adjustScopedStore?: (ss: ScopedStore) => ScopedStore): Promise<void>;
-    syncSingleShareMetadata(share: BN, adjustScopedStore?: (ss: ScopedStore) => ScopedStore): Promise<void>;
     addRefreshMiddleware(moduleName: string, middleware: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap) => unknown): void;
     addReconstructKeyMiddleware(moduleName: string, middleware: () => Promise<Array<BN>>): void;
     setDeviceStorage(storeDeviceStorage: (deviceShareStore: ShareStore) => Promise<void>): void;
@@ -48,9 +48,9 @@ declare class ThresholdKey implements ITKey {
     deleteShareDescription(shareIndex: string, description: string, updateMetadata?: boolean): Promise<void>;
     encrypt(data: Buffer): Promise<EncryptedMessage>;
     decrypt(encryptedMessage: EncryptedMessage): Promise<Buffer>;
-    setTKeyStore(data: unknown): Promise<void>;
-    deleteKey(): Promise<void>;
-    getTKeyStore(keys: Array<string>): Promise<TkeyStoreDataArgs>;
+    setTKeyStore(moduleName: string, data: unknown): Promise<void>;
+    deleteKey(moduleName: string, key: string): Promise<void>;
+    getTKeyStore(moduleName: string, key: string): Promise<ISeedPhraseStore>;
     toJSON(): StringifiedType;
     static fromJSON(value: StringifiedType, args: TKeyArgs): Promise<ThresholdKey>;
 }

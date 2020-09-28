@@ -23,7 +23,7 @@ declare class Metadata implements IMetadata {
     getGeneralStoreDomain(key: string): unknown;
     setTkeyStoreDomain(key: string, obj: unknown): void;
     getTkeyStoreDomain(key: string): unknown;
-    addFromPolynomialAndShares(polynomial: Polynomial, shares: Array<Share> | ShareMap): void;
+    addFromPolynomialAndShares(polynomial: Polynomial, shares: Share[] | ShareMap): void;
     setScopedStore(scopedStore: ScopedStore): void;
     getEncryptedShare(): ShareStore;
     getShareDescription(): ShareDescriptionMap;

@@ -108,10 +108,25 @@ export interface ShareRequestArgs {
     availableShareIndexes: Array<string>;
     userAgent: string;
 }
+export interface ISeedPhraseStore {
+    seedPhraseType: string;
+    seedPhrase: string;
+}
+export declare type MetamaskSeedPhraseStore = {
+    seedPhraseType: string;
+    seedPhrase: string;
+    numberOfWallets: number;
+};
+export interface ISeedPhraseFormat {
+    seedPhraseType: string;
+    validateSeedPhrase(seedPhrase: string): boolean;
+    deriveKeysFromSeedPhrase(seedPhraseStore: ISeedPhraseStore): Array<BN>;
+    createSeedPhraseStore(seedPhrase: string): Promise<ISeedPhraseStore>;
+}
 export interface ISubTkeyModule extends IModule {
-    setTKeyStore(data: unknown): Promise<void>;
-    deleteKey(): Promise<void>;
-    getTKeyStore(keys: Array<string>): Promise<TkeyStoreDataArgs>;
+    setTKeyStore(moduleName: string, data: unknown): Promise<void>;
+    deleteKey(moduleName: string, key: string): any;
+    getTKeyStore(moduleName: string, key: string): Promise<ISeedPhraseStore>;
 }
 export interface ITKeyApi {
     storageLayer: IStorageLayer;
@@ -129,9 +144,9 @@ export interface ITKeyApi {
     outputShare(shareIndex: BNString): ShareStore;
     encrypt(data: Buffer): Promise<EncryptedMessage>;
     decrypt(encryptedMesage: EncryptedMessage): Promise<Buffer>;
-    getTKeyStore(keys: Array<string>): Promise<TkeyStoreDataArgs>;
-    deleteKey(): Promise<void>;
-    setTKeyStore(data: unknown): Promise<void>;
+    getTKeyStore(moduleName: string, key: string): Promise<ISeedPhraseStore>;
+    deleteKey(moduleName: string, key: string): any;
+    setTKeyStore(moduleName: string, data: unknown): Promise<void>;
 }
 export interface ITKey extends ITKeyApi, ISerializable {
     modules: ModuleMap;
@@ -149,27 +164,11 @@ export interface ITKey extends ITKeyApi, ISerializable {
         userInput?: BN;
         initializeModules?: boolean;
     }): Promise<InitializeNewKeyResult>;
-    syncSingleShareMetadata(share: BN, adjustScopedStore?: (ss: ScopedStore) => ScopedStore): Promise<void>;
     setKey(privKey: BN): void;
     getKeyDetails(): KeyDetails;
     encrypt(data: Buffer): Promise<EncryptedMessage>;
     decrypt(encryptedMesage: EncryptedMessage): Promise<Buffer>;
-    getTKeyStore(keys: Array<string>): Promise<TkeyStoreDataArgs>;
-    deleteKey(): Promise<void>;
-    setTKeyStore(data: unknown): Promise<void>;
-}
-export interface ISeedPhraseStore {
-    seedPhraseType: string;
-    seedPhrase: string;
-}
-export declare type MetamaskSeedPhraseStore = {
-    seedPhraseType: string;
-    seedPhrase: string;
-    numberOfWallets: number;
-};
-export interface ISeedPhraseFormat {
-    seedPhraseType: string;
-    validateSeedPhrase(seedPhrase: string): boolean;
-    deriveKeysFromSeedPhrase(seedPhraseStore: ISeedPhraseStore): Array<BN>;
-    createSeedPhraseStore(seedPhrase: string): Promise<ISeedPhraseStore>;
+    getTKeyStore(moduleName: string, key: string): Promise<ISeedPhraseStore>;
+    deleteKey(moduleName: string, key: string): any;
+    setTKeyStore(moduleName: string, data: unknown): Promise<void>;
 }

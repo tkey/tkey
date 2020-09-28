@@ -1,7 +1,7 @@
 import BN from "bn.js";
 import HDKey from "hdkey";
 import { provider } from "web3-core";
-import { ISeedPhraseFormat, ISeedPhraseStore, MetamaskSeedPhraseStore } from "../../baseTypes/aggregateTypes";
+import { ISeedPhraseFormat, ISeedPhraseStore, MetamaskSeedPhraseStore } from "../baseTypes/aggregateTypes";
 declare class MetamaskSeedPhraseFormat implements ISeedPhraseFormat {
     seedPhraseType: string;
     hdPathString: string;
