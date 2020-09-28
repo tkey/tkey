@@ -35,7 +35,7 @@ class SeedPhraseModule implements IModule {
     return this.tbSDK.setTKeyStore(this.moduleName, data);
   }
 
-  async getSeedPhrase(key: string): Promise<ISeedPhraseStore> {
+  async getSeedPhrase(key: string): Promise<unknown> {
     return this.tbSDK.getTKeyStore(this.moduleName, key);
   }
 
@@ -45,7 +45,7 @@ class SeedPhraseModule implements IModule {
       const promisesArray = this.seedPhraseFormats.map((el) => {
         return this.getSeedPhrase(el.seedPhraseType);
       });
-      const seedPhrases = await Promise.all(promisesArray);
+      const seedPhrases = (await Promise.all(promisesArray)) as [ISeedPhraseStore];
 
       // Derive keys for all formats.
       return this.seedPhraseFormats.reduce((acc, x, index) => {

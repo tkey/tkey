@@ -12,6 +12,8 @@ import { getPubKeyPoint, Point, Polynomial } from "../src/base";
 import ThresholdKey from "../src/index";
 import { generateRandomPolynomial, lagrangeInterpolatePolynomial, lagrangeInterpolation } from "../src/lagrangeInterpolatePolynomial";
 import Metadata from "../src/metadata";
+import PrivateKeyModule from "../src/privateKeys/PrivateKeys";
+import SECP256K1Format from "../src/privateKeys/SECP256K1Format";
 import SecurityQuestionsModule from "../src/securityQuestions/SecurityQuestionsModule";
 import MetamaskSeedPhraseFormat from "../src/seedPhrase/MetamaskSeedPhraseFormat";
 import SeedPhraseModule from "../src/seedPhrase/SeedPhrase";
@@ -603,23 +605,24 @@ describe("TkeyStore", function () {
     const derivedKeys = await tb.modules.seedPhrase.getAccounts();
     compareBNArray(actualPrivateKeys, derivedKeys, "key should be same");
   });
+  it("#should be able to get/set private keys", async function () {
+    const privateKeyFormat = new SECP256K1Format();
+    const tb = new ThresholdKey({
+      serviceProvider: defaultSP,
+      storageLayer: defaultSL,
+      modules: { privateKeyModule: new PrivateKeyModule([privateKeyFormat]) },
+    });
+    await tb.initializeNewKey({ initializeModules: true });
 
-  // it("#should be able to get/set private keys", async function () {
-  //   const tb = new ThresholdKey({
-  //     serviceProvider: defaultSP,
-  //     storageLayer: defaultSL,
-  //     modules: { privateKeysModule: new PrivateKeysModule() },
-  //   });
-  //   await tb.initializeNewKey({ initializeModules: true });
-  //   const actualPrivateKeys = [
-  //     "4bd0041b7654a9b16a7268a5de7982f2422b15635c4fd170c140dc4897624390",
-  //     "1ea6edde61c750ec02896e9ac7fe9ac0b48a3630594fdf52ad5305470a2635c0",
-  //     "7749e59f398c5ccc01f3131e00abd1d061a03ae2ae59c49bebcee61d419f7cf0",
-  //     "1a99651a0aab297997bb3374451a2c40c927fab93903c1957fa9444bc4e2c770",
-  //     "220dad2d2bbb8bc2f731981921a49ee6059ef9d1e5d55ee203527a3157fb7284",
-  //   ];
-  //   await tb.modules.privateKeysModule.setPrivateKeys(actualPrivateKeys);
-  //   const keys = await tb.modules.privateKeysModule.getPrivateKeys();
-  //   deepEqual(actualPrivateKeys, keys.privateKeysModule);
-  // });
+    const actualPrivateKeys = [
+      "4bd0041b7654a9b16a7268a5de7982f2422b15635c4fd170c140dc4897624390",
+      "1ea6edde61c750ec02896e9ac7fe9ac0b48a3630594fdf52ad5305470a2635c0",
+      "7749e59f398c5ccc01f3131e00abd1d061a03ae2ae59c49bebcee61d419f7cf0",
+      "1a99651a0aab297997bb3374451a2c40c927fab93903c1957fa9444bc4e2c770",
+      "220dad2d2bbb8bc2f731981921a49ee6059ef9d1e5d55ee203527a3157fb7284",
+    ];
+    await tb.modules.privateKeyModule.setPrivateKeys(actualPrivateKeys, "secp256k1n");
+    const getAccounts = await tb.modules.privateKeyModule.getAccounts();
+    deepStrictEqual(actualPrivateKeys, getAccounts);
+  });
 });

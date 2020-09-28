@@ -169,6 +169,16 @@ export type MetamaskSeedPhraseStore = {
   numberOfWallets: number;
 };
 
+export interface ISECP256k1NStore {
+  privateKeys: string[];
+  privateKeyType: string;
+}
+
+export type SECP256k1NStore = {
+  privateKeys: string[];
+  privateKeyType: string;
+};
+
 export interface ISeedPhraseFormat {
   seedPhraseType: string;
   validateSeedPhrase(seedPhrase: string): boolean;
@@ -176,10 +186,17 @@ export interface ISeedPhraseFormat {
   createSeedPhraseStore(seedPhrase: string): Promise<ISeedPhraseStore>;
 }
 
+export interface IPrivateKeyFormat {
+  privateKeys: string[];
+  privateKeyType: string;
+  validatePrivateKeys(privateKey: string): boolean;
+  createPrivateKeyStore(privateKey: string[]): SECP256k1NStore;
+}
+
 export interface ISubTkeyModule extends IModule {
   setTKeyStore(moduleName: string, data: unknown): Promise<void>;
   deleteKey(moduleName: string, key: string);
-  getTKeyStore(moduleName: string, key: string): Promise<ISeedPhraseStore>;
+  getTKeyStore(moduleName: string, key: string): Promise<unknown>;
 }
 
 export interface ITKeyApi {
@@ -202,7 +219,7 @@ export interface ITKeyApi {
   outputShare(shareIndex: BNString): ShareStore;
   encrypt(data: Buffer): Promise<EncryptedMessage>;
   decrypt(encryptedMesage: EncryptedMessage): Promise<Buffer>;
-  getTKeyStore(moduleName: string, key: string): Promise<ISeedPhraseStore>;
+  getTKeyStore(moduleName: string, key: string): Promise<unknown>;
   deleteKey(moduleName: string, key: string);
   setTKeyStore(moduleName: string, data: unknown): Promise<void>;
 }
@@ -238,7 +255,7 @@ export interface ITKey extends ITKeyApi, ISerializable {
 
   encrypt(data: Buffer): Promise<EncryptedMessage>;
   decrypt(encryptedMesage: EncryptedMessage): Promise<Buffer>;
-  getTKeyStore(moduleName: string, key: string): Promise<ISeedPhraseStore>;
+  getTKeyStore(moduleName: string, key: string): Promise<unknown>;
   deleteKey(moduleName: string, key: string);
   setTKeyStore(moduleName: string, data: unknown): Promise<void>;
 }
