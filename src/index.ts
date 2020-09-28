@@ -163,17 +163,28 @@ class ThresholdKey implements ITKey {
     return Promise.all(Object.keys(this.modules).map((x) => this.modules[x].initialize()));
   }
 
-  async catchupToLatestShare(shareStore: ShareStore): Promise<CatchupToLatestShareResult> {
+  /**
+   * catchupToLatestShare recursively loops fetches metadata of the provided share and checks if there is an encrypted share for it.
+   * @param shareStore share to start of with
+   * @param polyID if specified, polyID to refresh to if it exists
+   */
+  async catchupToLatestShare(shareStore: ShareStore, polyID?: PolynomialID): Promise<CatchupToLatestShareResult> {
     let metadata: StringifiedType;
     try {
       metadata = await this.storageLayer.getMetadata(shareStore.share.share);
     } catch (err) {
       throw new Error(`getMetadata in initialize errored: ${prettyPrintError(err)}`);
     }
-    let shareMetadata: Metadata;
     let nextShare: ShareStore;
+    const shareMetadata = Metadata.fromJSON(metadata);
+    // if matches specified polyID return it
+    if (polyID) {
+      if (shareStore.polynomialID === polyID) {
+        return { latestShare: shareStore, shareMetadata };
+      }
+    }
+
     try {
-      shareMetadata = Metadata.fromJSON(metadata);
       nextShare = await shareMetadata.getEncryptedShare(shareStore);
       return this.catchupToLatestShare(nextShare);
     } catch (err) {
@@ -205,7 +216,7 @@ class ThresholdKey implements ITKey {
         for (let k = 0; k < shareIndexesForPoly.length && sharesLeft > 0; k += 1) {
           if (shareIndexesForPoly[k] in shareIndexesRequired) {
             // eslint-disable-next-line no-await-in-loop
-            const latestShareRes = await this.catchupToLatestShare(sharesForPoly[shareIndexesForPoly[k]]);
+            const latestShareRes = await this.catchupToLatestShare(sharesForPoly[shareIndexesForPoly[k]], pubPolyID);
             if (latestShareRes.latestShare.polynomialID === pubPolyID) {
               sharesLeft -= 1;
               delete shareIndexesRequired[shareIndexesForPoly[k]];
