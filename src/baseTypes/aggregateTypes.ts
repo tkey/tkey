@@ -8,7 +8,6 @@ import {
   PublicPolynomialMap,
   PublicShare,
   PublicSharePolyIDShareIndexMap,
-  ScopedStore,
   Share,
   ShareMap,
   ShareStore,
@@ -189,7 +188,7 @@ export interface ITKeyApi {
   getMetadata(): IMetadata;
   initialize(input?: ShareStore, importKey?: BN): Promise<KeyDetails>;
   catchupToLatestShare(shareStore: ShareStore): Promise<CatchupToLatestShareResult>;
-  syncShareMetadata(adjustScopedStore?: (ss: ScopedStore) => ScopedStore): Promise<void>;
+  syncShareMetadata(adjustScopedStore?: (ss: unknown) => unknown): Promise<void>;
   inputShareSafe(shareStore: ShareStore): Promise<void>;
   setDeviceStorage(storeDeviceStorage: (deviceShareStore: ShareStore) => Promise<void>): void;
   addShareDescription(shareIndex: string, description: string, updateMetadata?: boolean): Promise<void>;

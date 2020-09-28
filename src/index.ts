@@ -339,7 +339,7 @@ class ThresholdKey implements ITKey {
     // evaluate oldPoly for old shares and create new metadata with encrypted shares for new polynomial
 
     // evaluate oldPoly for old shares and set new metadata with encrypted share for new polynomial
-    const metadataToPush = [];
+
     const m = this.metadata.clone();
     const newScopedStore = {};
     const sharesToPush = await Promise.all(
@@ -352,6 +352,7 @@ class ThresholdKey implements ITKey {
       })
     );
     m.setScopedStore("encryptedShares", newScopedStore);
+    const metadataToPush = Array(sharesToPush.length).fill(m);
 
     await this.storageLayer.setMetadataBulk(metadataToPush, sharesToPush);
 

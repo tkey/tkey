@@ -109,7 +109,11 @@ class Metadata implements IMetadata {
 
   async getEncryptedShare(shareStore: ShareStore): Promise<ShareStore> {
     const pubShare = shareStore.share.getPublicShare();
-    const encryptedShare = this.scopedStore[pubShare.shareCommitment.x.toString("hex")];
+    const encryptedShareStore = this.scopedStore.encryptedShares;
+    if (!encryptedShareStore) {
+      throw new Error(`no encrypted share store for share exists:  ${shareStore}`);
+    }
+    const encryptedShare = encryptedShareStore[pubShare.shareCommitment.x.toString("hex")];
     if (!encryptedShare) {
       throw new Error(`no encrypted share for share store exists:  ${shareStore}`);
     }
