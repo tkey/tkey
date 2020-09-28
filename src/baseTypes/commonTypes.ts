@@ -34,7 +34,7 @@ export interface ISerializable {
 export interface IPoint extends ISerializable {
   x: BN;
   y: BN;
-  encode(enc: "arr"): Buffer;
+  encode(enc: string, params?: unknown): Buffer;
 }
 
 export interface IServiceProvider extends ISerializable {
