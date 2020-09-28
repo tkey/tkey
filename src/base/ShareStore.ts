@@ -24,8 +24,8 @@ class ShareStore implements ISerializable {
   }
 }
 
-export type ScopedStore = {
-  encryptedShare: ShareStore;
+export type EncryptedShareStore = {
+  [shareCommitment: string]: ShareStore;
 };
 
 // @flow

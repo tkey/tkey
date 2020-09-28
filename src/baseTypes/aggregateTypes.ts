@@ -8,7 +8,6 @@ import {
   PublicPolynomialMap,
   PublicShare,
   PublicSharePolyIDShareIndexMap,
-  ScopedStore,
   Share,
   ShareMap,
   ShareStore,
@@ -60,7 +59,9 @@ export interface IMetadata extends ISerializable {
     [moduleName: string]: unknown;
   };
 
-  scopedStore: ScopedStore;
+  scopedStore: {
+    [moduleName: string]: unknown;
+  };
 
   getShareIndexesForPolynomial(polyID: PolynomialID): Array<string>;
   getLatestPublicPolynomial(): PublicPolynomial;
@@ -71,8 +72,8 @@ export interface IMetadata extends ISerializable {
   setTkeyStoreDomain(key: string, obj: unknown): void;
   getTkeyStoreDomain(key: string): unknown;
   addFromPolynomialAndShares(polynomial: Polynomial, shares: Array<Share> | ShareMap): void;
-  setScopedStore(scopedStore: ScopedStore): void;
-  getEncryptedShare(): ShareStore;
+  setScopedStore(domain: string, data: unknown): void;
+  getEncryptedShare(shareStore: ShareStore): Promise<ShareStore>;
   getShareDescription(): ShareDescriptionMap;
   addShareDescription(shareIndex: string, description: string): void;
   deleteShareDescription(shareIndex: string, description: string): void;
@@ -187,7 +188,7 @@ export interface ITKeyApi {
   getMetadata(): IMetadata;
   initialize(input?: ShareStore, importKey?: BN): Promise<KeyDetails>;
   catchupToLatestShare(shareStore: ShareStore): Promise<CatchupToLatestShareResult>;
-  syncShareMetadata(adjustScopedStore?: (ss: ScopedStore) => ScopedStore): Promise<void>;
+  syncShareMetadata(adjustScopedStore?: (ss: unknown) => unknown): Promise<void>;
   inputShareSafe(shareStore: ShareStore): Promise<void>;
   setDeviceStorage(storeDeviceStorage: (deviceShareStore: ShareStore) => Promise<void>): void;
   addShareDescription(shareIndex: string, description: string, updateMetadata?: boolean): Promise<void>;
