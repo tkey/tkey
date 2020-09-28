@@ -166,7 +166,7 @@ class ThresholdKey implements ITKey {
   /**
    * catchupToLatestShare recursively loops fetches metadata of the provided share and checks if there is an encrypted share for it.
    * @param shareStore share to start of with
-   * @param polyID if specified, polyID to refresh to
+   * @param polyID if specified, polyID to refresh to if it exists
    */
   async catchupToLatestShare(shareStore: ShareStore, polyID?: PolynomialID): Promise<CatchupToLatestShareResult> {
     let metadata: StringifiedType;
@@ -216,7 +216,7 @@ class ThresholdKey implements ITKey {
         for (let k = 0; k < shareIndexesForPoly.length && sharesLeft > 0; k += 1) {
           if (shareIndexesForPoly[k] in shareIndexesRequired) {
             // eslint-disable-next-line no-await-in-loop
-            const latestShareRes = await this.catchupToLatestShare(sharesForPoly[shareIndexesForPoly[k]]);
+            const latestShareRes = await this.catchupToLatestShare(sharesForPoly[shareIndexesForPoly[k]], pubPolyID);
             if (latestShareRes.latestShare.polynomialID === pubPolyID) {
               sharesLeft -= 1;
               delete shareIndexesRequired[shareIndexesForPoly[k]];
