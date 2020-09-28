@@ -1,3 +1,4 @@
+import BN from "bn.js";
 import stringify from "json-stable-stringify";
 
 import {
@@ -145,7 +146,29 @@ class Metadata implements IMetadata {
   }
 
   toJSON(): StringifiedType {
-    return this;
+    // squash data to serialized polyID according to spec
+    const serializedPolyIDList = [];
+    for (let i = 0; i < this.polyIDList.length; i += 1) {
+      const polyID = this.polyIDList[i];
+      const shareIndexes = Object.keys(this.publicShares[polyID]);
+      const sortedShareIndexes = shareIndexes.sort((a: string, b: string) => {
+        return new BN(a, "hex").cmp(new BN(b, "hex"));
+      });
+      const serializedPolyID = polyID
+        .split(`|`)
+        .concat("0x0")
+        .concat(...sortedShareIndexes)
+        .join("|");
+      serializedPolyIDList.push(serializedPolyID);
+    }
+
+    return {
+      pubKey: this.pubKey.x.toString("hex"),
+      polyIDList: serializedPolyIDList,
+      scopedStore: this.scopedStore,
+      generalStore: this.generalStore,
+      tKeyStore: this.tkeyStore,
+    };
   }
 
   static fromJSON(value: StringifiedType): Metadata {

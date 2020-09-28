@@ -141,7 +141,7 @@ describe("tkey", function () {
     const finalKey = await tb3.reconstructKey();
     strictEqual(finalKey.toString("hex"), reconstructedKey.toString("hex"), "Incorrect serialization");
   });
-  it("#should be able to reshare a key and retrieve from service provider serialization", async function () {
+  it.only("#should be able to reshare a key and retrieve from service provider serialization", async function () {
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
     const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize();
@@ -155,6 +155,7 @@ describe("tkey", function () {
     const tb3 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb3.initialize();
     tb3.inputShare(resp2.newShareStores[resp2.newShareIndex.toString("hex")]);
+    debugger;
     const finalKey = await tb3.reconstructKey();
     // compareBNArray(resp1.privKey, finalKey, "key should be able to be reconstructed");
     if (resp1.privKey.cmp(finalKey.privKey) !== 0) {
