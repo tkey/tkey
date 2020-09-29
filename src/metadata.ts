@@ -233,12 +233,12 @@ class Metadata implements IMetadata {
           return v === "0x0";
         }) - 1
       );
-      const secondHalf = arrPolyID.slice(
-        arrPolyID.findIndex((v) => {
-          return v === "0x0";
-        }),
-        arrPolyID.length
-      );
+      // const secondHalf = arrPolyID.slice(
+      //   arrPolyID.findIndex((v) => {
+      //     return v === "0x0";
+      //   }),
+      //   arrPolyID.length
+      // );
       // for publicPolynomials
       const pubPolyID = firstHalf.join();
       const pointCommitments = [];
@@ -249,13 +249,13 @@ class Metadata implements IMetadata {
       metadata.publicPolynomials[pubPolyID] = publicPolynomial;
 
       // for publicShares
-      secondHalf.forEach(() => {
-        const newPubShare = new PublicShare(
-          publicShares[pubPolyID][shareIndex].shareIndex,
-          new Point(publicShares[pubPolyID][shareIndex].shareCommitment.x, publicShares[pubPolyID][shareIndex].shareCommitment.y)
-        );
-        metadata.addPublicShare(pubPolyID, newPubShare);
-      });
+      // secondHalf.forEach((shareIndex) => {
+      //   const newPubShare = new PublicShare(
+      //     shareIndex,
+      //     new Point(publicShares[pubPolyID][shareIndex].shareCommitment.x, publicShares[pubPolyID][shareIndex].shareCommitment.y)
+      //   );
+      //   metadata.addPublicShare(pubPolyID, newPubShare);
+      // });
     }
     return metadata;
   }
