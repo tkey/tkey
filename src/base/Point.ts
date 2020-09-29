@@ -1,7 +1,8 @@
 import BN from "bn.js";
-import { ec as EC } from "elliptic";
 
+// import { ec as EC } from "elliptic";
 import { BNString, IPoint, StringifiedType } from "../baseTypes/commonTypes";
+import { ecCurve } from "../utils";
 
 class Point implements IPoint {
   x: BN;
@@ -19,7 +20,8 @@ class Point implements IPoint {
       case "arr":
         return Buffer.concat([Buffer.from("0x04", "hex"), Buffer.from(this.x.toString("hex"), "hex"), Buffer.from(this.y.toString("hex"), "hex")]);
       case "elliptic-compressed": {
-        const ec = params.ec as EC;
+        let ec = params;
+        ec = ecCurve;
         const key = ec.keyFromPublic({ x: this.x.toString("hex"), y: this.y.toString("hex") }, "hex");
         return Buffer.from(key.getPublic(true, "hex"));
       }
