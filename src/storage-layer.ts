@@ -73,21 +73,38 @@ class TorusStorageLayer implements IStorageLayer {
    * @param input data to post
    * @param privKey If not provided, it will use service provider's share for encryption
    */
-  async setMetadataBulk<T>(input: Array<T>, privKey?: Array<BN>): Promise<{ message: string }> {
-    const encryptedDetailsArray = input.map(async (el, i) => {
-      const bufferMetadata = Buffer.from(stringify(el));
-      let encryptedDetails: EncryptedMessage;
-      if (privKey[i]) {
-        encryptedDetails = await encrypt(getPubKeyECC(privKey[i]), bufferMetadata);
-      } else {
-        encryptedDetails = await this.serviceProvider.encrypt(bufferMetadata);
-      }
-      const serializedEncryptedDetails = btoa(stringify(encryptedDetails));
-      const metadataParams = this.generateMetadataParams(serializedEncryptedDetails, privKey[i]);
-      return metadataParams;
-    });
-    const finalMetadataParams = await Promise.all(encryptedDetailsArray);
-    return post<{ message: string }>(`${this.hostUrl}/bulk_set`, { shares: finalMetadataParams });
+  async setMetadataBulk<T>(input: Array<T>, privKey?: Array<BN>): Promise<{ message: string }[]> {
+    const newInput = input;
+    const encryptedDetailsArray = [];
+    while (newInput.length !== 0) {
+      const tempInput = newInput.splice(0, 3);
+      const promises = Promise.all(
+        tempInput.map(async (el, i) => {
+          const bufferMetadata = Buffer.from(stringify(el));
+          let encryptedDetails: EncryptedMessage;
+          if (privKey[i]) {
+            encryptedDetails = await encrypt(getPubKeyECC(privKey[i]), bufferMetadata);
+          } else {
+            encryptedDetails = await this.serviceProvider.encrypt(bufferMetadata);
+          }
+          const serializedEncryptedDetails = btoa(stringify(encryptedDetails));
+          const metadataParams = this.generateMetadataParams(serializedEncryptedDetails, privKey[i]);
+          return metadataParams;
+        })
+      );
+      // eslint-disable-next-line no-await-in-loop
+      const finalMetadataParams = await promises;
+      encryptedDetailsArray.push(
+        post<{ message: string }>(`${this.hostUrl}/bulk_set`, { shares: finalMetadataParams })
+      );
+      // encryptedDetailsArray.push(promises);
+    }
+    return Promise.all(encryptedDetailsArray);
+
+    // console.log(encryptedDetailsArray);
+
+    // const finalMetadataParams = await Promise.all(encryptedDetailsArray);
+    // return post<{ message: string }>(`${this.hostUrl}/bulk_set`, { shares: finalMetadataParams });
   }
 
   generateMetadataParams(message: unknown, privKey?: BN): TorusStorageLayerAPIParams {
