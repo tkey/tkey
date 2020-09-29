@@ -15,7 +15,7 @@ class PublicPolynomial implements ISerializable {
   getPolynomialID(): PolynomialID {
     let idSeed = "";
     for (let i = 0; i < this.polynomialCommitments.length; i += 1) {
-      let nextChunk = this.polynomialCommitments[i].encode("elliptic-compressed").toString("hex");
+      let nextChunk = this.polynomialCommitments[i].encode("elliptic-compressed").toString();
       if (i !== 0) {
         nextChunk = `|${nextChunk}`;
       }
