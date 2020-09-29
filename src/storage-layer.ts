@@ -98,7 +98,6 @@ class TorusStorageLayer implements IStorageLayer {
         post<{ message: string }>(`${this.hostUrl}/bulk_set`, { shares: finalMetadataParams })
       );
     }
-    // console.log("encryptedDetailsArray length", encryptedDetailsArray.length);
     return Promise.all(encryptedDetailsArray);
   }
 

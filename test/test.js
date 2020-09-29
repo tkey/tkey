@@ -52,15 +52,8 @@ describe("tkey", function () {
     tb = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
   });
 
-  it.only("#should be able to reconstruct key when initializing a key", async function () {
+  it("#should be able to reconstruct key when initializing a key", async function () {
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
-
-    for (let i = 0; i < 50; i += 1) {
-      // eslint-disable-next-line no-await-in-loop
-      await tb.generateNewShare();
-      console.log("succeeded at i ", i);
-    }
-
     const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize();
     tb2.inputShare(resp1.deviceShare);
