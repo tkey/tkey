@@ -15,6 +15,7 @@ import {
 } from "./base";
 import { IMetadata } from "./baseTypes/aggregateTypes";
 import { EncryptedMessage, PolynomialID, ShareDescriptionMap, StringifiedType } from "./baseTypes/commonTypes";
+import { polyCommitmentEval } from "./lagrangeInterpolatePolynomial";
 import { decrypt, ecCurve } from "./utils";
 
 class Metadata implements IMetadata {
@@ -167,7 +168,7 @@ class Metadata implements IMetadata {
     generalStoreCopy.shareDescriptions = this.shareDescriptions;
 
     return {
-      pubKey: this.pubKey.encode("ellptic-compressed", { ec: ecCurve }).toString("hex"),
+      pubKey: this.pubKey.encode("elliptic-compressed", { ec: ecCurve }).toString(),
       polyIDList: serializedPolyIDList,
       scopedStore: this.scopedStore,
       generalStore: generalStoreCopy,
@@ -215,9 +216,10 @@ class Metadata implements IMetadata {
     // return metadata;
 
     const { pubKey, polyIDList, generalStore, tkeyStore, scopedStore } = value;
-    const point = new Point(pubKey.x, pubKey.y);
+    const point = Point.fromCompressedPub(pubKey);
     const metadata = new Metadata(point);
-    metadata.polyIDList = polyIDList;
+    const unserializedPolyIDList = [];
+
     if (generalStore) metadata.generalStore = generalStore;
     if (tkeyStore) metadata.tkeyStore = tkeyStore;
     if (scopedStore) metadata.scopedStore = scopedStore;
@@ -231,16 +233,16 @@ class Metadata implements IMetadata {
         0,
         arrPolyID.findIndex((v) => {
           return v === "0x0";
-        }) - 1
+        })
       );
-      // const secondHalf = arrPolyID.slice(
-      //   arrPolyID.findIndex((v) => {
-      //     return v === "0x0";
-      //   }),
-      //   arrPolyID.length
-      // );
+      const secondHalf = arrPolyID.slice(
+        arrPolyID.findIndex((v) => {
+          return v === "0x0";
+        }) + 1,
+        arrPolyID.length
+      );
       // for publicPolynomials
-      const pubPolyID = firstHalf.join();
+      const pubPolyID = firstHalf.join("|");
       const pointCommitments = [];
       firstHalf.forEach((compressedCommitment) => {
         pointCommitments.push(Point.fromCompressedPub(compressedCommitment));
@@ -249,14 +251,16 @@ class Metadata implements IMetadata {
       metadata.publicPolynomials[pubPolyID] = publicPolynomial;
 
       // for publicShares
-      // secondHalf.forEach((shareIndex) => {
-      //   const newPubShare = new PublicShare(
-      //     shareIndex,
-      //     new Point(publicShares[pubPolyID][shareIndex].shareCommitment.x, publicShares[pubPolyID][shareIndex].shareCommitment.y)
-      //   );
-      //   metadata.addPublicShare(pubPolyID, newPubShare);
-      // });
+      secondHalf.forEach((shareIndex) => {
+        const newPubShare = new PublicShare(shareIndex, polyCommitmentEval(publicPolynomial.polynomialCommitments, new BN(shareIndex, "hex")));
+        metadata.addPublicShare(pubPolyID, newPubShare);
+      });
+
+      // for polyIDList
+      unserializedPolyIDList.push(pubPolyID);
     }
+
+    metadata.polyIDList = unserializedPolyIDList;
     return metadata;
   }
 }

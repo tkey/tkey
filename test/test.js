@@ -58,6 +58,7 @@ describe("tkey", function () {
   });
 
   it("#should be able to reconstruct key when initializing a key", async function () {
+    debugger;
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
     const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize();
@@ -413,7 +414,7 @@ describe("lagrangeInterpolatePolynomial", function () {
   });
 });
 
-describe.only("polyCommitmentEval", function () {
+describe("polyCommitmentEval", function () {
   it("#should polyCommitmentEval basic poly correctly", async function () {
     const polyArr = [new BN(5), new BN(2)];
     const poly = new Polynomial(polyArr);
