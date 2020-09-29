@@ -1,3 +1,4 @@
+import BN from "bn.js";
 import stringify from "json-stable-stringify";
 
 import {
@@ -14,7 +15,8 @@ import {
 } from "./base";
 import { IMetadata } from "./baseTypes/aggregateTypes";
 import { EncryptedMessage, PolynomialID, ShareDescriptionMap, StringifiedType } from "./baseTypes/commonTypes";
-import { decrypt } from "./utils";
+import { polyCommitmentEval } from "./lagrangeInterpolatePolynomial";
+import { decrypt, ecCurve } from "./utils";
 
 class Metadata implements IMetadata {
   pubKey: Point;
@@ -145,44 +147,82 @@ class Metadata implements IMetadata {
   }
 
   toJSON(): StringifiedType {
-    return this;
+    // squash data to serialized polyID according to spec
+    const serializedPolyIDList = [];
+    for (let i = 0; i < this.polyIDList.length; i += 1) {
+      const polyID = this.polyIDList[i];
+      const shareIndexes = Object.keys(this.publicShares[polyID]);
+      const sortedShareIndexes = shareIndexes.sort((a: string, b: string) => {
+        return new BN(a, "hex").cmp(new BN(b, "hex"));
+      });
+      const serializedPolyID = polyID
+        .split(`|`)
+        .concat("0x0")
+        .concat(...sortedShareIndexes)
+        .join("|");
+      serializedPolyIDList.push(serializedPolyID);
+    }
+
+    // cater to sharedescriptions being out of general store
+    const generalStoreCopy = JSON.parse(JSON.stringify(this.generalStore));
+    generalStoreCopy.shareDescriptions = this.shareDescriptions;
+
+    return {
+      pubKey: this.pubKey.encode("elliptic-compressed", { ec: ecCurve }).toString(),
+      polyIDList: serializedPolyIDList,
+      scopedStore: this.scopedStore,
+      generalStore: generalStoreCopy,
+      tKeyStore: this.tkeyStore,
+    };
   }
 
   static fromJSON(value: StringifiedType): Metadata {
-    const { pubKey, polyIDList, generalStore, tkeyStore, scopedStore, shareDescriptions, publicPolynomials, publicShares } = value;
-    const point = new Point(pubKey.x, pubKey.y);
+    const { pubKey, polyIDList, generalStore, tkeyStore, scopedStore } = value;
+    const point = Point.fromCompressedPub(pubKey);
     const metadata = new Metadata(point);
-    metadata.polyIDList = polyIDList;
+    const unserializedPolyIDList = [];
+
     if (generalStore) metadata.generalStore = generalStore;
     if (tkeyStore) metadata.tkeyStore = tkeyStore;
     if (scopedStore) metadata.scopedStore = scopedStore;
-    if (shareDescriptions) metadata.shareDescriptions = shareDescriptions;
+    if (generalStore.shareDescriptions) metadata.shareDescriptions = generalStore.shareDescriptions; // cater to shareDescriptions
 
-    // for publicPolynomials
-    for (const pubPolyID in publicPolynomials) {
-      if (Object.prototype.hasOwnProperty.call(publicPolynomials, pubPolyID)) {
-        const pointCommitments = [];
-        publicPolynomials[pubPolyID].polynomialCommitments.forEach((commitment) => {
-          pointCommitments.push(new Point(commitment.x, commitment.y));
-        });
-        const publicPolynomial = new PublicPolynomial(pointCommitments);
-        metadata.publicPolynomials[pubPolyID] = publicPolynomial;
-      }
+    // eslint-disable-next-line guard-for-in
+    for (let i = 0; i < polyIDList.length; i += 1) {
+      const serializedPolyID = polyIDList[i];
+      const arrPolyID = serializedPolyID.split("|");
+      const firstHalf = arrPolyID.slice(
+        0,
+        arrPolyID.findIndex((v) => {
+          return v === "0x0";
+        })
+      );
+      const secondHalf = arrPolyID.slice(
+        arrPolyID.findIndex((v) => {
+          return v === "0x0";
+        }) + 1,
+        arrPolyID.length
+      );
+      // for publicPolynomials
+      const pubPolyID = firstHalf.join("|");
+      const pointCommitments = [];
+      firstHalf.forEach((compressedCommitment) => {
+        pointCommitments.push(Point.fromCompressedPub(compressedCommitment));
+      });
+      const publicPolynomial = new PublicPolynomial(pointCommitments);
+      metadata.publicPolynomials[pubPolyID] = publicPolynomial;
+
+      // for publicShares
+      secondHalf.forEach((shareIndex) => {
+        const newPubShare = new PublicShare(shareIndex, polyCommitmentEval(publicPolynomial.polynomialCommitments, new BN(shareIndex, "hex")));
+        metadata.addPublicShare(pubPolyID, newPubShare);
+      });
+
+      // for polyIDList
+      unserializedPolyIDList.push(pubPolyID);
     }
-    // for publicShares
-    for (const pubPolyID in publicShares) {
-      if (Object.prototype.hasOwnProperty.call(publicShares, pubPolyID)) {
-        for (const shareIndex in publicShares[pubPolyID]) {
-          if (Object.prototype.hasOwnProperty.call(publicShares[pubPolyID], shareIndex)) {
-            const newPubShare = new PublicShare(
-              publicShares[pubPolyID][shareIndex].shareIndex,
-              new Point(publicShares[pubPolyID][shareIndex].shareCommitment.x, publicShares[pubPolyID][shareIndex].shareCommitment.y)
-            );
-            metadata.addPublicShare(pubPolyID, newPubShare);
-          }
-        }
-      }
-    }
+
+    metadata.polyIDList = unserializedPolyIDList;
     return metadata;
   }
 }

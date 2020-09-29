@@ -1,6 +1,8 @@
 import BN from "bn.js";
 
+// import { ec as EC } from "elliptic";
 import { BNString, IPoint, StringifiedType } from "../baseTypes/commonTypes";
+import { ecCurve } from "../utils";
 
 class Point implements IPoint {
   x: BN;
@@ -12,12 +14,20 @@ class Point implements IPoint {
     this.y = new BN(y, "hex");
   }
 
-  // complies with EC point pub key  encoding api
-  encode(enc: "arr"): Buffer {
-    if (enc === "arr") {
-      return Buffer.concat([Buffer.from("0x04", "hex"), Buffer.from(this.x.toString("hex"), "hex"), Buffer.from(this.y.toString("hex"), "hex")]);
+  // complies with EC and elliptic pub key types
+  encode(enc: string, params?: any): Buffer {
+    switch (enc) {
+      case "arr":
+        return Buffer.concat([Buffer.from("0x04", "hex"), Buffer.from(this.x.toString("hex"), "hex"), Buffer.from(this.y.toString("hex"), "hex")]);
+      case "elliptic-compressed": {
+        let ec = params;
+        ec = ecCurve;
+        const key = ec.keyFromPublic({ x: this.x.toString("hex"), y: this.y.toString("hex") }, "hex");
+        return Buffer.from(key.getPublic(true, "hex"));
+      }
+      default:
+        throw new Error("encoding doesnt exist in Point");
     }
-    throw new Error("encoding doesnt exist in Point");
   }
 
   toJSON(): StringifiedType {
@@ -25,6 +35,12 @@ class Point implements IPoint {
       x: this.x.toString("hex"),
       y: this.y.toString("hex"),
     };
+  }
+
+  static fromCompressedPub(value: string): Point {
+    const key = ecCurve.keyFromPublic(value, "hex");
+    const pt = key.getPublic();
+    return new Point(pt.getX(), pt.getY());
   }
 
   static fromJSON(value: StringifiedType): Point {

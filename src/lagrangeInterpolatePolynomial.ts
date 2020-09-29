@@ -1,5 +1,6 @@
 import { generatePrivate } from "@toruslabs/eccrypto";
 import BN from "bn.js";
+import { curve } from "elliptic";
 
 import { Point, Polynomial, Share } from "./base";
 import { ecCurve } from "./utils";
@@ -134,4 +135,20 @@ export function generateRandomPolynomial(degree: number, secret?: BN, determinst
   }
   points["0"] = new Point(new BN(0), actualS);
   return lagrangeInterpolatePolynomial(Object.values(points));
+}
+
+//  2 + 3x = y | secret for index 1 is 5 >>> g^5 is the commitment | now we have g^2, g^3 and 1, |
+export function polyCommitmentEval(polyCommitments: Array<Point>, index: BN): Point {
+  // convert to base points, this is badly written, its the only way to access the point rn zzz TODO: refactor
+  const basePtPolyCommitments: Array<curve.base.BasePoint> = [];
+  for (let i = 0; i < polyCommitments.length; i += 1) {
+    const key = ecCurve.keyFromPublic({ x: polyCommitments[i].x.toString("hex"), y: polyCommitments[i].y.toString("hex") }, "");
+    basePtPolyCommitments.push(key.getPublic());
+  }
+  let shareCommitment = basePtPolyCommitments[0];
+  for (let i = 1; i < basePtPolyCommitments.length; i += 1) {
+    const e = basePtPolyCommitments[i].mul(index.pow(new BN(i)).umod(ecCurve.n));
+    shareCommitment = shareCommitment.add(e);
+  }
+  return new Point(shareCommitment.getX(), shareCommitment.getY());
 }
