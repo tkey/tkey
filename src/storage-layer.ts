@@ -77,7 +77,7 @@ class TorusStorageLayer implements IStorageLayer {
     const newInput = input;
     const encryptedDetailsArray = [];
     while (newInput.length !== 0) {
-      const tempInput = newInput.splice(0, 3);
+      const tempInput = newInput.splice(0, 4);
       const promises = Promise.all(
         tempInput.map(async (el, i) => {
           const bufferMetadata = Buffer.from(stringify(el));
@@ -97,14 +97,9 @@ class TorusStorageLayer implements IStorageLayer {
       encryptedDetailsArray.push(
         post<{ message: string }>(`${this.hostUrl}/bulk_set`, { shares: finalMetadataParams })
       );
-      // encryptedDetailsArray.push(promises);
     }
+    // console.log("encryptedDetailsArray length", encryptedDetailsArray.length);
     return Promise.all(encryptedDetailsArray);
-
-    // console.log(encryptedDetailsArray);
-
-    // const finalMetadataParams = await Promise.all(encryptedDetailsArray);
-    // return post<{ message: string }>(`${this.hostUrl}/bulk_set`, { shares: finalMetadataParams });
   }
 
   generateMetadataParams(message: unknown, privKey?: BN): TorusStorageLayerAPIParams {
