@@ -306,6 +306,49 @@ describe("Metadata", function () {
   });
 });
 
+describe("Point", function () {
+  it("#should encode into elliptic format on encode", async function () {
+    const secret = new BN(generatePrivate());
+    const point = getPubKeyPoint(secret);
+    const result = point.encode("elliptic-compressed", { ec: ecCurve });
+    if (result.toString().slice(2) !== point.x.toString("hex")) {
+      fail("elliptic format x should be equal");
+    }
+  });
+  it("#should decode into point for elliptic format compressed", async function () {
+    const secret = new BN(generatePrivate());
+    const point = getPubKeyPoint(secret);
+    const result = point.encode("elliptic-compressed", { ec: ecCurve });
+    if (result.toString().slice(2) !== point.x.toString("hex")) {
+      fail("elliptic format x should be equal");
+    }
+
+    const key = ecCurve.keyFromPublic(result.toString(), "hex");
+    if (point.x.cmp(key.pub.x) !== 0) {
+      fail(" x should be equal");
+    }
+    if (point.y.cmp(key.pub.y) !== 0) {
+      fail(" x should be equal");
+    }
+  });
+  it("#should decode into point for fromCompressedPub", async function () {
+    const secret = new BN(generatePrivate());
+    const point = getPubKeyPoint(secret);
+    const result = point.encode("elliptic-compressed", { ec: ecCurve });
+    if (result.toString().slice(2) !== point.x.toString("hex")) {
+      fail("elliptic format x should be equal");
+    }
+
+    const key = Point.fromCompressedPub(result.toString());
+    if (point.x.cmp(key.x) !== 0) {
+      fail(" x should be equal");
+    }
+    if (point.y.cmp(key.y) !== 0) {
+      fail(" x should be equal");
+    }
+  });
+});
+
 describe("lagrange interpolate", function () {
   it("#should interpolate secret correctly", async function () {
     const polyArr = [new BN(5), new BN(2)];

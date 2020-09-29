@@ -178,49 +178,14 @@ class Metadata implements IMetadata {
   }
 
   static fromJSON(value: StringifiedType): Metadata {
-    // const { pubKey, polyIDList, generalStore, tkeyStore, scopedStore, shareDescriptions, publicPolynomials, publicShares } = value;
-    // const point = new Point(pubKey.x, pubKey.y);
-    // const metadata = new Metadata(point);
-    // metadata.polyIDList = polyIDList;
-    // if (generalStore) metadata.generalStore = generalStore;
-    // if (tkeyStore) metadata.tkeyStore = tkeyStore;
-    // if (scopedStore) metadata.scopedStore = scopedStore;
-    // if (shareDescriptions) metadata.shareDescriptions = shareDescriptions;
-
-    // // for publicPolynomials
-    // for (const pubPolyID in publicPolynomials) {
-    //   if (Object.prototype.hasOwnProperty.call(publicPolynomials, pubPolyID)) {
-    //     const pointCommitments = [];
-    //     publicPolynomials[pubPolyID].polynomialCommitments.forEach((commitment) => {
-    //       pointCommitments.push(new Point(commitment.x, commitment.y));
-    //     });
-    //     const publicPolynomial = new PublicPolynomial(pointCommitments);
-    //     metadata.publicPolynomials[pubPolyID] = publicPolynomial;
-    //   }
-    // }
-    // // for publicShares
-    // for (const pubPolyID in publicShares) {
-    //   if (Object.prototype.hasOwnProperty.call(publicShares, pubPolyID)) {
-    //     for (const shareIndex in publicShares[pubPolyID]) {
-    //       if (Object.prototype.hasOwnProperty.call(publicShares[pubPolyID], shareIndex)) {
-    //         const newPubShare = new PublicShare(
-    //           publicShares[pubPolyID][shareIndex].shareIndex,
-    //           new Point(publicShares[pubPolyID][shareIndex].shareCommitment.x, publicShares[pubPolyID][shareIndex].shareCommitment.y)
-    //         );
-    //         metadata.addPublicShare(pubPolyID, newPubShare);
-    //       }
-    //     }
-    //   }
-    // }
-    // return metadata;
-    const { pubKey, polyIDList, generalStore, tkeyStore, scopedStore } = value;
+    const { pubKey, polyIDList, generalStore, tkeyStore, scopedStore, shareDescriptions, publicPolynomials, publicShares } = value;
     const point = new Point(pubKey.x, pubKey.y);
     const metadata = new Metadata(point);
     metadata.polyIDList = polyIDList;
     if (generalStore) metadata.generalStore = generalStore;
     if (tkeyStore) metadata.tkeyStore = tkeyStore;
     if (scopedStore) metadata.scopedStore = scopedStore;
-    if (generalStore.shareDescriptions) metadata.shareDescriptions = generalStore.shareDescriptions; // cater to shareDescriptions
+    if (shareDescriptions) metadata.shareDescriptions = shareDescriptions;
 
     // for publicPolynomials
     for (const pubPolyID in publicPolynomials) {
@@ -248,6 +213,42 @@ class Metadata implements IMetadata {
       }
     }
     return metadata;
+
+    // const { pubKey, polyIDList, generalStore, tkeyStore, scopedStore } = value;
+    // const point = new Point(pubKey.x, pubKey.y);
+    // const metadata = new Metadata(point);
+    // metadata.polyIDList = polyIDList;
+    // if (generalStore) metadata.generalStore = generalStore;
+    // if (tkeyStore) metadata.tkeyStore = tkeyStore;
+    // if (scopedStore) metadata.scopedStore = scopedStore;
+    // if (generalStore.shareDescriptions) metadata.shareDescriptions = generalStore.shareDescriptions; // cater to shareDescriptions
+
+    // // for publicPolynomials
+    // for (const pubPolyID in publicPolynomials) {
+    //   if (Object.prototype.hasOwnProperty.call(publicPolynomials, pubPolyID)) {
+    //     const pointCommitments = [];
+    //     publicPolynomials[pubPolyID].polynomialCommitments.forEach((commitment) => {
+    //       pointCommitments.push(new Point(commitment.x, commitment.y));
+    //     });
+    //     const publicPolynomial = new PublicPolynomial(pointCommitments);
+    //     metadata.publicPolynomials[pubPolyID] = publicPolynomial;
+    //   }
+    // }
+    // // for publicShares
+    // for (const pubPolyID in publicShares) {
+    //   if (Object.prototype.hasOwnProperty.call(publicShares, pubPolyID)) {
+    //     for (const shareIndex in publicShares[pubPolyID]) {
+    //       if (Object.prototype.hasOwnProperty.call(publicShares[pubPolyID], shareIndex)) {
+    //         const newPubShare = new PublicShare(
+    //           publicShares[pubPolyID][shareIndex].shareIndex,
+    //           new Point(publicShares[pubPolyID][shareIndex].shareCommitment.x, publicShares[pubPolyID][shareIndex].shareCommitment.y)
+    //         );
+    //         metadata.addPublicShare(pubPolyID, newPubShare);
+    //       }
+    //     }
+    //   }
+    // }
+    // return metadata;
   }
 }
 

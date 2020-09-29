@@ -37,6 +37,12 @@ class Point implements IPoint {
     };
   }
 
+  static fromCompressedPub(value: string): Point {
+    const key = ecCurve.keyFromPublic(value, "hex");
+    const pt = key.getPublic();
+    return new Point(pt.getX(), pt.getY());
+  }
+
   static fromJSON(value: StringifiedType): Point {
     const { x, y } = value;
     return new Point(x, y);
