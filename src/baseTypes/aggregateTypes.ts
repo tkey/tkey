@@ -202,7 +202,7 @@ export interface ITKeyApi {
   outputShare(shareIndex: BNString): ShareStore;
   encrypt(data: Buffer): Promise<EncryptedMessage>;
   decrypt(encryptedMesage: EncryptedMessage): Promise<Buffer>;
-  getTKeyStore(moduleName: string, key: string): Promise<ISeedPhraseStore>;
+  getTKeyStore(moduleName: string, key: string): Promise<unknown>;
   deleteKey(moduleName: string, key: string);
   setTKeyStore(moduleName: string, data: unknown): Promise<void>;
 }

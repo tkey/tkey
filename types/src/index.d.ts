@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import BN from "bn.js";
 import { Polynomial, ShareStore, ShareStoreMap, ShareStorePolyIDShareIndexMap } from "./base";
-import { CatchupToLatestShareResult, GenerateNewShareResult, IMetadata, InitializeNewKeyResult, ISeedPhraseStore, ITKey, ITKeyApi, KeyDetails, ModuleMap, ReconstructedKeyResult, ReconstructKeyMiddlewareMap, RefreshMiddlewareMap, RefreshSharesResult, TKeyArgs } from "./baseTypes/aggregateTypes";
+import { CatchupToLatestShareResult, GenerateNewShareResult, IMetadata, InitializeNewKeyResult, ITKey, ITKeyApi, KeyDetails, ModuleMap, ReconstructedKeyResult, ReconstructKeyMiddlewareMap, RefreshMiddlewareMap, RefreshSharesResult, TKeyArgs } from "./baseTypes/aggregateTypes";
 import { BNString, EncryptedMessage, IServiceProvider, IStorageLayer, PolynomialID, StringifiedType } from "./baseTypes/commonTypes";
 import Metadata from "./metadata";
 declare class ThresholdKey implements ITKey {
@@ -55,7 +55,7 @@ declare class ThresholdKey implements ITKey {
     decrypt(encryptedMessage: EncryptedMessage): Promise<Buffer>;
     setTKeyStore(moduleName: string, data: unknown): Promise<void>;
     deleteKey(moduleName: string, key: string): Promise<void>;
-    getTKeyStore(moduleName: string, key: string): Promise<ISeedPhraseStore>;
+    getTKeyStore(moduleName: string, key: string): Promise<unknown>;
     toJSON(): StringifiedType;
     static fromJSON(value: StringifiedType, args: TKeyArgs): Promise<ThresholdKey>;
 }

@@ -18,7 +18,6 @@ import {
   GenerateNewShareResult,
   IMetadata,
   InitializeNewKeyResult,
-  ISeedPhraseStore,
   ITKey,
   ITKeyApi,
   KeyDetails,
@@ -694,7 +693,7 @@ class ThresholdKey implements ITKey {
     await this.syncShareMetadata();
   }
 
-  async getTKeyStore(moduleName: string, key: string): Promise<ISeedPhraseStore> {
+  async getTKeyStore(moduleName: string, key: string): Promise<unknown> {
     // Get tkey domain
     const { metadata } = this;
     const rawTkeyStore = metadata.getTkeyStoreDomain(this.tkeyStoreModuleName);
@@ -707,7 +706,7 @@ class ThresholdKey implements ITKey {
     // decrypt and parsing
     const decryptedKeyStore = await this.decrypt(JSON.parse(keyStore));
     const newString = decryptedKeyStore.toString();
-    const tkeyStoreData = JSON.parse(newString.toString()) as ISeedPhraseStore;
+    const tkeyStoreData = JSON.parse(newString.toString());
     return tkeyStoreData;
   }
 
