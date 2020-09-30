@@ -5,8 +5,9 @@ declare class Point implements IPoint {
     x: BN;
     y: BN;
     constructor(x: BNString, y: BNString);
-    encode(enc: "arr"): Buffer;
+    encode(enc: string, params?: any): Buffer;
     toJSON(): StringifiedType;
+    static fromCompressedPub(value: string): Point;
     static fromJSON(value: StringifiedType): Point;
 }
 export default Point;

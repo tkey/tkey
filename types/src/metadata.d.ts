@@ -1,4 +1,4 @@
-import { Point, Polynomial, PublicPolynomial, PublicPolynomialMap, PublicShare, PublicSharePolyIDShareIndexMap, ScopedStore, Share, ShareMap, ShareStore } from "./base";
+import { Point, Polynomial, PublicPolynomial, PublicPolynomialMap, PublicShare, PublicSharePolyIDShareIndexMap, Share, ShareMap, ShareStore } from "./base";
 import { IMetadata } from "./baseTypes/aggregateTypes";
 import { PolynomialID, ShareDescriptionMap, StringifiedType } from "./baseTypes/commonTypes";
 declare class Metadata implements IMetadata {
@@ -13,7 +13,9 @@ declare class Metadata implements IMetadata {
     tkeyStore: {
         [moduleName: string]: unknown;
     };
-    scopedStore: ScopedStore;
+    scopedStore: {
+        [moduleName: string]: unknown;
+    };
     constructor(input: Point);
     getShareIndexesForPolynomial(polyID: PolynomialID): Array<string>;
     getLatestPublicPolynomial(): PublicPolynomial;
@@ -24,8 +26,8 @@ declare class Metadata implements IMetadata {
     setTkeyStoreDomain(key: string, obj: unknown): void;
     getTkeyStoreDomain(key: string): unknown;
     addFromPolynomialAndShares(polynomial: Polynomial, shares: Share[] | ShareMap): void;
-    setScopedStore(scopedStore: ScopedStore): void;
-    getEncryptedShare(): ShareStore;
+    setScopedStore(domain: string, data: unknown): void;
+    getEncryptedShare(shareStore: ShareStore): Promise<ShareStore>;
     getShareDescription(): ShareDescriptionMap;
     addShareDescription(shareIndex: string, description: string): void;
     deleteShareDescription(shareIndex: string, description: string): void;

@@ -7,8 +7,8 @@ declare class ShareStore implements ISerializable {
     toJSON(): StringifiedType;
     static fromJSON(value: StringifiedType): ShareStore;
 }
-export declare type ScopedStore = {
-    encryptedShare: ShareStore;
+export declare type EncryptedShareStore = {
+    [shareCommitment: string]: ShareStore;
 };
 export declare type ShareStoreMap = {
     [shareIndex: string]: ShareStore;

@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import { DirectWebSDKArgs } from "@toruslabs/torus-direct-web-sdk";
 import BN from "bn.js";
-import { Point, Polynomial, PublicPolynomial, PublicPolynomialMap, PublicShare, PublicSharePolyIDShareIndexMap, ScopedStore, Share, ShareMap, ShareStore, ShareStoreMap, ShareStorePolyIDShareIndexMap } from "../base";
+import { Point, Polynomial, PublicPolynomial, PublicPolynomialMap, PublicShare, PublicSharePolyIDShareIndexMap, Share, ShareMap, ShareStore, ShareStoreMap, ShareStorePolyIDShareIndexMap } from "../base";
 import { BNString, EncryptedMessage, ISerializable, IServiceProvider, IStorageLayer, PolynomialID, ShareDescriptionMap } from "./commonTypes";
 export interface IModule {
     moduleName: string;
@@ -29,7 +29,9 @@ export interface IMetadata extends ISerializable {
     tkeyStore: {
         [moduleName: string]: unknown;
     };
-    scopedStore: ScopedStore;
+    scopedStore: {
+        [moduleName: string]: unknown;
+    };
     getShareIndexesForPolynomial(polyID: PolynomialID): Array<string>;
     getLatestPublicPolynomial(): PublicPolynomial;
     addPublicPolynomial(publicPolynomial: PublicPolynomial): void;
@@ -39,8 +41,8 @@ export interface IMetadata extends ISerializable {
     setTkeyStoreDomain(key: string, obj: unknown): void;
     getTkeyStoreDomain(key: string): unknown;
     addFromPolynomialAndShares(polynomial: Polynomial, shares: Array<Share> | ShareMap): void;
-    setScopedStore(scopedStore: ScopedStore): void;
-    getEncryptedShare(): ShareStore;
+    setScopedStore(domain: string, data: unknown): void;
+    getEncryptedShare(shareStore: ShareStore): Promise<ShareStore>;
     getShareDescription(): ShareDescriptionMap;
     addShareDescription(shareIndex: string, description: string): void;
     deleteShareDescription(shareIndex: string, description: string): void;
@@ -133,7 +135,7 @@ export interface ITKeyApi {
     getMetadata(): IMetadata;
     initialize(input?: ShareStore, importKey?: BN): Promise<KeyDetails>;
     catchupToLatestShare(shareStore: ShareStore): Promise<CatchupToLatestShareResult>;
-    syncShareMetadata(adjustScopedStore?: (ss: ScopedStore) => ScopedStore): Promise<void>;
+    syncShareMetadata(adjustScopedStore?: (ss: unknown) => unknown): Promise<void>;
     inputShareSafe(shareStore: ShareStore): Promise<void>;
     setDeviceStorage(storeDeviceStorage: (deviceShareStore: ShareStore) => Promise<void>): void;
     addShareDescription(shareIndex: string, description: string, updateMetadata?: boolean): Promise<void>;

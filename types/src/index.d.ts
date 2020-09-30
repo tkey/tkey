@@ -1,6 +1,6 @@
 /// <reference types="node" />
 import BN from "bn.js";
-import { Polynomial, ScopedStore, ShareStore, ShareStoreMap, ShareStorePolyIDShareIndexMap } from "./base";
+import { Polynomial, ShareStore, ShareStoreMap, ShareStorePolyIDShareIndexMap } from "./base";
 import { CatchupToLatestShareResult, GenerateNewShareResult, IMetadata, InitializeNewKeyResult, ISeedPhraseStore, ITKey, ITKeyApi, KeyDetails, ModuleMap, ReconstructedKeyResult, ReconstructKeyMiddlewareMap, RefreshMiddlewareMap, RefreshSharesResult, TKeyArgs } from "./baseTypes/aggregateTypes";
 import { BNString, EncryptedMessage, IServiceProvider, IStorageLayer, PolynomialID, StringifiedType } from "./baseTypes/commonTypes";
 import Metadata from "./metadata";
@@ -22,7 +22,12 @@ declare class ThresholdKey implements ITKey {
     initialize(input?: ShareStore, importKey?: BN): Promise<KeyDetails>;
     private setModuleReferences;
     private initializeModules;
-    catchupToLatestShare(shareStore: ShareStore): Promise<CatchupToLatestShareResult>;
+    /**
+     * catchupToLatestShare recursively loops fetches metadata of the provided share and checks if there is an encrypted share for it.
+     * @param shareStore share to start of with
+     * @param polyID if specified, polyID to refresh to if it exists
+     */
+    catchupToLatestShare(shareStore: ShareStore, polyID?: PolynomialID): Promise<CatchupToLatestShareResult>;
     reconstructKey(): Promise<ReconstructedKeyResult>;
     reconstructLatestPoly(): Polynomial;
     generateNewShare(): Promise<GenerateNewShareResult>;
@@ -39,8 +44,8 @@ declare class ThresholdKey implements ITKey {
     getKey(): Array<BN>;
     getCurrentShareIndexes(): Array<string>;
     getKeyDetails(): KeyDetails;
-    syncShareMetadata(adjustScopedStore?: (ss: ScopedStore) => ScopedStore): Promise<void>;
-    syncMultipleShareMetadata(shares: Array<BN>, adjustScopedStore?: (ss: ScopedStore) => ScopedStore): Promise<void>;
+    syncShareMetadata(adjustScopedStore?: (ss: unknown) => unknown): Promise<void>;
+    syncMultipleShareMetadata(shares: Array<BN>, adjustScopedStore?: (ss: unknown) => unknown): Promise<void>;
     addRefreshMiddleware(moduleName: string, middleware: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap) => unknown): void;
     addReconstructKeyMiddleware(moduleName: string, middleware: () => Promise<Array<BN>>): void;
     setDeviceStorage(storeDeviceStorage: (deviceShareStore: ShareStore) => Promise<void>): void;
