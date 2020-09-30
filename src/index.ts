@@ -32,7 +32,7 @@ import { BNString, EncryptedMessage, IServiceProvider, IStorageLayer, Polynomial
 import { generateRandomPolynomial, lagrangeInterpolatePolynomial, lagrangeInterpolation } from "./lagrangeInterpolatePolynomial";
 import Metadata from "./metadata";
 import TorusServiceProvider from "./serviceProvider/TorusServiceProvider";
-import TorusStorageLayer from "./storage-layer";
+import TorusStorageLayer from "./storageLayer/TorusStorageLayer";
 import { decrypt, encrypt, KEY_NOT_FOUND, prettyPrintError } from "./utils";
 
 // TODO: handle errors for get and set with retries

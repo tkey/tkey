@@ -45,9 +45,6 @@ export declare type TorusStorageLayerAPIParams = {
     namespace: string;
 };
 export interface IStorageLayer extends ISerializable {
-    enableLogging: boolean;
-    hostUrl: string;
-    serviceProvider: IServiceProvider;
     getMetadata<T>(privKey?: BN): Promise<T>;
     setMetadata<T>(input: T, privKey?: BN): Promise<{
         message: string;
@@ -55,11 +52,14 @@ export interface IStorageLayer extends ISerializable {
     setMetadataBulk<T>(input: T[], privKey?: BN[]): Promise<{
         message: string;
     }[]>;
-    generateMetadataParams(message: unknown, privKey: BN): TorusStorageLayerAPIParams;
 }
 export declare type TorusStorageLayerArgs = {
     enableLogging?: boolean;
     hostUrl?: string;
+    serviceProvider: IServiceProvider;
+};
+export declare type MockStorageLayerArgs = {
+    dataMap: any;
     serviceProvider: IServiceProvider;
 };
 export declare type ShareDescriptionMap = {

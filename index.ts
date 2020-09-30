@@ -6,7 +6,7 @@ import SeedPhraseModule from "./src/seedPhrase/SeedPhrase";
 import ServiceProviderBase from "./src/serviceProvider/ServiceProviderBase";
 import TorusServiceProvider from "./src/serviceProvider/TorusServiceProvider";
 import ShareTransferModule from "./src/shareTransfer/ShareTransferModule";
-import TorusStorageLayer from "./src/storage-layer";
+import TorusStorageLayer from "./src/storageLayer/TorusStorageLayer";
 import WebStorageModule from "./src/webStorage/WebStorageModule";
 
 export default ThresholdKey;

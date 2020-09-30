@@ -22,14 +22,20 @@ import MetamaskSeedPhraseFormat from "../src/seedPhrase/MetamaskSeedPhraseFormat
 import SeedPhraseModule from "../src/seedPhrase/SeedPhrase";
 import ServiceProviderBase from "../src/serviceProvider/ServiceProviderBase";
 import ShareTransferModule from "../src/shareTransfer/ShareTransferModule";
-import TorusStorageLayer from "../src/storage-layer";
+import MockStorageLayer from "../src/storageLayer/MockStorageLayer";
+import TorusStorageLayer from "../src/storageLayer/TorusStorageLayer";
 import { ecCurve } from "../src/utils";
 
+function initStorageLayer(mocked, extraParams) {
+  return mocked ? new MockStorageLayer({ serviceProvider: extraParams.serviceProvider }) : new TorusStorageLayer(extraParams);
+}
+
+const mocked = true;
 const PRIVATE_KEY = "e70fb5f5970b363879bc36f54d4fc0ad77863bfd059881159251f50f48863acf";
 const PRIVATE_KEY_2 = "2e6824ef22a58b7b5c8938c38e9debd03611f074244f213943e3fa3047ef2385";
 
 const defaultSP = new ServiceProviderBase({ postboxKey: PRIVATE_KEY });
-const defaultSL = new TorusStorageLayer({ serviceProvider: defaultSP, hostUrl: "http://localhost:5051" });
+const defaultSL = initStorageLayer(mocked, { serviceProvider: defaultSP, hostUrl: "http://localhost:5051" });
 
 global.fetch = fetch;
 global.atob = atob;
@@ -201,7 +207,7 @@ describe("tkey reconstruction", function () {
   it("#should be able to detect a new user and reconstruct key on initialize", async function () {
     const privKey = new BN(generatePrivate());
     const uniqueSP = new ServiceProviderBase({ postboxKey: privKey.toString("hex") });
-    const uniqueSL = new TorusStorageLayer({ serviceProvider: uniqueSP });
+    const uniqueSL = initStorageLayer(true, { serviceProvider: uniqueSP });
     const tb = new ThresholdKey({ serviceProvider: uniqueSP, storageLayer: uniqueSL });
     await tb.initialize();
     const reconstructedKey = await tb.reconstructKey();
@@ -238,7 +244,7 @@ describe("TorusStorageLayer", function () {
   it("#should get or set correctly", async function () {
     const privKey = PRIVATE_KEY;
     const tsp = new ServiceProviderBase({ postboxKey: privKey });
-    const storageLayer = new TorusStorageLayer({ enableLogging: true, serviceProvider: tsp });
+    const storageLayer = initStorageLayer(true, { enableLogging: true, serviceProvider: tsp });
     const message = { test: Math.random().toString(36).substring(7) };
     await storageLayer.setMetadata(message, tsp.postboxKey);
     const resp = await storageLayer.getMetadata(tsp.postboxKey);
@@ -248,7 +254,7 @@ describe("TorusStorageLayer", function () {
     const privKey = PRIVATE_KEY;
     const privKeyBN = new BN(privKey, 16);
     const tsp = new ServiceProviderBase({ postboxKey: privKey });
-    const storageLayer = new TorusStorageLayer({ enableLogging: true, serviceProvider: tsp });
+    const storageLayer = initStorageLayer(true, { enableLogging: true, serviceProvider: tsp });
     const message = { test: Math.random().toString(36).substring(7) };
     await storageLayer.setMetadata(message, privKeyBN);
     const resp = await storageLayer.getMetadata(privKeyBN);
@@ -258,7 +264,7 @@ describe("TorusStorageLayer", function () {
     const privKey = PRIVATE_KEY;
     const privKeyBN = new BN(privKey, 16);
     const tsp = new ServiceProviderBase({ postboxKey: privKey });
-    const storageLayer = new TorusStorageLayer({ enableLogging: true, serviceProvider: tsp });
+    const storageLayer = initStorageLayer(true, { enableLogging: true, serviceProvider: tsp });
     const message = { test: Math.random().toString(36).substring(7) };
 
     const privKey2 = PRIVATE_KEY_2;

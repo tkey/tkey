@@ -3,7 +3,7 @@ import BN from "bn.js";
 import stringify from "json-stable-stringify";
 import { keccak256 } from "web3-utils";
 
-import { getPubKeyECC, getPubKeyPoint, toPrivKeyEC, toPrivKeyECC } from "./base";
+import { getPubKeyECC, getPubKeyPoint, toPrivKeyEC, toPrivKeyECC } from "../base";
 import {
   EncryptedMessage,
   IServiceProvider,
@@ -11,8 +11,8 @@ import {
   StringifiedType,
   TorusStorageLayerAPIParams,
   TorusStorageLayerArgs,
-} from "./baseTypes/commonTypes";
-import { decrypt, encrypt, KEY_NOT_FOUND } from "./utils";
+} from "../baseTypes/commonTypes";
+import { decrypt, encrypt, KEY_NOT_FOUND } from "../utils";
 
 class TorusStorageLayer implements IStorageLayer {
   enableLogging: boolean;
