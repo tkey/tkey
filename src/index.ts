@@ -18,7 +18,6 @@ import {
   GenerateNewShareResult,
   IMetadata,
   InitializeNewKeyResult,
-  ISeedPhraseStore,
   ITKey,
   ITKeyApi,
   KeyDetails,
@@ -174,17 +173,18 @@ class ThresholdKey implements ITKey {
     } catch (err) {
       throw new Error(`getMetadata in initialize errored: ${prettyPrintError(err)}`);
     }
-    let nextShare: ShareStore;
-    const shareMetadata = Metadata.fromJSON(metadata);
-    // if matches specified polyID return it
-    if (polyID) {
-      if (shareStore.polynomialID === polyID) {
-        return { latestShare: shareStore, shareMetadata };
-      }
-    }
 
+    let shareMetadata: Metadata;
     try {
-      nextShare = await shareMetadata.getEncryptedShare(shareStore);
+      // let nextShare: ShareStore;
+      shareMetadata = Metadata.fromJSON(metadata);
+      // if matches specified polyID return it
+      if (polyID) {
+        if (shareStore.polynomialID === polyID) {
+          return { latestShare: shareStore, shareMetadata };
+        }
+      }
+      const nextShare = await shareMetadata.getEncryptedShare(shareStore);
       return this.catchupToLatestShare(nextShare);
     } catch (err) {
       return { latestShare: shareStore, shareMetadata };
@@ -693,7 +693,7 @@ class ThresholdKey implements ITKey {
     await this.syncShareMetadata();
   }
 
-  async getTKeyStore(moduleName: string, key: string): Promise<ISeedPhraseStore> {
+  async getTKeyStore(moduleName: string, key: string): Promise<unknown> {
     // Get tkey domain
     const { metadata } = this;
     const rawTkeyStore = metadata.getTkeyStoreDomain(this.tkeyStoreModuleName);
@@ -706,7 +706,7 @@ class ThresholdKey implements ITKey {
     // decrypt and parsing
     const decryptedKeyStore = await this.decrypt(JSON.parse(keyStore));
     const newString = decryptedKeyStore.toString();
-    const tkeyStoreData = JSON.parse(newString.toString()) as ISeedPhraseStore;
+    const tkeyStoreData = JSON.parse(newString.toString());
     return tkeyStoreData;
   }
 

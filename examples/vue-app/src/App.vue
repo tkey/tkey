@@ -29,7 +29,7 @@
         <input v-model="answer" placeholder="enter your answer" />
       </div>
       <button @click="generateNewShareWithSecurityQuestions">Create a new password</button>
-      <button @click="inputShareFromSecurityQuestions">Add password</button>
+      <button @click="inputShareFromSecurityQuestions">input password share (for reconstructKey)</button>
       <!-- <button @click="generateNewShare">generateNewShare</button> -->
       <br />
       <h4>Share Transer</h4>

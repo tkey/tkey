@@ -128,7 +128,7 @@ export interface ISeedPhraseFormat {
 export interface ISubTkeyModule extends IModule {
     setTKeyStore(moduleName: string, data: unknown): Promise<void>;
     deleteKey(moduleName: string, key: string): any;
-    getTKeyStore(moduleName: string, key: string): Promise<ISeedPhraseStore>;
+    getTKeyStore(moduleName: string, key: string): Promise<unknown>;
 }
 export interface ITKeyApi {
     storageLayer: IStorageLayer;
@@ -146,7 +146,7 @@ export interface ITKeyApi {
     outputShare(shareIndex: BNString): ShareStore;
     encrypt(data: Buffer): Promise<EncryptedMessage>;
     decrypt(encryptedMesage: EncryptedMessage): Promise<Buffer>;
-    getTKeyStore(moduleName: string, key: string): Promise<ISeedPhraseStore>;
+    getTKeyStore(moduleName: string, key: string): Promise<unknown>;
     deleteKey(moduleName: string, key: string): any;
     setTKeyStore(moduleName: string, data: unknown): Promise<void>;
 }
@@ -170,7 +170,7 @@ export interface ITKey extends ITKeyApi, ISerializable {
     getKeyDetails(): KeyDetails;
     encrypt(data: Buffer): Promise<EncryptedMessage>;
     decrypt(encryptedMesage: EncryptedMessage): Promise<Buffer>;
-    getTKeyStore(moduleName: string, key: string): Promise<ISeedPhraseStore>;
+    getTKeyStore(moduleName: string, key: string): Promise<unknown>;
     deleteKey(moduleName: string, key: string): any;
     setTKeyStore(moduleName: string, data: unknown): Promise<void>;
 }

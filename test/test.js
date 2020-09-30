@@ -36,6 +36,7 @@ global.atob = atob;
 global.btoa = btoa;
 
 function compareBNArray(a, b, message) {
+  if (a.length !== b.length) fail(message);
   return a.map((el, index) => {
     // console.log(el, b[index], el.cmp(b[index]));
     // eslint-disable-next-line no-unused-expressions
@@ -309,6 +310,54 @@ describe("Metadata", function () {
     const deserializedMetadata2 = Metadata.fromJSON(JSON.parse(secondSerialization));
     deepStrictEqual(deserializedMetadata2, deserializedMetadata, "metadata and deserializedMetadata should be equal");
   });
+  it("#should serialize and deserialize into JSON with tkey store seamlessly", async function () {
+    const privKey = PRIVATE_KEY;
+    const privKeyBN = new BN(privKey, 16);
+    // create a random poly and respective shares
+    const shareIndexes = [new BN(1), new BN(2)];
+    for (let i = 1; i <= 2; i += 1) {
+      let ran = generatePrivate();
+      while (ran < 2) {
+        ran = generatePrivate();
+      }
+      shareIndexes.push(new BN(ran));
+    }
+    const poly = generateRandomPolynomial(1, privKeyBN);
+    const shares = poly.generateShares(shareIndexes);
+    const metadata = new Metadata(getPubKeyPoint(privKeyBN));
+    metadata.addFromPolynomialAndShares(poly, shares);
+    metadata.setTkeyStoreDomain("something", { test: "oh this is an object" });
+    const serializedMetadata = stringify(metadata);
+    const deserializedMetadata = Metadata.fromJSON(JSON.parse(serializedMetadata));
+    const secondSerialization = stringify(deserializedMetadata);
+    deepStrictEqual(serializedMetadata, secondSerialization, "serializedMetadata should be equal");
+    const deserializedMetadata2 = Metadata.fromJSON(JSON.parse(secondSerialization));
+    deepStrictEqual(deserializedMetadata2, deserializedMetadata, "metadata and deserializedMetadata should be equal");
+  });
+  it("#should serialize and deserialize into JSON with tkey store seamlessly", async function () {
+    const privKey = PRIVATE_KEY;
+    const privKeyBN = new BN(privKey, 16);
+    // create a random poly and respective shares
+    const shareIndexes = [new BN(1), new BN(2)];
+    for (let i = 1; i <= 2; i += 1) {
+      let ran = generatePrivate();
+      while (ran < 2) {
+        ran = generatePrivate();
+      }
+      shareIndexes.push(new BN(ran));
+    }
+    const poly = generateRandomPolynomial(1, privKeyBN);
+    const shares = poly.generateShares(shareIndexes);
+    const metadata = new Metadata(getPubKeyPoint(privKeyBN));
+    metadata.addFromPolynomialAndShares(poly, shares);
+    metadata.setScopedStore("something", { test: "oh this is an object" });
+    const serializedMetadata = stringify(metadata);
+    const deserializedMetadata = Metadata.fromJSON(JSON.parse(serializedMetadata));
+    const secondSerialization = stringify(deserializedMetadata);
+    deepStrictEqual(serializedMetadata, secondSerialization, "serializedMetadata should be equal");
+    const deserializedMetadata2 = Metadata.fromJSON(JSON.parse(secondSerialization));
+    deepStrictEqual(deserializedMetadata2, deserializedMetadata, "metadata and deserializedMetadata should be equal");
+  });
 });
 
 describe("Point", function () {
@@ -316,15 +365,15 @@ describe("Point", function () {
     const secret = new BN(generatePrivate());
     const point = getPubKeyPoint(secret);
     const result = point.encode("elliptic-compressed", { ec: ecCurve });
-    if (result.toString().slice(2) !== point.x.toString("hex")) {
-      fail("elliptic format x should be equal");
+    if (result.toString().slice(2) !== point.x.toString("hex", 64)) {
+      fail(`elliptic format x should be equal ${secret} ${result.toString()} ${point.x.toString("hex")} ${secret.umod(ecCurve.n)}`);
     }
   });
   it("#should decode into point for elliptic format compressed", async function () {
     const secret = new BN(generatePrivate());
     const point = getPubKeyPoint(secret);
     const result = point.encode("elliptic-compressed", { ec: ecCurve });
-    if (result.toString().slice(2) !== point.x.toString("hex")) {
+    if (result.toString().slice(2) !== point.x.toString("hex", 64)) {
       fail("elliptic format x should be equal");
     }
 
@@ -340,7 +389,7 @@ describe("Point", function () {
     const secret = new BN(generatePrivate());
     const point = getPubKeyPoint(secret);
     const result = point.encode("elliptic-compressed", { ec: ecCurve });
-    if (result.toString().slice(2) !== point.x.toString("hex")) {
+    if (result.toString().slice(2) !== point.x.toString("hex", 64)) {
       fail("elliptic format x should be equal");
     }
 

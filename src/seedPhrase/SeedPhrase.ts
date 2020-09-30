@@ -36,7 +36,7 @@ class SeedPhraseModule implements IModule {
   }
 
   async getSeedPhrase(key: string): Promise<ISeedPhraseStore> {
-    return this.tbSDK.getTKeyStore(this.moduleName, key);
+    return (this.tbSDK.getTKeyStore(this.moduleName, key) as unknown) as ISeedPhraseStore;
   }
 
   async getAccounts(): Promise<Array<BN>> {
