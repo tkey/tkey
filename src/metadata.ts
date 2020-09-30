@@ -187,7 +187,6 @@ class Metadata implements IMetadata {
     if (scopedStore) metadata.scopedStore = scopedStore;
     if (generalStore.shareDescriptions) metadata.shareDescriptions = generalStore.shareDescriptions; // cater to shareDescriptions
 
-    // eslint-disable-next-line guard-for-in
     for (let i = 0; i < polyIDList.length; i += 1) {
       const serializedPolyID = polyIDList[i];
       const arrPolyID = serializedPolyID.split("|");

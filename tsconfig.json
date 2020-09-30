@@ -10,6 +10,10 @@
     "noImplicitThis": true,
     "declaration": true,
     "downlevelIteration": true,
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "typeRoots": [
+      "./@types", // custom merged types MUST be first in a list
+      "./node_modules/@types"
+    ]
   }
 }
