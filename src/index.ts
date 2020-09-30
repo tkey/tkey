@@ -174,17 +174,18 @@ class ThresholdKey implements ITKey {
     } catch (err) {
       throw new Error(`getMetadata in initialize errored: ${prettyPrintError(err)}`);
     }
-    let nextShare: ShareStore;
-    const shareMetadata = Metadata.fromJSON(metadata);
-    // if matches specified polyID return it
-    if (polyID) {
-      if (shareStore.polynomialID === polyID) {
-        return { latestShare: shareStore, shareMetadata };
-      }
-    }
 
+    let shareMetadata: Metadata;
     try {
-      nextShare = await shareMetadata.getEncryptedShare(shareStore);
+      // let nextShare: ShareStore;
+      shareMetadata = Metadata.fromJSON(metadata);
+      // if matches specified polyID return it
+      if (polyID) {
+        if (shareStore.polynomialID === polyID) {
+          return { latestShare: shareStore, shareMetadata };
+        }
+      }
+      const nextShare = await shareMetadata.getEncryptedShare(shareStore);
       return this.catchupToLatestShare(nextShare);
     } catch (err) {
       return { latestShare: shareStore, shareMetadata };

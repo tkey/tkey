@@ -179,7 +179,7 @@ export interface ISeedPhraseFormat {
 export interface ISubTkeyModule extends IModule {
   setTKeyStore(moduleName: string, data: unknown): Promise<void>;
   deleteKey(moduleName: string, key: string);
-  getTKeyStore(moduleName: string, key: string): Promise<ISeedPhraseStore>;
+  getTKeyStore(moduleName: string, key: string): Promise<unknown>;
 }
 
 export interface ITKeyApi {
@@ -238,7 +238,7 @@ export interface ITKey extends ITKeyApi, ISerializable {
 
   encrypt(data: Buffer): Promise<EncryptedMessage>;
   decrypt(encryptedMesage: EncryptedMessage): Promise<Buffer>;
-  getTKeyStore(moduleName: string, key: string): Promise<ISeedPhraseStore>;
+  getTKeyStore(moduleName: string, key: string): Promise<unknown>;
   deleteKey(moduleName: string, key: string);
   setTKeyStore(moduleName: string, data: unknown): Promise<void>;
 }

@@ -172,7 +172,7 @@ class Metadata implements IMetadata {
       polyIDList: serializedPolyIDList,
       scopedStore: this.scopedStore,
       generalStore: generalStoreCopy,
-      tKeyStore: this.tkeyStore,
+      tkeyStore: this.tkeyStore,
     };
   }
 
