@@ -365,15 +365,15 @@ describe("Point", function () {
     const secret = new BN(generatePrivate());
     const point = getPubKeyPoint(secret);
     const result = point.encode("elliptic-compressed", { ec: ecCurve });
-    if (result.toString().slice(2) !== point.x.toString("hex")) {
-      fail("elliptic format x should be equal");
+    if (result.toString().slice(2) !== point.x.toString("hex", 64)) {
+      fail(`elliptic format x should be equal ${secret} ${result.toString()} ${point.x.toString("hex")} ${secret.umod(ecCurve.n)}`);
     }
   });
   it("#should decode into point for elliptic format compressed", async function () {
     const secret = new BN(generatePrivate());
     const point = getPubKeyPoint(secret);
     const result = point.encode("elliptic-compressed", { ec: ecCurve });
-    if (result.toString().slice(2) !== point.x.toString("hex")) {
+    if (result.toString().slice(2) !== point.x.toString("hex", 64)) {
       fail("elliptic format x should be equal");
     }
 
@@ -389,7 +389,7 @@ describe("Point", function () {
     const secret = new BN(generatePrivate());
     const point = getPubKeyPoint(secret);
     const result = point.encode("elliptic-compressed", { ec: ecCurve });
-    if (result.toString().slice(2) !== point.x.toString("hex")) {
+    if (result.toString().slice(2) !== point.x.toString("hex", 64)) {
       fail("elliptic format x should be equal");
     }
 
