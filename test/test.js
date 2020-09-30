@@ -1,5 +1,5 @@
 import { generatePrivate } from "@toruslabs/eccrypto";
-import { deepEqual, deepStrictEqual, fail, strictEqual } from "assert";
+import { deepStrictEqual, fail, strictEqual } from "assert";
 // const { privKeyBnToPubKeyECC }  from "../src/utils";
 import atob from "atob";
 import BN from "bn.js";
@@ -58,7 +58,6 @@ describe("tkey", function () {
   });
 
   it("#should be able to reconstruct key when initializing a key", async function () {
-    debugger;
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
     const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize();
@@ -306,9 +305,9 @@ describe("Metadata", function () {
     const serializedMetadata = stringify(metadata);
     const deserializedMetadata = Metadata.fromJSON(JSON.parse(serializedMetadata));
     const secondSerialization = stringify(deserializedMetadata);
-    deepEqual(serializedMetadata, secondSerialization, "serializedMetadata should be equal");
+    deepStrictEqual(serializedMetadata, secondSerialization, "serializedMetadata should be equal");
     const deserializedMetadata2 = Metadata.fromJSON(JSON.parse(secondSerialization));
-    deepEqual(deserializedMetadata2, deserializedMetadata, "metadata and deserializedMetadata should be equal");
+    deepStrictEqual(deserializedMetadata2, deserializedMetadata, "metadata and deserializedMetadata should be equal");
   });
 });
 

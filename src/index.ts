@@ -34,7 +34,6 @@ import { generateRandomPolynomial, lagrangeInterpolatePolynomial, lagrangeInterp
 import Metadata from "./metadata";
 import TorusServiceProvider from "./serviceProvider/TorusServiceProvider";
 import TorusStorageLayer from "./storage-layer";
-// import TkeyStore from "./tkeyModule/TkeyStore";
 import { decrypt, encrypt, KEY_NOT_FOUND, prettyPrintError } from "./utils";
 
 // TODO: handle errors for get and set with retries
@@ -255,14 +254,9 @@ class ThresholdKey implements ITKey {
       let allKeys = [];
       for (const moduleName in this.reconstructKeyMiddleware) {
         if (Object.prototype.hasOwnProperty.call(this.reconstructKeyMiddleware, moduleName)) {
-          try {
-            // eslint-disable-next-line no-await-in-loop
-            const extraKeys = await this.reconstructKeyMiddleware[moduleName]();
-            allKeys = allKeys.concat(extraKeys);
-          } catch (err) {
-            // eslint-disable-next-line no-unused-expressions
-            undefined;
-          }
+          // eslint-disable-next-line no-await-in-loop
+          const extraKeys = await this.reconstructKeyMiddleware[moduleName]();
+          allKeys = allKeys.concat(extraKeys);
         }
       }
       returnObject.seedPhrase = allKeys;

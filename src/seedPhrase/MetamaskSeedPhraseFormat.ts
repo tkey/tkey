@@ -1,4 +1,3 @@
-// import { post } from "@toruslabs/http-helpers";
 import { mnemonicToSeedSync, validateMnemonic } from "bip39";
 import BN from "bn.js";
 import HDKey from "hdkey";
