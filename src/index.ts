@@ -256,10 +256,10 @@ class ThresholdKey implements ITKey {
         if (Object.prototype.hasOwnProperty.call(this.reconstructKeyMiddleware, moduleName)) {
           // eslint-disable-next-line no-await-in-loop
           const extraKeys = await this.reconstructKeyMiddleware[moduleName]();
+          returnObject[moduleName] = extraKeys;
           allKeys = allKeys.concat(extraKeys);
         }
       }
-      returnObject.seedPhrase = allKeys;
       returnObject.allKeys = [privKey].concat(allKeys);
     }
 

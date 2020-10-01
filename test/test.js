@@ -57,8 +57,15 @@ function compareBNArray(a, b, message) {
 function compareReconstructedKeys(a, b, message) {
   // eslint-disable-next-line no-unused-expressions
   a.privKey.cmp(b.privKey) !== 0 ? fail(message) : undefined;
-  compareBNArray(a.seedPhrase, b.seedPhrase, message);
-  compareBNArray(a.allKeys, b.allKeys, message);
+  if (a.seedPhraseModule && b.seedPhraseModule) {
+    compareBNArray(a.seedPhraseModule, b.seedPhraseModule, message);
+  }
+  if (a.privateKeyModule && b.privateKeyModule) {
+    compareBNArray(a.privateKeyModule, b.privateKeyModule, message);
+  }
+  if (a.allKeys && b.allKeys) {
+    compareBNArray(a.allKeys, b.allKeys, message);
+  }
 }
 
 describe("tkey", function () {
@@ -730,7 +737,7 @@ describe("TkeyStore", function () {
     // console.log(reconstuctedKey);
     compareReconstructedKeys(reconstuctedKey, {
       privKey: resp1.privKey,
-      seedPhrase: [new BN("70dc3117300011918e26b02176945cc15c3d548cf49fd8418d97f93af699e46", "hex")],
+      seedPhraseModule: [new BN("70dc3117300011918e26b02176945cc15c3d548cf49fd8418d97f93af699e46", "hex")],
       allKeys: [resp1.privKey, new BN("70dc3117300011918e26b02176945cc15c3d548cf49fd8418d97f93af699e46", "hex")],
     });
   });
@@ -757,14 +764,85 @@ describe("TkeyStore", function () {
     await tb.initializeNewKey({ initializeModules: true });
 
     const actualPrivateKeys = [
-      "4bd0041b7654a9b16a7268a5de7982f2422b15635c4fd170c140dc4897624390",
-      "1ea6edde61c750ec02896e9ac7fe9ac0b48a3630594fdf52ad5305470a2635c0",
-      "7749e59f398c5ccc01f3131e00abd1d061a03ae2ae59c49bebcee61d419f7cf0",
-      "1a99651a0aab297997bb3374451a2c40c927fab93903c1957fa9444bc4e2c770",
-      "220dad2d2bbb8bc2f731981921a49ee6059ef9d1e5d55ee203527a3157fb7284",
+      new BN("4bd0041b7654a9b16a7268a5de7982f2422b15635c4fd170c140dc4897624390", "hex"),
+      new BN("1ea6edde61c750ec02896e9ac7fe9ac0b48a3630594fdf52ad5305470a2635c0", "hex"),
+      new BN("7749e59f398c5ccc01f3131e00abd1d061a03ae2ae59c49bebcee61d419f7cf0", "hex"),
+      new BN("1a99651a0aab297997bb3374451a2c40c927fab93903c1957fa9444bc4e2c770", "hex"),
+      new BN("220dad2d2bbb8bc2f731981921a49ee6059ef9d1e5d55ee203527a3157fb7284", "hex"),
     ];
     await tb.modules.privateKeyModule.setPrivateKeys(actualPrivateKeys, "secp256k1n");
     const getAccounts = await tb.modules.privateKeyModule.getAccounts();
     deepStrictEqual(actualPrivateKeys, getAccounts);
+  });
+
+  it("#should be able to get/set private keys and seed phrase", async function () {
+    const privateKeyFormat = new SECP256K1Format();
+    const metamaskSeedPhraseFormat = new MetamaskSeedPhraseFormat("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68");
+    const tb = new ThresholdKey({
+      serviceProvider: defaultSP,
+      storageLayer: defaultSL,
+      modules: { seedPhrase: new SeedPhraseModule([metamaskSeedPhraseFormat]), privateKeyModule: new PrivateKeyModule([privateKeyFormat]) },
+    });
+    const resp1 = await tb.initializeNewKey({ initializeModules: true });
+
+    await tb.modules.seedPhrase.setSeedPhrase("seed sock milk update focus rotate barely fade car face mechanic mercy", "HD Key Tree");
+
+    const actualPrivateKeys = [
+      new BN("4bd0041b7654a9b16a7268a5de7982f2422b15635c4fd170c140dc4897624390", "hex"),
+      new BN("1ea6edde61c750ec02896e9ac7fe9ac0b48a3630594fdf52ad5305470a2635c0", "hex"),
+      new BN("7749e59f398c5ccc01f3131e00abd1d061a03ae2ae59c49bebcee61d419f7cf0", "hex"),
+      new BN("1a99651a0aab297997bb3374451a2c40c927fab93903c1957fa9444bc4e2c770", "hex"),
+      new BN("220dad2d2bbb8bc2f731981921a49ee6059ef9d1e5d55ee203527a3157fb7284", "hex"),
+    ];
+    await tb.modules.privateKeyModule.setPrivateKeys(actualPrivateKeys, "secp256k1n");
+
+    const metamaskSeedPhraseFormat2 = new MetamaskSeedPhraseFormat("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68");
+    const tb2 = new ThresholdKey({
+      serviceProvider: defaultSP,
+      storageLayer: defaultSL,
+      modules: { seedPhrase: new SeedPhraseModule([metamaskSeedPhraseFormat2]), privateKeyModule: new PrivateKeyModule([privateKeyFormat]) },
+    });
+    await tb2.initialize();
+    tb2.inputShare(resp1.deviceShare);
+    const reconstuctedKey = await tb2.reconstructKey();
+    // console.log(reconstuctedKey);
+    compareReconstructedKeys(reconstuctedKey, {
+      privKey: resp1.privKey,
+      seedPhraseModule: [new BN("70dc3117300011918e26b02176945cc15c3d548cf49fd8418d97f93af699e46", "hex")],
+      privateKeyModule: [
+        new BN("4bd0041b7654a9b16a7268a5de7982f2422b15635c4fd170c140dc4897624390", "hex"),
+        new BN("1ea6edde61c750ec02896e9ac7fe9ac0b48a3630594fdf52ad5305470a2635c0", "hex"),
+        new BN("7749e59f398c5ccc01f3131e00abd1d061a03ae2ae59c49bebcee61d419f7cf0", "hex"),
+        new BN("1a99651a0aab297997bb3374451a2c40c927fab93903c1957fa9444bc4e2c770", "hex"),
+        new BN("220dad2d2bbb8bc2f731981921a49ee6059ef9d1e5d55ee203527a3157fb7284", "hex"),
+      ],
+      allKeys: [
+        resp1.privKey,
+        new BN("70dc3117300011918e26b02176945cc15c3d548cf49fd8418d97f93af699e46", "hex"),
+        new BN("4bd0041b7654a9b16a7268a5de7982f2422b15635c4fd170c140dc4897624390", "hex"),
+        new BN("1ea6edde61c750ec02896e9ac7fe9ac0b48a3630594fdf52ad5305470a2635c0", "hex"),
+        new BN("7749e59f398c5ccc01f3131e00abd1d061a03ae2ae59c49bebcee61d419f7cf0", "hex"),
+        new BN("1a99651a0aab297997bb3374451a2c40c927fab93903c1957fa9444bc4e2c770", "hex"),
+        new BN("220dad2d2bbb8bc2f731981921a49ee6059ef9d1e5d55ee203527a3157fb7284", "hex"),
+      ],
+    });
+
+    // const tb = new ThresholdKey({
+    //   serviceProvider: defaultSP,
+    //   storageLayer: defaultSL,
+    //   modules: { privateKeyModule: new PrivateKeyModule([privateKeyFormat]) },
+    // });
+    // await tb.initializeNewKey({ initializeModules: true });
+
+    // const actualPrivateKeys = [
+    //   "4bd0041b7654a9b16a7268a5de7982f2422b15635c4fd170c140dc4897624390",
+    //   "1ea6edde61c750ec02896e9ac7fe9ac0b48a3630594fdf52ad5305470a2635c0",
+    //   "7749e59f398c5ccc01f3131e00abd1d061a03ae2ae59c49bebcee61d419f7cf0",
+    //   "1a99651a0aab297997bb3374451a2c40c927fab93903c1957fa9444bc4e2c770",
+    //   "220dad2d2bbb8bc2f731981921a49ee6059ef9d1e5d55ee203527a3157fb7284",
+    // ];
+    // await tb.modules.privateKeyModule.setPrivateKeys(actualPrivateKeys, "secp256k1n");
+    // const getAccounts = await tb.modules.privateKeyModule.getAccounts();
+    // deepStrictEqual(actualPrivateKeys, getAccounts);
   });
 });

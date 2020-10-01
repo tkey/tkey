@@ -1,3 +1,5 @@
+import BN from "bn.js";
+
 import { IModule, IPrivateKeyFormat, ISECP256k1NStore, ITKeyApi } from "../baseTypes/aggregateTypes";
 
 class PrivateKeyModule implements IModule {
@@ -14,13 +16,13 @@ class PrivateKeyModule implements IModule {
 
   setModuleReferences(tbSDK: ITKeyApi): void {
     this.tbSDK = tbSDK;
-    // this.tbSDK.addReconstructKeyMiddleware(this.moduleName, this.getAccounts.bind(this));
+    this.tbSDK.addReconstructKeyMiddleware(this.moduleName, this.getAccounts.bind(this));
   }
 
   // eslint-disable-next-line
   async initialize(): Promise<void> {}
 
-  async setPrivateKeys(privateKeys: string[], privateKeyType: string): Promise<void> {
+  async setPrivateKeys(privateKeys: BN[], privateKeyType: string): Promise<void> {
     const data = {};
     const format = this.privateKeyFormats.find((el) => el.privateKeyType === privateKeyType);
     if (!format) {
@@ -34,7 +36,7 @@ class PrivateKeyModule implements IModule {
     return this.tbSDK.getTKeyStore(this.moduleName, key);
   }
 
-  async getAccounts(): Promise<Array<string>> {
+  async getAccounts(): Promise<Array<BN>> {
     try {
       // Get all private keys
       const promisesArray = this.privateKeyFormats.map((el) => {
@@ -42,7 +44,10 @@ class PrivateKeyModule implements IModule {
       });
       const results = (await Promise.all(promisesArray)) as [ISECP256k1NStore];
       return results.reduce((acc, el) => {
-        acc.push(...el.privateKeys);
+        const bns = el.privateKeys.map((pl) => {
+          return new BN(pl, "hex");
+        });
+        acc.push(...bns);
         return acc;
       }, []);
     } catch (err) {

@@ -170,12 +170,12 @@ export type MetamaskSeedPhraseStore = {
 };
 
 export interface ISECP256k1NStore {
-  privateKeys: string[];
+  privateKeys: BN[];
   privateKeyType: string;
 }
 
 export type SECP256k1NStore = {
-  privateKeys: string[];
+  privateKeys: BN[];
   privateKeyType: string;
 };
 
@@ -187,10 +187,10 @@ export interface ISeedPhraseFormat {
 }
 
 export interface IPrivateKeyFormat {
-  privateKeys: string[];
+  privateKeys: BN[];
   privateKeyType: string;
-  validatePrivateKeys(privateKey: string): boolean;
-  createPrivateKeyStore(privateKey: string[]): SECP256k1NStore;
+  validatePrivateKeys(privateKey: BN): boolean;
+  createPrivateKeyStore(privateKey: BN[]): SECP256k1NStore;
 }
 
 export interface ISubTkeyModule extends IModule {
