@@ -826,23 +826,5 @@ describe("TkeyStore", function () {
         new BN("220dad2d2bbb8bc2f731981921a49ee6059ef9d1e5d55ee203527a3157fb7284", "hex"),
       ],
     });
-
-    // const tb = new ThresholdKey({
-    //   serviceProvider: defaultSP,
-    //   storageLayer: defaultSL,
-    //   modules: { privateKeyModule: new PrivateKeyModule([privateKeyFormat]) },
-    // });
-    // await tb.initializeNewKey({ initializeModules: true });
-
-    // const actualPrivateKeys = [
-    //   "4bd0041b7654a9b16a7268a5de7982f2422b15635c4fd170c140dc4897624390",
-    //   "1ea6edde61c750ec02896e9ac7fe9ac0b48a3630594fdf52ad5305470a2635c0",
-    //   "7749e59f398c5ccc01f3131e00abd1d061a03ae2ae59c49bebcee61d419f7cf0",
-    //   "1a99651a0aab297997bb3374451a2c40c927fab93903c1957fa9444bc4e2c770",
-    //   "220dad2d2bbb8bc2f731981921a49ee6059ef9d1e5d55ee203527a3157fb7284",
-    // ];
-    // await tb.modules.privateKeyModule.setPrivateKeys(actualPrivateKeys, "secp256k1n");
-    // const getAccounts = await tb.modules.privateKeyModule.getAccounts();
-    // deepStrictEqual(actualPrivateKeys, getAccounts);
   });
 });
