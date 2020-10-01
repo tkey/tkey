@@ -119,11 +119,25 @@ export declare type MetamaskSeedPhraseStore = {
     seedPhrase: string;
     numberOfWallets: number;
 };
+export interface ISECP256k1NStore {
+    privateKeys: BN[];
+    privateKeyType: string;
+}
+export declare type SECP256k1NStore = {
+    privateKeys: BN[];
+    privateKeyType: string;
+};
 export interface ISeedPhraseFormat {
     seedPhraseType: string;
     validateSeedPhrase(seedPhrase: string): boolean;
     deriveKeysFromSeedPhrase(seedPhraseStore: ISeedPhraseStore): Array<BN>;
     createSeedPhraseStore(seedPhrase: string): Promise<ISeedPhraseStore>;
+}
+export interface IPrivateKeyFormat {
+    privateKeys: BN[];
+    privateKeyType: string;
+    validatePrivateKeys(privateKey: BN): boolean;
+    createPrivateKeyStore(privateKey: BN[]): SECP256k1NStore;
 }
 export interface ISubTkeyModule extends IModule {
     setTKeyStore(moduleName: string, data: unknown): Promise<void>;

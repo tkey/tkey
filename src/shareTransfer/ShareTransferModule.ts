@@ -36,8 +36,7 @@ class ShareTransferModule implements IModule {
     if (!rawShareTransferStorePointer) {
       shareTransferStorePointer = { pointer: new BN(generatePrivate()) };
       metadata.setGeneralStoreDomain(this.moduleName, shareTransferStorePointer);
-      await this.tbSDK.syncShareMetadata();
-      // await this.tbSDK.storageLayer.setMetadata({}, shareTransferStorePointer.pointer);
+      await this.tbSDK.syncShareMetadata(); // Requires threshold shares
     } else {
       shareTransferStorePointer = new ShareTransferStorePointer(rawShareTransferStorePointer);
     }
@@ -46,14 +45,7 @@ class ShareTransferModule implements IModule {
   async requestNewShare(userAgent: string, availableShareIndexes: Array<string>, callback?: (shareStore: ShareStore) => void): Promise<string> {
     if (this.currentEncKey) throw new Error(`Current request already exists ${this.currentEncKey.toString("hex")}`);
     this.currentEncKey = new BN(generatePrivate());
-    let newShareTransferStore;
-    const shareTransferStore = await this.getShareTransferStore();
-    if (shareTransferStore) {
-      newShareTransferStore = shareTransferStore;
-    } else {
-      newShareTransferStore = {};
-    }
-
+    const newShareTransferStore = (await this.getShareTransferStore()) || {};
     const encPubKeyX = getPubKeyPoint(this.currentEncKey).x.toString("hex");
     newShareTransferStore[encPubKeyX] = new ShareRequest({
       encPubKey: getPubKeyECC(this.currentEncKey),

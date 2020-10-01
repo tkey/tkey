@@ -1,35 +1,59 @@
-// import { IModule, ISubTkeyModule, ITKeyApi, TkeyStoreDataArgs } from "../../baseTypes/aggregateTypes";
-// // import { ecCurve } from "../utils";
-// import TkeyModule from "../TkeyModule";
+import BN from "bn.js";
 
-// class PrivateKeysModule implements IModule {
-//   moduleName: string;
+import { IModule, IPrivateKeyFormat, ISECP256k1NStore, ITKeyApi } from "../baseTypes/aggregateTypes";
 
-//   tbSDK: ITKeyApi;
+class PrivateKeyModule implements IModule {
+  moduleName: string;
 
-//   tkeyModule: ISubTkeyModule;
+  tbSDK: ITKeyApi;
 
-//   constructor() {
-//     this.moduleName = "privateKeysModule";
-//   }
+  privateKeyFormats: IPrivateKeyFormat[];
 
-//   setModuleReferences(tbSDK: ITKeyApi): void {
-//     this.tbSDK = tbSDK;
-//     this.tkeyModule = new TkeyModule();
-//     this.tkeyModule.setModuleReferences(tbSDK);
-//   }
+  constructor(formats: IPrivateKeyFormat[]) {
+    this.moduleName = "privateKeyModule";
+    this.privateKeyFormats = formats;
+  }
 
-//   // eslint-disable-next-line
-//   async initialize(): Promise<void> {}
+  setModuleReferences(tbSDK: ITKeyApi): void {
+    this.tbSDK = tbSDK;
+    this.tbSDK.addReconstructKeyMiddleware(this.moduleName, this.getAccounts.bind(this));
+  }
 
-//   async setPrivateKeys(privateKeys: Array<string>): Promise<void> {
-//     await this.tkeyModule.setTKeyStore({ privateKeysModule: privateKeys });
-//   }
+  // eslint-disable-next-line
+  async initialize(): Promise<void> {}
 
-//   async getPrivateKeys(): Promise<TkeyStoreDataArgs> {
-//     const seedPhrase = await this.tkeyModule.getTKeyStoreStore([this.moduleName]);
-//     return seedPhrase;
-//   }
-// }
+  async setPrivateKeys(privateKeys: BN[], privateKeyType: string): Promise<void> {
+    const data = {};
+    const format = this.privateKeyFormats.find((el) => el.privateKeyType === privateKeyType);
+    if (!format) {
+      throw new Error("Private key type is not supported");
+    }
+    data[privateKeyType] = await format.createPrivateKeyStore(privateKeys);
+    return this.tbSDK.setTKeyStore(this.moduleName, data);
+  }
 
-// export default PrivateKeysModule;
+  async getPrivateKeys(key: string): Promise<unknown> {
+    return this.tbSDK.getTKeyStore(this.moduleName, key);
+  }
+
+  async getAccounts(): Promise<Array<BN>> {
+    try {
+      // Get all private keys
+      const promisesArray = this.privateKeyFormats.map((el) => {
+        return this.getPrivateKeys(el.privateKeyType);
+      });
+      const results = (await Promise.all(promisesArray)) as [ISECP256k1NStore];
+      return results.reduce((acc, el) => {
+        const bns = el.privateKeys.map((pl) => {
+          return new BN(pl, "hex");
+        });
+        acc.push(...bns);
+        return acc;
+      }, []);
+    } catch (err) {
+      return [];
+    }
+  }
+}
+
+export default PrivateKeyModule;
