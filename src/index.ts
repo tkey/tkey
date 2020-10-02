@@ -405,7 +405,7 @@ class ThresholdKey implements ITKey {
     determinedShare?: BN;
     initializeModules?: boolean;
     importedKey?: BN;
-  }): Promise<InitializeNewKeyResult> {
+  } = {}): Promise<InitializeNewKeyResult> {
     if (!importedKey) {
       const tmpPriv = generatePrivate();
       this.setKey(new BN(tmpPriv));
