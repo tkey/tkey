@@ -8,6 +8,8 @@
     "build": "lerna run build",
     "dev": "lerna run dev",
     "test": "lerna run test --parallel",
+    "test-development": "lerna run test-development --parallel",
+    "test-production": "lerna run test-production --parallel",
     "test-debugger": "lerna run test-debugger --parallel",
     "build:types": "lerna run build:types",
     "lint": "lerna run lint --parallel"
