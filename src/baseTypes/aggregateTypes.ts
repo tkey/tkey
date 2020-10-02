@@ -149,13 +149,13 @@ export interface ShareTransferStorePointerArgs {
 
 export type BufferObj = {
   type: string;
-  data: Array<number>;
+  data: number[];
 };
 
 export interface ShareRequestArgs {
   encPubKey: unknown;
   encShareInTransit: EncryptedMessage;
-  availableShareIndexes: Array<string>;
+  availableShareIndexes: string[];
   userAgent: string;
 }
 

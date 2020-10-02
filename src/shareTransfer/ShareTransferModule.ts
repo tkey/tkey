@@ -19,7 +19,7 @@ class ShareTransferModule implements IModule {
 
   currentEncKey: BN;
 
-  requestStatusCheckId: any;
+  requestStatusCheckId: number;
 
   constructor() {
     this.moduleName = "shareTransfer";
@@ -45,7 +45,7 @@ class ShareTransferModule implements IModule {
   async requestNewShare(userAgent: string, availableShareIndexes: Array<string>, callback?: (shareStore: ShareStore) => void): Promise<string> {
     if (this.currentEncKey) throw new Error(`Current request already exists ${this.currentEncKey.toString("hex")}`);
     this.currentEncKey = new BN(generatePrivate());
-    const newShareTransferStore = (await this.getShareTransferStore()) || {};
+    const newShareTransferStore = await this.getShareTransferStore();
     const encPubKeyX = getPubKeyPoint(this.currentEncKey).x.toString("hex");
     newShareTransferStore[encPubKeyX] = new ShareRequest({
       encPubKey: getPubKeyECC(this.currentEncKey),
@@ -77,7 +77,7 @@ class ShareTransferModule implements IModule {
 
   async approveRequest(encPubKeyX: string, shareStore?: ShareStore): Promise<void> {
     const shareTransferStore = await this.getShareTransferStore();
-    let bufferedShare;
+    let bufferedShare: Buffer;
     if (shareStore) {
       bufferedShare = Buffer.from(JSON.stringify(shareStore));
     } else {
@@ -94,7 +94,7 @@ class ShareTransferModule implements IModule {
     const shareRequest = new ShareRequest(shareTransferStore[encPubKeyX]);
     shareTransferStore[encPubKeyX].encShareInTransit = await encrypt(shareRequest.encPubKey, bufferedShare);
     await this.setShareTransferStore(shareTransferStore);
-    delete this.currentEncKey;
+    this.currentEncKey = undefined;
   }
 
   async approveRequestWithShareIndex(encPubKeyX: string, shareIndex: string): Promise<void> {
@@ -105,8 +105,7 @@ class ShareTransferModule implements IModule {
   async getShareTransferStore(): Promise<ShareTransferStore> {
     const metadata = this.tbSDK.getMetadata();
     const shareTransferStorePointer = new ShareTransferStorePointer(metadata.getGeneralStoreDomain(this.moduleName) as ShareTransferStorePointerArgs);
-    const value = await this.tbSDK.storageLayer.getMetadata(shareTransferStorePointer.pointer);
-    return value as ShareTransferStore;
+    return this.tbSDK.storageLayer.getMetadata<ShareTransferStore>(shareTransferStorePointer.pointer);
   }
 
   async setShareTransferStore(shareTransferStore: ShareTransferStore): Promise<void> {
@@ -118,24 +117,26 @@ class ShareTransferModule implements IModule {
   async startRequestStatusCheck(encPubKeyX: string, deleteRequestAfterCompletion: boolean): Promise<ShareStore> {
     // watcher
     return new Promise((resolve, reject) => {
-      this.requestStatusCheckId = setInterval(async () => {
-        try {
-          const latestShareTransferStore = await this.getShareTransferStore();
-          if (latestShareTransferStore[encPubKeyX].encShareInTransit) {
-            const shareStoreBuf = await decrypt(toPrivKeyECC(this.currentEncKey), latestShareTransferStore[encPubKeyX].encShareInTransit);
-            const receivedShare = ShareStore.fromJSON(JSON.parse(shareStoreBuf.toString()));
-            await this.tbSDK.inputShareSafe(receivedShare);
-            if (deleteRequestAfterCompletion) {
-              await this.deleteShareTransferStore(encPubKeyX);
+      this.requestStatusCheckId = Number(
+        setInterval(async () => {
+          try {
+            const latestShareTransferStore = await this.getShareTransferStore();
+            if (latestShareTransferStore[encPubKeyX].encShareInTransit) {
+              const shareStoreBuf = await decrypt(toPrivKeyECC(this.currentEncKey), latestShareTransferStore[encPubKeyX].encShareInTransit);
+              const receivedShare = ShareStore.fromJSON(JSON.parse(shareStoreBuf.toString()));
+              await this.tbSDK.inputShareSafe(receivedShare);
+              if (deleteRequestAfterCompletion) {
+                await this.deleteShareTransferStore(encPubKeyX);
+              }
+              resolve(receivedShare);
+              clearInterval(this.requestStatusCheckId);
             }
-            resolve(receivedShare);
+          } catch (err) {
             clearInterval(this.requestStatusCheckId);
+            reject(err);
           }
-        } catch (err) {
-          clearInterval(this.requestStatusCheckId);
-          reject(err);
-        }
-      }, 1000);
+        }, 1000)
+      );
     });
   }
 
