@@ -513,7 +513,7 @@ class ThresholdKey implements ITKey {
   }
 
   outputShare(shareIndex: BNString): ShareStore {
-    let shareIndexParsed;
+    let shareIndexParsed: BN;
     if (typeof shareIndex === "number") {
       shareIndexParsed = new BN(shareIndex);
     } else if (shareIndex instanceof BN) {
@@ -538,11 +538,11 @@ class ThresholdKey implements ITKey {
     this.privKey = privKey;
   }
 
-  getKey(): Array<BN> {
+  getKey(): BN[] {
     return [this.privKey];
   }
 
-  getCurrentShareIndexes(): Array<string> {
+  getCurrentShareIndexes(): string[] {
     const latestPolynomial = this.metadata.getLatestPublicPolynomial();
     const latestPolynomialId = latestPolynomial.getPolynomialID();
     const currentShareIndexes = Object.keys(this.shares[latestPolynomialId]);
