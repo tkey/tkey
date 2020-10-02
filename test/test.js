@@ -217,7 +217,7 @@ describe("tkey reconstruction", function () {
   it("#should be able to detect a new user and reconstruct key on initialize", async function () {
     const privKey = new BN(generatePrivate());
     const uniqueSP = new ServiceProviderBase({ postboxKey: privKey.toString("hex") });
-    const uniqueSL = initStorageLayer(true, { serviceProvider: uniqueSP });
+    const uniqueSL = initStorageLayer(mocked, { serviceProvider: uniqueSP });
     const tb = new ThresholdKey({ serviceProvider: uniqueSP, storageLayer: uniqueSL });
     await tb.initialize();
     const reconstructedKey = await tb.reconstructKey();
