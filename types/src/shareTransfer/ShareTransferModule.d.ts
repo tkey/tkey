@@ -9,7 +9,7 @@ declare class ShareTransferModule implements IModule {
     moduleName: string;
     tbSDK: ITKeyApi;
     currentEncKey: BN;
-    requestStatusCheckId: any;
+    requestStatusCheckId: number;
     constructor();
     setModuleReferences(tbSDK: ITKeyApi): void;
     initialize(): Promise<void>;

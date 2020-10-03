@@ -32,7 +32,7 @@ declare class ThresholdKey implements ITKey {
     reconstructLatestPoly(): Polynomial;
     generateNewShare(): Promise<GenerateNewShareResult>;
     refreshShares(threshold: number, newShareIndexes: Array<string>, previousPolyID: PolynomialID): Promise<RefreshSharesResult>;
-    initializeNewKey({ determinedShare, initializeModules, importedKey, }: {
+    initializeNewKey({ determinedShare, initializeModules, importedKey, }?: {
         determinedShare?: BN;
         initializeModules?: boolean;
         importedKey?: BN;
@@ -41,8 +41,8 @@ declare class ThresholdKey implements ITKey {
     inputShareSafe(shareStore: ShareStore): Promise<void>;
     outputShare(shareIndex: BNString): ShareStore;
     setKey(privKey: BN): void;
-    getKey(): Array<BN>;
-    getCurrentShareIndexes(): Array<string>;
+    getKey(): BN[];
+    getCurrentShareIndexes(): string[];
     getKeyDetails(): KeyDetails;
     syncShareMetadata(adjustScopedStore?: (ss: unknown) => unknown): Promise<void>;
     syncMultipleShareMetadata(shares: Array<BN>, adjustScopedStore?: (ss: unknown) => unknown): Promise<void>;
