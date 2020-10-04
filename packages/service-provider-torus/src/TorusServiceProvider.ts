@@ -1,3 +1,4 @@
+import ServiceProviderBase from "@tkey/service-provider-base";
 import { StringifiedType, TorusServiceProviderArgs } from "@tkey/types";
 import DirectWebSDK, {
   AggregateLoginParams,
@@ -8,8 +9,6 @@ import DirectWebSDK, {
   TorusLoginResponse,
 } from "@toruslabs/torus-direct-web-sdk";
 import BN from "bn.js";
-
-import ServiceProviderBase from "./ServiceProviderBase";
 
 class TorusServiceProvider extends ServiceProviderBase {
   directWeb: DirectWebSDK;

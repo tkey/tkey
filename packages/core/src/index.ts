@@ -38,7 +38,6 @@ import stringify from "json-stable-stringify";
 
 import { generateRandomPolynomial, lagrangeInterpolatePolynomial, lagrangeInterpolation } from "./lagrangeInterpolatePolynomial";
 import Metadata from "./metadata";
-import TorusServiceProvider from "./serviceProvider/TorusServiceProvider";
 import TorusStorageLayer from "./storageLayer/TorusStorageLayer";
 
 // TODO: handle errors for get and set with retries
@@ -67,15 +66,9 @@ class ThresholdKey implements ITKey {
   storeDeviceShare: (deviceShareStore: ShareStore) => Promise<void>;
 
   constructor(args?: TKeyArgs) {
-    const { enableLogging = false, modules = {}, serviceProvider, storageLayer, directParams } = args;
+    const { enableLogging = false, modules = {}, serviceProvider, storageLayer } = args;
     this.enableLogging = enableLogging;
-
-    // Defaults to torus SP and SL
-    if (!serviceProvider) {
-      this.serviceProvider = new TorusServiceProvider({ directParams });
-    } else {
-      this.serviceProvider = serviceProvider;
-    }
+    this.serviceProvider = serviceProvider;
 
     if (!storageLayer) {
       this.storageLayer = new TorusStorageLayer({ serviceProvider: this.serviceProvider });
