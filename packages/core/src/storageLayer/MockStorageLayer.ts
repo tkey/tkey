@@ -19,7 +19,7 @@ class MockStorageLayer implements IStorageLayer {
    * @param privKey If not provided, it will use service provider's share for decryption
    */
   async getMetadata<T>(privKey?: BN): Promise<T> {
-    let usedKey;
+    let usedKey: BN;
     if (!privKey) usedKey = this.serviceProvider.retrievePubKeyPoint().getX();
     else usedKey = getPubKeyPoint(privKey).x;
 
@@ -36,7 +36,7 @@ class MockStorageLayer implements IStorageLayer {
    * @param privKey If not provided, it will use service provider's share for encryption
    */
   async setMetadata<T>(input: T, privKey?: BN): Promise<{ message: string }> {
-    let usedKey;
+    let usedKey: BN;
     if (!privKey) usedKey = this.serviceProvider.retrievePubKeyPoint().getX();
     else usedKey = getPubKeyPoint(privKey).x;
     this.dataMap[usedKey.toString("hex")] = stringify(input);
@@ -50,7 +50,7 @@ class MockStorageLayer implements IStorageLayer {
    */
   async setMetadataBulk<T>(input: Array<T>, privKey?: Array<BN>): Promise<{ message: string }[]> {
     input.forEach((el, index) => {
-      let usedKey;
+      let usedKey: BN;
       if (!privKey || !privKey[index]) usedKey = this.serviceProvider.retrievePubKeyPoint().getX();
       else usedKey = getPubKeyPoint(privKey[index]).x;
       this.dataMap[usedKey.toString("hex")] = stringify(el);
