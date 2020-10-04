@@ -27,7 +27,7 @@ class PrivateKeyModule implements IModule {
     if (!format) {
       throw new Error("Private key type is not supported");
     }
-    data[privateKeyType] = await format.createPrivateKeyStore(privateKeys);
+    data[privateKeyType] = format.createPrivateKeyStore(privateKeys);
     return this.tbSDK.setTKeyStore(this.moduleName, data);
   }
 

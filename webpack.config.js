@@ -46,7 +46,7 @@ const tsLoader = {
 
 const babelLoader = { ...babelLoaderWithPolyfills, use: { loader: "babel-loader", options: { plugins: ["@babel/transform-runtime"] } } };
 
-function generateWebpackConfig({ pkg, pkgName, currentPath }) {
+function generateWebpackConfig({ pkg, pkgName, currentPath, alias }) {
   const baseConfig = {
     mode: NODE_ENV,
     devtool: NODE_ENV === "production" ? false : "source-map",
@@ -62,7 +62,7 @@ function generateWebpackConfig({ pkg, pkgName, currentPath }) {
       alias: {
         "bn.js": path.resolve(currentPath, "node_modules/bn.js"),
         lodash: path.resolve(currentPath, "node_modules/lodash"),
-        "js-sha3": path.resolve(currentPath, "node_modules/js-sha3"),
+        ...alias,
       },
     },
     module: {

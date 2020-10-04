@@ -4,6 +4,7 @@ import BN from "bn.js";
 class SECP256K1Format implements IPrivateKeyFormat {
   privateKeys: BN[];
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ecParams: any;
 
   privateKeyType: string;
