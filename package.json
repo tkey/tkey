@@ -4,7 +4,7 @@
   "scripts": {
     "bootstrap": "lerna bootstrap",
     "publish:lerna": "lerna publish",
-    "clean": "lerna clean --yes && lerna exec -- rimraf yarn.lock dist/ .rts2_cache_{cjs,esm}/",
+    "clean": "lerna clean --yes && lerna exec -- rimraf package-lock.json dist/ .rts2_cache_{cjs,esm}/",
     "build": "lerna run build",
     "dev": "lerna run dev",
     "test": "lerna run test --parallel",
@@ -35,7 +35,6 @@
     "babel-loader": "^8.1.0",
     "btoa": "^1.2.1",
     "cross-env": "^7.0.2",
-    "dts-bundle": "^0.7.3",
     "eslint": "^7.10.0",
     "eslint-config-airbnb-base": "^14.2.0",
     "eslint-config-prettier": "^6.12.0",

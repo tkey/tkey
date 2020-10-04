@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "typeRoots": [
+      "./@types", // custom merged types MUST be first in a list
+      "./node_modules/@types"
+    ]
+  }
+}
