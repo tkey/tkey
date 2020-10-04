@@ -22,7 +22,7 @@
     "project": "./tsconfig.json"
   },
   "rules": {
-    "no-console": "error",
+    "no-console": 2,
     "no-bitwise": [2, { "allow": ["~"] }],
     "camelcase": 0,
     "no-useless-constructor": 0,

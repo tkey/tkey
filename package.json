@@ -23,9 +23,6 @@
     "@babel/preset-env": "^7.11.5",
     "@babel/register": "^7.11.5",
     "@babel/runtime-corejs3": "^7.11.2",
-    "@types/chrome": "0.0.124",
-    "@types/eccrypto": "^1.1.1",
-    "@types/elliptic": "^6.4.12",
     "@types/filesystem": "^0.0.29",
     "@types/json-stable-stringify": "^1.0.32",
     "@types/mocha": "^8.0.3",
@@ -76,8 +73,8 @@
   },
   "lint-staged": {
     "*.ts": [
-      "npm run lint:ts --",
-      "prettier --write 'packages/**/*.ts'"
+      "npm run lint --",
+      "prettier --write 'packages/**/**/*.ts'"
     ]
   }
 }

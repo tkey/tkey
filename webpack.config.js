@@ -2,37 +2,13 @@
 const path = require("path");
 const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin");
 
-const pkg = require("./package.json");
-
-const pkgName = "tkey";
-const libraryName = pkgName.charAt(0).toUpperCase() + pkgName.slice(1);
+const generateLibraryName = (pkgName) => {
+  return pkgName.charAt(0).toUpperCase() + pkgName.slice(1);
+};
 
 const packagesToInclude = ["broadcast-channel", "@toruslabs/torus.js", "@toruslabs/fetch-node-details"];
 
 const { NODE_ENV = "production" } = process.env;
-
-const baseConfig = {
-  mode: NODE_ENV,
-  devtool: NODE_ENV === "production" ? false : "source-map",
-  entry: "./index.ts",
-  target: "web",
-  output: {
-    path: path.resolve(__dirname, "dist"),
-    library: libraryName,
-    // libraryExport: "default",
-  },
-  resolve: {
-    extensions: [".ts", ".js", ".json"],
-    alias: {
-      "bn.js": path.resolve(__dirname, "node_modules/bn.js"),
-      lodash: path.resolve(__dirname, "node_modules/lodash"),
-      "js-sha3": path.resolve(__dirname, "node_modules/js-sha3"),
-    },
-  },
-  module: {
-    rules: [],
-  },
-};
 
 const optimization = {
   optimization: {
@@ -70,64 +46,91 @@ const tsLoader = {
 
 const babelLoader = { ...babelLoaderWithPolyfills, use: { loader: "babel-loader", options: { plugins: ["@babel/transform-runtime"] } } };
 
-const umdPolyfilledConfig = {
-  ...baseConfig,
-  output: {
-    ...baseConfig.output,
-    filename: `${pkgName}.polyfill.umd.min.js`,
-    libraryTarget: "umd",
-  },
-  module: {
-    rules: [tsLoader, eslintLoader, babelLoaderWithPolyfills],
-  },
-};
+function generateWebpackConfig({ pkg, pkgName, currentPath }) {
+  const baseConfig = {
+    mode: NODE_ENV,
+    devtool: NODE_ENV === "production" ? false : "source-map",
+    entry: path.resolve(currentPath, "index.ts"),
+    target: "web",
+    output: {
+      path: path.resolve(currentPath, "dist"),
+      library: generateLibraryName(pkgName),
+      // libraryExport: "default",
+    },
+    resolve: {
+      extensions: [".ts", ".js", ".json"],
+      alias: {
+        "bn.js": path.resolve(currentPath, "node_modules/bn.js"),
+        lodash: path.resolve(currentPath, "node_modules/lodash"),
+        "js-sha3": path.resolve(currentPath, "node_modules/js-sha3"),
+      },
+    },
+    module: {
+      rules: [],
+    },
+  };
 
-const umdConfig = {
-  ...baseConfig,
-  output: {
-    ...baseConfig.output,
-    filename: `${pkgName}.umd.min.js`,
-    libraryTarget: "umd",
-  },
-  module: {
-    rules: [tsLoader, eslintLoader, babelLoader],
-  },
-};
+  const umdPolyfilledConfig = {
+    ...baseConfig,
+    output: {
+      ...baseConfig.output,
+      filename: `${pkgName}.polyfill.umd.min.js`,
+      libraryTarget: "umd",
+    },
+    module: {
+      rules: [tsLoader, eslintLoader, babelLoaderWithPolyfills],
+    },
+  };
 
-const cjsConfig = {
-  ...baseConfig,
-  ...optimization,
-  output: {
-    ...baseConfig.output,
-    filename: `${pkgName}.cjs.js`,
-    libraryTarget: "commonjs2",
-  },
-  module: {
-    rules: [tsLoader, eslintLoader, babelLoader],
-  },
-  externals: [...Object.keys(pkg.dependencies), /^(@babel\/runtime)/i],
-  plugins: [new ForkTsCheckerWebpackPlugin()],
-  node: {
-    ...baseConfig.node,
-    Buffer: false,
-  },
-};
+  const umdConfig = {
+    ...baseConfig,
+    output: {
+      ...baseConfig.output,
+      filename: `${pkgName}.umd.min.js`,
+      libraryTarget: "umd",
+    },
+    module: {
+      rules: [tsLoader, eslintLoader, babelLoader],
+    },
+  };
 
-const cjsBundledConfig = {
-  ...baseConfig,
-  ...optimization,
-  output: {
-    ...baseConfig.output,
-    filename: `${pkgName}-bundled.cjs.js`,
-    libraryTarget: "commonjs2",
-  },
-  module: {
-    rules: [tsLoader, eslintLoader, babelLoader],
-  },
-  externals: [...Object.keys(pkg.dependencies).filter((x) => !packagesToInclude.includes(x)), /^(@babel\/runtime)/i],
-};
+  const cjsConfig = {
+    ...baseConfig,
+    ...optimization,
+    output: {
+      ...baseConfig.output,
+      filename: `${pkgName}.cjs.js`,
+      libraryTarget: "commonjs2",
+    },
+    module: {
+      rules: [tsLoader, eslintLoader, babelLoader],
+    },
+    externals: [...Object.keys(pkg.dependencies), /^(@babel\/runtime)/i],
+    plugins: [new ForkTsCheckerWebpackPlugin()],
+    node: {
+      ...baseConfig.node,
+      Buffer: false,
+    },
+  };
 
-module.exports = [umdPolyfilledConfig, umdConfig, cjsConfig, cjsBundledConfig];
+  const cjsBundledConfig = {
+    ...baseConfig,
+    ...optimization,
+    output: {
+      ...baseConfig.output,
+      filename: `${pkgName}-bundled.cjs.js`,
+      libraryTarget: "commonjs2",
+    },
+    module: {
+      rules: [tsLoader, eslintLoader, babelLoader],
+    },
+    externals: [...Object.keys(pkg.dependencies).filter((x) => !packagesToInclude.includes(x)), /^(@babel\/runtime)/i],
+  };
+
+  return [umdPolyfilledConfig, umdConfig, cjsConfig, cjsBundledConfig];
+}
+
+module.exports = generateWebpackConfig;
 // module.exports = [cjsConfig];
 // V5
 // experiments: {
