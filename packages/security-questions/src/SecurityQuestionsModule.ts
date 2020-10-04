@@ -111,7 +111,7 @@ class SecurityQuestionsModule implements IModule {
       shareIndex: sqStore.shareIndex,
       questions: newQuestions,
     });
-    await metadata.setGeneralStoreDomain(this.moduleName, newSqStore);
+    metadata.setGeneralStoreDomain(this.moduleName, newSqStore);
     await this.tbSDK.syncShareMetadata();
   }
 

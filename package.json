@@ -65,16 +65,5 @@
     "webpack-cli": "^3.3.12"
   },
   "author": "Torus Labs",
-  "license": "MIT",
-  "husky": {
-    "hooks": {
-      "pre-commit": "lint-staged"
-    }
-  },
-  "lint-staged": {
-    "*.ts": [
-      "npm run lint --",
-      "prettier --write 'packages/**/**/*.ts'"
-    ]
-  }
+  "license": "MIT"
 }
