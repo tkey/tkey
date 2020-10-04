@@ -38,7 +38,6 @@ import stringify from "json-stable-stringify";
 
 import { generateRandomPolynomial, lagrangeInterpolatePolynomial, lagrangeInterpolation } from "./lagrangeInterpolatePolynomial";
 import Metadata from "./metadata";
-import TorusStorageLayer from "./storageLayer/TorusStorageLayer";
 
 // TODO: handle errors for get and set with retries
 
@@ -69,13 +68,7 @@ class ThresholdKey implements ITKey {
     const { enableLogging = false, modules = {}, serviceProvider, storageLayer } = args;
     this.enableLogging = enableLogging;
     this.serviceProvider = serviceProvider;
-
-    if (!storageLayer) {
-      this.storageLayer = new TorusStorageLayer({ serviceProvider: this.serviceProvider });
-    } else {
-      this.storageLayer = storageLayer;
-    }
-
+    this.storageLayer = storageLayer;
     this.modules = modules;
     this.shares = {};
     this.privKey = undefined;
