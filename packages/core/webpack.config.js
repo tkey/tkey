@@ -4,7 +4,7 @@ const generateWebpackConfig = require("../../webpack.config");
 
 const pkg = require("./package.json");
 
-const pkgName = pkg.name;
+const pkgName = pkg.name.split("/")[1];
 
 const currentPath = path.resolve(".");
 
