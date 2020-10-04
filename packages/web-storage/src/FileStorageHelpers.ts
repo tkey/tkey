@@ -25,7 +25,7 @@ async function requestQuota(): Promise<number> {
     navigator.webkitPersistentStorage.requestQuota(requestedBytes, resolve, reject);
   });
 }
-async function chromeRequestFileSystem(grantedBytes: number): Promise<FileSystem> {
+async function browserRequestFileSystem(grantedBytes: number): Promise<FileSystem> {
   return new Promise((resolve, reject) => {
     window.requestFileSystem(window.PERSISTENT, grantedBytes, resolve, reject);
   });
@@ -41,11 +41,11 @@ async function readFile(fileEntry: FileEntry): Promise<File> {
   });
 }
 
-export const getShareFromChromeFileStorage = async (polyID: string): Promise<ShareStore> => {
+export const getShareFromFileStorage = async (polyID: string): Promise<ShareStore> => {
   const fileName = derivePubKeyXFromPolyID(polyID);
   if (window.requestFileSystem) {
     const grantedBytes = await requestQuota();
-    const fs = await chromeRequestFileSystem(grantedBytes);
+    const fs = await browserRequestFileSystem(grantedBytes);
 
     const fileEntry = await getFile(fs, fileName, true);
     const file = await readFile(fileEntry);
@@ -64,7 +64,7 @@ export const storeShareOnFileStorage = async (share: ShareStore): Promise<void> 
   const fileStr = JSON.stringify(share);
   if (window.requestFileSystem) {
     const grantedBytes = await requestQuota();
-    const fs = await chromeRequestFileSystem(grantedBytes);
+    const fs = await browserRequestFileSystem(grantedBytes);
     const fileEntry = await getFile(fs, fileName, true);
     await new Promise((resolve, reject) => {
       fileEntry.createWriter((fileWriter) => {

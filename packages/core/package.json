@@ -38,7 +38,6 @@
   },
   "devDependencies": {
     "@types/elliptic": "^6.4.12",
-    "@types/filesystem": "^0.0.29",
     "@types/json-stable-stringify": "^1.0.32"
   },
   "peerDependencies": {

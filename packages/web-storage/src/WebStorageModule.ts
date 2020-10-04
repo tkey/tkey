@@ -1,7 +1,7 @@
 import { BNString, IModule, ITKeyApi, prettyPrintError, ShareStore } from "@tkey/types";
 import BN from "bn.js";
 
-import { getShareFromChromeFileStorage, storeShareOnFileStorage } from "./ChromeStorageHelpers";
+import { getShareFromFileStorage, storeShareOnFileStorage } from "./FileStorageHelpers";
 import { getShareFromLocalStorage, storeShareOnLocalStorage } from "./LocalStorageHelpers";
 
 class WebStorageModule implements IModule {
@@ -9,11 +9,11 @@ class WebStorageModule implements IModule {
 
   tbSDK: ITKeyApi;
 
-  canUseChromeStorage: boolean;
+  canUseFileStorage: boolean;
 
-  constructor(canUseChromeStorage = true) {
+  constructor(canUseFileStorage = true) {
     this.moduleName = "webStorage";
-    this.canUseChromeStorage = canUseChromeStorage;
+    this.canUseFileStorage = canUseFileStorage;
   }
 
   setModuleReferences(tbSDK: ITKeyApi): void {
@@ -45,15 +45,15 @@ class WebStorageModule implements IModule {
     try {
       shareStore = await getShareFromLocalStorage(polyID);
     } catch (localErr) {
-      if (this.canUseChromeStorage) {
+      if (this.canUseFileStorage) {
         try {
-          shareStore = await getShareFromChromeFileStorage(polyID);
-        } catch (chromeErr) {
-          if (chromeErr?.message?.includes("storage quota")) {
+          shareStore = await getShareFromFileStorage(polyID);
+        } catch (FileErr) {
+          if (FileErr?.message?.includes("storage quota")) {
             // User has denied access to storage. stop asking for every share
-            this.canUseChromeStorage = false;
+            this.canUseFileStorage = false;
           }
-          throw new Error(`Error inputShareFromWebStorage: ${prettyPrintError(localErr)} and ${prettyPrintError(chromeErr)}`);
+          throw new Error(`Error inputShareFromWebStorage: ${prettyPrintError(localErr)} and ${prettyPrintError(FileErr)}`);
         }
       }
       throw new Error(`Error inputShareFromWebStorage: ${prettyPrintError(localErr)}`);
