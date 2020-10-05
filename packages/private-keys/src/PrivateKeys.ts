@@ -1,6 +1,8 @@
 import { IModule, IPrivateKeyFormat, ISECP256k1NStore, ITKeyApi } from "@tkey/types";
 import BN from "bn.js";
 
+export const PRIVATE_KEY_MODULE_NAME = "privateKeyModule";
+
 class PrivateKeyModule implements IModule {
   moduleName: string;
 
@@ -9,7 +11,7 @@ class PrivateKeyModule implements IModule {
   privateKeyFormats: IPrivateKeyFormat[];
 
   constructor(formats: IPrivateKeyFormat[]) {
-    this.moduleName = "privateKeyModule";
+    this.moduleName = PRIVATE_KEY_MODULE_NAME;
     this.privateKeyFormats = formats;
   }
 

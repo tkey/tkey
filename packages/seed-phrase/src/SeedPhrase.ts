@@ -1,6 +1,8 @@
 import { IModule, ISeedPhraseFormat, ISeedPhraseStore, ITKeyApi } from "@tkey/types";
 import BN from "bn.js";
 
+export const SEED_PHRASE_MODULE_NAME = "seedPhraseModule";
+
 class SeedPhraseModule implements IModule {
   moduleName: string;
 
@@ -9,7 +11,7 @@ class SeedPhraseModule implements IModule {
   seedPhraseFormats: ISeedPhraseFormat[];
 
   constructor(formats: ISeedPhraseFormat[]) {
-    this.moduleName = "seedPhraseModule";
+    this.moduleName = SEED_PHRASE_MODULE_NAME;
     this.seedPhraseFormats = formats;
   }
 

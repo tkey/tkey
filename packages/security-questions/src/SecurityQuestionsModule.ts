@@ -18,6 +18,8 @@ function answerToUserInputHashBN(answerString: string): BN {
   return new BN(keccak256(answerString).slice(2), "hex");
 }
 
+export const SECURITY_QUESTIONS_MODULE_NAME = "securityQuestions";
+
 // password + nonce = share
 // password has changed to password2
 
@@ -29,7 +31,7 @@ class SecurityQuestionsModule implements IModule {
   tbSDK: ITKeyApi;
 
   constructor() {
-    this.moduleName = "securityQuestions";
+    this.moduleName = SECURITY_QUESTIONS_MODULE_NAME;
   }
 
   setModuleReferences(tbSDK: ITKeyApi): void {

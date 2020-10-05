@@ -20,6 +20,8 @@ export type ShareTransferStore = {
   [encPubKeyX: string]: ShareRequest;
 };
 
+export const SHARE_TRANSFER_MODULE_NAME = "shareTransfer";
+
 class ShareTransferModule implements IModule {
   moduleName: string;
 
@@ -30,7 +32,7 @@ class ShareTransferModule implements IModule {
   requestStatusCheckId: number;
 
   constructor() {
-    this.moduleName = "shareTransfer";
+    this.moduleName = SHARE_TRANSFER_MODULE_NAME;
   }
 
   setModuleReferences(tbSDK: ITKeyApi): void {
@@ -40,7 +42,7 @@ class ShareTransferModule implements IModule {
   async initialize(): Promise<void> {
     const metadata = this.tbSDK.getMetadata();
     const rawShareTransferStorePointer = metadata.getGeneralStoreDomain(this.moduleName) as ShareTransferStorePointerArgs;
-    let shareTransferStorePointer;
+    let shareTransferStorePointer: ShareTransferStorePointer;
     if (!rawShareTransferStorePointer) {
       shareTransferStorePointer = { pointer: new BN(generatePrivate()) };
       metadata.setGeneralStoreDomain(this.moduleName, shareTransferStorePointer);

@@ -4,6 +4,8 @@ import BN from "bn.js";
 import { getShareFromFileStorage, storeShareOnFileStorage } from "./FileStorageHelpers";
 import { getShareFromLocalStorage, storeShareOnLocalStorage } from "./LocalStorageHelpers";
 
+export const WEB_STORAGE_MODULE_NAME = "webStorage";
+
 class WebStorageModule implements IModule {
   moduleName: string;
 
@@ -12,7 +14,7 @@ class WebStorageModule implements IModule {
   canUseFileStorage: boolean;
 
   constructor(canUseFileStorage = true) {
-    this.moduleName = "webStorage";
+    this.moduleName = WEB_STORAGE_MODULE_NAME;
     this.canUseFileStorage = canUseFileStorage;
   }
 

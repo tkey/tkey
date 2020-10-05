@@ -1,0 +1,65 @@
+{
+  "name": "@tkey/torus",
+  "version": "1.1.2",
+  "description": "TKey Torus library",
+  "main": "dist/torus.cjs.js",
+  "unpkg": "dist/torus.umd.min.js",	
+  "jsdelivr": "dist/torus.umd.min.js",
+  "types": "types/index.d.ts",
+  "scripts": {
+    "test": "cross-env MOCKED=true mocha --timeout 0",
+    "test-development": "cross-env MOCKED=false METADATA=http://localhost:5051 mocha --timeout 0",
+    "test-production": "cross-env MOCKED=false METADATA=https://metadata.tor.us mocha --timeout 0",
+    "test-debugger": "mocha --inspect-brk",
+    "dev": "rimraf dist/ && cross-env NODE_ENV=development parallel-webpack --no-stats",
+    "build": "rimraf dist/ && cross-env NODE_ENV=production parallel-webpack --no-stats",
+    "build:types": "rimraf types/ && tsc --project tsconfig.types.json",
+    "lint": "eslint --fix 'src/**/*.ts'",
+    "prepack": "npm run build && npm run build:types",
+    "pack": "npm pack"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/torusresearch/tkey.git"
+  },
+  "files": [
+    "dist",
+    "types"
+  ],
+  "dependencies": {
+    "@tkey/core": "^1.1.2",
+    "@tkey/types": "^1.1.2",
+    "@tkey/service-provider-torus": "^1.1.2",
+    "@tkey/storage-layer-torus": "^1.1.2",
+    "@tkey/share-transfer": "^1.1.2"
+  },
+  "peerDependencies": {
+    "@babel/runtime": "7.x"
+  },
+  "husky": {	
+    "hooks": {	
+      "pre-commit": "lint-staged"	
+    }	
+  },	
+  "lint-staged": {	
+    "*.ts": [	
+      "npm run lint --",	
+      "prettier --write 'src/**/*.ts'"	
+    ]	
+  },
+  "author": "Torus Labs",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/torusresearch/tkey/issues"
+  },
+  "homepage": "https://github.com/torusresearch/tkey#readme",
+  "keywords": [
+    "torus-direct-web-sdk",
+    "torus-threshold-bak",
+    "threshold-bak",
+    "torus nodes",
+    "torus-embed",
+    "direct auth",
+    "tkey"
+  ]
+}
