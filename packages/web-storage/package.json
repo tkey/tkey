@@ -1,6 +1,6 @@
 {
   "name": "@tkey/web-storage",
-  "version": "1.1.2",
+  "version": "1.1.3",
   "description": "TKey Web Storage Module",
   "author": "Torus Labs",
   "homepage": "https://github.com/torusresearch/tkey#readme",
@@ -37,7 +37,7 @@
     "@babel/runtime": "7.x"	
   },
   "dependencies": {
-    "@tkey/types": "^1.1.2",
+    "@tkey/types": "^1.1.3",
     "bn.js": "^5.1.3"
   },
   "devDependencies": {

@@ -29,8 +29,6 @@ class Metadata implements IMetadata {
 
   publicShares: PublicSharePolyIDShareIndexMap;
 
-  shareDescriptions: ShareDescriptionMap;
-
   polyIDList: PolynomialID[];
 
   generalStore: {
@@ -51,7 +49,6 @@ class Metadata implements IMetadata {
     this.generalStore = {};
     this.tkeyStore = {};
     this.scopedStore = {};
-    this.shareDescriptions = {};
     this.pubKey = input;
     this.polyIDList = [];
   }
@@ -128,21 +125,23 @@ class Metadata implements IMetadata {
   }
 
   getShareDescription(): ShareDescriptionMap {
-    return this.shareDescriptions;
+    return this.getGeneralStoreDomain("shareDescriptions") as ShareDescriptionMap;
   }
 
   addShareDescription(shareIndex: string, description: string): void {
-    if (this.shareDescriptions[shareIndex]) {
-      this.shareDescriptions[shareIndex].push(description);
+    const currentSD = this.getGeneralStoreDomain("shareDescriptions") || {};
+    if (currentSD[shareIndex]) {
+      currentSD[shareIndex].push(description);
     } else {
-      this.shareDescriptions[shareIndex] = [description];
+      currentSD[shareIndex] = [description];
     }
   }
 
   deleteShareDescription(shareIndex: string, description: string): void {
-    const index = this.shareDescriptions[shareIndex].indexOf(description);
+    const currentSD = this.getGeneralStoreDomain("shareDescriptions");
+    const index = currentSD[shareIndex].indexOf(description);
     if (index > -1) {
-      this.shareDescriptions[shareIndex].splice(index, 1);
+      currentSD[shareIndex].splice(index, 1);
     }
   }
 
@@ -167,15 +166,11 @@ class Metadata implements IMetadata {
       serializedPolyIDList.push(serializedPolyID);
     }
 
-    // cater to sharedescriptions being out of general store
-    const generalStoreCopy = JSON.parse(JSON.stringify(this.generalStore));
-    generalStoreCopy.shareDescriptions = this.shareDescriptions;
-
     return {
       pubKey: this.pubKey.encode("elliptic-compressed", { ec: ecCurve }).toString(),
       polyIDList: serializedPolyIDList,
       scopedStore: this.scopedStore,
-      generalStore: generalStoreCopy,
+      generalStore: this.generalStore,
       tkeyStore: this.tkeyStore,
     };
   }
@@ -189,7 +184,6 @@ class Metadata implements IMetadata {
     if (generalStore) metadata.generalStore = generalStore;
     if (tkeyStore) metadata.tkeyStore = tkeyStore;
     if (scopedStore) metadata.scopedStore = scopedStore;
-    if (generalStore.shareDescriptions) metadata.shareDescriptions = generalStore.shareDescriptions; // cater to shareDescriptions
 
     for (let i = 0; i < polyIDList.length; i += 1) {
       const serializedPolyID = polyIDList[i];

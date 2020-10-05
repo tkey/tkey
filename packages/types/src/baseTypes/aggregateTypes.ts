@@ -46,8 +46,6 @@ export interface IMetadata extends ISerializable {
 
   publicShares: PublicSharePolyIDShareIndexMap;
 
-  shareDescriptions: ShareDescriptionMap;
-
   polyIDList: PolynomialID[];
 
   generalStore: {

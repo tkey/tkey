@@ -67,9 +67,9 @@
   },
   "author": "Torus Labs",
   "license": "MIT",
-  "husky": {	
-    "hooks": {	
-      "pre-commit": "lerna run pre-commit --concurrency 1 --since HEAD"	
-    }	
+  "husky": {
+    "hooks": {
+      "pre-commit": "lerna run pre-commit --concurrency 1 --since HEAD"
+    }
   }
 }

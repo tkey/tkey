@@ -549,7 +549,7 @@ class ThresholdKey implements ITKey {
       requiredShares,
       threshold: poly.getThreshold(),
       totalShares: Object.keys(this.metadata.publicShares[poly.getPolynomialID()]).length,
-      shareDescriptions: this.metadata.shareDescriptions,
+      shareDescriptions: this.metadata.getShareDescription(),
       modules: this.modules,
     };
   }
