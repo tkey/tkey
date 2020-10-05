@@ -5,7 +5,10 @@
   "author": "Torus Labs",
   "homepage": "https://github.com/torusresearch/tkey#readme",
   "license": "MIT",
-  "main": "index.ts",
+  "main": "dist/chrome-storage.cjs.js",
+  "unpkg": "dist/chrome-storage.umd.min.js",	
+  "jsdelivr": "dist/chrome-storage.umd.min.js",
+  "types": "types/index.d.ts",
   "files": [
     "dist",
     "types"
@@ -32,10 +35,24 @@
   "bugs": {
     "url": "https://github.com/torusresearch/tkey/issues"
   },
+  "peerDependencies": {	
+    "@babel/runtime": "7.x"	
+  },
   "dependencies": {
     "@tkey/types": "^1.1.2"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.124"
+  },
+  "husky": {	
+    "hooks": {	
+      "pre-commit": "lint-staged"	
+    }	
+  },	
+  "lint-staged": {	
+    "*.ts": [	
+      "npm run lint --",	
+      "prettier --write 'src/**/*.ts'"	
+    ]	
   }
 }

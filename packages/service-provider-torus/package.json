@@ -1,11 +1,14 @@
 {
   "name": "@tkey/service-provider-torus",
   "version": "1.1.2",
-  "description": "Torus Service provider Module for tkey",
+  "description": "TKey Torus Service Provider Module",
   "author": "Torus Labs",
   "homepage": "https://github.com/torusresearch/tkey#readme",
   "license": "MIT",
-  "main": "index.ts",
+  "main": "dist/service-provider-torus.cjs.js",
+  "unpkg": "dist/service-provider-torus.umd.min.js",	
+  "jsdelivr": "dist/service-provider-torus.umd.min.js",
+  "types": "types/index.d.ts",
   "files": [
     "dist",
     "types"
@@ -29,6 +32,9 @@
     "prepack": "npm run build && npm run build:types",
     "pack": "npm pack"
   },
+  "peerDependencies": {	
+    "@babel/runtime": "7.x"	
+  },
   "dependencies": {
     "@toruslabs/torus-direct-web-sdk": "^3.4.1",
     "@tkey/service-provider-base": "^1.1.2",
@@ -41,5 +47,16 @@
   },
   "bugs": {
     "url": "https://github.com/torusresearch/tkey/issues"
+  },
+  "husky": {	
+    "hooks": {	
+      "pre-commit": "lint-staged"	
+    }	
+  },	
+  "lint-staged": {	
+    "*.ts": [	
+      "npm run lint --",	
+      "prettier --write 'src/**/*.ts'"	
+    ]	
   }
 }

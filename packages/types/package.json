@@ -1,11 +1,14 @@
 {
   "name": "@tkey/types",
   "version": "1.1.2",
-  "description": "Common types for tkey",
+  "description": "TKey types",
   "author": "Torus Labs",
   "homepage": "https://github.com/torusresearch/tkey#readme",
   "license": "MIT",
-  "main": "index.ts",
+  "main": "dist/types.cjs.js",
+  "unpkg": "dist/types.umd.min.js",	
+  "jsdelivr": "dist/types.umd.min.js",
+  "types": "types/index.d.ts",
   "files": [
     "dist",
     "types"
@@ -29,6 +32,9 @@
     "prepack": "npm run build && npm run build:types",
     "pack": "npm pack"
   },
+  "peerDependencies": {	
+    "@babel/runtime": "7.x"	
+  },
   "dependencies": {
     "@toruslabs/eccrypto": "^1.1.5",
     "@toruslabs/torus-direct-web-sdk": "^3.4.1",
@@ -41,5 +47,16 @@
   },
   "bugs": {
     "url": "https://github.com/torusresearch/tkey/issues"
+  },
+  "husky": {	
+    "hooks": {	
+      "pre-commit": "lint-staged"	
+    }	
+  },	
+  "lint-staged": {	
+    "*.ts": [	
+      "npm run lint --",	
+      "prettier --write 'src/**/*.ts'"	
+    ]	
   }
 }

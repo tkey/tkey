@@ -1,11 +1,14 @@
 {
   "name": "@tkey/service-provider-base",
   "version": "1.1.2",
-  "description": "Base Service provider Module for tkey",
+  "description": "TKey Base Service Provider Module",
   "author": "Torus Labs",
   "homepage": "https://github.com/torusresearch/tkey#readme",
   "license": "MIT",
-  "main": "index.ts",
+  "main": "dist/service-provider-base.cjs.js",
+  "unpkg": "dist/service-provider-base.umd.min.js",	
+  "jsdelivr": "dist/service-provider-base.umd.min.js",
+  "types": "types/index.d.ts",
   "files": [
     "dist",
     "types"
@@ -29,6 +32,9 @@
     "prepack": "npm run build && npm run build:types",
     "pack": "npm pack"
   },
+  "peerDependencies": {	
+    "@babel/runtime": "7.x"	
+  },
   "dependencies": {
     "@tkey/types": "^1.1.2",
     "bn.js": "^5.1.3",
@@ -39,5 +45,16 @@
   },
   "bugs": {
     "url": "https://github.com/torusresearch/tkey/issues"
+  },
+  "husky": {	
+    "hooks": {	
+      "pre-commit": "lint-staged"	
+    }	
+  },	
+  "lint-staged": {	
+    "*.ts": [	
+      "npm run lint --",	
+      "prettier --write 'src/**/*.ts'"	
+    ]	
   }
 }

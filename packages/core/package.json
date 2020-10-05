@@ -1,10 +1,10 @@
 {
   "name": "@tkey/core",
   "version": "1.1.2",
-  "description": "Core library for threshold key implementation",
-  "main": "dist/tkey.cjs.js",
-  "unpkg": "dist/tkey.umd.min.js",
-  "jsdelivr": "dist/tkey.umd.min.js",
+  "description": "TKey Core library",
+  "main": "dist/core.cjs.js",
+  "unpkg": "dist/core.umd.min.js",	
+  "jsdelivr": "dist/core.umd.min.js",
   "types": "types/index.d.ts",
   "scripts": {
     "test": "cross-env MOCKED=true mocha --timeout 0",
@@ -20,7 +20,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/torusresearch/threshold-device-key-management-web.git"
+    "url": "git+https://github.com/torusresearch/tkey.git"
   },
   "files": [
     "dist",
@@ -41,12 +41,23 @@
   "peerDependencies": {
     "@babel/runtime": "7.x"
   },
+  "husky": {	
+    "hooks": {	
+      "pre-commit": "lint-staged"	
+    }	
+  },	
+  "lint-staged": {	
+    "*.ts": [	
+      "npm run lint --",	
+      "prettier --write 'src/**/*.ts'"	
+    ]	
+  },
   "author": "Torus Labs",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/torusresearch/threshold-device-key-management-web/issues"
+    "url": "https://github.com/torusresearch/tkey/issues"
   },
-  "homepage": "https://github.com/torusresearch/threshold-device-key-management-web#readme",
+  "homepage": "https://github.com/torusresearch/tkey#readme",
   "keywords": [
     "torus-direct-web-sdk",
     "torus-threshold-bak",
