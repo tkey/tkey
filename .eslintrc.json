@@ -19,7 +19,7 @@
   "parserOptions": {
     "sourceType": "module",
     "ecmaVersion": 11,
-    "project": "./packages/**/tsconfig.json"
+    "project": "./tsconfig.json"
   },
   "rules": {
     "no-console": 2,
