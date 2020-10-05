@@ -19,7 +19,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/torusresearch/threshold-device-key-management-web.git"
+    "url": "git+https://github.com/torusresearch/tkey.git"
   },
   "files": [
     "dist",

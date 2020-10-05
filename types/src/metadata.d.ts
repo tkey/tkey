@@ -5,7 +5,6 @@ declare class Metadata implements IMetadata {
     pubKey: Point;
     publicPolynomials: PublicPolynomialMap;
     publicShares: PublicSharePolyIDShareIndexMap;
-    shareDescriptions: ShareDescriptionMap;
     polyIDList: PolynomialID[];
     generalStore: {
         [moduleName: string]: unknown;

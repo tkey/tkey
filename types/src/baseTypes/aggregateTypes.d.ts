@@ -21,7 +21,6 @@ export interface IMetadata extends ISerializable {
     pubKey: Point;
     publicPolynomials: PublicPolynomialMap;
     publicShares: PublicSharePolyIDShareIndexMap;
-    shareDescriptions: ShareDescriptionMap;
     polyIDList: PolynomialID[];
     generalStore: {
         [moduleName: string]: unknown;
