@@ -13,7 +13,8 @@
     "test-debugger": "lerna run test-debugger --parallel",
     "build:types": "lerna run build:types",
     "lint": "lerna run lint --parallel",
-    "prepack": "lerna run prepack"
+    "prepack": "lerna run prepack",
+    "pack": "lerna run pack"
   },
   "devDependencies": {
     "@babel/cli": "^7.11.6",

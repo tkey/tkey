@@ -26,7 +26,8 @@
     "build": "rimraf dist/ && cross-env NODE_ENV=production parallel-webpack --no-stats",
     "build:types": "rimraf types/ && tsc --project tsconfig.types.json",
     "lint": "eslint --fix 'src/**/*.ts'",
-    "prepack": "npm run build && npm run build:types"
+    "prepack": "npm run build && npm run build:types",
+    "pack": "npm pack"
   },
   "bugs": {
     "url": "https://github.com/torusresearch/tkey/issues"
