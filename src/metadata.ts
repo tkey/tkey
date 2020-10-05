@@ -115,7 +115,7 @@ class Metadata implements IMetadata {
     if (!encryptedShareStore) {
       throw new Error(`no encrypted share store for share exists:  ${shareStore}`);
     }
-    const encryptedShare = encryptedShareStore[pubShare.shareCommitment.x.toString("hex")];
+    const encryptedShare = encryptedShareStore[pubShare.shareCommitment.getX().toString("hex")];
     if (!encryptedShare) {
       throw new Error(`no encrypted share for share store exists:  ${shareStore}`);
     }

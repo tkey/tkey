@@ -46,7 +46,7 @@ class ShareTransferModule implements IModule {
     if (this.currentEncKey) throw new Error(`Current request already exists ${this.currentEncKey.toString("hex")}`);
     this.currentEncKey = new BN(generatePrivate());
     const newShareTransferStore = await this.getShareTransferStore();
-    const encPubKeyX = getPubKeyPoint(this.currentEncKey).x.toString("hex");
+    const encPubKeyX = getPubKeyPoint(this.currentEncKey).getX().toString("hex");
     newShareTransferStore[encPubKeyX] = new ShareRequest({
       encPubKey: getPubKeyECC(this.currentEncKey),
       encShareInTransit: undefined,

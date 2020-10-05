@@ -381,20 +381,20 @@ describe("Point", function () {
     const secret = new BN(generatePrivate());
     const point = getPubKeyPoint(secret);
     const result = point.encode("elliptic-compressed", { ec: ecCurve });
-    if (result.toString().slice(2) !== point.x.toString("hex", 64)) {
-      fail(`elliptic format x should be equal ${secret} ${result.toString()} ${point.x.toString("hex")} ${secret.umod(ecCurve.n)}`);
+    if (result.toString().slice(2) !== point.getX().toString("hex", 64)) {
+      fail(`elliptic format x should be equal ${secret} ${result.toString()} ${point.getX().toString("hex")} ${secret.umod(ecCurve.n)}`);
     }
   });
   it("#should decode into point for elliptic format compressed", async function () {
     const secret = new BN(generatePrivate());
     const point = getPubKeyPoint(secret);
     const result = point.encode("elliptic-compressed", { ec: ecCurve });
-    if (result.toString().slice(2) !== point.x.toString("hex", 64)) {
+    if (result.toString().slice(2) !== point.getX().toString("hex", 64)) {
       fail("elliptic format x should be equal");
     }
 
     const key = ecCurve.keyFromPublic(result.toString(), "hex");
-    if (point.x.cmp(key.pub.x) !== 0) {
+    if (point.getX().cmp(key.pub.x) !== 0) {
       fail(" x should be equal");
     }
     if (point.y.cmp(key.pub.y) !== 0) {
@@ -405,12 +405,12 @@ describe("Point", function () {
     const secret = new BN(generatePrivate());
     const point = getPubKeyPoint(secret);
     const result = point.encode("elliptic-compressed", { ec: ecCurve });
-    if (result.toString().slice(2) !== point.x.toString("hex", 64)) {
+    if (result.toString().slice(2) !== point.getX().toString("hex", 64)) {
       fail("elliptic format x should be equal");
     }
 
     const key = Point.fromCompressedPub(result.toString());
-    if (point.x.cmp(key.x) !== 0) {
+    if (point.getX().cmp(key.x) !== 0) {
       fail(" x should be equal");
     }
     if (point.y.cmp(key.y) !== 0) {
@@ -489,10 +489,10 @@ describe("polyCommitmentEval", function () {
     const expectedShareCommit2 = getPubKeyPoint(share2);
     const shareCommit1 = polyCommitmentEval(publicPoly.polynomialCommitments, new BN(1));
     const shareCommit2 = polyCommitmentEval(publicPoly.polynomialCommitments, new BN(2));
-    if (expectedShareCommit1.x.cmp(shareCommit1.x) !== 0) {
+    if (expectedShareCommit1.getX().cmp(shareCommit1.getX()) !== 0) {
       fail("expected share commitment1 should equal share commitment");
     }
-    if (expectedShareCommit2.x.cmp(shareCommit2.x) !== 0) {
+    if (expectedShareCommit2.getX().cmp(shareCommit2.x) !== 0) {
       fail("expected share commitment2 should equal share commitment");
     }
   });
@@ -508,7 +508,7 @@ describe("polyCommitmentEval", function () {
       shareCommitment.push(polyCommitmentEval(publicPoly.polynomialCommitments, shareIndex));
     }
     expectedShareCommitment.forEach(function (expected, i) {
-      if (shareCommitment[i].x.cmp(expected.x) !== 0) {
+      if (shareCommitment[i].getX().cmp(expected.x) !== 0) {
         fail("poly result should equal hardcoded poly");
       }
     });

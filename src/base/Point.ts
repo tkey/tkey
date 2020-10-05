@@ -14,15 +14,27 @@ class Point implements IPoint {
     this.y = new BN(y, "hex");
   }
 
+  getX() {
+    return this.x;
+  }
+
+  getY() {
+    return this.y;
+  }
+
   // complies with EC and elliptic pub key types
   encode(enc: string, params?: any): Buffer {
     switch (enc) {
       case "arr":
-        return Buffer.concat([Buffer.from("0x04", "hex"), Buffer.from(this.x.toString("hex"), "hex"), Buffer.from(this.y.toString("hex"), "hex")]);
+        return Buffer.concat([
+          Buffer.from("0x04", "hex"),
+          Buffer.from(this.getX().toString("hex"), "hex"),
+          Buffer.from(this.y.toString("hex"), "hex"),
+        ]);
       case "elliptic-compressed": {
         let ec = params;
         ec = ecCurve;
-        const key = ec.keyFromPublic({ x: this.x.toString("hex"), y: this.y.toString("hex") }, "hex");
+        const key = ec.keyFromPublic({ x: this.getX().toString("hex"), y: this.y.toString("hex") }, "hex");
         return Buffer.from(key.getPublic(true, "hex"));
       }
       default:

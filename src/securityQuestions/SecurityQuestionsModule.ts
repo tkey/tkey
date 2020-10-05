@@ -75,7 +75,7 @@ class SecurityQuestionsModule implements IModule {
     const shareStore = new ShareStore(new Share(sqStore.shareIndex, share), sqStore.polynomialID);
     // validate if share is correct
     const derivedPublicShare = shareStore.share.getPublicShare();
-    if (derivedPublicShare.shareCommitment.x.cmp(sqStore.sqPublicShare.shareCommitment.x) !== 0) {
+    if (derivedPublicShare.shareCommitment.getX().cmp(sqStore.sqPublicShare.shareCommitment.x) !== 0) {
       throw new Error("wrong password");
     }
 

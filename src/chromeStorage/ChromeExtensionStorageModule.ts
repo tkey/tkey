@@ -31,7 +31,7 @@ export default class ChromeExtensionStorageModule implements IModule {
 
   async storeShareOnChromeExtensionStorage(share: ShareStore): Promise<void> {
     const metadata = this.tbSDK.getMetadata();
-    const key = metadata.pubKey.x.toString("hex"); // tbkey public
+    const key = metadata.pubKey.getX().toString("hex"); // tbkey public
     return new Promise((resolve) => {
       chrome.storage.sync.set({ [key]: JSON.stringify(share) }, resolve);
     });
@@ -39,7 +39,7 @@ export default class ChromeExtensionStorageModule implements IModule {
 
   async getStoreFromChromeExtensionStorage(): Promise<ShareStore> {
     const metadata = this.tbSDK.getMetadata();
-    const key = metadata.pubKey.x.toString("hex"); // tbkey public
+    const key = metadata.pubKey.getX().toString("hex"); // tbkey public
     return new Promise((resolve, reject) => {
       chrome.storage.sync.get([key], async (result) => {
         try {

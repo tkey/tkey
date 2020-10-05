@@ -240,7 +240,7 @@ class ThresholdKey implements ITKey {
     const privKey = lagrangeInterpolation(shareArr, shareIndexArr);
     // check that priv key regenerated is correct
     const reconstructedPubKey = getPubKeyPoint(privKey);
-    if (this.metadata.pubKey.x.cmp(reconstructedPubKey.x) !== 0) {
+    if (this.metadata.pubKey.getX().cmp(reconstructedPubKey.x) !== 0) {
       throw new Error(`reconstructed key is not pub key`);
     }
     this.setKey(privKey);
@@ -351,7 +351,7 @@ class ThresholdKey implements ITKey {
       shareIndexesNeedingEncryption.map(async (shareIndex) => {
         const oldShare = oldPoly.polyEval(new BN(shareIndex, "hex"));
         const encryptedShare = await encrypt(getPubKeyECC(oldShare), Buffer.from(JSON.stringify(newShareStores[shareIndex])));
-        newScopedStore[getPubKeyPoint(oldShare).x.toString("hex")] = encryptedShare;
+        newScopedStore[getPubKeyPoint(oldShare).getX().toString("hex")] = encryptedShare;
         oldShareStores[shareIndex] = new ShareStore(new Share(shareIndex, oldShare), previousPolyID);
         return oldShare;
       })

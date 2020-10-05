@@ -55,7 +55,7 @@ const interpolationPoly = (i: number, innerPoints: Array<Point>): BN[] => {
 
 const pointSort = (innerPoints: Point[]): Point[] => {
   const pointArrClone = [...innerPoints];
-  pointArrClone.sort((a, b) => a.x.cmp(b.x));
+  pointArrClone.sort((a, b) => a.getX().cmp(b.x));
   return pointArrClone;
 };
 
@@ -142,7 +142,7 @@ export function polyCommitmentEval(polyCommitments: Array<Point>, index: BN): Po
   // convert to base points, this is badly written, its the only way to access the point rn zzz TODO: refactor
   const basePtPolyCommitments: Array<curve.base.BasePoint> = [];
   for (let i = 0; i < polyCommitments.length; i += 1) {
-    const key = ecCurve.keyFromPublic({ x: polyCommitments[i].x.toString("hex"), y: polyCommitments[i].y.toString("hex") }, "");
+    const key = ecCurve.keyFromPublic({ x: polyCommitments[i].getX().toString("hex"), y: polyCommitments[i].y.toString("hex") }, "");
     basePtPolyCommitments.push(key.getPublic());
   }
   let shareCommitment = basePtPolyCommitments[0];
