@@ -131,7 +131,6 @@ class Metadata implements IMetadata {
     } else {
       currentSD[shareIndex] = [description];
     }
-    // console.log(this.generalStore);
   }
 
   deleteShareDescription(shareIndex: string, description: string): void {
