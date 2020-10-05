@@ -6,5 +6,5 @@ declare global {
         };
     }
 }
-export declare const getShareFromChromeFileStorage: (polyID: string) => Promise<ShareStore>;
+export declare const getShareFromFileStorage: (polyID: string) => Promise<ShareStore>;
 export declare const storeShareOnFileStorage: (share: ShareStore) => Promise<void>;

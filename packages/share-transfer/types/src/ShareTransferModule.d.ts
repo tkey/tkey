@@ -1,5 +1,5 @@
-import BN from "bn.js";
 import { IModule, ITKeyApi, ShareStore } from "@tkey/types";
+import BN from "bn.js";
 import ShareRequest from "./ShareRequest";
 export declare type ShareTransferStore = {
     [encPubKeyX: string]: ShareRequest;
