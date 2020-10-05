@@ -124,14 +124,15 @@ class Metadata implements IMetadata {
   }
 
   getShareDescription(): ShareDescriptionMap {
-    return this.shareDescriptions;
+    return this.getGeneralStoreDomain("shareDescriptions") as ShareDescriptionMap;
   }
 
   addShareDescription(shareIndex: string, description: string): void {
-    if (this.shareDescriptions[shareIndex]) {
-      this.shareDescriptions[shareIndex].push(description);
+    const currentSD = this.getGeneralStoreDomain("shareDescriptions") || {};
+    if (currentSD[shareIndex]) {
+      currentSD[shareIndex].push(description);
     } else {
-      this.shareDescriptions[shareIndex] = [description];
+      currentSD[shareIndex] = [description];
     }
   }
 
