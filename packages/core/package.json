@@ -16,7 +16,8 @@
     "build:types": "rimraf types/ && tsc --project tsconfig.types.json",
     "lint": "eslint --fix 'src/**/*.ts'",
     "prepack": "npm run build && npm run build:types",
-    "pack": "npm pack"
+    "pack": "npm pack",
+    "pre-commit": "lint-staged"
   },
   "repository": {
     "type": "git",
@@ -41,11 +42,6 @@
   "peerDependencies": {
     "@babel/runtime": "7.x"
   },
-  "husky": {	
-    "hooks": {	
-      "pre-commit": "lint-staged"	
-    }	
-  },	
   "lint-staged": {	
     "*.ts": [	
       "npm run lint --",	

@@ -1,2 +1,1 @@
-import ThresholdKey from "./src/index";
-export default ThresholdKey;
+export { default } from "./src/index";

@@ -1,12 +1,13 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 const path = require("path");
 const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin");
+const ESLintPlugin = require("eslint-webpack-plugin");
 
 const generateLibraryName = (pkgName) => {
   return pkgName.charAt(0).toUpperCase() + pkgName.slice(1);
 };
 
-const packagesToInclude = ["broadcast-channel", "@toruslabs/torus.js", "@toruslabs/fetch-node-details"];
+const packagesToInclude = ["@toruslabs/eccrypto", "elliptic", "bip39", "hdkey"];
 
 const { NODE_ENV = "production" } = process.env;
 
@@ -14,13 +15,6 @@ const optimization = {
   optimization: {
     minimize: false,
   },
-};
-
-const eslintLoader = {
-  enforce: "pre",
-  test: /\.js$/,
-  exclude: /node_modules/,
-  loader: "eslint-loader",
 };
 
 const babelLoaderWithPolyfills = {
@@ -57,6 +51,7 @@ function generateWebpackConfig({ pkg, pkgName, currentPath, alias }) {
       library: generateLibraryName(pkgName),
       // libraryExport: "default",
     },
+    plugins: [],
     resolve: {
       extensions: [".ts", ".js", ".json"],
       alias: {
@@ -78,7 +73,7 @@ function generateWebpackConfig({ pkg, pkgName, currentPath, alias }) {
       libraryTarget: "umd",
     },
     module: {
-      rules: [tsLoader, eslintLoader, babelLoaderWithPolyfills],
+      rules: [tsLoader, babelLoaderWithPolyfills],
     },
   };
 
@@ -90,7 +85,7 @@ function generateWebpackConfig({ pkg, pkgName, currentPath, alias }) {
       libraryTarget: "umd",
     },
     module: {
-      rules: [tsLoader, eslintLoader, babelLoader],
+      rules: [tsLoader, babelLoader],
     },
   };
 
@@ -103,10 +98,10 @@ function generateWebpackConfig({ pkg, pkgName, currentPath, alias }) {
       libraryTarget: "commonjs2",
     },
     module: {
-      rules: [tsLoader, eslintLoader, babelLoader],
+      rules: [tsLoader, babelLoader],
     },
     externals: [...Object.keys(pkg.dependencies), /^(@babel\/runtime)/i],
-    plugins: [new ForkTsCheckerWebpackPlugin()],
+    plugins: [new ESLintPlugin({ extensions: "ts" }), new ForkTsCheckerWebpackPlugin()],
     node: {
       ...baseConfig.node,
       Buffer: false,
@@ -122,7 +117,7 @@ function generateWebpackConfig({ pkg, pkgName, currentPath, alias }) {
       libraryTarget: "commonjs2",
     },
     module: {
-      rules: [tsLoader, eslintLoader, babelLoader],
+      rules: [tsLoader, babelLoader],
     },
     externals: [...Object.keys(pkg.dependencies).filter((x) => !packagesToInclude.includes(x)), /^(@babel\/runtime)/i],
   };

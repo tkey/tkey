@@ -30,7 +30,8 @@
     "build:types": "rimraf types/ && tsc --project tsconfig.types.json",
     "lint": "eslint --fix 'src/**/*.ts'",
     "prepack": "npm run build && npm run build:types",
-    "pack": "npm pack"
+    "pack": "npm pack",
+    "pre-commit": "lint-staged"
   },
   "peerDependencies": {	
     "@babel/runtime": "7.x"	
@@ -45,11 +46,6 @@
   "bugs": {
     "url": "https://github.com/torusresearch/tkey/issues"
   },
-  "husky": {	
-    "hooks": {	
-      "pre-commit": "lint-staged"	
-    }	
-  },	
   "lint-staged": {	
     "*.ts": [	
       "npm run lint --",	
