@@ -166,7 +166,7 @@ class Metadata implements IMetadata {
       pubKey: this.pubKey.encode("elliptic-compressed", { ec: ecCurve }).toString(),
       polyIDList: serializedPolyIDList,
       scopedStore: this.scopedStore,
-      generalStore: JSON.parse(JSON.stringify(this.generalStore)),
+      generalStore: this.generalStore,
       tkeyStore: this.tkeyStore,
     };
   }
