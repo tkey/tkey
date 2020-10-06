@@ -508,7 +508,7 @@ class ThresholdKey implements ITKey {
     let shareIndexParsed: BN;
     if (typeof shareIndex === "number") {
       shareIndexParsed = new BN(shareIndex);
-    } else if (shareIndex instanceof BN) {
+    } else if (BN.isBN(shareIndex)) {
       shareIndexParsed = shareIndex;
     } else if (typeof shareIndex === "string") {
       shareIndexParsed = new BN(shareIndex, "hex");
