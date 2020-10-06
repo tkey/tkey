@@ -2,7 +2,7 @@ import TKey from "@tkey/core";
 import TorusServiceProvider from "@tkey/service-provider-torus";
 import ShareTransferModule, { SHARE_TRANSFER_MODULE_NAME } from "@tkey/share-transfer";
 import TorusStorageLayer from "@tkey/storage-layer-torus";
-import { TKeyArgs } from "@tkey/types";
+import { IServiceProvider, IStorageLayer, TKeyArgs } from "@tkey/types";
 
 class ThresholdKey extends TKey {
   constructor(args?: TKeyArgs) {
@@ -10,17 +10,19 @@ class ThresholdKey extends TKey {
     const defaultModules = {
       [SHARE_TRANSFER_MODULE_NAME]: new ShareTransferModule(),
     };
-    super({ ...args, modules: { ...defaultModules, ...modules } });
+    let finalServiceProvider: IServiceProvider;
+    let finalStorageLayer: IStorageLayer;
     if (!serviceProvider) {
-      this.serviceProvider = new TorusServiceProvider({ directParams });
+      finalServiceProvider = new TorusServiceProvider({ directParams });
     } else {
-      this.serviceProvider = serviceProvider;
+      finalServiceProvider = serviceProvider;
     }
     if (!storageLayer) {
-      this.storageLayer = new TorusStorageLayer({ serviceProvider: this.serviceProvider });
+      finalStorageLayer = new TorusStorageLayer({ serviceProvider: finalServiceProvider });
     } else {
-      this.storageLayer = storageLayer;
+      finalStorageLayer = storageLayer;
     }
+    super({ ...args, modules: { ...defaultModules, ...modules }, serviceProvider: finalServiceProvider, storageLayer: finalStorageLayer });
   }
 }
 
