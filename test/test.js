@@ -228,28 +228,6 @@ describe("tkey reconstruction", function () {
   });
 });
 
-describe("ServiceProvider", function () {
-  it("#should encrypt and decrypt correctly", async function () {
-    const privKey = PRIVATE_KEY;
-    const tmp = new BN(123);
-    const message = Buffer.from(tmp.toString("hex", 15));
-    const tsp = new ServiceProviderBase({ postboxKey: privKey });
-    const encDeets = await tsp.encrypt(message);
-    const result = await tsp.decrypt(encDeets);
-    deepStrictEqual(result, message, "encrypted and decrypted message should be equal");
-  });
-
-  it("#should encrypt and decrypt correctly messages > 15", async function () {
-    const privKey = PRIVATE_KEY;
-    const tmp = new BN(123);
-    const message = Buffer.from(tmp.toString("hex", 16));
-    const tsp = new ServiceProviderBase({ postboxKey: privKey });
-    const encDeets = await tsp.encrypt(message);
-    const result = await tsp.decrypt(encDeets);
-    deepStrictEqual(result, message, "encrypted and decrypted message should be equal");
-  });
-});
-
 describe("TorusStorageLayer", function () {
   it("#should get or set correctly", async function () {
     const privKey = PRIVATE_KEY;
@@ -287,92 +265,6 @@ describe("TorusStorageLayer", function () {
 
     deepStrictEqual(resp, message, "set and get message should be equal");
     deepStrictEqual(resp2, message2, "set and get message should be equal");
-  });
-});
-
-describe("polynomial", function () {
-  it("#should polyEval indexes correctly", async function () {
-    const polyArr = [new BN(5), new BN(2)];
-    const poly = new Polynomial(polyArr);
-    const result = poly.polyEval(new BN(1));
-    if (result.cmp(new BN(7)) !== 0) {
-      fail("poly result should equal 7");
-    }
-  });
-});
-
-describe("Metadata", function () {
-  it("#should serialize and deserialize into JSON seamlessly", async function () {
-    const privKey = PRIVATE_KEY;
-    const privKeyBN = new BN(privKey, 16);
-    // create a random poly and respective shares
-    const shareIndexes = [new BN(1), new BN(2)];
-    for (let i = 1; i <= 2; i += 1) {
-      let ran = generatePrivate();
-      while (ran < 2) {
-        ran = generatePrivate();
-      }
-      shareIndexes.push(new BN(ran));
-    }
-    const poly = generateRandomPolynomial(1, privKeyBN);
-    const shares = poly.generateShares(shareIndexes);
-    const metadata = new Metadata(getPubKeyPoint(privKeyBN));
-    metadata.addFromPolynomialAndShares(poly, shares);
-    metadata.setGeneralStoreDomain("something", { test: "oh this is an object" });
-    const serializedMetadata = stringify(metadata);
-    const deserializedMetadata = Metadata.fromJSON(JSON.parse(serializedMetadata));
-    const secondSerialization = stringify(deserializedMetadata);
-    deepStrictEqual(serializedMetadata, secondSerialization, "serializedMetadata should be equal");
-    const deserializedMetadata2 = Metadata.fromJSON(JSON.parse(secondSerialization));
-    deepStrictEqual(deserializedMetadata2, deserializedMetadata, "metadata and deserializedMetadata should be equal");
-  });
-  it("#should serialize and deserialize into JSON with tkey store seamlessly", async function () {
-    const privKey = PRIVATE_KEY;
-    const privKeyBN = new BN(privKey, 16);
-    // create a random poly and respective shares
-    const shareIndexes = [new BN(1), new BN(2)];
-    for (let i = 1; i <= 2; i += 1) {
-      let ran = generatePrivate();
-      while (ran < 2) {
-        ran = generatePrivate();
-      }
-      shareIndexes.push(new BN(ran));
-    }
-    const poly = generateRandomPolynomial(1, privKeyBN);
-    const shares = poly.generateShares(shareIndexes);
-    const metadata = new Metadata(getPubKeyPoint(privKeyBN));
-    metadata.addFromPolynomialAndShares(poly, shares);
-    metadata.setTkeyStoreDomain("something", { test: "oh this is an object" });
-    const serializedMetadata = stringify(metadata);
-    const deserializedMetadata = Metadata.fromJSON(JSON.parse(serializedMetadata));
-    const secondSerialization = stringify(deserializedMetadata);
-    deepStrictEqual(serializedMetadata, secondSerialization, "serializedMetadata should be equal");
-    const deserializedMetadata2 = Metadata.fromJSON(JSON.parse(secondSerialization));
-    deepStrictEqual(deserializedMetadata2, deserializedMetadata, "metadata and deserializedMetadata should be equal");
-  });
-  it("#should serialize and deserialize into JSON with tkey store seamlessly", async function () {
-    const privKey = PRIVATE_KEY;
-    const privKeyBN = new BN(privKey, 16);
-    // create a random poly and respective shares
-    const shareIndexes = [new BN(1), new BN(2)];
-    for (let i = 1; i <= 2; i += 1) {
-      let ran = generatePrivate();
-      while (ran < 2) {
-        ran = generatePrivate();
-      }
-      shareIndexes.push(new BN(ran));
-    }
-    const poly = generateRandomPolynomial(1, privKeyBN);
-    const shares = poly.generateShares(shareIndexes);
-    const metadata = new Metadata(getPubKeyPoint(privKeyBN));
-    metadata.addFromPolynomialAndShares(poly, shares);
-    metadata.setScopedStore("something", { test: "oh this is an object" });
-    const serializedMetadata = stringify(metadata);
-    const deserializedMetadata = Metadata.fromJSON(JSON.parse(serializedMetadata));
-    const secondSerialization = stringify(deserializedMetadata);
-    deepStrictEqual(serializedMetadata, secondSerialization, "serializedMetadata should be equal");
-    const deserializedMetadata2 = Metadata.fromJSON(JSON.parse(secondSerialization));
-    deepStrictEqual(deserializedMetadata2, deserializedMetadata, "metadata and deserializedMetadata should be equal");
   });
 });
 
