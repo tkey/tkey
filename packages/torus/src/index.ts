@@ -10,7 +10,7 @@ class ThresholdKey extends TKey {
     const defaultModules = {
       [SHARE_TRANSFER_MODULE_NAME]: new ShareTransferModule(),
     };
-    super(args);
+    super({ ...args, modules: { ...defaultModules, ...modules } });
     if (!serviceProvider) {
       this.serviceProvider = new TorusServiceProvider({ directParams });
     } else {
@@ -21,7 +21,6 @@ class ThresholdKey extends TKey {
     } else {
       this.storageLayer = storageLayer;
     }
-    this.modules = { ...defaultModules, ...modules };
   }
 }
 
