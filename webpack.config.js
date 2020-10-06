@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 const path = require("path");
-const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin");
 const ESLintPlugin = require("eslint-webpack-plugin");
+const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
 
 const generateLibraryName = (pkgName) => {
   return pkgName.charAt(0).toUpperCase() + pkgName.slice(1);
@@ -51,8 +51,8 @@ function generateWebpackConfig({ pkg, pkgName, currentPath, alias }) {
       library: generateLibraryName(pkgName),
       // libraryExport: "default",
     },
-    plugins: [],
     resolve: {
+      plugins: [new TsconfigPathsPlugin()],
       extensions: [".ts", ".js", ".json"],
       alias: {
         "bn.js": path.resolve(currentPath, "node_modules/bn.js"),
@@ -101,7 +101,12 @@ function generateWebpackConfig({ pkg, pkgName, currentPath, alias }) {
       rules: [tsLoader, babelLoader],
     },
     externals: [...Object.keys(pkg.dependencies), /^(@babel\/runtime)/i],
-    plugins: [new ESLintPlugin({ extensions: "ts" }), new ForkTsCheckerWebpackPlugin()],
+    plugins: [
+      new ESLintPlugin({
+        extensions: ".ts",
+        cwd: path.resolve(currentPath, "../../"),
+      }),
+    ],
     node: {
       ...baseConfig.node,
       Buffer: false,

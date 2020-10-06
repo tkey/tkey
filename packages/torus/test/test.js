@@ -15,6 +15,8 @@ import { keccak256 } from "web3-utils";
 
 import ThresholdKey from "../src/index";
 
+// console.log(require.resolve("@tkey/private-keys"));
+
 function initStorageLayer(mocked, extraParams) {
   return mocked === "true" ? new MockStorageLayer({ serviceProvider: extraParams.serviceProvider }) : new TorusStorageLayer(extraParams);
 }
@@ -299,7 +301,7 @@ describe("SecurityQuestionsModule", function () {
       fail("key should be able to be reconstructed");
     }
   });
-  it.only("#should be able to change password", async function () {
+  it("#should be able to change password", async function () {
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
     await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
     await tb.modules.securityQuestions.changeSecurityQuestionAndAnswer("dodo", "who is your cat?");

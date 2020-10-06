@@ -48,7 +48,6 @@
     "eslint-plugin-simple-import-sort": "^5.0.3",
     "eslint-plugin-standard": "^4.0.1",
     "eslint-webpack-plugin": "^2.1.0",
-    "fork-ts-checker-webpack-plugin": "^5.2.0",
     "husky": "^4.3.0",
     "lerna": "^3.22.1",
     "lint-staged": "^10.4.0",
@@ -58,6 +57,8 @@
     "rimraf": "^3.0.2",
     "ts-loader": "^8.0.4",
     "ts-node": "^9.0.0",
+    "tsconfig-paths": "^3.9.0",
+    "tsconfig-paths-webpack-plugin": "^3.3.0",
     "typescript": "^4.0.3",
     "webpack": "^4.44.2",
     "webpack-cli": "^3.3.12"

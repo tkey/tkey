@@ -3,8 +3,9 @@ import { mnemonicToSeedSync, validateMnemonic } from "bip39";
 import BN from "bn.js";
 import HDKey from "hdkey";
 import { provider } from "web3-core";
-import Web3Eth from "web3-eth";
 import { fromWei } from "web3-utils";
+
+import Web3Eth from "./web3";
 
 class MetamaskSeedPhraseFormat implements ISeedPhraseFormat {
   seedPhraseType: string;

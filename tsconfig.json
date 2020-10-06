@@ -2,7 +2,7 @@
   "compilerOptions": {
     "outDir": "dist",
     "module": "commonjs",
-    "target": "es5",
+    "target": "es6",
     "lib": ["ES2019", "DOM"],
     "moduleResolution": "node",
     "sourceMap": true,
@@ -10,6 +10,12 @@
     "noImplicitThis": true,
     "declaration": true,
     "downlevelIteration": true,
-    "allowSyntheticDefaultImports": true
-  }
+    "allowSyntheticDefaultImports": true,
+    "baseUrl": "./packages",
+    "paths": {
+      "@tkey/*": ["*/index.ts"]
+    },
+    "skipLibCheck": true,
+  },
+  "exclude": ["node_modules", "dist"],
 }
