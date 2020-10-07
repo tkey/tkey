@@ -1,38 +1,10 @@
 import { IModule, ITKeyApi } from "@tkey/common-types";
 import BN from "bn.js";
-import createHash from "create-hash";
 
 import { english } from "./english";
+import { binaryToByte, bytesToBinary, deriveChecksumBits, lpad, normalize } from "./utils";
 
 export const IMPORT_EXPORT_MODULE_NAME = "importExportModule";
-
-function normalize(str?: string): string {
-  return (str || "").normalize("NFKD");
-}
-
-function binaryToByte(bin: string): number {
-  return parseInt(bin, 2);
-}
-
-function lpad(str: string, padString: string, length: number): string {
-  let string = str;
-  while (string.length < length) {
-    string = padString + string;
-  }
-  return string;
-}
-
-function bytesToBinary(bytes: number[]): string {
-  return bytes.map((x) => lpad(x.toString(2), "0", 8)).join("");
-}
-
-function deriveChecksumBits(entropyBuffer: Buffer): string {
-  const ENT = entropyBuffer.length * 8;
-  const CS = ENT / 32;
-  const hash = createHash("sha256").update(entropyBuffer).digest();
-
-  return bytesToBinary(Array.from(hash)).slice(0, CS);
-}
 
 class ImportExportModule implements IModule {
   moduleName: string;

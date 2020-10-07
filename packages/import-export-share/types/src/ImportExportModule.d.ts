@@ -12,5 +12,6 @@ declare class ImportExportModule implements IModule {
     entropyToMnemonic(entropy: Buffer | string): string;
     mnemonicToEntropy(mnemonic: string): string;
     exportShare(share: BN): string;
+    importShare(seed: string): BN;
 }
 export default ImportExportModule;
