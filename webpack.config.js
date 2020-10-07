@@ -1,38 +1,17 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 const path = require("path");
-const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin");
+const ESLintPlugin = require("eslint-webpack-plugin");
+const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
 
-const pkg = require("./package.json");
+const generateLibraryName = (pkgName) => {
+  return pkgName.charAt(0).toUpperCase() + pkgName.slice(1);
+};
 
-const pkgName = "tkey";
-const libraryName = pkgName.charAt(0).toUpperCase() + pkgName.slice(1);
+// loaders execute right to left
 
-const packagesToInclude = ["broadcast-channel", "@toruslabs/torus.js", "@toruslabs/fetch-node-details"];
+const packagesToInclude = ["@toruslabs/eccrypto", "elliptic", "bip39", "hdkey"];
 
 const { NODE_ENV = "production" } = process.env;
-
-const baseConfig = {
-  mode: NODE_ENV,
-  devtool: NODE_ENV === "production" ? false : "source-map",
-  entry: "./index.ts",
-  target: "web",
-  output: {
-    path: path.resolve(__dirname, "dist"),
-    library: libraryName,
-    // libraryExport: "default",
-  },
-  resolve: {
-    extensions: [".ts", ".js", ".json"],
-    alias: {
-      "bn.js": path.resolve(__dirname, "node_modules/bn.js"),
-      lodash: path.resolve(__dirname, "node_modules/lodash"),
-      "js-sha3": path.resolve(__dirname, "node_modules/js-sha3"),
-    },
-  },
-  module: {
-    rules: [],
-  },
-};
 
 const optimization = {
   optimization: {
@@ -40,94 +19,113 @@ const optimization = {
   },
 };
 
-const eslintLoader = {
-  enforce: "pre",
-  test: /\.js$/,
-  exclude: /node_modules/,
-  loader: "eslint-loader",
-};
-
 const babelLoaderWithPolyfills = {
-  test: /\.m?js$/,
+  test: /\.(ts|js)x?$/,
   exclude: /(node_modules|bower_components)/,
   use: {
     loader: "babel-loader",
-  },
-};
-
-const tsLoader = {
-  test: /\.ts?$/,
-  exclude: /(node_modules|bower_components)/,
-  use: {
-    loader: "ts-loader",
     options: {
-      // disable type checker - we will use it in fork plugin
-      transpileOnly: true,
-      configFile: NODE_ENV === "production" ? "tsconfig.prod.json" : "tsconfig.json",
+      rootMode: "upward",
     },
   },
 };
 
-const babelLoader = { ...babelLoaderWithPolyfills, use: { loader: "babel-loader", options: { plugins: ["@babel/transform-runtime"] } } };
-
-const umdPolyfilledConfig = {
-  ...baseConfig,
-  output: {
-    ...baseConfig.output,
-    filename: `${pkgName}.polyfill.umd.min.js`,
-    libraryTarget: "umd",
-  },
-  module: {
-    rules: [tsLoader, eslintLoader, babelLoaderWithPolyfills],
-  },
+const babelLoader = {
+  ...babelLoaderWithPolyfills,
+  use: { loader: "babel-loader", options: { plugins: ["@babel/transform-runtime"], rootMode: "upward" } },
 };
 
-const umdConfig = {
-  ...baseConfig,
-  output: {
-    ...baseConfig.output,
-    filename: `${pkgName}.umd.min.js`,
-    libraryTarget: "umd",
-  },
-  module: {
-    rules: [tsLoader, eslintLoader, babelLoader],
-  },
-};
+function generateWebpackConfig({ pkg, pkgName, currentPath, alias }) {
+  const baseConfig = {
+    mode: NODE_ENV,
+    devtool: NODE_ENV === "production" ? false : "source-map",
+    entry: path.resolve(currentPath, "index.ts"),
+    target: "web",
+    output: {
+      path: path.resolve(currentPath, "dist"),
+      library: generateLibraryName(pkgName),
+      // libraryExport: "default",
+    },
+    resolve: {
+      plugins: [new TsconfigPathsPlugin()],
+      extensions: [".ts", ".js", ".json"],
+      alias: {
+        "bn.js": path.resolve(currentPath, "node_modules/bn.js"),
+        lodash: path.resolve(currentPath, "node_modules/lodash"),
+        ...alias,
+      },
+    },
+    module: {
+      rules: [],
+    },
+  };
 
-const cjsConfig = {
-  ...baseConfig,
-  ...optimization,
-  output: {
-    ...baseConfig.output,
-    filename: `${pkgName}.cjs.js`,
-    libraryTarget: "commonjs2",
-  },
-  module: {
-    rules: [tsLoader, eslintLoader, babelLoader],
-  },
-  externals: [...Object.keys(pkg.dependencies), /^(@babel\/runtime)/i],
-  plugins: [new ForkTsCheckerWebpackPlugin()],
-  node: {
-    ...baseConfig.node,
-    Buffer: false,
-  },
-};
+  const umdPolyfilledConfig = {
+    ...baseConfig,
+    output: {
+      ...baseConfig.output,
+      filename: `${pkgName}.polyfill.umd.min.js`,
+      libraryTarget: "umd",
+    },
+    module: {
+      rules: [babelLoaderWithPolyfills],
+    },
+  };
 
-const cjsBundledConfig = {
-  ...baseConfig,
-  ...optimization,
-  output: {
-    ...baseConfig.output,
-    filename: `${pkgName}-bundled.cjs.js`,
-    libraryTarget: "commonjs2",
-  },
-  module: {
-    rules: [tsLoader, eslintLoader, babelLoader],
-  },
-  externals: [...Object.keys(pkg.dependencies).filter((x) => !packagesToInclude.includes(x)), /^(@babel\/runtime)/i],
-};
+  const umdConfig = {
+    ...baseConfig,
+    output: {
+      ...baseConfig.output,
+      filename: `${pkgName}.umd.min.js`,
+      libraryTarget: "umd",
+    },
+    module: {
+      rules: [babelLoader],
+    },
+  };
 
-module.exports = [umdPolyfilledConfig, umdConfig, cjsConfig, cjsBundledConfig];
+  const cjsConfig = {
+    ...baseConfig,
+    ...optimization,
+    output: {
+      ...baseConfig.output,
+      filename: `${pkgName}.cjs.js`,
+      libraryTarget: "commonjs2",
+    },
+    module: {
+      rules: [babelLoader],
+    },
+    externals: [...Object.keys(pkg.dependencies), /^(@babel\/runtime)/i],
+    plugins: [
+      new ESLintPlugin({
+        extensions: ".ts",
+        cwd: path.resolve(currentPath, "../../"),
+      }),
+    ],
+    node: {
+      ...baseConfig.node,
+      Buffer: false,
+    },
+  };
+
+  const cjsBundledConfig = {
+    ...baseConfig,
+    ...optimization,
+    output: {
+      ...baseConfig.output,
+      filename: `${pkgName}-bundled.cjs.js`,
+      libraryTarget: "commonjs2",
+    },
+    module: {
+      rules: [babelLoader],
+    },
+    externals: [...Object.keys(pkg.dependencies).filter((x) => !packagesToInclude.includes(x)), /^(@babel\/runtime)/i],
+  };
+
+  return [umdPolyfilledConfig, umdConfig, cjsConfig, cjsBundledConfig];
+}
+
+module.exports = generateWebpackConfig;
 // module.exports = [cjsConfig];
 // V5
 // experiments: {

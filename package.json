@@ -1,44 +1,21 @@
 {
-  "name": "@tkey/core",
-  "version": "1.1.3",
-  "description": "Core library for threshold key implementation",
-  "main": "dist/tkey.cjs.js",
-  "unpkg": "dist/tkey.umd.min.js",
-  "jsdelivr": "dist/tkey.umd.min.js",
-  "types": "types/index.d.ts",
+  "name": "tkey",
+  "private": true,
   "scripts": {
-    "test": "cross-env MOCKED=true mocha --timeout 0",
-    "test-development": "cross-env MOCKED=false METADATA=http://localhost:5051 mocha --timeout 0",
-    "test-production": "cross-env MOCKED=false METADATA=https://metadata.tor.us mocha --timeout 0",
-    "test-debugger": "mocha --inspect-brk",
-    "dev": "rimraf dist/ && cross-env NODE_ENV=development parallel-webpack --no-stats",
-    "build": "rimraf dist/ && cross-env NODE_ENV=production parallel-webpack --no-stats",
-    "build:types": "rimraf types/ && tsc --project tsconfig.types.json",
-    "lint:ts": "eslint --fix 'src/**/*.ts'",
-    "prepack": "npm run build && npm run build:types"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/torusresearch/tkey.git"
-  },
-  "files": [
-    "dist",
-    "types"
-  ],
-  "dependencies": {
-    "@toruslabs/eccrypto": "^1.1.5",
-    "@toruslabs/http-helpers": "^1.3.4",
-    "@toruslabs/torus-direct-web-sdk": "^3.4.1",
-    "bip39": "^3.0.2",
-    "bn.js": "^5.1.3",
-    "bowser": "^2.11.0",
-    "elliptic": "^6.5.3",
-    "eth-hd-keyring": "^3.5.0",
-    "hdkey": "^2.0.1",
-    "json-stable-stringify": "^1.0.1",
-    "web3-eth": "^1.3.0",
-    "web3-utils": "^1.3.0",
-    "web3-core": "^1.3.0"
+    "bootstrap": "lerna bootstrap",
+    "publish:lerna": "lerna publish",
+    "clean": "lerna clean --yes && lerna exec -- rimraf package-lock.json dist/ .rts2_cache_{cjs,esm}/",
+    "build": "lerna run build",
+    "dev": "lerna run dev",
+    "test": "lerna run test --parallel",
+    "test-development": "lerna run test-development --parallel",
+    "test-production": "lerna run test-production --parallel",
+    "test-debugger": "lerna run test-debugger --parallel",
+    "build:types": "lerna run build:types",
+    "lint": "lerna run lint --parallel",
+    "prepack": "lerna run prepack",
+    "pack": "lerna run pack",
+    "pre-commit": "lerna run pre-commit"
   },
   "devDependencies": {
     "@babel/cli": "^7.11.6",
@@ -47,28 +24,21 @@
     "@babel/plugin-proposal-object-rest-spread": "^7.11.0",
     "@babel/plugin-transform-runtime": "^7.11.5",
     "@babel/preset-env": "^7.11.5",
+    "@babel/preset-typescript": "^7.10.4",
     "@babel/register": "^7.11.5",
     "@babel/runtime-corejs3": "^7.11.2",
-    "@types/chrome": "0.0.124",
-    "@types/eccrypto": "^1.1.1",
-    "@types/elliptic": "^6.4.12",
-    "@types/filesystem": "^0.0.29",
-    "@types/json-stable-stringify": "^1.0.32",
+    "@types/bn.js": "^4.11.6",
     "@types/mocha": "^8.0.3",
     "@types/node": "^14.11.2",
     "@typescript-eslint/eslint-plugin": "^4.3.0",
     "@typescript-eslint/parser": "^4.3.0",
-    "atob": "^2.1.2",
     "babel-eslint": "^10.1.0",
     "babel-loader": "^8.1.0",
-    "btoa": "^1.2.1",
     "cross-env": "^7.0.2",
-    "dts-bundle": "^0.7.3",
     "eslint": "^7.10.0",
     "eslint-config-airbnb-base": "^14.2.0",
     "eslint-config-prettier": "^6.12.0",
     "eslint-config-standard": "^14.1.1",
-    "eslint-loader": "^4.0.2",
     "eslint-plugin-babel": "^5.3.1",
     "eslint-plugin-flowtype": "^5.2.0",
     "eslint-plugin-import": "^2.22.1",
@@ -78,47 +48,26 @@
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-simple-import-sort": "^5.0.3",
     "eslint-plugin-standard": "^4.0.1",
-    "fork-ts-checker-webpack-plugin": "^5.2.0",
+    "eslint-webpack-plugin": "^2.1.0",
     "husky": "^4.3.0",
+    "lerna": "^3.22.1",
     "lint-staged": "^10.4.0",
     "mocha": "^8.1.3",
-    "node-fetch": "^2.6.1",
     "parallel-webpack": "^2.6.0",
     "prettier": "^2.1.2",
     "rimraf": "^3.0.2",
-    "ts-loader": "^8.0.4",
     "ts-node": "^9.0.0",
+    "tsconfig-paths": "^3.9.0",
+    "tsconfig-paths-webpack-plugin": "^3.3.0",
     "typescript": "^4.0.3",
     "webpack": "^4.44.2",
     "webpack-cli": "^3.3.12"
-  },
-  "peerDependencies": {
-    "@babel/runtime": "7.x"
   },
   "author": "Torus Labs",
   "license": "MIT",
   "husky": {
     "hooks": {
-      "pre-commit": "lint-staged"
+      "pre-commit": "lerna run pre-commit --concurrency 1 --since HEAD"
     }
-  },
-  "lint-staged": {
-    "*.ts": [
-      "npm run lint:ts --",
-      "prettier --write 'src/**/*.ts'"
-    ]
-  },
-  "bugs": {
-    "url": "https://github.com/torusresearch/threshold-device-key-management-web/issues"
-  },
-  "homepage": "https://github.com/torusresearch/threshold-device-key-management-web#readme",
-  "keywords": [
-    "torus-direct-web-sdk",
-    "torus-threshold-bak",
-    "threshold-bak",
-    "torus nodes",
-    "torus-embed",
-    "direct auth",
-    "tkey"
-  ]
+  }
 }

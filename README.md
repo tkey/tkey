@@ -1,5 +1,6 @@
 # tKey
 
+[![lerna](https://img.shields.io/badge/maintained%20with-lerna-cc00ff.svg)](https://lerna.js.org/)
 [![npm version](https://badge.fury.io/js/%40tkey%2Fcore.svg)](https://badge.fury.io/js/%tkey%2Fcore)
 ![npm](https://img.shields.io/npm/dw/@tkey/core)
 

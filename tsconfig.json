@@ -11,9 +11,10 @@
     "declaration": true,
     "downlevelIteration": true,
     "allowSyntheticDefaultImports": true,
-    "typeRoots": [
-      "./@types", // custom merged types MUST be first in a list
-      "./node_modules/@types"
-    ]
+    "baseUrl": "./packages",
+    "paths": {
+      "@tkey/*": ["*/index.ts"]
+    },
+    "skipLibCheck": true,
   }
 }

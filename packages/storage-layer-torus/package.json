@@ -1,0 +1,58 @@
+{
+  "name": "@tkey/storage-layer-torus",
+  "version": "1.1.3",
+  "description": "TKey Torus Storage Layer Module",
+  "author": "Torus Labs",
+  "homepage": "https://github.com/torusresearch/tkey#readme",
+  "license": "MIT",
+  "main": "dist/storage-layer-torus.cjs.js",
+  "unpkg": "dist/storage-layer-torus.umd.min.js",	
+  "jsdelivr": "dist/storage-layer-torus.umd.min.js",
+  "types": "types/index.d.ts",
+  "files": [
+    "dist",
+    "types"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/torusresearch/tkey.git"
+  },
+  "scripts": {
+    "test": "cross-env MOCKED=true mocha --config ../../.mocharc.json ",
+    "test-development": "cross-env MOCKED=false METADATA=http://localhost:5051 mocha --config ../../.mocharc.json ",
+    "test-production": "cross-env MOCKED=false METADATA=https://metadata.tor.us mocha --config ../../.mocharc.json ",
+    "test-debugger": "mocha --config ../../.mocharc.json --inspect-brk",
+    "dev": "rimraf dist/ && cross-env NODE_ENV=development parallel-webpack --no-stats",
+    "build": "rimraf dist/ && cross-env NODE_ENV=production parallel-webpack --no-stats",
+    "build:types": "rimraf types/ && tsc --project tsconfig.types.json",
+    "lint": "eslint --fix 'src/**/*.ts'",
+    "prepack": "npm run build && npm run build:types",
+    "pack": "npm pack",
+    "pre-commit": "lint-staged"
+  },
+  "peerDependencies": {	
+    "@babel/runtime": "7.x"	
+  },
+  "dependencies": {
+    "@tkey/common-types": "^1.1.3",
+    "@toruslabs/http-helpers": "^1.3.4",
+    "bn.js": "^5.1.3",
+    "json-stable-stringify": "^1.0.1",
+    "web3-utils": "^1.3.0"
+  },
+  "devDependencies": {
+    "@types/json-stable-stringify": "^1.0.32"
+  },
+  "bugs": {
+    "url": "https://github.com/torusresearch/tkey/issues"
+  },
+  "lint-staged": {	
+    "!(*d).ts": [	
+      "npm run lint --",	
+      "prettier --write 'src/**/*.ts'"	
+    ]	
+  }
+}

@@ -1,5 +1,5 @@
 {
-  "require": ["@babel/register", "ts-node/register"],
+  "require": ["../../test/setup.js"],
   "timeout": 0,
   "exit": true
 }
