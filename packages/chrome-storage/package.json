@@ -46,7 +46,7 @@
     "@types/chrome": "^0.0.124"
   },
   "lint-staged": {	
-    "*.ts": [	
+    "!(*d).ts": [	
       "npm run lint --",	
       "prettier --write 'src/**/*.ts'"	
     ]	

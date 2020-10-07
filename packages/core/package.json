@@ -43,7 +43,7 @@
     "@babel/runtime": "7.x"
   },
   "lint-staged": {	
-    "*.ts": [	
+    "!(*d).ts": [	
       "npm run lint --",	
       "prettier --write 'src/**/*.ts'"	
     ]	

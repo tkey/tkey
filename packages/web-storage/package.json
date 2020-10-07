@@ -47,7 +47,7 @@
     "url": "https://github.com/torusresearch/tkey/issues"
   },
   "lint-staged": {	
-    "*.ts": [	
+    "!(*d).ts": [	
       "npm run lint --",	
       "prettier --write 'src/**/*.ts'"	
     ]	
