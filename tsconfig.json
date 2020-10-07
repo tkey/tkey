@@ -2,7 +2,7 @@
   "compilerOptions": {
     "outDir": "dist",
     "module": "commonjs",
-    "target": "es6",
+    "target": "es5",
     "lib": ["ES2019", "DOM"],
     "moduleResolution": "node",
     "sourceMap": true,
@@ -17,5 +17,5 @@
     },
     "skipLibCheck": true,
   },
-  "exclude": ["node_modules", "dist"],
+  "exclude": ["node_modules", "dist"]
 }

@@ -7,6 +7,8 @@ const generateLibraryName = (pkgName) => {
   return pkgName.charAt(0).toUpperCase() + pkgName.slice(1);
 };
 
+// loaders execute right to left
+
 const packagesToInclude = ["@toruslabs/eccrypto", "elliptic", "bip39", "hdkey"];
 
 const { NODE_ENV = "production" } = process.env;
@@ -18,27 +20,20 @@ const optimization = {
 };
 
 const babelLoaderWithPolyfills = {
-  test: /\.m?js$/,
+  test: /\.(ts|js)x?$/,
   exclude: /(node_modules|bower_components)/,
   use: {
     loader: "babel-loader",
-  },
-};
-
-const tsLoader = {
-  test: /\.ts?$/,
-  exclude: /(node_modules|bower_components)/,
-  use: {
-    loader: "ts-loader",
     options: {
-      // disable type checker - we will use it in fork plugin
-      transpileOnly: true,
-      configFile: NODE_ENV === "production" ? "tsconfig.prod.json" : "tsconfig.json",
+      rootMode: "upward",
     },
   },
 };
 
-const babelLoader = { ...babelLoaderWithPolyfills, use: { loader: "babel-loader", options: { plugins: ["@babel/transform-runtime"] } } };
+const babelLoader = {
+  ...babelLoaderWithPolyfills,
+  use: { loader: "babel-loader", options: { plugins: ["@babel/transform-runtime"], rootMode: "upward" } },
+};
 
 function generateWebpackConfig({ pkg, pkgName, currentPath, alias }) {
   const baseConfig = {
@@ -73,7 +68,7 @@ function generateWebpackConfig({ pkg, pkgName, currentPath, alias }) {
       libraryTarget: "umd",
     },
     module: {
-      rules: [tsLoader, babelLoaderWithPolyfills],
+      rules: [babelLoaderWithPolyfills],
     },
   };
 
@@ -85,7 +80,7 @@ function generateWebpackConfig({ pkg, pkgName, currentPath, alias }) {
       libraryTarget: "umd",
     },
     module: {
-      rules: [tsLoader, babelLoader],
+      rules: [babelLoader],
     },
   };
 
@@ -98,7 +93,7 @@ function generateWebpackConfig({ pkg, pkgName, currentPath, alias }) {
       libraryTarget: "commonjs2",
     },
     module: {
-      rules: [tsLoader, babelLoader],
+      rules: [babelLoader],
     },
     externals: [...Object.keys(pkg.dependencies), /^(@babel\/runtime)/i],
     plugins: [
@@ -122,7 +117,7 @@ function generateWebpackConfig({ pkg, pkgName, currentPath, alias }) {
       libraryTarget: "commonjs2",
     },
     module: {
-      rules: [tsLoader, babelLoader],
+      rules: [babelLoader],
     },
     externals: [...Object.keys(pkg.dependencies).filter((x) => !packagesToInclude.includes(x)), /^(@babel\/runtime)/i],
   };
