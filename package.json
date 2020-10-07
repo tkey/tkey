@@ -10,7 +10,7 @@
     "test": "lerna run test --parallel --scope @tkey/import-export-share",
     "test-development": "lerna run test-development --parallel",
     "test-production": "lerna run test-production --parallel",
-    "test-debugger": "lerna run test-debugger --parallel",
+    "test-debugger": "lerna run test-debugger --parallel  --scope @tkey/import-export-share",
     "build:types": "lerna run build:types",
     "lint": "lerna run lint --parallel",
     "prepack": "lerna run prepack",

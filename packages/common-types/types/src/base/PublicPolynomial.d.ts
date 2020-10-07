@@ -2,6 +2,7 @@ import { ISerializable, PolynomialID, StringifiedType } from "../baseTypes/commo
 import Point from "./Point";
 declare class PublicPolynomial implements ISerializable {
     polynomialCommitments: Point[];
+    polynomialId: PolynomialID;
     constructor(polynomialCommitments: Point[]);
     getThreshold(): number;
     getPolynomialID(): PolynomialID;

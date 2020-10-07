@@ -2,7 +2,7 @@ import { IModule, ITKeyApi } from "@tkey/common-types";
 import BN from "bn.js";
 import createHash from "create-hash";
 
-import english from "./english";
+import { english } from "./english";
 
 export const IMPORT_EXPORT_MODULE_NAME = "importExportModule";
 
@@ -17,13 +17,13 @@ function binaryToByte(bin: string): number {
 function lpad(str: string, padString: string, length: number): string {
   let string = str;
   while (string.length < length) {
-    string = padString + str;
+    string = padString + string;
   }
-  return str;
+  return string;
 }
 
 function bytesToBinary(bytes: number[]): string {
-  return bytes.map((x: number): string => lpad(x.toString(2), "0", 8)).join("");
+  return bytes.map((x) => lpad(x.toString(2), "0", 8)).join("");
 }
 
 function deriveChecksumBits(entropyBuffer: Buffer): string {
@@ -42,7 +42,6 @@ class ImportExportModule implements IModule {
   english: string[];
 
   constructor() {
-    console.log(this);
     this.moduleName = IMPORT_EXPORT_MODULE_NAME;
     this.english = english as string[];
   }
@@ -59,16 +58,15 @@ class ImportExportModule implements IModule {
     if (!Buffer.isBuffer(entropy)) {
       newEntropy = Buffer.from(entropy, "hex");
     }
-    console.log(this.english);
 
     // 128 <= ENT <= 256
-    if (entropy.length < 16) {
+    if (newEntropy.length < 16) {
       throw new TypeError("Invalid Entropy");
     }
-    if (entropy.length > 32) {
+    if (newEntropy.length > 32) {
       throw new TypeError("Invalid Entropy");
     }
-    if (entropy.length % 4 !== 0) {
+    if (newEntropy.length % 4 !== 0) {
       throw new TypeError("Invalid Entropy");
     }
 
@@ -88,8 +86,6 @@ class ImportExportModule implements IModule {
   }
 
   mnemonicToEntropy(mnemonic: string): string {
-    console.log(this.english);
-
     const words = normalize(mnemonic).split(" ");
     if (words.length % 3 !== 0) {
       throw new Error("Invalid mnemonic");
@@ -135,6 +131,10 @@ class ImportExportModule implements IModule {
 
   exportShare(share: BN): string {
     return this.entropyToMnemonic(share.toString("hex"));
+  }
+
+  importShare(seed: string): BN {
+    return new BN(this.mnemonicToEntropy(seed), "hex");
   }
 }
 

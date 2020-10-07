@@ -1,4 +1,4 @@
-const english = [
+export const english = [
   "abandon",
   "ability",
   "able",
@@ -2048,5 +2048,3 @@ const english = [
   "zone",
   "zoo",
 ];
-
-export { english };

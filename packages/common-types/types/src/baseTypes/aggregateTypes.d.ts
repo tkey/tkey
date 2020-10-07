@@ -43,6 +43,7 @@ export interface IMetadata extends ISerializable {
     setScopedStore(domain: string, data: unknown): void;
     getEncryptedShare(shareStore: ShareStore): Promise<ShareStore>;
     getShareDescription(): ShareDescriptionMap;
+    shareToShareStore(share: BN): ShareStore;
     addShareDescription(shareIndex: string, description: string): void;
     deleteShareDescription(shareIndex: string, description: string): void;
     clone(): IMetadata;
