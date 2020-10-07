@@ -7,7 +7,7 @@
     "clean": "lerna clean --yes && lerna exec -- rimraf package-lock.json dist/ .rts2_cache_{cjs,esm}/",
     "build": "lerna run build",
     "dev": "lerna run dev",
-    "test": "lerna run test --parallel",
+    "test": "lerna run test --parallel --scope @tkey/import-export-share",
     "test-development": "lerna run test-development --parallel",
     "test-production": "lerna run test-production --parallel",
     "test-debugger": "lerna run test-debugger --parallel",

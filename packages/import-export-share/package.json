@@ -1,0 +1,54 @@
+{
+  "name": "@tkey/import-export-share",
+  "version": "1.1.3",
+  "description": "TKey import-export module",
+  "author": "Torus Labs",
+  "homepage": "https://github.com/torusresearch/tkey#readme",
+  "license": "MIT",
+  "main": "dist/import-export-share.cjs.js",
+  "unpkg": "dist/import-export-share.umd.min.js",	
+  "jsdelivr": "dist/import-export-share.umd.min.js",
+  "types": "types/index.d.ts",
+  "files": [
+    "dist",
+    "types"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/torusresearch/tkey.git"
+  },
+  "scripts": {
+    "test": "cross-env MOCKED=true mocha --config ../../.mocharc.json ",
+    "test-development": "cross-env MOCKED=false METADATA=http://localhost:5051 mocha --config ../../.mocharc.json ",
+    "test-production": "cross-env MOCKED=false METADATA=https://metadata.tor.us mocha --config ../../.mocharc.json ",
+    "test-debugger": "mocha --config ../../.mocharc.json --inspect-brk",
+    "dev": "rimraf dist/ && cross-env NODE_ENV=development parallel-webpack --no-stats",
+    "build": "rimraf dist/ && cross-env NODE_ENV=production parallel-webpack --no-stats",
+    "build:types": "rimraf types/ && tsc --project tsconfig.types.json",
+    "lint": "eslint --fix 'src/**/*.ts'",
+    "prepack": "npm run build && npm run build:types",
+    "pack": "npm pack",
+    "pre-commit": "lint-staged"
+  },
+  "peerDependencies": {	
+    "@babel/runtime": "7.x"
+  },
+  "dependencies": {
+    "@tkey/common-types": "^1.1.3",
+    "create-hash": "^1.1.0",
+    "@types/create-hash": "1.2.0",
+    "bn.js": "^5.1.3"
+  },
+  "bugs": {
+    "url": "https://github.com/torusresearch/tkey/issues"
+  },
+  "lint-staged": {	
+    "!(*d).ts": [	
+      "npm run lint --",	
+      "prettier --write 'src/**/*.ts'"	
+    ]	
+  }
+}

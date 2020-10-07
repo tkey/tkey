@@ -96,12 +96,7 @@ function generateWebpackConfig({ pkg, pkgName, currentPath, alias }) {
       rules: [babelLoader],
     },
     externals: [...Object.keys(pkg.dependencies), /^(@babel\/runtime)/i],
-    plugins: [
-      new ESLintPlugin({
-        extensions: ".ts",
-        cwd: path.resolve(currentPath, "../../"),
-      }),
-    ],
+    // plugins: [new ESLintPlugin({ extensions: "ts" }), new ForkTsCheckerWebpackPlugin()],
     node: {
       ...baseConfig.node,
       Buffer: false,
@@ -122,7 +117,8 @@ function generateWebpackConfig({ pkg, pkgName, currentPath, alias }) {
     externals: [...Object.keys(pkg.dependencies).filter((x) => !packagesToInclude.includes(x)), /^(@babel\/runtime)/i],
   };
 
-  return [umdPolyfilledConfig, umdConfig, cjsConfig, cjsBundledConfig];
+  // return [umdPolyfilledConfig, umdConfig, cjsConfig, cjsBundledConfig];
+  return [cjsConfig];
 }
 
 module.exports = generateWebpackConfig;
