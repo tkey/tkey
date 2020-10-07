@@ -1,4 +1,4 @@
-import { IServiceProvider, IStorageLayer, MockStorageLayerArgs, StringifiedType } from "@tkey/types";
+import { IServiceProvider, IStorageLayer, MockStorageLayerArgs, StringifiedType } from "@tkey/common-types";
 import BN from "bn.js";
 declare class MockStorageLayer implements IStorageLayer {
     dataMap: {

@@ -1,4 +1,4 @@
-import { ShareStore } from "@tkey/types";
+import { ShareStore } from "@tkey/common-types";
 declare global {
     interface Navigator {
         webkitPersistentStorage: {

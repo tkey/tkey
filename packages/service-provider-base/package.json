@@ -37,7 +37,7 @@
     "@babel/runtime": "7.x"	
   },
   "dependencies": {
-    "@tkey/types": "^1.1.3",
+    "@tkey/common-types": "^1.1.3",
     "bn.js": "^5.1.3",
     "elliptic": "^6.5.3"
   },

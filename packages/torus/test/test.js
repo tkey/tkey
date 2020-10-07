@@ -4,7 +4,7 @@ import SeedPhraseModule, { MetamaskSeedPhraseFormat } from "@tkey/seed-phrase";
 import ServiceProviderBase from "@tkey/service-provider-base";
 import ShareTransferModule from "@tkey/share-transfer";
 import TorusStorageLayer, { MockStorageLayer } from "@tkey/storage-layer-torus";
-import { ecCurve } from "@tkey/types";
+import { ecCurve } from "@tkey/common-types";
 import { generatePrivate } from "@toruslabs/eccrypto";
 import { deepStrictEqual, fail, strictEqual } from "assert";
 import atob from "atob";

@@ -1,4 +1,4 @@
-import { derivePubKeyXFromPolyID, ShareStore } from "@tkey/types";
+import { derivePubKeyXFromPolyID, ShareStore } from "@tkey/common-types";
 
 function storageAvailable(type: string): boolean {
   let storage: Storage;

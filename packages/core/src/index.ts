@@ -31,7 +31,7 @@ import {
   StringifiedType,
   TKeyArgs,
   toPrivKeyECC,
-} from "@tkey/types";
+} from "@tkey/common-types";
 import { generatePrivate } from "@toruslabs/eccrypto";
 import BN from "bn.js";
 import stringify from "json-stable-stringify";

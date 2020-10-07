@@ -16,6 +16,5 @@
       "@tkey/*": ["*/index.ts"]
     },
     "skipLibCheck": true,
-  },
-  "exclude": ["node_modules", "dist"]
+  }
 }

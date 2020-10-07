@@ -1,4 +1,4 @@
-import { IServiceProvider, IStorageLayer, StringifiedType, TorusStorageLayerAPIParams, TorusStorageLayerArgs } from "@tkey/types";
+import { IServiceProvider, IStorageLayer, StringifiedType, TorusStorageLayerAPIParams, TorusStorageLayerArgs } from "@tkey/common-types";
 import BN from "bn.js";
 declare class TorusStorageLayer implements IStorageLayer {
     enableLogging: boolean;

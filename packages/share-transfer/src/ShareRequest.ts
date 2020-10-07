@@ -1,4 +1,4 @@
-import { BufferObj, EncryptedMessage, ShareRequestArgs } from "@tkey/types";
+import { BufferObj, EncryptedMessage, ShareRequestArgs } from "@tkey/common-types";
 
 class ShareRequest {
   encPubKey: Buffer;

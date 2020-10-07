@@ -10,7 +10,7 @@ import {
   StringifiedType,
   toPrivKeyEC,
   toPrivKeyECC,
-} from "@tkey/types";
+} from "@tkey/common-types";
 import BN from "bn.js";
 import { curve, ec as EC } from "elliptic";
 

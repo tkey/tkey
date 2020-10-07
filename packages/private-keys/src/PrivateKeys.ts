@@ -1,4 +1,4 @@
-import { IModule, IPrivateKeyFormat, ISECP256k1NStore, ITKeyApi } from "@tkey/types";
+import { IModule, IPrivateKeyFormat, ISECP256k1NStore, ITKeyApi } from "@tkey/common-types";
 import BN from "bn.js";
 
 export const PRIVATE_KEY_MODULE_NAME = "privateKeyModule";

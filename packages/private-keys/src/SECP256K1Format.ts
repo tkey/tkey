@@ -1,4 +1,4 @@
-import { ecCurve, IPrivateKeyFormat, SECP256k1NStore } from "@tkey/types";
+import { ecCurve, IPrivateKeyFormat, SECP256k1NStore } from "@tkey/common-types";
 import BN from "bn.js";
 
 class SECP256K1Format implements IPrivateKeyFormat {

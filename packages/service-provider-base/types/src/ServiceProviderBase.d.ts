@@ -1,5 +1,5 @@
 /// <reference types="node" />
-import { BNString, EncryptedMessage, IServiceProvider, PubKeyType, ServiceProviderArgs, StringifiedType } from "@tkey/types";
+import { BNString, EncryptedMessage, IServiceProvider, PubKeyType, ServiceProviderArgs, StringifiedType } from "@tkey/common-types";
 import BN from "bn.js";
 import { curve, ec as EC } from "elliptic";
 declare class ServiceProviderBase implements IServiceProvider {

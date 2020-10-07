@@ -1,4 +1,4 @@
-import { IPrivateKeyFormat, SECP256k1NStore } from "@tkey/types";
+import { IPrivateKeyFormat, SECP256k1NStore } from "@tkey/common-types";
 import BN from "bn.js";
 declare class SECP256K1Format implements IPrivateKeyFormat {
     privateKeys: BN[];

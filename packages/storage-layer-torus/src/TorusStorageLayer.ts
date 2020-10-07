@@ -12,7 +12,7 @@ import {
   toPrivKeyECC,
   TorusStorageLayerAPIParams,
   TorusStorageLayerArgs,
-} from "@tkey/types";
+} from "@tkey/common-types";
 import { post } from "@toruslabs/http-helpers";
 import BN from "bn.js";
 import stringify from "json-stable-stringify";

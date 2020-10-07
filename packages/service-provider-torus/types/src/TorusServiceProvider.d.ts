@@ -1,5 +1,5 @@
+import { StringifiedType, TorusServiceProviderArgs } from "@tkey/common-types";
 import ServiceProviderBase from "@tkey/service-provider-base";
-import { StringifiedType, TorusServiceProviderArgs } from "@tkey/types";
 import DirectWebSDK, { AggregateLoginParams, DirectWebSDKArgs, InitParams, SubVerifierDetails, TorusAggregateLoginResponse, TorusLoginResponse } from "@toruslabs/torus-direct-web-sdk";
 declare class TorusServiceProvider extends ServiceProviderBase {
     directWeb: DirectWebSDK;

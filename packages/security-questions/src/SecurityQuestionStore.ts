@@ -1,4 +1,4 @@
-import { ISerializable, PolynomialID, PublicShare, SecurityQuestionStoreArgs, StringifiedType } from "@tkey/types";
+import { ISerializable, PolynomialID, PublicShare, SecurityQuestionStoreArgs, StringifiedType } from "@tkey/common-types";
 import BN from "bn.js";
 
 class SecurityQuestionStore implements ISerializable {

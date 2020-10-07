@@ -8,7 +8,7 @@ import {
   Share,
   ShareStore,
   ShareStoreMap,
-} from "@tkey/types";
+} from "@tkey/common-types";
 import BN from "bn.js";
 import { keccak256 } from "web3-utils";
 

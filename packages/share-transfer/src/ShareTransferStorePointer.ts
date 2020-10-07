@@ -1,4 +1,4 @@
-import { ShareTransferStorePointerArgs } from "@tkey/types";
+import { ShareTransferStorePointerArgs } from "@tkey/common-types";
 import BN from "bn.js";
 
 class ShareTransferStorePointer {

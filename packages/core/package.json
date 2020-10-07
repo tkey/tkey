@@ -28,7 +28,7 @@
     "types"
   ],
   "dependencies": {
-    "@tkey/types": "^1.1.3",
+    "@tkey/common-types": "^1.1.3",
     "@toruslabs/eccrypto": "^1.1.5",
     "@toruslabs/http-helpers": "^1.3.4",
     "bn.js": "^5.1.3",

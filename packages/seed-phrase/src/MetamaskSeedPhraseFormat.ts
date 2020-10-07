@@ -1,4 +1,4 @@
-import { generateAddressFromPublicKey, ISeedPhraseFormat, ISeedPhraseStore, MetamaskSeedPhraseStore } from "@tkey/types";
+import { generateAddressFromPublicKey, ISeedPhraseFormat, ISeedPhraseStore, MetamaskSeedPhraseStore } from "@tkey/common-types";
 import { mnemonicToSeedSync, validateMnemonic } from "bip39";
 import BN from "bn.js";
 import HDKey from "hdkey";

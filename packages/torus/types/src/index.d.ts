@@ -1,6 +1,6 @@
+import { TKeyArgs } from "@tkey/common-types";
 import TKey from "@tkey/core";
-import { TKeyArgs } from "@tkey/types";
 declare class ThresholdKey extends TKey {
-  constructor(args?: TKeyArgs);
+    constructor(args?: TKeyArgs);
 }
 export default ThresholdKey;

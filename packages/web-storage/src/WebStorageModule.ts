@@ -1,4 +1,4 @@
-import { BNString, IModule, ITKeyApi, prettyPrintError, ShareStore } from "@tkey/types";
+import { BNString, IModule, ITKeyApi, prettyPrintError, ShareStore } from "@tkey/common-types";
 import BN from "bn.js";
 
 import { getShareFromFileStorage, storeShareOnFileStorage } from "./FileStorageHelpers";

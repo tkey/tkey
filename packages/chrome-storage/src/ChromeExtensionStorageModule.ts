@@ -1,4 +1,4 @@
-import { IModule, ITKeyApi, ShareStore } from "@tkey/types";
+import { IModule, ITKeyApi, ShareStore } from "@tkey/common-types";
 
 export const CHROME_EXTENSION_STORAGE_MODULE_NAME = "chromeExtensionStorage";
 

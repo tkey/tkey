@@ -1,4 +1,4 @@
-import { getPubKeyPoint, IServiceProvider, IStorageLayer, KEY_NOT_FOUND, MockStorageLayerArgs, StringifiedType } from "@tkey/types";
+import { getPubKeyPoint, IServiceProvider, IStorageLayer, KEY_NOT_FOUND, MockStorageLayerArgs, StringifiedType } from "@tkey/common-types";
 import BN from "bn.js";
 import stringify from "json-stable-stringify";
 

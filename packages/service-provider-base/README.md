@@ -1,11 +1,11 @@
-# `@tkey/types`
+# `@tkey/common-types`
 
 > TODO: description
 
 ## Usage
 
 ```
-const types = require('@tkey/types');
+const types = require('@tkey/common-types');
 
 // TODO: DEMONSTRATE API
 ```

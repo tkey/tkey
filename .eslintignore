@@ -21,4 +21,5 @@ yarn-debug.log*
 yarn-error.log*
 examples/
 dist/
-/packages/*/types
+types/
+**/*.d.ts

@@ -1,4 +1,4 @@
-import { derivePubKeyXFromPolyID, ShareStore } from "@tkey/types";
+import { derivePubKeyXFromPolyID, ShareStore } from "@tkey/common-types";
 
 // Web Specific declarations
 const requestedBytes = 1024 * 1024 * 10; // 10MB

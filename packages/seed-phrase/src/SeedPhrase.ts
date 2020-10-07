@@ -1,4 +1,4 @@
-import { IModule, ISeedPhraseFormat, ISeedPhraseStore, ITKeyApi } from "@tkey/types";
+import { IModule, ISeedPhraseFormat, ISeedPhraseStore, ITKeyApi } from "@tkey/common-types";
 import BN from "bn.js";
 
 export const SEED_PHRASE_MODULE_NAME = "seedPhraseModule";
