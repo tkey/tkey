@@ -1,4 +1,5 @@
 import { ecCurve } from "@tkey/common-types";
+import { IMPORT_EXPORT_MODULE_NAME, ImportExportModule } from "@tkey/import-export-share";
 import PrivateKeyModule, { SECP256k1Format } from "@tkey/private-keys";
 import SecurityQuestionsModule from "@tkey/security-questions";
 import SeedPhraseModule, { MetamaskSeedPhraseFormat } from "@tkey/seed-phrase";
@@ -456,6 +457,28 @@ describe("ShareTransferModule", function () {
   });
 });
 
+describe("ImportExportModule", function () {
+  it.only("#should be able to import export share", async function () {
+    const tb = new ThresholdKey({
+      serviceProvider: defaultSP,
+      storageLayer: defaultSL,
+    });
+    const resp1 = await tb.initializeNewKey({ initializeModules: true });
+    const exportedSeedShare = tb.exportShare(resp1.deviceShare.share.shareIndex, "mnemonic");
+
+    const tb2 = new ThresholdKey({
+      serviceProvider: defaultSP,
+      storageLayer: defaultSL,
+    });
+    await tb2.initialize();
+    await tb2.importShare(exportedSeedShare, "mnemonic");
+    const reconstructedKey = await tb2.reconstructKey();
+
+    if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
+      fail("key should be able to be reconstructed");
+    }
+  });
+});
 describe("TkeyStore", function () {
   it("#should get/set seed phrase", async function () {
     const metamaskSeedPhraseFormat = new MetamaskSeedPhraseFormat("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68");

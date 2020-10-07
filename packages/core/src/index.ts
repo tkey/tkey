@@ -32,6 +32,7 @@ import {
   TKeyArgs,
   toPrivKeyECC,
 } from "@tkey/common-types";
+import { ImportExportModule } from "@tkey/import-export-share";
 import { generatePrivate } from "@toruslabs/eccrypto";
 import BN from "bn.js";
 import stringify from "json-stable-stringify";
@@ -700,6 +701,28 @@ class ThresholdKey implements ITKey {
     const newString = decryptedKeyStore.toString();
     const tkeyStoreData = JSON.parse(newString.toString());
     return tkeyStoreData;
+  }
+
+  // Import export shares
+  exportShare(shareIndex: BNString, type: string): unknown {
+    const shareStore = this.outputShare(shareIndex);
+    if (type === "mnemonic") {
+      const module = this.modules.importExportModule as ImportExportModule;
+      return module.exportShare(shareStore.share.share);
+    }
+    throw new Error("Type not supported");
+  }
+
+  async importShare(share: unknown, type: string): Promise<void> {
+    if (type === "mnemonic") {
+      const shareString = share as string;
+      const module = this.modules.importExportModule as ImportExportModule;
+      const shareBN = module.importShare(shareString);
+      const shareStore = this.metadata.shareToShareStore(shareBN);
+      await this.inputShareSafe(shareStore);
+    } else {
+      throw new Error("Type not supported");
+    }
   }
 
   toJSON(): StringifiedType {
