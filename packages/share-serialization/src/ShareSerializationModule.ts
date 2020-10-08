@@ -26,13 +26,21 @@ class ShareSerializationModule implements IModule {
   async initialize(): Promise<void> { }
 
   serialize(share: BN, type: string): string {
-    if (type === "mnemonic") return entropyToMnemonic(share.toString("hex"), this.english);
+    if (type === "mnemonic") return this.serializeMnemonic(share);
     throw new Error("Type is not supported");
   }
 
   deserialize(share: unknown, type: string): BN {
-    if (type === "mnemonic") return new BN(mnemonicToEntropy(share as string, this.english), "hex");
+    if (type === "mnemonic") return this.deserializeMnemonic(share as string);
     throw new Error("Type is not supported");
+  }
+
+  serializeMnemonic(share: BN): string {
+    return entropyToMnemonic(share.toString("hex"), this.english);
+  }
+
+  deserializeMnemonic(share: string): BN {
+    return new BN(mnemonicToEntropy(share, this.english), "hex");
   }
 }
 
