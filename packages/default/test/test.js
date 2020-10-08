@@ -1,5 +1,4 @@
 import { ecCurve } from "@tkey/common-types";
-import { IMPORT_EXPORT_MODULE_NAME, ImportExportModule } from "@tkey/import-export-share";
 import PrivateKeyModule, { SECP256k1Format } from "@tkey/private-keys";
 import SecurityQuestionsModule from "@tkey/security-questions";
 import SeedPhraseModule, { MetamaskSeedPhraseFormat } from "@tkey/seed-phrase";

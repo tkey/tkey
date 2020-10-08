@@ -708,7 +708,7 @@ class ThresholdKey implements ITKey {
     const shareStore = this.outputShare(shareIndex);
     if (type === "mnemonic") {
       const module = this.modules.importExportModule as ImportExportModule;
-      return module.exportShare(shareStore.share.share);
+      return module.shareToMnemonic(shareStore.share.share);
     }
     throw new Error("Type not supported");
   }
@@ -717,7 +717,7 @@ class ThresholdKey implements ITKey {
     if (type === "mnemonic") {
       const shareString = share as string;
       const module = this.modules.importExportModule as ImportExportModule;
-      const shareBN = module.importShare(shareString);
+      const shareBN = module.mnemonicToShare(shareString);
       const shareStore = this.metadata.shareToShareStore(shareBN);
       await this.inputShareSafe(shareStore);
     } else {
