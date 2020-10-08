@@ -1,13 +1,13 @@
 {
-  "name": "@tkey/import-export-share",
+  "name": "@tkey/share-serialization",
   "version": "1.1.3",
-  "description": "TKey import-export module",
+  "description": "TKey share serialization module",
   "author": "Torus Labs",
   "homepage": "https://github.com/torusresearch/tkey#readme",
   "license": "MIT",
-  "main": "dist/import-export-share.cjs.js",
-  "unpkg": "dist/import-export-share.umd.min.js",	
-  "jsdelivr": "dist/import-export-share.umd.min.js",
+  "main": "dist/share-serialization.cjs.js",
+  "unpkg": "dist/share-serialization.umd.min.js",	
+  "jsdelivr": "dist/share-serialization.umd.min.js",
   "types": "types/index.d.ts",
   "files": [
     "dist",

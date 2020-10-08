@@ -4,9 +4,9 @@ import BN from "bn.js";
 import { english } from "./english";
 import { entropyToMnemonic, mnemonicToEntropy } from "./utils";
 
-export const IMPORT_EXPORT_MODULE_NAME = "importExportModule";
+export const SHARE_SERIALIZATION_MODULE = "shareSerializationModule";
 
-class ImportExportModule implements IModule {
+class ShareSerializationModule implements IModule {
   moduleName: string;
 
   tbSDK: ITKeyApi;
@@ -14,7 +14,7 @@ class ImportExportModule implements IModule {
   english: string[];
 
   constructor() {
-    this.moduleName = IMPORT_EXPORT_MODULE_NAME;
+    this.moduleName = SHARE_SERIALIZATION_MODULE;
     this.english = english as string[];
   }
 
@@ -34,4 +34,4 @@ class ImportExportModule implements IModule {
   }
 }
 
-export default ImportExportModule;
+export default ShareSerializationModule;
