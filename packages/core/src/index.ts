@@ -32,7 +32,7 @@ import {
   TKeyArgs,
   toPrivKeyECC,
 } from "@tkey/common-types";
-import { ImportExportModule } from "@tkey/import-export-share";
+import { ShareSerializationModule } from "@tkey/share-serialization";
 import { generatePrivate } from "@toruslabs/eccrypto";
 import BN from "bn.js";
 import stringify from "json-stable-stringify";
@@ -706,25 +706,23 @@ class ThresholdKey implements ITKey {
   }
 
   // Import export shares
-  outputShare(shareIndex: BNString, type: string): unknown {
-    const shareStore = this.outputShareStore(shareIndex);
-    if (type === "mnemonic") {
-      const module = this.modules.importExportModule as ImportExportModule;
-      return module.shareToMnemonic(shareStore.share.share);
-    }
-    throw new Error("Type not supported");
+  outputShare(shareIndex: BNString, type?: string): unknown {
+    const { share } = this.outputShareStore(shareIndex).share;
+    if (!type) return share;
+
+    const module = this.modules.shareSerializationModule as ShareSerializationModule;
+    return module.serialize(share, type);
   }
 
-  async inputShare(share: unknown, type: string): Promise<void> {
-    if (type === "mnemonic") {
-      const shareString = share as string;
-      const module = this.modules.importExportModule as ImportExportModule;
-      const shareBN = module.mnemonicToShare(shareString);
-      const shareStore = this.metadata.shareToShareStore(shareBN);
-      await this.inputShareStoreSafe(shareStore);
-    } else {
-      throw new Error("Type not supported");
+  async inputShare(share: unknown, type?: string): Promise<void> {
+    let shareStore: ShareStore;
+    if (!type) shareStore = this.metadata.shareToShareStore(share as BN);
+    else {
+      const module = this.modules.shareSerializationModule as ShareSerializationModule;
+      const deserialized = module.deserialize(share, type);
+      shareStore = this.metadata.shareToShareStore(deserialized);
     }
+    this.inputShareStore(shareStore);
   }
 
   toJSON(): StringifiedType {

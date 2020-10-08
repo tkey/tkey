@@ -23,14 +23,16 @@ class ShareSerializationModule implements IModule {
   }
 
   // eslint-disable-next-line
-  async initialize(): Promise<void> {}
+  async initialize(): Promise<void> { }
 
-  shareToMnemonic(share: BN): string {
-    return entropyToMnemonic(share.toString("hex"), this.english);
+  serialize(share: BN, type: string): string {
+    if (type === "mnemonic") return entropyToMnemonic(share.toString("hex"), this.english);
+    throw new Error("Type is not supported");
   }
 
-  mnemonicToShare(seed: string): BN {
-    return new BN(mnemonicToEntropy(seed, this.english), "hex");
+  deserialize(share: unknown, type: string): BN {
+    if (type === "mnemonic") return new BN(mnemonicToEntropy(share as string, this.english), "hex");
+    throw new Error("Type is not supported");
   }
 }
 

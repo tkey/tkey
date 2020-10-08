@@ -456,8 +456,8 @@ describe("ShareTransferModule", function () {
   });
 });
 
-describe("ImportExportModule", function () {
-  it.only("#should be able to import export share", async function () {
+describe("ShareSerializationModuel", function () {
+  it("#should be able to serializa and deserialize share", async function () {
     const tb = new ThresholdKey({
       serviceProvider: defaultSP,
       storageLayer: defaultSL,
