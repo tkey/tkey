@@ -92,7 +92,7 @@ class SecurityQuestionsModule implements IModule {
     const latestShareDetails = await this.tbSDK.catchupToLatestShare(shareStore);
     // TODO: update share nonce on all metadata. would be cleaner in long term?
     // if (shareStore.polynomialID !== latestShareDetails.latestShare.polynomialID) this.storeDeviceShare(latestShareDetails.latestShare);
-    this.tbSDK.inputShare(latestShareDetails.latestShare);
+    this.tbSDK.inputShareStore(latestShareDetails.latestShare);
   }
 
   async changeSecurityQuestionAndAnswer(newAnswerString: string, newQuestions: string): Promise<void> {
@@ -102,7 +102,7 @@ class SecurityQuestionsModule implements IModule {
     const sqStore = new SecurityQuestionStore(rawSqStore as SecurityQuestionStoreArgs);
 
     const userInputHash = answerToUserInputHashBN(newAnswerString);
-    const sqShare = this.tbSDK.outputShare(sqStore.shareIndex);
+    const sqShare = this.tbSDK.outputShareStore(sqStore.shareIndex);
     let nonce = sqShare.share.share.sub(userInputHash);
     nonce = nonce.umod(ecCurve.curve.n);
 

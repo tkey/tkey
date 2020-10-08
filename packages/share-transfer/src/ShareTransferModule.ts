@@ -71,7 +71,7 @@ class ShareTransferModule implements IModule {
         if (latestShareTransferStore[encPubKeyX].encShareInTransit) {
           const shareStoreBuf = await decrypt(toPrivKeyECC(this.currentEncKey), latestShareTransferStore[encPubKeyX].encShareInTransit);
           const receivedShare = ShareStore.fromJSON(JSON.parse(shareStoreBuf.toString()));
-          await this.tbSDK.inputShareSafe(receivedShare);
+          await this.tbSDK.inputShareStoreSafe(receivedShare);
           if (callback) callback(receivedShare);
           clearInterval(timerID);
         }
@@ -98,7 +98,7 @@ class ShareTransferModule implements IModule {
       const latestPolynomialId = latestPolynomial.getPolynomialID();
       const indexes = metadata.getShareIndexesForPolynomial(latestPolynomialId);
       const filtered = indexes.filter((el) => !availableShareIndexes.includes(el));
-      const share = this.tbSDK.outputShare(filtered[0]);
+      const share = this.tbSDK.outputShareStore(filtered[0]);
       bufferedShare = Buffer.from(JSON.stringify(share));
     }
     const shareRequest = new ShareRequest(shareTransferStore[encPubKeyX]);
@@ -108,7 +108,7 @@ class ShareTransferModule implements IModule {
   }
 
   async approveRequestWithShareIndex(encPubKeyX: string, shareIndex: string): Promise<void> {
-    const deviceShare = this.tbSDK.outputShare(shareIndex);
+    const deviceShare = this.tbSDK.outputShareStore(shareIndex);
     return this.approveRequest(encPubKeyX, deviceShare);
   }
 
@@ -134,7 +134,7 @@ class ShareTransferModule implements IModule {
             if (latestShareTransferStore[encPubKeyX].encShareInTransit) {
               const shareStoreBuf = await decrypt(toPrivKeyECC(this.currentEncKey), latestShareTransferStore[encPubKeyX].encShareInTransit);
               const receivedShare = ShareStore.fromJSON(JSON.parse(shareStoreBuf.toString()));
-              await this.tbSDK.inputShareSafe(receivedShare);
+              await this.tbSDK.inputShareStoreSafe(receivedShare);
               if (deleteRequestAfterCompletion) {
                 await this.deleteShareTransferStore(encPubKeyX);
               }

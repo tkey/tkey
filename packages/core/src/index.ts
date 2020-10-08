@@ -92,8 +92,10 @@ class ThresholdKey implements ITKey {
       addReconstructKeyMiddleware: this.addReconstructKeyMiddleware.bind(this),
       addShareDescription: this.addShareDescription.bind(this),
       generateNewShare: this.generateNewShare.bind(this),
+      inputShareStore: this.inputShareStore.bind(this),
+      inputShareStoreSafe: this.inputShareStoreSafe.bind(this),
+      outputShareStore: this.outputShareStore.bind(this),
       inputShare: this.inputShare.bind(this),
-      inputShareSafe: this.inputShareSafe.bind(this),
       outputShare: this.outputShare.bind(this),
       setDeviceStorage: this.setDeviceStorage.bind(this),
       encrypt: this.encrypt.bind(this),
@@ -136,7 +138,7 @@ class ThresholdKey implements ITKey {
     // we fetch metadata for the account from the share
     const latestShareDetails = await this.catchupToLatestShare(shareStore);
     this.metadata = latestShareDetails.shareMetadata;
-    this.inputShare(latestShareDetails.latestShare);
+    this.inputShareStore(latestShareDetails.latestShare);
     // now that we have metadata we set the requirements for reconstruction
 
     // initialize modules
@@ -212,7 +214,7 @@ class ThresholdKey implements ITKey {
             if (latestShareRes.latestShare.polynomialID === pubPolyID) {
               sharesLeft -= 1;
               delete shareIndexesRequired[shareIndexesForPoly[k]];
-              this.inputShare(latestShareRes.latestShare);
+              this.inputShareStore(latestShareRes.latestShare);
             }
           }
         }
@@ -384,7 +386,7 @@ class ThresholdKey implements ITKey {
     // set metadata for all new shares
     for (let index = 0; index < newShareIndexes.length; index += 1) {
       const shareIndex = newShareIndexes[index];
-      this.inputShare(newShareStores[shareIndex]);
+      this.inputShareStore(newShareStores[shareIndex]);
     }
 
     return { shareStores: newShareStores };
@@ -445,7 +447,7 @@ class ThresholdKey implements ITKey {
     for (let index = 0; index < shareIndexes.length; index += 1) {
       const shareIndex = shareIndexes[index];
       // also add into our share store
-      this.inputShare(new ShareStore(shares[shareIndex.toString("hex")], poly.getPolynomialID()));
+      this.inputShareStore(new ShareStore(shares[shareIndex.toString("hex")], poly.getPolynomialID()));
     }
     this.metadata = metadata;
 
@@ -469,7 +471,7 @@ class ThresholdKey implements ITKey {
     return result;
   }
 
-  inputShare(shareStore: ShareStore): void {
+  inputShareStore(shareStore: ShareStore): void {
     let ss: ShareStore;
     if (shareStore instanceof ShareStore) {
       ss = shareStore;
@@ -485,7 +487,7 @@ class ThresholdKey implements ITKey {
   }
 
   // inputs a share ensuring that the share is the latest share AND metadata is updated to its latest state
-  async inputShareSafe(shareStore: ShareStore): Promise<void> {
+  async inputShareStoreSafe(shareStore: ShareStore): Promise<void> {
     let ss;
     if (shareStore instanceof ShareStore) {
       ss = shareStore;
@@ -505,7 +507,7 @@ class ThresholdKey implements ITKey {
     this.shares[latestShareRes.latestShare.polynomialID][latestShareRes.latestShare.share.shareIndex.toString("hex")] = latestShareRes.latestShare;
   }
 
-  outputShare(shareIndex: BNString): ShareStore {
+  outputShareStore(shareIndex: BNString): ShareStore {
     let shareIndexParsed: BN;
     if (typeof shareIndex === "number") {
       shareIndexParsed = new BN(shareIndex);
@@ -704,8 +706,8 @@ class ThresholdKey implements ITKey {
   }
 
   // Import export shares
-  exportShare(shareIndex: BNString, type: string): unknown {
-    const shareStore = this.outputShare(shareIndex);
+  outputShare(shareIndex: BNString, type: string): unknown {
+    const shareStore = this.outputShareStore(shareIndex);
     if (type === "mnemonic") {
       const module = this.modules.importExportModule as ImportExportModule;
       return module.shareToMnemonic(shareStore.share.share);
@@ -713,13 +715,13 @@ class ThresholdKey implements ITKey {
     throw new Error("Type not supported");
   }
 
-  async importShare(share: unknown, type: string): Promise<void> {
+  async inputShare(share: unknown, type: string): Promise<void> {
     if (type === "mnemonic") {
       const shareString = share as string;
       const module = this.modules.importExportModule as ImportExportModule;
       const shareBN = module.mnemonicToShare(shareString);
       const shareStore = this.metadata.shareToShareStore(shareBN);
-      await this.inputShareSafe(shareStore);
+      await this.inputShareStoreSafe(shareStore);
     } else {
       throw new Error("Type not supported");
     }

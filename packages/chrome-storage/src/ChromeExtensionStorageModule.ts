@@ -46,7 +46,7 @@ export default class ChromeExtensionStorageModule implements IModule {
         else {
           try {
             const verifierIdObj: ShareStore = JSON.parse(result[key]);
-            this.tbSDK.inputShare(verifierIdObj);
+            this.tbSDK.inputShareStore(verifierIdObj);
             resolve(verifierIdObj);
           } catch (err) {
             reject(err);
@@ -59,6 +59,6 @@ export default class ChromeExtensionStorageModule implements IModule {
   async inputShareFromChromeExtensionStorage(): Promise<void> {
     const castedShareStore = await this.getStoreFromChromeExtensionStorage();
     const latestShareDetails = await this.tbSDK.catchupToLatestShare(castedShareStore);
-    this.tbSDK.inputShare(latestShareDetails.latestShare);
+    this.tbSDK.inputShareStore(latestShareDetails.latestShare);
   }
 }
