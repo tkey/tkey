@@ -72,6 +72,7 @@ export interface IMetadata extends ISerializable {
   setScopedStore(domain: string, data: unknown): void;
   getEncryptedShare(shareStore: ShareStore): Promise<ShareStore>;
   getShareDescription(): ShareDescriptionMap;
+  shareToShareStore(share: BN): ShareStore;
   addShareDescription(shareIndex: string, description: string): void;
   deleteShareDescription(shareIndex: string, description: string): void;
   clone(): IMetadata;
@@ -203,17 +204,19 @@ export interface ITKeyApi {
   initialize(input?: ShareStore, importKey?: BN): Promise<KeyDetails>;
   catchupToLatestShare(shareStore: ShareStore): Promise<CatchupToLatestShareResult>;
   syncShareMetadata(adjustScopedStore?: (ss: unknown) => unknown): Promise<void>;
-  inputShareSafe(shareStore: ShareStore): Promise<void>;
+  inputShareStoreSafe(shareStore: ShareStore): Promise<void>;
   setDeviceStorage(storeDeviceStorage: (deviceShareStore: ShareStore) => Promise<void>): void;
   addShareDescription(shareIndex: string, description: string, updateMetadata?: boolean): Promise<void>;
-  inputShare(shareStore: ShareStore): void;
+  inputShareStore(shareStore: ShareStore): void;
   addRefreshMiddleware(
     moduleName: string,
     middleware: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap) => unknown
   ): void;
   addReconstructKeyMiddleware(moduleName: string, middleware: () => Promise<Array<BN>>): void;
   generateNewShare(): Promise<GenerateNewShareResult>;
-  outputShare(shareIndex: BNString): ShareStore;
+  outputShareStore(shareIndex: BNString): ShareStore;
+  inputShare(share: unknown, type: string): Promise<void>;
+  outputShare(shareIndex: BNString, type: string): unknown;
   encrypt(data: Buffer): Promise<EncryptedMessage>;
   decrypt(encryptedMesage: EncryptedMessage): Promise<Buffer>;
   getTKeyStore(moduleName: string, key: string): Promise<unknown>;

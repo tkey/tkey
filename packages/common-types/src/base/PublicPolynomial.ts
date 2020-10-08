@@ -4,6 +4,8 @@ import Point from "./Point";
 class PublicPolynomial implements ISerializable {
   polynomialCommitments: Point[];
 
+  polynomialId: PolynomialID;
+
   constructor(polynomialCommitments: Point[]) {
     this.polynomialCommitments = polynomialCommitments;
   }
@@ -21,7 +23,8 @@ class PublicPolynomial implements ISerializable {
       }
       idSeed += nextChunk;
     }
-    return idSeed;
+    this.polynomialId = idSeed;
+    return this.polynomialId;
   }
 
   toJSON(): StringifiedType {

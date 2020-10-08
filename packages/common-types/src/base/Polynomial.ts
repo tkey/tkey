@@ -15,6 +15,8 @@ export type ShareMap = {
 class Polynomial implements ISerializable {
   polynomial: BN[];
 
+  publicPolynomial: PublicPolynomial;
+
   constructor(polynomial: BN[]) {
     this.polynomial = polynomial;
   }
@@ -64,12 +66,12 @@ class Polynomial implements ISerializable {
     for (let i = 0; i < this.polynomial.length; i += 1) {
       polynomialCommitments.push(getPubKeyPoint(this.polynomial[i]));
     }
-    return new PublicPolynomial(polynomialCommitments);
+    this.publicPolynomial = new PublicPolynomial(polynomialCommitments);
+    return this.publicPolynomial;
   }
 
-  // TODO: inefficient optimize this
   getPolynomialID(): PolynomialID {
-    return this.getPublicPolynomial().getPolynomialID();
+    return this.publicPolynomial.polynomialId;
   }
 
   toJSON(): StringifiedType {

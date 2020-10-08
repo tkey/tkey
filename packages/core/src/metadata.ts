@@ -2,6 +2,7 @@ import {
   decrypt,
   ecCurve,
   EncryptedMessage,
+  getPubKeyPoint,
   IMetadata,
   Point,
   Polynomial,
@@ -143,6 +144,23 @@ class Metadata implements IMetadata {
     if (index > -1) {
       currentSD[shareIndex].splice(index, 1);
     }
+  }
+
+  shareToShareStore(share: BN): ShareStore {
+    const pubkey = getPubKeyPoint(share);
+    let returnShare: ShareStore;
+    Object.keys(this.publicShares).forEach((el) => {
+      // eslint-disable-next-line consistent-return
+      Object.keys(this.publicShares[el]).forEach((pl) => {
+        const pubShare = this.publicShares[el][pl];
+        if (pubShare.shareCommitment.x.cmp(pubkey.x) === 0 && pubShare.shareCommitment.y.cmp(pubkey.y) === 0) {
+          const tempShare = new Share(pubShare.shareIndex, share);
+          returnShare = new ShareStore(tempShare, el);
+        }
+      });
+    });
+    if (returnShare) return returnShare;
+    throw new Error("Share doesn't exist");
   }
 
   clone(): Metadata {

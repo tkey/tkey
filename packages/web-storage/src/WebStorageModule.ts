@@ -36,7 +36,7 @@ class WebStorageModule implements IModule {
   }
 
   async storeDeviceShareOnFileStorage(shareIndex: BNString): Promise<void> {
-    const shareStore = this.tbSDK.outputShare(new BN(shareIndex));
+    const shareStore = this.tbSDK.outputShareStore(new BN(shareIndex));
     return storeShareOnFileStorage(shareStore);
   }
 
@@ -67,7 +67,7 @@ class WebStorageModule implements IModule {
     const shareStore = await this.getDeviceShare();
     const latestShareDetails = await this.tbSDK.catchupToLatestShare(shareStore);
     if (shareStore.polynomialID !== latestShareDetails.latestShare.polynomialID) this.storeDeviceShare(latestShareDetails.latestShare);
-    this.tbSDK.inputShare(latestShareDetails.latestShare);
+    this.tbSDK.inputShareStore(latestShareDetails.latestShare);
   }
 }
 

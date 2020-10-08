@@ -1,4 +1,5 @@
 import { IMetadata, Point, Polynomial, PolynomialID, PublicPolynomial, PublicPolynomialMap, PublicShare, PublicSharePolyIDShareIndexMap, Share, ShareDescriptionMap, ShareMap, ShareStore, StringifiedType } from "@tkey/common-types";
+import BN from "bn.js";
 declare class Metadata implements IMetadata {
     pubKey: Point;
     publicPolynomials: PublicPolynomialMap;
@@ -28,6 +29,7 @@ declare class Metadata implements IMetadata {
     getShareDescription(): ShareDescriptionMap;
     addShareDescription(shareIndex: string, description: string): void;
     deleteShareDescription(shareIndex: string, description: string): void;
+    shareToShareStore(share: BN): ShareStore;
     clone(): Metadata;
     toJSON(): StringifiedType;
     static fromJSON(value: StringifiedType): Metadata;

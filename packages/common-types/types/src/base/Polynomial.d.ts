@@ -7,6 +7,7 @@ export declare type ShareMap = {
 };
 declare class Polynomial implements ISerializable {
     polynomial: BN[];
+    publicPolynomial: PublicPolynomial;
     constructor(polynomial: BN[]);
     getThreshold(): number;
     polyEval(x: BNString): BN;

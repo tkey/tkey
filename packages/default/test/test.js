@@ -67,7 +67,7 @@ describe("tkey", function () {
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
     const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize();
-    tb2.inputShare(resp1.deviceShare);
+    tb2.inputShareStore(resp1.deviceShare);
     const reconstructedKey = await tb2.reconstructKey();
     if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
       fail("key should be able to be reconstructed");
@@ -79,7 +79,7 @@ describe("tkey", function () {
     const resp1 = await tb.initializeNewKey({ determinedShare, initializeModules: true });
     const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize();
-    tb2.inputShare(resp1.userShare);
+    tb2.inputShareStore(resp1.userShare);
     const reconstructedKey = await tb2.reconstructKey();
     // compareBNArray(resp1.privKey, reconstructedKey, "key should be able to be reconstructed");
     if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
@@ -90,7 +90,7 @@ describe("tkey", function () {
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
     const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize();
-    tb2.inputShare(resp1.deviceShare);
+    tb2.inputShareStore(resp1.deviceShare);
     const reconstructedKey = await tb2.reconstructKey();
     // compareBNArray(resp1.privKey, reconstructedKey, "key should be able to be reconstructed");
     if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
@@ -99,7 +99,7 @@ describe("tkey", function () {
     const resp2 = await tb2.generateNewShare();
     const tb3 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb3.initialize();
-    tb3.inputShare(resp2.newShareStores[resp2.newShareIndex.toString("hex")]);
+    tb3.inputShareStore(resp2.newShareStores[resp2.newShareIndex.toString("hex")]);
     const finalKey = await tb3.reconstructKey();
     // compareBNArray(resp1.privKey, finalKey, "key should be able to be reconstructed after adding new share");
     if (resp1.privKey.cmp(finalKey.privKey) !== 0) {
@@ -112,7 +112,7 @@ describe("tkey", function () {
     const resp1 = await tb.initializeNewKey({ userInput, initializeModules: true });
     const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize(resp1.userShare);
-    tb2.inputShare(resp1.deviceShare);
+    tb2.inputShareStore(resp1.deviceShare);
     const reconstructedKey = await tb2.reconstructKey();
     // compareBNArray(resp1.privKey, reconstructedKey, "key should be able to be reconstructed");
     if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
@@ -126,7 +126,7 @@ describe("tkey", function () {
     const newShares = await tb.generateNewShare();
     const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize(resp1.userShare);
-    tb2.inputShare(newShares.newShareStores[resp1.deviceShare.share.shareIndex.toString("hex")]);
+    tb2.inputShareStore(newShares.newShareStores[resp1.deviceShare.share.shareIndex.toString("hex")]);
     const reconstructedKey = await tb2.reconstructKey();
     // compareBNArray(resp1.privKey, reconstructedKey, "key should be able to be reconstructed");
     if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
@@ -140,7 +140,7 @@ describe("tkey", function () {
     const newShares = await tb.generateNewShare();
     const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize(resp1.userShare);
-    tb2.inputShare(newShares.newShareStores[resp1.deviceShare.share.shareIndex.toString("hex")]);
+    tb2.inputShareStore(newShares.newShareStores[resp1.deviceShare.share.shareIndex.toString("hex")]);
     const reconstructedKey = await tb2.reconstructKey();
     // compareBNArray(resp1.privKey, reconstructedKey, "key should be able to be reconstructed");
     if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
@@ -156,7 +156,7 @@ describe("tkey", function () {
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
     const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize();
-    tb2.inputShare(resp1.deviceShare);
+    tb2.inputShareStore(resp1.deviceShare);
     const reconstructedKey = await tb2.reconstructKey();
     // compareBNArray(resp1.privKey, reconstructedKey, "key should be able to be reconstructed");
     if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
@@ -165,7 +165,7 @@ describe("tkey", function () {
     const resp2 = await tb2.generateNewShare();
     const tb3 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb3.initialize();
-    tb3.inputShare(resp2.newShareStores[resp2.newShareIndex.toString("hex")]);
+    tb3.inputShareStore(resp2.newShareStores[resp2.newShareIndex.toString("hex")]);
     const finalKey = await tb3.reconstructKey();
     // compareBNArray(resp1.privKey, finalKey, "key should be able to be reconstructed");
     if (resp1.privKey.cmp(finalKey.privKey) !== 0) {
@@ -182,7 +182,7 @@ describe("tkey", function () {
     const resp1 = await tb.initializeNewKey({ importedKey, initializeModules: true });
     const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize();
-    tb2.inputShare(resp1.deviceShare);
+    tb2.inputShareStore(resp1.deviceShare);
     const reconstructedKey = await tb2.reconstructKey();
     // compareBNArray([importedKey], reconstructedKey, "key should be able to be reconstructed");
     if (importedKey.cmp(reconstructedKey.privKey) !== 0) {
@@ -194,7 +194,7 @@ describe("tkey", function () {
     const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize(); // initialize sdk with old metadata
     tb.generateNewShare(); // generate new share to update metadata
-    tb2.inputShare(resp1.deviceShare);
+    tb2.inputShareStore(resp1.deviceShare);
     const reconstructedKey = await tb2.reconstructKey(); // reconstruct key with old metadata should work to poly
     if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
       fail("key should be able to be reconstructed");
@@ -456,6 +456,28 @@ describe("ShareTransferModule", function () {
   });
 });
 
+describe("ShareSerializationModuel", function () {
+  it("#should be able to serializa and deserialize share", async function () {
+    const tb = new ThresholdKey({
+      serviceProvider: defaultSP,
+      storageLayer: defaultSL,
+    });
+    const resp1 = await tb.initializeNewKey({ initializeModules: true });
+    const exportedSeedShare = tb.outputShare(resp1.deviceShare.share.shareIndex, "mnemonic");
+
+    const tb2 = new ThresholdKey({
+      serviceProvider: defaultSP,
+      storageLayer: defaultSL,
+    });
+    await tb2.initialize();
+    await tb2.inputShare(exportedSeedShare, "mnemonic");
+    const reconstructedKey = await tb2.reconstructKey();
+
+    if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
+      fail("key should be able to be reconstructed");
+    }
+  });
+});
 describe("TkeyStore", function () {
   it("#should get/set seed phrase", async function () {
     const metamaskSeedPhraseFormat = new MetamaskSeedPhraseFormat("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68");
@@ -474,7 +496,7 @@ describe("TkeyStore", function () {
       modules: { seedPhrase: new SeedPhraseModule([metamaskSeedPhraseFormat2]) },
     });
     await tb2.initialize();
-    tb2.inputShare(resp1.deviceShare);
+    tb2.inputShareStore(resp1.deviceShare);
     const reconstuctedKey = await tb2.reconstructKey();
     // console.log(reconstuctedKey);
     compareReconstructedKeys(reconstuctedKey, {
@@ -548,7 +570,7 @@ describe("TkeyStore", function () {
       modules: { seedPhrase: new SeedPhraseModule([metamaskSeedPhraseFormat2]), privateKeyModule: new PrivateKeyModule([privateKeyFormat]) },
     });
     await tb2.initialize();
-    tb2.inputShare(resp1.deviceShare);
+    tb2.inputShareStore(resp1.deviceShare);
     const reconstuctedKey = await tb2.reconstructKey();
     // console.log(reconstuctedKey);
     compareReconstructedKeys(reconstuctedKey, {

@@ -32,6 +32,7 @@ import {
   TKeyArgs,
   toPrivKeyECC,
 } from "@tkey/common-types";
+import { ShareSerializationModule } from "@tkey/share-serialization";
 import { generatePrivate } from "@toruslabs/eccrypto";
 import BN from "bn.js";
 import stringify from "json-stable-stringify";
@@ -91,8 +92,10 @@ class ThresholdKey implements ITKey {
       addReconstructKeyMiddleware: this.addReconstructKeyMiddleware.bind(this),
       addShareDescription: this.addShareDescription.bind(this),
       generateNewShare: this.generateNewShare.bind(this),
+      inputShareStore: this.inputShareStore.bind(this),
+      inputShareStoreSafe: this.inputShareStoreSafe.bind(this),
+      outputShareStore: this.outputShareStore.bind(this),
       inputShare: this.inputShare.bind(this),
-      inputShareSafe: this.inputShareSafe.bind(this),
       outputShare: this.outputShare.bind(this),
       setDeviceStorage: this.setDeviceStorage.bind(this),
       encrypt: this.encrypt.bind(this),
@@ -135,7 +138,7 @@ class ThresholdKey implements ITKey {
     // we fetch metadata for the account from the share
     const latestShareDetails = await this.catchupToLatestShare(shareStore);
     this.metadata = latestShareDetails.shareMetadata;
-    this.inputShare(latestShareDetails.latestShare);
+    this.inputShareStore(latestShareDetails.latestShare);
     // now that we have metadata we set the requirements for reconstruction
 
     // initialize modules
@@ -211,7 +214,7 @@ class ThresholdKey implements ITKey {
             if (latestShareRes.latestShare.polynomialID === pubPolyID) {
               sharesLeft -= 1;
               delete shareIndexesRequired[shareIndexesForPoly[k]];
-              this.inputShare(latestShareRes.latestShare);
+              this.inputShareStore(latestShareRes.latestShare);
             }
           }
         }
@@ -383,7 +386,7 @@ class ThresholdKey implements ITKey {
     // set metadata for all new shares
     for (let index = 0; index < newShareIndexes.length; index += 1) {
       const shareIndex = newShareIndexes[index];
-      this.inputShare(newShareStores[shareIndex]);
+      this.inputShareStore(newShareStores[shareIndex]);
     }
 
     return { shareStores: newShareStores };
@@ -444,7 +447,7 @@ class ThresholdKey implements ITKey {
     for (let index = 0; index < shareIndexes.length; index += 1) {
       const shareIndex = shareIndexes[index];
       // also add into our share store
-      this.inputShare(new ShareStore(shares[shareIndex.toString("hex")], poly.getPolynomialID()));
+      this.inputShareStore(new ShareStore(shares[shareIndex.toString("hex")], poly.getPolynomialID()));
     }
     this.metadata = metadata;
 
@@ -468,7 +471,7 @@ class ThresholdKey implements ITKey {
     return result;
   }
 
-  inputShare(shareStore: ShareStore): void {
+  inputShareStore(shareStore: ShareStore): void {
     let ss: ShareStore;
     if (shareStore instanceof ShareStore) {
       ss = shareStore;
@@ -484,7 +487,7 @@ class ThresholdKey implements ITKey {
   }
 
   // inputs a share ensuring that the share is the latest share AND metadata is updated to its latest state
-  async inputShareSafe(shareStore: ShareStore): Promise<void> {
+  async inputShareStoreSafe(shareStore: ShareStore): Promise<void> {
     let ss;
     if (shareStore instanceof ShareStore) {
       ss = shareStore;
@@ -504,7 +507,7 @@ class ThresholdKey implements ITKey {
     this.shares[latestShareRes.latestShare.polynomialID][latestShareRes.latestShare.share.shareIndex.toString("hex")] = latestShareRes.latestShare;
   }
 
-  outputShare(shareIndex: BNString): ShareStore {
+  outputShareStore(shareIndex: BNString): ShareStore {
     let shareIndexParsed: BN;
     if (typeof shareIndex === "number") {
       shareIndexParsed = new BN(shareIndex);
@@ -700,6 +703,26 @@ class ThresholdKey implements ITKey {
     const newString = decryptedKeyStore.toString();
     const tkeyStoreData = JSON.parse(newString.toString());
     return tkeyStoreData;
+  }
+
+  // Import export shares
+  outputShare(shareIndex: BNString, type?: string): unknown {
+    const { share } = this.outputShareStore(shareIndex).share;
+    if (!type) return share;
+
+    const module = this.modules.shareSerializationModule as ShareSerializationModule;
+    return module.serialize(share, type);
+  }
+
+  async inputShare(share: unknown, type?: string): Promise<void> {
+    let shareStore: ShareStore;
+    if (!type) shareStore = this.metadata.shareToShareStore(share as BN);
+    else {
+      const module = this.modules.shareSerializationModule as ShareSerializationModule;
+      const deserialized = module.deserialize(share, type);
+      shareStore = this.metadata.shareToShareStore(deserialized);
+    }
+    this.inputShareStore(shareStore);
   }
 
   toJSON(): StringifiedType {
