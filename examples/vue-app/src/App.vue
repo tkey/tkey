@@ -45,14 +45,14 @@
 </template>
 
 <script>
-import ThresholdKey, {
-  WebStorageModule,
-  SecurityQuestionsModule,
-  TorusStorageLayer,
-  TorusServiceProvider,
-  ServiceProviderBase,
-  ShareTransferModule
-} from "@tkey/core";
+import ThresholdKey from "@tkey/default";
+import TorusServiceProvider from "@tkey/service-provider-torus";
+import TorusStorageLayer from "@tkey/storage-layer-torus";
+import ServiceProviderBase from "@tkey/service-provider-base"
+import WebStorageModule from "@tkey/web-storage"
+import SecurityQuestionsModule from "@tkey/security-questions"
+import ShareTransferModule from "@tkey/share-transfer"
+
 // import ServiceProviderBase from '../../../src/serviceProvider/ServiceProviderBase';
 
 const GOOGLE = "google";
@@ -187,7 +187,8 @@ export default {
         if (tempSD.length === 0 && requiredShares > 0) {
           throw new Error("No share descriptions available. New key assign might be required or contact support");
         }
-
+        //eslint-disable-next-line
+        debugger
         let requiredShares = initializedDetails.requiredShares;
         while (requiredShares > 0 && tempSD.length > 0) {
           let currentPriority = tempSD.shift();
@@ -207,6 +208,8 @@ export default {
             throw "new key assign required";
           }
         }
+
+        console.log(this.tbsdk)
 
         const key = await this.tbsdk.reconstructKey();
         // await this.tbsdk.initializeNewKey(undefined, true)

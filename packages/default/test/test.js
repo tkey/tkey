@@ -77,6 +77,7 @@ describe("tkey", function () {
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
     const newServiceProvider = new ServiceProviderBase({ postboxKey: PRIVATE_KEY_2 });
     await tb.linkServiceProvider(newServiceProvider);
+    await tb.generateNewShare();
 
     const tb2 = new ThresholdKey({ serviceProvider: newServiceProvider, storageLayer: defaultSL });
     await tb2.initialize();
