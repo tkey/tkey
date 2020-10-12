@@ -4,7 +4,7 @@
   "scripts": {
     "bootstrap": "lerna bootstrap",
     "publish:lerna": "lerna publish",
-    "clean": "lerna clean --yes && lerna exec -- rimraf package-lock.json dist/ .rts2_cache_{cjs,esm}/",
+    "clean": "lerna clean --yes && lerna exec -- rimraf package-lock.json dist/ .rts2_cache_{cjs,esm}/ tkey-*.tgz",
     "build": "lerna run build",
     "dev": "lerna run dev",
     "test": "lerna run test --parallel",
@@ -13,8 +13,7 @@
     "test-debugger": "lerna run test-debugger --parallel",
     "build:types": "lerna run build:types",
     "lint": "lerna run lint --parallel",
-    "prepack": "lerna run prepack",
-    "pack": "lerna run pack",
+    "pack:lerna": "lerna exec -- npm pack",
     "pre-commit": "lerna run pre-commit"
   },
   "devDependencies": {
