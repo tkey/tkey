@@ -16,7 +16,6 @@
     "build:types": "rimraf types/ && tsc --project tsconfig.types.json",
     "lint": "eslint --fix 'src/**/*.ts'",
     "prepack": "npm run build && npm run build:types",
-    "pack": "npm pack",
     "pre-commit": "lint-staged"
   },
   "repository": {
