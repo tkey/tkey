@@ -6,7 +6,7 @@
   "homepage": "https://github.com/torusresearch/tkey#readme",
   "license": "MIT",
   "main": "dist/common-types.cjs.js",
-  "unpkg": "dist/common-types.umd.min.js",	
+  "unpkg": "dist/common-types.umd.min.js",
   "jsdelivr": "dist/common-types.umd.min.js",
   "types": "types/index.d.ts",
   "files": [
@@ -32,8 +32,8 @@
     "prepack": "npm run build && npm run build:types",
     "pre-commit": "lint-staged"
   },
-  "peerDependencies": {	
-    "@babel/runtime": "7.x"	
+  "peerDependencies": {
+    "@babel/runtime": "7.x"
   },
   "dependencies": {
     "@toruslabs/eccrypto": "^1.1.5",
@@ -48,10 +48,10 @@
   "bugs": {
     "url": "https://github.com/torusresearch/tkey/issues"
   },
-  "lint-staged": {	
-    "!(*d).ts": [	
-      "npm run lint --",	
-      "prettier --write 'src/**/*.ts'"	
-    ]	
+  "lint-staged": {
+    "!(*d).ts": [
+      "npm run lint --",
+      "prettier --write 'src/**/*.ts'"
+    ]
   }
 }
