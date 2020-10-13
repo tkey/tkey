@@ -136,6 +136,7 @@ class Metadata implements IMetadata {
     } else {
       currentSD[shareIndex] = [description];
     }
+    this.setGeneralStoreDomain("shareDescriptions", currentSD);
   }
 
   deleteShareDescription(shareIndex: string, description: string): void {
