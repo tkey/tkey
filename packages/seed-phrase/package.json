@@ -1,12 +1,12 @@
 {
   "name": "@tkey/seed-phrase",
-  "version": "1.1.3",
+  "version": "2.0.0",
   "description": "TKey Seed Phrase Module",
   "author": "Torus Labs",
   "homepage": "https://github.com/torusresearch/tkey#readme",
   "license": "MIT",
   "main": "dist/seed-phrase.cjs.js",
-  "unpkg": "dist/seed-phrase.umd.min.js",	
+  "unpkg": "dist/seed-phrase.umd.min.js",
   "jsdelivr": "dist/seed-phrase.umd.min.js",
   "types": "types/index.d.ts",
   "files": [
@@ -35,11 +35,11 @@
   "bugs": {
     "url": "https://github.com/torusresearch/tkey/issues"
   },
-  "peerDependencies": {	
-    "@babel/runtime": "7.x"	
+  "peerDependencies": {
+    "@babel/runtime": "7.x"
   },
   "dependencies": {
-    "@tkey/common-types": "^1.1.3",
+    "@tkey/common-types": "^2.0.0",
     "bip39": "^3.0.2",
     "bn.js": "^5.1.3",
     "hdkey": "^2.0.1",
@@ -47,10 +47,10 @@
     "web3-eth": "^1.3.0",
     "web3-utils": "^1.3.0"
   },
-  "lint-staged": {	
-    "!(*d).ts": [	
-      "npm run lint --",	
-      "prettier --write 'src/**/*.ts'"	
-    ]	
+  "lint-staged": {
+    "!(*d).ts": [
+      "npm run lint --",
+      "prettier --write 'src/**/*.ts'"
+    ]
   }
 }
