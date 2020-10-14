@@ -15,7 +15,7 @@ class ShareSerializationModule implements IModule {
 
   constructor() {
     this.moduleName = SHARE_SERIALIZATION_MODULE;
-    this.english = english as string[];
+    this.english = english;
   }
 
   setModuleReferences(tbSDK: ITKeyApi): void {

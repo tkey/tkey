@@ -187,8 +187,6 @@ export default {
         if (tempSD.length === 0 && requiredShares > 0) {
           throw new Error("No share descriptions available. New key assign might be required or contact support");
         }
-        //eslint-disable-next-line
-        debugger
         let requiredShares = initializedDetails.requiredShares;
         while (requiredShares > 0 && tempSD.length > 0) {
           let currentPriority = tempSD.shift();
