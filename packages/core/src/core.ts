@@ -25,6 +25,7 @@ import {
   RefreshMiddlewareMap,
   RefreshSharesResult,
   Share,
+  ShareSerializationMiddleware,
   ShareStore,
   ShareStoreMap,
   ShareStorePolyIDShareIndexMap,
@@ -32,7 +33,6 @@ import {
   TKeyArgs,
   toPrivKeyECC,
 } from "@tkey/common-types";
-import { ShareSerializationModule } from "@tkey/share-serialization";
 import { generatePrivate } from "@toruslabs/eccrypto";
 import BN from "bn.js";
 import stringify from "json-stable-stringify";
@@ -63,6 +63,8 @@ class ThresholdKey implements ITKey {
 
   reconstructKeyMiddleware: ReconstructKeyMiddlewareMap;
 
+  shareSerializationMiddleware: ShareSerializationMiddleware;
+
   storeDeviceShare: (deviceShareStore: ShareStore) => Promise<void>;
 
   constructor(args?: TKeyArgs) {
@@ -75,6 +77,7 @@ class ThresholdKey implements ITKey {
     this.privKey = undefined;
     this.refreshMiddleware = {};
     this.reconstructKeyMiddleware = {};
+    this.shareSerializationMiddleware = undefined;
     this.storeDeviceShare = undefined;
 
     this.tkeyStoreModuleName = "tkeyStoreModule";
@@ -90,6 +93,7 @@ class ThresholdKey implements ITKey {
       syncShareMetadata: this.syncShareMetadata.bind(this),
       addRefreshMiddleware: this.addRefreshMiddleware.bind(this),
       addReconstructKeyMiddleware: this.addReconstructKeyMiddleware.bind(this),
+      addShareSerializationMiddleware: this.addShareSerializationMiddleware.bind(this),
       addShareDescription: this.addShareDescription.bind(this),
       generateNewShare: this.generateNewShare.bind(this),
       inputShareStore: this.inputShareStore.bind(this),
@@ -615,6 +619,16 @@ class ThresholdKey implements ITKey {
     this.reconstructKeyMiddleware[moduleName] = middleware;
   }
 
+  addShareSerializationMiddleware(
+    serialize: <T>(share: BN, type: string) => Promise<T>,
+    deserialize: <T>(serializedShare: T, type: string) => Promise<BN>
+  ): void {
+    this.shareSerializationMiddleware = {
+      serialize,
+      deserialize,
+    };
+  }
+
   setDeviceStorage(storeDeviceStorage: (deviceShareStore: ShareStore) => Promise<void>): void {
     if (this.storeDeviceShare) {
       throw new Error("storeDeviceShare already set");
@@ -706,20 +720,18 @@ class ThresholdKey implements ITKey {
   }
 
   // Import export shares
-  outputShare(shareIndex: BNString, type?: string): unknown {
+  async outputShare(shareIndex: BNString, type?: string): Promise<unknown> {
     const { share } = this.outputShareStore(shareIndex).share;
     if (!type) return share;
 
-    const module = this.modules.shareSerializationModule as ShareSerializationModule;
-    return module.serialize(share, type);
+    return this.shareSerializationMiddleware.serialize(share, type);
   }
 
-  async inputShare(share: unknown, type?: string): Promise<void> {
+  async inputShare(share: BNString, type?: string): Promise<void> {
     let shareStore: ShareStore;
     if (!type) shareStore = this.metadata.shareToShareStore(share as BN);
     else {
-      const module = this.modules.shareSerializationModule as ShareSerializationModule;
-      const deserialized = module.deserialize(share, type);
+      const deserialized = await this.shareSerializationMiddleware.deserialize(share as string, type);
       shareStore = this.metadata.shareToShareStore(deserialized);
     }
     this.inputShareStore(shareStore);
