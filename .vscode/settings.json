@@ -1,10 +1,10 @@
 {
   "eslint.workingDirectories": [
-		{
-			"directory": "packages/*",
-			"changeProcessCWD": true
-		}
-	],
+    {
+      "directory": "packages/*",
+      "changeProcessCWD": true
+    }
+  ],
   "eslint.options": {
     "extends": [
       "plugin:@typescript-eslint/recommended",
@@ -42,9 +42,13 @@
       }
     ],
     "rules": {
+      "no-console": 2,
+      "no-bitwise": [2, { "allow": ["~"] }],
       "camelcase": 0,
       "no-useless-constructor": 0,
       "@typescript-eslint/no-useless-constructor": 2,
+      "no-dupe-class-members": 0,
+      "@typescript-eslint/no-dupe-class-members": 2,
       "import/extensions": [
         "error",
         "ignorePackages",

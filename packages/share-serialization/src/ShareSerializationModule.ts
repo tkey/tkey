@@ -4,7 +4,7 @@ import BN from "bn.js";
 import { english } from "./english";
 import { entropyToMnemonic, mnemonicToEntropy } from "./utils";
 
-export const SHARE_SERIALIZATION_MODULE = "shareSerializationModule";
+export const SHARE_SERIALIZATION_MODULE = "shareSerialization";
 
 class ShareSerializationModule implements IModule {
   moduleName: string;
@@ -20,18 +20,21 @@ class ShareSerializationModule implements IModule {
 
   setModuleReferences(tbSDK: ITKeyApi): void {
     this.tbSDK = tbSDK;
+    this.tbSDK.addShareSerializationMiddleware(this.serialize.bind(this), this.deserialize.bind(this));
   }
 
   // eslint-disable-next-line
   async initialize(): Promise<void> { }
 
-  serialize(share: BN, type: string): string {
-    if (type === "mnemonic") return this.serializeMnemonic(share);
+  async serialize(share: BN, type: string): Promise<unknown> {
+    if (type === "mnemonic") {
+      return this.serializeMnemonic(share);
+    }
     throw new Error("Type is not supported");
   }
 
-  deserialize(share: unknown, type: string): BN {
-    if (type === "mnemonic") return this.deserializeMnemonic(share as string);
+  async deserialize(serializedShare: unknown, type: string): Promise<BN> {
+    if (type === "mnemonic") return this.deserializeMnemonic(serializedShare as string);
     throw new Error("Type is not supported");
   }
 

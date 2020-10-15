@@ -27,6 +27,8 @@
     "camelcase": 0,
     "no-useless-constructor": 0,
     "@typescript-eslint/no-useless-constructor": 2,
+    "no-dupe-class-members": 0,
+    "@typescript-eslint/no-dupe-class-members": 2,
     "import/extensions": [
       "error",
       "ignorePackages",

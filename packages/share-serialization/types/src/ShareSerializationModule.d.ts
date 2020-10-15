@@ -1,6 +1,6 @@
 import { IModule, ITKeyApi } from "@tkey/common-types";
 import BN from "bn.js";
-export declare const SHARE_SERIALIZATION_MODULE = "shareSerializationModule";
+export declare const SHARE_SERIALIZATION_MODULE = "shareSerialization";
 declare class ShareSerializationModule implements IModule {
     moduleName: string;
     tbSDK: ITKeyApi;

@@ -470,14 +470,14 @@ describe("ShareTransferModule", function () {
   });
 });
 
-describe("ShareSerializationModuel", function () {
-  it("#should be able to serializa and deserialize share", async function () {
+describe("ShareSerializationModule", function () {
+  it("#should be able to serialize and deserialize share", async function () {
     const tb = new ThresholdKey({
       serviceProvider: defaultSP,
       storageLayer: defaultSL,
     });
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
-    const exportedSeedShare = tb.outputShare(resp1.deviceShare.share.shareIndex, "mnemonic");
+    const exportedSeedShare = await tb.outputShare(resp1.deviceShare.share.shareIndex, "mnemonic");
 
     const tb2 = new ThresholdKey({
       serviceProvider: defaultSP,
