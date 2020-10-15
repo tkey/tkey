@@ -68,5 +68,8 @@
     "hooks": {
       "pre-commit": "lerna run pre-commit --concurrency 1 --since HEAD"
     }
+  },
+  "dependencies": {
+    "@tkey/web-storage": "^2.0.0"
   }
 }

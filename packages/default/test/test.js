@@ -237,8 +237,8 @@ describe("TorusStorageLayer", function () {
     const tsp = new ServiceProviderBase({ postboxKey: privKey });
     const storageLayer = initStorageLayer(mocked, { enableLogging: true, serviceProvider: tsp });
     const message = { test: Math.random().toString(36).substring(7) };
-    await storageLayer.setMetadata(message, tsp.postboxKey);
-    const resp = await storageLayer.getMetadata(tsp.postboxKey);
+    await storageLayer.setMetadata(message, tsp, tsp.postboxKey);
+    const resp = await storageLayer.getMetadata(tsp, tsp.postboxKey);
     deepStrictEqual(resp, message, "set and get message should be equal");
   });
   it("#should get or set with specified private key correctly", async function () {
@@ -247,8 +247,8 @@ describe("TorusStorageLayer", function () {
     const tsp = new ServiceProviderBase({ postboxKey: privKey });
     const storageLayer = initStorageLayer(mocked, { enableLogging: true, serviceProvider: tsp });
     const message = { test: Math.random().toString(36).substring(7) };
-    await storageLayer.setMetadata(message, privKeyBN);
-    const resp = await storageLayer.getMetadata(privKeyBN);
+    await storageLayer.setMetadata(message, tsp, privKeyBN);
+    const resp = await storageLayer.getMetadata(tsp, privKeyBN);
     deepStrictEqual(resp, message, "set and get message should be equal");
   });
   it("#should get or set with array of specified private keys correctly", async function () {
@@ -262,9 +262,9 @@ describe("TorusStorageLayer", function () {
     const privKeyBN2 = new BN(privKey2, 16);
     const message2 = { test: Math.random().toString(36).substring(7) };
 
-    await storageLayer.setMetadataBulk([message, message2], [privKeyBN, privKeyBN2]);
-    const resp = await storageLayer.getMetadata(privKeyBN);
-    const resp2 = await storageLayer.getMetadata(privKeyBN2);
+    await storageLayer.setMetadataBulk([message, message2], tsp, [privKeyBN, privKeyBN2]);
+    const resp = await storageLayer.getMetadata(tsp, privKeyBN);
+    const resp2 = await storageLayer.getMetadata(tsp, privKeyBN2);
 
     deepStrictEqual(resp, message, "set and get message should be equal");
     deepStrictEqual(resp2, message2, "set and get message should be equal");

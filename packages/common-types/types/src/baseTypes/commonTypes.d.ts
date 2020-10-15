@@ -45,11 +45,11 @@ export declare type TorusStorageLayerAPIParams = {
     namespace: string;
 };
 export interface IStorageLayer extends ISerializable {
-    getMetadata<T>(privKey?: BN): Promise<T>;
-    setMetadata<T>(input: T, privKey?: BN): Promise<{
+    getMetadata<T>(serviceProvider?: IServiceProvider, privKey?: BN): Promise<T>;
+    setMetadata<T>(input: T, serviceProvider?: IServiceProvider, privKey?: BN): Promise<{
         message: string;
     }>;
-    setMetadataBulk<T>(input: T[], privKey?: BN[]): Promise<{
+    setMetadataBulk<T>(input: T[], serviceProvider?: IServiceProvider, privKey?: BN[]): Promise<{
         message: string;
     }[]>;
 }
