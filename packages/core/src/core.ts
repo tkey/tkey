@@ -387,7 +387,6 @@ class ThresholdKey implements ITKey {
     });
     await this.storageLayer.setMetadataBulk({
       input: newShareMetadataToPush,
-      serviceProvider: this.serviceProvider,
       privKey: newShareStoreSharesToPush,
     });
 
