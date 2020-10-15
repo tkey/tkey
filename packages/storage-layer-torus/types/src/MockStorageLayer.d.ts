@@ -10,13 +10,20 @@ declare class MockStorageLayer implements IStorageLayer {
      *  Get metadata for a key
      * @param privKey If not provided, it will use service provider's share for decryption
      */
-    getMetadata<T>(serviceProvider?: IServiceProvider, privKey?: BN): Promise<T>;
+    getMetadata<T>(params: {
+        serviceProvider?: IServiceProvider;
+        privKey?: BN;
+    }): Promise<T>;
     /**
      * Set Metadata for a key
      * @param input data to post
      * @param privKey If not provided, it will use service provider's share for encryption
      */
-    setMetadata<T>(input: T, serviceProvider?: IServiceProvider, privKey?: BN): Promise<{
+    setMetadata<T>(params: {
+        input: T;
+        serviceProvider?: IServiceProvider;
+        privKey?: BN;
+    }): Promise<{
         message: string;
     }>;
     /**
@@ -24,7 +31,11 @@ declare class MockStorageLayer implements IStorageLayer {
      * @param input data to post
      * @param privKey If not provided, it will use service provider's share for encryption
      */
-    setMetadataBulk<T>(input: Array<T>, serviceProvider?: IServiceProvider, privKey?: Array<BN>): Promise<{
+    setMetadataBulk<T>(params: {
+        input: Array<T>;
+        serviceProvider?: IServiceProvider;
+        privKey?: Array<BN>;
+    }): Promise<{
         message: string;
     }[]>;
     toJSON(): StringifiedType;
