@@ -224,7 +224,7 @@ export interface ITKeyApi {
   ): void;
   generateNewShare(): Promise<GenerateNewShareResult>;
   outputShareStore(shareIndex: BNString): ShareStore;
-  inputShare(share: BNString, type: string): Promise<void>;
+  inputShare(share: unknown, type: string): Promise<void>;
   outputShare(shareIndex: BNString, type: string): Promise<unknown>;
   encrypt(data: Buffer): Promise<EncryptedMessage>;
   decrypt(encryptedMesage: EncryptedMessage): Promise<Buffer>;

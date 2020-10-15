@@ -620,8 +620,8 @@ class ThresholdKey implements ITKey {
   }
 
   addShareSerializationMiddleware(
-    serialize: <T>(share: BN, type: string) => Promise<T>,
-    deserialize: <T>(serializedShare: T, type: string) => Promise<BN>
+    serialize: (share: BN, type: string) => Promise<unknown>,
+    deserialize: (serializedShare: unknown, type: string) => Promise<BN>
   ): void {
     this.shareSerializationMiddleware = {
       serialize,
@@ -727,11 +727,11 @@ class ThresholdKey implements ITKey {
     return this.shareSerializationMiddleware.serialize(share, type);
   }
 
-  async inputShare(share: BNString, type?: string): Promise<void> {
+  async inputShare(share: unknown, type?: string): Promise<void> {
     let shareStore: ShareStore;
     if (!type) shareStore = this.metadata.shareToShareStore(share as BN);
     else {
-      const deserialized = await this.shareSerializationMiddleware.deserialize(share as string, type);
+      const deserialized = await this.shareSerializationMiddleware.deserialize(share, type);
       shareStore = this.metadata.shareToShareStore(deserialized);
     }
     this.inputShareStore(shareStore);

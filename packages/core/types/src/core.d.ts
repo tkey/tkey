@@ -47,7 +47,7 @@ declare class ThresholdKey implements ITKey {
     syncMultipleShareMetadata(shares: Array<BN>, adjustScopedStore?: (ss: unknown) => unknown): Promise<void>;
     addRefreshMiddleware(moduleName: string, middleware: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap) => unknown): void;
     addReconstructKeyMiddleware(moduleName: string, middleware: () => Promise<Array<BN>>): void;
-    addShareSerializationMiddleware(serialize: <T>(share: BN, type: string) => Promise<T>, deserialize: <T>(serializedShare: T, type: string) => Promise<BN>): void;
+    addShareSerializationMiddleware(serialize: (share: BN, type: string) => Promise<unknown>, deserialize: (serializedShare: unknown, type: string) => Promise<BN>): void;
     setDeviceStorage(storeDeviceStorage: (deviceShareStore: ShareStore) => Promise<void>): void;
     addShareDescription(shareIndex: string, description: string, updateMetadata?: boolean): Promise<void>;
     deleteShareDescription(shareIndex: string, description: string, updateMetadata?: boolean): Promise<void>;
@@ -57,7 +57,7 @@ declare class ThresholdKey implements ITKey {
     deleteKey(moduleName: string, key: string): Promise<void>;
     getTKeyStore(moduleName: string, key: string): Promise<unknown>;
     outputShare(shareIndex: BNString, type?: string): Promise<unknown>;
-    inputShare(share: BNString, type?: string): Promise<void>;
+    inputShare(share: unknown, type?: string): Promise<void>;
     linkServiceProvider(serviceProvider: IServiceProvider): Promise<void>;
     toJSON(): StringifiedType;
     static fromJSON(value: StringifiedType, args: TKeyArgs): Promise<ThresholdKey>;
