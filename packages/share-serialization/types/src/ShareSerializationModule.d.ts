@@ -8,8 +8,8 @@ declare class ShareSerializationModule implements IModule {
     constructor();
     setModuleReferences(tbSDK: ITKeyApi): void;
     initialize(): Promise<void>;
-    serialize(share: BN, type: string): string;
-    deserialize(share: unknown, type: string): BN;
+    serialize(share: BN, type: string): Promise<unknown>;
+    deserialize(serializedShare: unknown, type: string): Promise<BN>;
     serializeMnemonic(share: BN): string;
     deserializeMnemonic(share: string): BN;
 }
