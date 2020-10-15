@@ -15,7 +15,11 @@ export declare type RefreshMiddlewareMap = {
     [moduleName: string]: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap) => unknown;
 };
 export declare type ReconstructKeyMiddlewareMap = {
-    [moduleName: string]: () => Promise<Array<BN>>;
+    [moduleName: string]: () => Promise<BN[]>;
+};
+export declare type ShareSerializationMiddleware = {
+    serialize: (share: BN, type: string) => Promise<unknown>;
+    deserialize: (serializedShare: unknown, type: string) => Promise<BN>;
 };
 export interface IMetadata extends ISerializable {
     pubKey: Point;
@@ -31,7 +35,7 @@ export interface IMetadata extends ISerializable {
     scopedStore: {
         [moduleName: string]: unknown;
     };
-    getShareIndexesForPolynomial(polyID: PolynomialID): Array<string>;
+    getShareIndexesForPolynomial(polyID: PolynomialID): string[];
     getLatestPublicPolynomial(): PublicPolynomial;
     addPublicPolynomial(publicPolynomial: PublicPolynomial): void;
     addPublicShare(polynomialID: PolynomialID, publicShare: PublicShare): void;
@@ -156,10 +160,11 @@ export interface ITKeyApi {
     inputShareStore(shareStore: ShareStore): void;
     addRefreshMiddleware(moduleName: string, middleware: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap) => unknown): void;
     addReconstructKeyMiddleware(moduleName: string, middleware: () => Promise<Array<BN>>): void;
+    addShareSerializationMiddleware(serialize: (share: BN, type: string) => Promise<unknown>, deserialize: (serializedShare: unknown, type: string) => Promise<BN>): void;
     generateNewShare(): Promise<GenerateNewShareResult>;
     outputShareStore(shareIndex: BNString): ShareStore;
-    inputShare(share: unknown, type: string): Promise<void>;
-    outputShare(shareIndex: BNString, type: string): unknown;
+    inputShare(share: BNString, type: string): Promise<void>;
+    outputShare(shareIndex: BNString, type: string): Promise<unknown>;
     encrypt(data: Buffer): Promise<EncryptedMessage>;
     decrypt(encryptedMesage: EncryptedMessage): Promise<Buffer>;
     getTKeyStore(moduleName: string, key: string): Promise<unknown>;
@@ -174,6 +179,7 @@ export interface ITKey extends ITKeyApi, ISerializable {
     privKey: BN;
     refreshMiddleware: RefreshMiddlewareMap;
     reconstructKeyMiddleware: ReconstructKeyMiddlewareMap;
+    shareSerializationMiddleware: ShareSerializationMiddleware;
     initialize(input: ShareStore): Promise<KeyDetails>;
     reconstructKey(): Promise<ReconstructedKeyResult>;
     reconstructLatestPoly(): Polynomial;

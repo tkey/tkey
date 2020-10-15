@@ -1,5 +1,5 @@
 /// <reference types="node" />
-import { BNString, CatchupToLatestShareResult, EncryptedMessage, GenerateNewShareResult, IMetadata, InitializeNewKeyResult, IServiceProvider, IStorageLayer, ITKey, ITKeyApi, KeyDetails, ModuleMap, Polynomial, PolynomialID, ReconstructedKeyResult, ReconstructKeyMiddlewareMap, RefreshMiddlewareMap, RefreshSharesResult, ShareStore, ShareStoreMap, ShareStorePolyIDShareIndexMap, StringifiedType, TKeyArgs } from "@tkey/common-types";
+import { BNString, CatchupToLatestShareResult, EncryptedMessage, GenerateNewShareResult, IMetadata, InitializeNewKeyResult, IServiceProvider, IStorageLayer, ITKey, ITKeyApi, KeyDetails, ModuleMap, Polynomial, PolynomialID, ReconstructedKeyResult, ReconstructKeyMiddlewareMap, RefreshMiddlewareMap, RefreshSharesResult, ShareSerializationMiddleware, ShareStore, ShareStoreMap, ShareStorePolyIDShareIndexMap, StringifiedType, TKeyArgs } from "@tkey/common-types";
 import BN from "bn.js";
 import Metadata from "./metadata";
 declare class ThresholdKey implements ITKey {
@@ -13,6 +13,7 @@ declare class ThresholdKey implements ITKey {
     metadata: Metadata;
     refreshMiddleware: RefreshMiddlewareMap;
     reconstructKeyMiddleware: ReconstructKeyMiddlewareMap;
+    shareSerializationMiddleware: ShareSerializationMiddleware;
     storeDeviceShare: (deviceShareStore: ShareStore) => Promise<void>;
     constructor(args?: TKeyArgs);
     getApi(): ITKeyApi;
@@ -46,6 +47,7 @@ declare class ThresholdKey implements ITKey {
     syncMultipleShareMetadata(shares: Array<BN>, adjustScopedStore?: (ss: unknown) => unknown): Promise<void>;
     addRefreshMiddleware(moduleName: string, middleware: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap) => unknown): void;
     addReconstructKeyMiddleware(moduleName: string, middleware: () => Promise<Array<BN>>): void;
+    addShareSerializationMiddleware(serialize: (share: BN, type: string) => Promise<unknown>, deserialize: (serializedShare: unknown, type: string) => Promise<BN>): void;
     setDeviceStorage(storeDeviceStorage: (deviceShareStore: ShareStore) => Promise<void>): void;
     addShareDescription(shareIndex: string, description: string, updateMetadata?: boolean): Promise<void>;
     deleteShareDescription(shareIndex: string, description: string, updateMetadata?: boolean): Promise<void>;
@@ -54,7 +56,7 @@ declare class ThresholdKey implements ITKey {
     setTKeyStore(moduleName: string, data: unknown): Promise<void>;
     deleteKey(moduleName: string, key: string): Promise<void>;
     getTKeyStore(moduleName: string, key: string): Promise<unknown>;
-    outputShare(shareIndex: BNString, type?: string): unknown;
+    outputShare(shareIndex: BNString, type?: string): Promise<unknown>;
     inputShare(share: unknown, type?: string): Promise<void>;
     linkServiceProvider(serviceProvider: IServiceProvider): Promise<void>;
     toJSON(): StringifiedType;
