@@ -4,7 +4,7 @@ import BN from "bn.js";
 import { english } from "./english";
 import { entropyToMnemonic, mnemonicToEntropy } from "./utils";
 
-export const SHARE_SERIALIZATION_MODULE = "shareSerialization";
+export const SHARE_SERIALIZATION_MODULE_NAME = "shareSerialization";
 
 class ShareSerializationModule implements IModule {
   moduleName: string;
@@ -14,7 +14,7 @@ class ShareSerializationModule implements IModule {
   english: string[];
 
   constructor() {
-    this.moduleName = SHARE_SERIALIZATION_MODULE;
+    this.moduleName = SHARE_SERIALIZATION_MODULE_NAME;
     this.english = english;
   }
 
