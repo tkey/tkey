@@ -168,7 +168,7 @@ class ThresholdKey implements ITKey {
   async catchupToLatestShare(shareStore: ShareStore, polyID?: PolynomialID): Promise<CatchupToLatestShareResult> {
     let metadata: StringifiedType;
     try {
-      metadata = await this.storageLayer.getMetadata({ serviceProvider: this.serviceProvider, privKey: shareStore.share.share });
+      metadata = await this.storageLayer.getMetadata({ privKey: shareStore.share.share });
     } catch (err) {
       throw new Error(`getMetadata in initialize errored: ${prettyPrintError(err)}`);
     }
@@ -449,7 +449,7 @@ class ThresholdKey implements ITKey {
       metadataToPush.push(metadata);
       return shares[shareIndex.toString("hex")].share;
     });
-    await this.storageLayer.setMetadataBulk({ input: metadataToPush, serviceProvider: this.serviceProvider, privKey: sharesToPush });
+    await this.storageLayer.setMetadataBulk({ input: metadataToPush, privKey: sharesToPush });
 
     // store metadata on metadata respective to shares
     for (let index = 0; index < shareIndexes.length; index += 1) {
