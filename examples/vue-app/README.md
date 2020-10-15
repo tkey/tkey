@@ -2,6 +2,7 @@
 
 ## Project setup
 ```
+npm install:local
 npm install
 ```
 
