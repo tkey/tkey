@@ -126,7 +126,7 @@ class ThresholdKey implements ITKey {
     } else if (!input) {
       // default to use service provider
       // first we see if a share has been kept for us
-      const rawServiceProviderShare = await this.storageLayer.getMetadata<{ message?: string }>();
+      const rawServiceProviderShare = await this.storageLayer.getMetadata<{ message?: string }>({ serviceProvider: this.serviceProvider });
 
       if (rawServiceProviderShare.message === KEY_NOT_FOUND) {
         // no metadata set, assumes new user
@@ -168,7 +168,7 @@ class ThresholdKey implements ITKey {
   async catchupToLatestShare(shareStore: ShareStore, polyID?: PolynomialID): Promise<CatchupToLatestShareResult> {
     let metadata: StringifiedType;
     try {
-      metadata = await this.storageLayer.getMetadata(shareStore.share.share);
+      metadata = await this.storageLayer.getMetadata({ privKey: shareStore.share.share });
     } catch (err) {
       throw new Error(`getMetadata in initialize errored: ${prettyPrintError(err)}`);
     }
@@ -358,11 +358,11 @@ class ThresholdKey implements ITKey {
     m.setScopedStore("encryptedShares", newScopedStore);
     const metadataToPush = Array(sharesToPush.length).fill(m);
 
-    await this.storageLayer.setMetadataBulk(metadataToPush, sharesToPush);
+    await this.storageLayer.setMetadataBulk({ input: metadataToPush, privKey: sharesToPush });
 
     // set share for serviceProvider encrytion
     if (shareIndexesNeedingEncryption.includes("1")) {
-      await this.storageLayer.setMetadata(newShareStores["1"]);
+      await this.storageLayer.setMetadata({ input: newShareStores["1"], serviceProvider: this.serviceProvider });
       // TODO: handle failure gracefully
     }
 
@@ -385,7 +385,10 @@ class ThresholdKey implements ITKey {
       newShareMetadataToPush.push(me);
       return newShareStores[shareIndex].share.share;
     });
-    await this.storageLayer.setMetadataBulk(newShareMetadataToPush, newShareStoreSharesToPush);
+    await this.storageLayer.setMetadataBulk({
+      input: newShareMetadataToPush,
+      privKey: newShareStoreSharesToPush,
+    });
 
     // set metadata for all new shares
     for (let index = 0; index < newShareIndexes.length; index += 1) {
@@ -435,7 +438,7 @@ class ThresholdKey implements ITKey {
     // store torus share on metadata
     const shareStore = new ShareStore(serviceProviderShare, poly.getPolynomialID());
     try {
-      await this.storageLayer.setMetadata(shareStore);
+      await this.storageLayer.setMetadata({ input: shareStore, serviceProvider: this.serviceProvider });
     } catch (err) {
       throw new Error(`setMetadata errored: ${JSON.stringify(err)}`);
     }
@@ -445,7 +448,7 @@ class ThresholdKey implements ITKey {
       metadataToPush.push(metadata);
       return shares[shareIndex.toString("hex")].share;
     });
-    await this.storageLayer.setMetadataBulk(metadataToPush, sharesToPush);
+    await this.storageLayer.setMetadataBulk({ input: metadataToPush, privKey: sharesToPush });
 
     // store metadata on metadata respective to shares
     for (let index = 0; index < shareIndexes.length; index += 1) {
@@ -589,7 +592,7 @@ class ThresholdKey implements ITKey {
       const newMetadata = this.metadata.clone();
       let resp: StringifiedType;
       try {
-        resp = await this.storageLayer.getMetadata(share);
+        resp = await this.storageLayer.getMetadata({ privKey: share });
       } catch (err) {
         throw new Error(`getMetadata in syncShareMetadata errored: ${prettyPrintError(err)}`);
       }
@@ -605,7 +608,7 @@ class ThresholdKey implements ITKey {
       return newMetadata;
     });
     const newMetadata = await Promise.all(newMetadataPromise);
-    await this.storageLayer.setMetadataBulk(newMetadata, shares);
+    await this.storageLayer.setMetadataBulk({ input: newMetadata, privKey: shares });
   }
 
   addRefreshMiddleware(
@@ -740,7 +743,7 @@ class ThresholdKey implements ITKey {
   async linkServiceProvider(serviceProvider: IServiceProvider): Promise<void> {
     const shareStore = this.outputShareStore("1"); // Service provider share
     try {
-      await this.storageLayer.setMetadata(shareStore, serviceProvider.postboxKey);
+      await this.storageLayer.setMetadata({ input: shareStore, serviceProvider });
     } catch (err) {
       throw new Error(`setMetadata errored: ${JSON.stringify(err)}`);
     }

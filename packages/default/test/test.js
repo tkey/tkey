@@ -237,8 +237,8 @@ describe("TorusStorageLayer", function () {
     const tsp = new ServiceProviderBase({ postboxKey: privKey });
     const storageLayer = initStorageLayer(mocked, { enableLogging: true, serviceProvider: tsp });
     const message = { test: Math.random().toString(36).substring(7) };
-    await storageLayer.setMetadata(message, tsp.postboxKey);
-    const resp = await storageLayer.getMetadata(tsp.postboxKey);
+    await storageLayer.setMetadata({ input: message, privKey: tsp.postboxKey });
+    const resp = await storageLayer.getMetadata({ privKey: tsp.postboxKey });
     deepStrictEqual(resp, message, "set and get message should be equal");
   });
   it("#should get or set with specified private key correctly", async function () {
@@ -247,8 +247,8 @@ describe("TorusStorageLayer", function () {
     const tsp = new ServiceProviderBase({ postboxKey: privKey });
     const storageLayer = initStorageLayer(mocked, { enableLogging: true, serviceProvider: tsp });
     const message = { test: Math.random().toString(36).substring(7) };
-    await storageLayer.setMetadata(message, privKeyBN);
-    const resp = await storageLayer.getMetadata(privKeyBN);
+    await storageLayer.setMetadata({ input: message, privKey: privKeyBN });
+    const resp = await storageLayer.getMetadata({ privKey: privKeyBN });
     deepStrictEqual(resp, message, "set and get message should be equal");
   });
   it("#should get or set with array of specified private keys correctly", async function () {
@@ -262,9 +262,9 @@ describe("TorusStorageLayer", function () {
     const privKeyBN2 = new BN(privKey2, 16);
     const message2 = { test: Math.random().toString(36).substring(7) };
 
-    await storageLayer.setMetadataBulk([message, message2], [privKeyBN, privKeyBN2]);
-    const resp = await storageLayer.getMetadata(privKeyBN);
-    const resp2 = await storageLayer.getMetadata(privKeyBN2);
+    await storageLayer.setMetadataBulk({ input: [message, message2], privKey: [privKeyBN, privKeyBN2] });
+    const resp = await storageLayer.getMetadata({ privKey: privKeyBN });
+    const resp2 = await storageLayer.getMetadata({ privKey: privKeyBN2 });
 
     deepStrictEqual(resp, message, "set and get message should be equal");
     deepStrictEqual(resp2, message2, "set and get message should be equal");

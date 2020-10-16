@@ -115,13 +115,13 @@ class ShareTransferModule implements IModule {
   async getShareTransferStore(): Promise<ShareTransferStore> {
     const metadata = this.tbSDK.getMetadata();
     const shareTransferStorePointer = new ShareTransferStorePointer(metadata.getGeneralStoreDomain(this.moduleName) as ShareTransferStorePointerArgs);
-    return this.tbSDK.storageLayer.getMetadata<ShareTransferStore>(shareTransferStorePointer.pointer);
+    return this.tbSDK.storageLayer.getMetadata<ShareTransferStore>({ privKey: shareTransferStorePointer.pointer });
   }
 
   async setShareTransferStore(shareTransferStore: ShareTransferStore): Promise<void> {
     const metadata = this.tbSDK.getMetadata();
     const shareTransferStorePointer = new ShareTransferStorePointer(metadata.getGeneralStoreDomain(this.moduleName) as ShareTransferStorePointerArgs);
-    await this.tbSDK.storageLayer.setMetadata(shareTransferStore, shareTransferStorePointer.pointer);
+    await this.tbSDK.storageLayer.setMetadata({ input: shareTransferStore, privKey: shareTransferStorePointer.pointer });
   }
 
   async startRequestStatusCheck(encPubKeyX: string, deleteRequestAfterCompletion: boolean): Promise<ShareStore> {

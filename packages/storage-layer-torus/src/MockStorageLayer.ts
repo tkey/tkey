@@ -18,9 +18,10 @@ class MockStorageLayer implements IStorageLayer {
    *  Get metadata for a key
    * @param privKey If not provided, it will use service provider's share for decryption
    */
-  async getMetadata<T>(privKey?: BN): Promise<T> {
+  async getMetadata<T>(params: { serviceProvider?: IServiceProvider; privKey?: BN }): Promise<T> {
+    const { serviceProvider, privKey } = params;
     let usedKey: BN;
-    if (!privKey) usedKey = this.serviceProvider.retrievePubKeyPoint().getX();
+    if (!privKey) usedKey = serviceProvider.retrievePubKeyPoint().getX();
     else usedKey = getPubKeyPoint(privKey).x;
 
     const fromMap = this.dataMap[usedKey.toString("hex")];
@@ -35,9 +36,10 @@ class MockStorageLayer implements IStorageLayer {
    * @param input data to post
    * @param privKey If not provided, it will use service provider's share for encryption
    */
-  async setMetadata<T>(input: T, privKey?: BN): Promise<{ message: string }> {
+  async setMetadata<T>(params: { input: T; serviceProvider?: IServiceProvider; privKey?: BN }): Promise<{ message: string }> {
+    const { serviceProvider, privKey, input } = params;
     let usedKey: BN;
-    if (!privKey) usedKey = this.serviceProvider.retrievePubKeyPoint().getX();
+    if (!privKey) usedKey = serviceProvider.retrievePubKeyPoint().getX();
     else usedKey = getPubKeyPoint(privKey).x;
     this.dataMap[usedKey.toString("hex")] = stringify(input);
     return { message: "success" };
@@ -48,10 +50,11 @@ class MockStorageLayer implements IStorageLayer {
    * @param input data to post
    * @param privKey If not provided, it will use service provider's share for encryption
    */
-  async setMetadataBulk<T>(input: Array<T>, privKey?: Array<BN>): Promise<{ message: string }[]> {
+  async setMetadataBulk<T>(params: { input: Array<T>; serviceProvider?: IServiceProvider; privKey?: Array<BN> }): Promise<{ message: string }[]> {
+    const { serviceProvider, privKey, input } = params;
     input.forEach((el, index) => {
       let usedKey: BN;
-      if (!privKey || !privKey[index]) usedKey = this.serviceProvider.retrievePubKeyPoint().getX();
+      if (!privKey || !privKey[index]) usedKey = serviceProvider.retrievePubKeyPoint().getX();
       else usedKey = getPubKeyPoint(privKey[index]).x;
       this.dataMap[usedKey.toString("hex")] = stringify(el);
     });
