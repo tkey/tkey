@@ -2,6 +2,7 @@
   "name": "tkey",
   "private": true,
   "scripts": {
+    "preinstall": "npx npm-force-resolutions",
     "bootstrap": "lerna bootstrap",
     "publish:lerna": "lerna publish",
     "clean": "lerna clean --yes && lerna exec -- rimraf package-lock.json dist/ .rts2_cache_{cjs,esm}/ tkey-*.tgz",
@@ -52,7 +53,7 @@
     "lerna": "^3.22.1",
     "lint-staged": "^10.4.0",
     "mocha": "^8.1.3",
-    "npm-packlist": "^1.1.12",
+    "npm-force-resolutions": "0.0.3",
     "parallel-webpack": "^2.6.0",
     "prettier": "^2.1.2",
     "rimraf": "^3.0.2",
@@ -69,5 +70,8 @@
     "hooks": {
       "pre-commit": "lerna run pre-commit --concurrency 1 --since HEAD"
     }
+  },
+  "resolutions": {
+    "npm-packlist": "1.1.12"
   }
 }
