@@ -13,7 +13,7 @@
     "test-debugger": "lerna run test-debugger --parallel",
     "build:types": "lerna run build:types",
     "lint": "lerna run lint --parallel",
-    "pack:lerna": "lerna exec -- npm pack",
+    "pack:lerna": "lerna exec -- yarn pack",
     "pre-commit": "lerna run pre-commit"
   },
   "devDependencies": {

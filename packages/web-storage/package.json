@@ -29,7 +29,7 @@
     "build": "rimraf dist/ && cross-env NODE_ENV=production parallel-webpack --no-stats",
     "build:types": "rimraf types/ && tsc --project tsconfig.types.json",
     "lint": "eslint --fix 'src/**/*.ts'",
-    "prepack": "npm run build && npm run build:types",
+    "prepack": "yarn run build && yarn run build:types",
     "pre-commit": "lint-staged"
   },
   "peerDependencies": {
@@ -47,7 +47,7 @@
   },
   "lint-staged": {
     "!(*d).ts": [
-      "npm run lint --",
+      "yarn run lint --",
       "prettier --write 'src/**/*.ts'"
     ]
   },
