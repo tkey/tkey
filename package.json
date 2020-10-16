@@ -52,6 +52,7 @@
     "lerna": "^3.22.1",
     "lint-staged": "^10.4.0",
     "mocha": "^8.1.3",
+    "npm-packlist": "^1.1.12",
     "parallel-webpack": "^2.6.0",
     "prettier": "^2.1.2",
     "rimraf": "^3.0.2",
