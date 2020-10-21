@@ -208,7 +208,7 @@ class ThresholdKey implements ITKey {
     for (let i = 0; i < fullShareList.length; i += 1) {
       shareIndexesRequired[fullShareList[i]] = true;
     }
-    for (let z = 0; z <= this.metadata.polyIDList.length - 1 && sharesLeft > 0; z += 1) {
+    for (let z = this.metadata.polyIDList.length - 1; z >= 0 && sharesLeft > 0; z -= 1) {
       const sharesForPoly = this.shares[this.metadata.polyIDList[z]];
       if (sharesForPoly) {
         const shareIndexesForPoly = Object.keys(sharesForPoly);
