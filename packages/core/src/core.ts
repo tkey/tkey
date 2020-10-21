@@ -221,7 +221,7 @@ class ThresholdKey implements ITKey {
               delete shareIndexesRequired[shareIndexesForPoly[k]];
               this.inputShareStore(latestShareRes.latestShare);
             } else {
-              throw new Error("Share found unexpected polynomial");
+              throw new Error("Share found in unexpected polynomial");
             }
           }
         }
