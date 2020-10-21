@@ -278,6 +278,9 @@ class ThresholdKey implements ITKey {
     if (sharesForExistingPoly.length < threshold) {
       throw new Error("not enough shares to reconstruct poly");
     }
+    if (new Set(sharesForExistingPoly).size !== sharesForExistingPoly.length) {
+      throw new Error("share indexes should be unique");
+    }
     for (let i = 0; i < threshold; i += 1) {
       pointsArr.push(new Point(new BN(sharesForExistingPoly[i], "hex"), this.shares[pubPolyID][sharesForExistingPoly[i]].share.share));
     }
