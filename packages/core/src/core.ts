@@ -5,6 +5,7 @@ import {
   encrypt,
   EncryptedMessage,
   GenerateNewShareResult,
+  generatePrivateExcludingIndexes,
   getPubKeyECC,
   getPubKeyPoint,
   IMetadata,
@@ -294,7 +295,7 @@ class ThresholdKey implements ITKey {
     const existingShareIndexesBN = existingShareIndexes.map((el) => {
       return new BN(el, "hex");
     });
-    const newShareIndex = new BN(this.generatePrivateWithoutIndexes(existingShareIndexesBN));
+    const newShareIndex = new BN(generatePrivateExcludingIndexes(existingShareIndexesBN));
 
     const results = await this.refreshShares(pubPoly.getThreshold(), [...existingShareIndexes, newShareIndex.toString("hex")], previousPolyID);
     const newShareStores = results.shareStores;
@@ -417,12 +418,12 @@ class ThresholdKey implements ITKey {
 
     // create a random poly and respective shares
     // 1 is defined as the serviceProvider share
-    const shareIndexForDeviceStorage = this.generatePrivateWithoutIndexes([new BN(1), new BN(0)]);
+    const shareIndexForDeviceStorage = generatePrivateExcludingIndexes([new BN(1), new BN(0)]);
 
     const shareIndexes = [new BN(1), shareIndexForDeviceStorage];
     let poly: Polynomial;
     if (determinedShare) {
-      const shareIndexForDeterminedShare = this.generatePrivateWithoutIndexes([new BN(1), new BN(0)]);
+      const shareIndexForDeterminedShare = generatePrivateExcludingIndexes([new BN(1), new BN(0)]);
       // const userShareIndex = new BN(shareIndexForDeterminedShare);
       poly = generateRandomPolynomial(1, this.privKey, [new Share(shareIndexForDeterminedShare, determinedShare)]);
       shareIndexes.push(shareIndexForDeterminedShare);
@@ -753,14 +754,6 @@ class ThresholdKey implements ITKey {
     } catch (err) {
       throw new Error(`setMetadata errored: ${JSON.stringify(err)}`);
     }
-  }
-
-  generatePrivateWithoutIndexes(shareIndexes: Array<BN>): BN {
-    const key = new BN(generatePrivate());
-    if (shareIndexes.includes(key)) {
-      return this.generatePrivateWithoutIndexes(shareIndexes);
-    }
-    return key;
   }
 
   toJSON(): StringifiedType {

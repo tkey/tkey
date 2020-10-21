@@ -1,4 +1,5 @@
-import { decrypt as ecDecrypt, encrypt as ecEncrypt } from "@toruslabs/eccrypto";
+import { decrypt as ecDecrypt, encrypt as ecEncrypt, generatePrivate } from "@toruslabs/eccrypto";
+import BN from "bn.js";
 import { ec as EC } from "elliptic";
 import { keccak256, toChecksumAddress } from "web3-utils";
 
@@ -74,6 +75,14 @@ export function normalize(input: number | string): string {
   }
 
   return `0x${hexString}`;
+}
+
+export function generatePrivateExcludingIndexes(shareIndexes: Array<BN>): BN {
+  const key = new BN(generatePrivate());
+  if (shareIndexes.includes(key)) {
+    return generatePrivateExcludingIndexes(shareIndexes);
+  }
+  return key;
 }
 
 export const KEY_NOT_FOUND = "KEY_NOT_FOUND";
