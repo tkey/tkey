@@ -291,11 +291,11 @@ class ThresholdKey implements ITKey {
     const pubPoly = this.metadata.getLatestPublicPolynomial();
     const previousPolyID = pubPoly.getPolynomialID();
     const existingShareIndexes = this.metadata.getShareIndexesForPolynomial(previousPolyID);
-    // check if existing share indexes exist
-    let newShareIndex = new BN(generatePrivate());
-    while (existingShareIndexes.includes(newShareIndex.toString("hex"))) {
-      newShareIndex = new BN(generatePrivate());
-    }
+    const existingShareIndexesBN = existingShareIndexes.map((el) => {
+      return new BN(el, "hex");
+    });
+    const newShareIndex = new BN(this.generatePrivateWithoutIndexes(existingShareIndexesBN));
+
     const results = await this.refreshShares(pubPoly.getThreshold(), [...existingShareIndexes, newShareIndex.toString("hex")], previousPolyID);
     const newShareStores = results.shareStores;
 
@@ -417,15 +417,15 @@ class ThresholdKey implements ITKey {
 
     // create a random poly and respective shares
     // 1 is defined as the serviceProvider share
-    const shareIndexForDeviceStorage = generatePrivate();
+    const shareIndexForDeviceStorage = this.generatePrivateWithoutIndexes([new BN(1), new BN(0)]);
 
-    const shareIndexes = [new BN(1), new BN(shareIndexForDeviceStorage)];
+    const shareIndexes = [new BN(1), shareIndexForDeviceStorage];
     let poly: Polynomial;
     if (determinedShare) {
-      const shareIndexForDeterminedShare = generatePrivate();
-      const userShareIndex = new BN(shareIndexForDeterminedShare);
-      poly = generateRandomPolynomial(1, this.privKey, [new Share(userShareIndex, determinedShare)]);
-      shareIndexes.push(userShareIndex);
+      const shareIndexForDeterminedShare = this.generatePrivateWithoutIndexes([new BN(1), new BN(0)]);
+      // const userShareIndex = new BN(shareIndexForDeterminedShare);
+      poly = generateRandomPolynomial(1, this.privKey, [new Share(shareIndexForDeterminedShare, determinedShare)]);
+      shareIndexes.push(shareIndexForDeterminedShare);
     } else {
       poly = generateRandomPolynomial(1, this.privKey);
     }
@@ -753,6 +753,14 @@ class ThresholdKey implements ITKey {
     } catch (err) {
       throw new Error(`setMetadata errored: ${JSON.stringify(err)}`);
     }
+  }
+
+  generatePrivateWithoutIndexes(shareIndexes: Array<BN>): BN {
+    const key = new BN(generatePrivate());
+    if (shareIndexes.includes(key)) {
+      return this.generatePrivateWithoutIndexes(shareIndexes);
+    }
+    return key;
   }
 
   toJSON(): StringifiedType {
