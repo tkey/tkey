@@ -418,6 +418,7 @@ class ThresholdKey implements ITKey {
     // create a random poly and respective shares
     // 1 is defined as the serviceProvider share
     const shareIndexForDeviceStorage = generatePrivate();
+
     const shareIndexes = [new BN(1), new BN(shareIndexForDeviceStorage)];
     let poly: Polynomial;
     if (determinedShare) {
@@ -716,7 +717,12 @@ class ThresholdKey implements ITKey {
     const keyStore = moduleStore[key];
 
     // decrypt and parsing
-    const decryptedKeyStore = await this.decrypt(JSON.parse(keyStore));
+    let decryptedKeyStore;
+    try {
+      decryptedKeyStore = await this.decrypt(JSON.parse(keyStore));
+    } catch (err) {
+      throw new Error("Decryption failed");
+    }
     const newString = decryptedKeyStore.toString();
     const tkeyStoreData = JSON.parse(newString.toString());
     return tkeyStoreData;
