@@ -119,7 +119,7 @@ export function generateRandomPolynomial(degree: number, secret?: BN, determinst
   }
 
   if (determinsticShares.length > degree) {
-    throw new TypeError("determinsticShares in generateRandomPolynomial need to be less than degree to ensure an element of randomness");
+    throw new TypeError("determinsticShares in generateRandomPolynomial should be less or equal than degree to ensure an element of randomness");
   }
   const points = {};
   determinsticShares.forEach((share) => {

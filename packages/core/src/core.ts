@@ -208,7 +208,7 @@ class ThresholdKey implements ITKey {
     for (let i = 0; i < fullShareList.length; i += 1) {
       shareIndexesRequired[fullShareList[i]] = true;
     }
-    for (let z = this.metadata.polyIDList.length - 1; z >= 0 && sharesLeft > 0; z -= 1) {
+    for (let z = 0; z <= this.metadata.polyIDList.length - 1 && sharesLeft > 0; z += 1) {
       const sharesForPoly = this.shares[this.metadata.polyIDList[z]];
       if (sharesForPoly) {
         const shareIndexesForPoly = Object.keys(sharesForPoly);
@@ -220,6 +220,8 @@ class ThresholdKey implements ITKey {
               sharesLeft -= 1;
               delete shareIndexesRequired[shareIndexesForPoly[k]];
               this.inputShareStore(latestShareRes.latestShare);
+            } else {
+              throw new Error("Share found unexpected polynomial");
             }
           }
         }
@@ -698,7 +700,7 @@ class ThresholdKey implements ITKey {
     const { metadata } = this;
     const rawTkeyStore = metadata.getTkeyStoreDomain(this.tkeyStoreModuleName);
     if (!rawTkeyStore) {
-      throw new Error("Tkey store does not exist. Unable to delete seed hrase");
+      throw new Error("Tkey store does not exist. Unable to delete");
     }
     const moduleStore = rawTkeyStore[moduleName];
     const keyStore = moduleStore[key];
