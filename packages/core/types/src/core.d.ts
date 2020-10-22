@@ -58,7 +58,6 @@ declare class ThresholdKey implements ITKey {
     getTKeyStore(moduleName: string, key: string): Promise<unknown>;
     outputShare(shareIndex: BNString, type?: string): Promise<unknown>;
     inputShare(share: unknown, type?: string): Promise<void>;
-    linkServiceProvider(serviceProvider: IServiceProvider): Promise<void>;
     toJSON(): StringifiedType;
     static fromJSON(value: StringifiedType, args: TKeyArgs): Promise<ThresholdKey>;
 }
