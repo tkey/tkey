@@ -1,5 +1,5 @@
+import { ecCurve, StringifiedType, toPrivKeyEC } from "@tkey/common-types";
 import BN from "bn.js";
-import { ecCurve, StringifiedType, toPrivKeyEC } from "common-types";
 import { keccak256 } from "web3-utils";
 
 import Metadata from "./metadata";
