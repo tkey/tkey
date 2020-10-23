@@ -37,6 +37,7 @@ import { generatePrivate } from "@toruslabs/eccrypto";
 import BN from "bn.js";
 import stringify from "json-stable-stringify";
 
+import AuthMetadata from "./authMetadata";
 import { generateRandomPolynomial, lagrangeInterpolatePolynomial, lagrangeInterpolation } from "./lagrangeInterpolatePolynomial";
 import Metadata from "./metadata";
 
@@ -562,6 +563,27 @@ class ThresholdKey implements ITKey {
       shareDescriptions: this.metadata.getShareDescription(),
       modules: this.modules,
     };
+  }
+
+  // Auth functions
+
+  async setAuthMetadata(input: Metadata, serviceProvider?: IServiceProvider, privKey?: BN): Promise<void> {
+    const a = new AuthMetadata(input, this.privKey);
+    await this.storageLayer.setMetadata({ input: a, serviceProvider, privKey });
+  }
+
+  async setAuthMetadataBulk(input: Metadata[], serviceProvider?: IServiceProvider, privKey?: BN[]): Promise<void> {
+    const a = [];
+    for (let i = 0; i < input.length; i += 1) {
+      a.push(new AuthMetadata(input[i], this.privKey));
+    }
+    await this.storageLayer.setMetadataBulk({ input: a, serviceProvider, privKey });
+  }
+
+  async getAuthMetadata(serviceProvider?: IServiceProvider, privKey?: BN): Promise<Metadata> {
+    const raw = await this.storageLayer.getMetadata({ serviceProvider, privKey });
+    const a = AuthMetadata.fromJSON(raw);
+    return a.metadata;
   }
 
   // Module functions
