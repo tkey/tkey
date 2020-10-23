@@ -429,7 +429,6 @@ class ThresholdKey implements ITKey {
     let poly: Polynomial;
     if (determinedShare) {
       const shareIndexForDeterminedShare = generatePrivateExcludingIndexes([new BN(1), new BN(0)]);
-      // const userShareIndex = new BN(shareIndexForDeterminedShare);
       poly = generateRandomPolynomial(1, this.privKey, [new Share(shareIndexForDeterminedShare, determinedShare)]);
       shareIndexes.push(shareIndexForDeterminedShare);
     } else {
