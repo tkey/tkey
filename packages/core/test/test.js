@@ -1,4 +1,4 @@
-import { getPubKeyPoint, Point, Polynomial } from "@tkey/common-types";
+import { generatePrivateExcludingIndexes, getPubKeyPoint, Point, Polynomial } from "@tkey/common-types";
 import { generatePrivate } from "@toruslabs/eccrypto";
 import { deepStrictEqual, fail } from "assert";
 import BN from "bn.js";
@@ -179,19 +179,12 @@ describe("polyCommitmentEval", function () {
   });
 });
 
-describe("AuthMetadata", function () {
+describe.only("AuthMetadata", function () {
   it("#should authenticate and  serialize and deserialize into JSON seamlessly", async function () {
-    const privKey = PRIVATE_KEY;
-    const privKeyBN = new BN(privKey, 16);
+    const privKeyBN = new BN(PRIVATE_KEY, 16);
     // create a random poly and respective shares
     const shareIndexes = [new BN(1), new BN(2)];
-    for (let i = 1; i <= 2; i += 1) {
-      let ran = generatePrivate();
-      while (ran < 2) {
-        ran = generatePrivate();
-      }
-      shareIndexes.push(new BN(ran));
-    }
+    shareIndexes.push(generatePrivateExcludingIndexes(shareIndexes));
     const poly = generateRandomPolynomial(1, privKeyBN);
     const shares = poly.generateShares(shareIndexes);
     const metadata = new Metadata(getPubKeyPoint(privKeyBN));
