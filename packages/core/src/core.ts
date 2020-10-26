@@ -751,15 +751,6 @@ class ThresholdKey implements ITKey {
     this.inputShareStore(shareStore);
   }
 
-  async linkServiceProvider(serviceProvider: IServiceProvider): Promise<void> {
-    const shareStore = this.outputShareStore("1"); // Service provider share
-    try {
-      await this.storageLayer.setMetadata({ input: shareStore, serviceProvider });
-    } catch (err) {
-      throw new Error(`setMetadata errored: ${JSON.stringify(err)}`);
-    }
-  }
-
   toJSON(): StringifiedType {
     return {
       shares: this.shares,

@@ -73,20 +73,6 @@ describe("tkey", function () {
       fail("key should be able to be reconstructed");
     }
   });
-  it("#should be able to add service provider", async function () {
-    const resp1 = await tb.initializeNewKey({ initializeModules: true });
-    const newServiceProvider = new ServiceProviderBase({ postboxKey: PRIVATE_KEY_2 });
-    await tb.linkServiceProvider(newServiceProvider);
-    await tb.generateNewShare();
-
-    const tb2 = new ThresholdKey({ serviceProvider: newServiceProvider, storageLayer: defaultSL });
-    await tb2.initialize();
-    tb2.inputShareStore(resp1.deviceShare);
-    const reconstructedKey = await tb2.reconstructKey();
-    if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
-      fail("key should be able to be reconstructed");
-    }
-  });
   it("#should be able to reconstruct key when initializing a  with user input", async function () {
     let determinedShare = new BN(keccak256("user answer blublu").slice(2), "hex");
     determinedShare = determinedShare.umod(ecCurve.curve.n);
@@ -220,7 +206,7 @@ describe("tkey reconstruction", function () {
   it("#should be able to detect a new user and reconstruct key on initialize", async function () {
     const privKey = new BN(generatePrivate());
     const uniqueSP = new ServiceProviderBase({ postboxKey: privKey.toString("hex") });
-    const uniqueSL = initStorageLayer(mocked, { serviceProvider: uniqueSP });
+    const uniqueSL = initStorageLayer(mocked, { serviceProvider: uniqueSP, hostUrl: metadataURL });
     const tb = new ThresholdKey({ serviceProvider: uniqueSP, storageLayer: uniqueSL });
     await tb.initialize();
     const reconstructedKey = await tb.reconstructKey();
@@ -235,7 +221,7 @@ describe("TorusStorageLayer", function () {
   it("#should get or set correctly", async function () {
     const privKey = PRIVATE_KEY;
     const tsp = new ServiceProviderBase({ postboxKey: privKey });
-    const storageLayer = initStorageLayer(mocked, { enableLogging: true, serviceProvider: tsp });
+    const storageLayer = initStorageLayer(mocked, { hostUrl: metadataURL, serviceProvider: tsp });
     const message = { test: Math.random().toString(36).substring(7) };
     await storageLayer.setMetadata({ input: message, privKey: tsp.postboxKey });
     const resp = await storageLayer.getMetadata({ privKey: tsp.postboxKey });
@@ -245,7 +231,7 @@ describe("TorusStorageLayer", function () {
     const privKey = PRIVATE_KEY;
     const privKeyBN = new BN(privKey, 16);
     const tsp = new ServiceProviderBase({ postboxKey: privKey });
-    const storageLayer = initStorageLayer(mocked, { enableLogging: true, serviceProvider: tsp });
+    const storageLayer = initStorageLayer(mocked, { hostUrl: metadataURL, serviceProvider: tsp });
     const message = { test: Math.random().toString(36).substring(7) };
     await storageLayer.setMetadata({ input: message, privKey: privKeyBN });
     const resp = await storageLayer.getMetadata({ privKey: privKeyBN });
@@ -255,7 +241,7 @@ describe("TorusStorageLayer", function () {
     const privKey = PRIVATE_KEY;
     const privKeyBN = new BN(privKey, 16);
     const tsp = new ServiceProviderBase({ postboxKey: privKey });
-    const storageLayer = initStorageLayer(mocked, { enableLogging: true, serviceProvider: tsp });
+    const storageLayer = initStorageLayer(mocked, { hostUrl: metadataURL, serviceProvider: tsp });
     const message = { test: Math.random().toString(36).substring(7) };
 
     const privKey2 = PRIVATE_KEY_2;
