@@ -92,7 +92,6 @@ describe("tkey", function () {
     await tb2.initialize();
     tb2.inputShareStore(resp1.deviceShare);
     const reconstructedKey = await tb2.reconstructKey();
-    // compareBNArray(resp1.privKey, reconstructedKey, "key should be able to be reconstructed");
     if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
       fail("key should be able to be reconstructed");
     }
@@ -101,7 +100,6 @@ describe("tkey", function () {
     await tb3.initialize();
     tb3.inputShareStore(resp2.newShareStores[resp2.newShareIndex.toString("hex")]);
     const finalKey = await tb3.reconstructKey();
-    // compareBNArray(resp1.privKey, finalKey, "key should be able to be reconstructed after adding new share");
     if (resp1.privKey.cmp(finalKey.privKey) !== 0) {
       fail("key should be able to be reconstructed after adding new share");
     }
