@@ -570,23 +570,23 @@ class ThresholdKey implements ITKey {
 
   async setAuthMetadata(params: { input: Metadata; serviceProvider?: IServiceProvider; privKey?: BN }): Promise<void> {
     const { input, serviceProvider, privKey } = params;
-    const a = new AuthMetadata(input, this.privKey);
-    await this.storageLayer.setMetadata({ input: a, serviceProvider, privKey });
+    const authMetadata = new AuthMetadata(input, this.privKey);
+    await this.storageLayer.setMetadata({ input: authMetadata, serviceProvider, privKey });
   }
 
   async setAuthMetadataBulk(params: { input: Metadata[]; serviceProvider?: IServiceProvider; privKey?: BN[] }): Promise<void> {
     const { input, serviceProvider, privKey } = params;
-    const a = [];
+    const authMetadatas = [];
     for (let i = 0; i < input.length; i += 1) {
-      a.push(new AuthMetadata(input[i], this.privKey));
+      authMetadatas.push(new AuthMetadata(input[i], this.privKey));
     }
-    await this.storageLayer.setMetadataBulk({ input: a, serviceProvider, privKey });
+    await this.storageLayer.setMetadataBulk({ input: authMetadatas, serviceProvider, privKey });
   }
 
   async getAuthMetadata(params: { serviceProvider?: IServiceProvider; privKey?: BN }): Promise<Metadata> {
     const raw = await this.storageLayer.getMetadata(params);
-    const a = AuthMetadata.fromJSON(raw);
-    return a.metadata;
+    const authMetadata = AuthMetadata.fromJSON(raw);
+    return authMetadata.metadata;
   }
 
   // Module functions
