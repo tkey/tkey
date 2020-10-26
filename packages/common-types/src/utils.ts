@@ -79,7 +79,7 @@ export function normalize(input: number | string): string {
 
 export function generatePrivateExcludingIndexes(shareIndexes: Array<BN>): BN {
   const key = new BN(generatePrivate());
-  if (shareIndexes.includes(key)) {
+  if (shareIndexes.find((el) => el.eq(key))) {
     return generatePrivateExcludingIndexes(shareIndexes);
   }
   return key;
