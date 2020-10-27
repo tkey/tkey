@@ -31,12 +31,19 @@ class ShareTransferModule implements IModule {
 
   requestStatusCheckId: number;
 
+  requestStatusCheckInterval: number;
+
   constructor() {
     this.moduleName = SHARE_TRANSFER_MODULE_NAME;
+    this.requestStatusCheckInterval = 1000;
   }
 
   setModuleReferences(tbSDK: ITKeyApi): void {
     this.tbSDK = tbSDK;
+  }
+
+  setRequestStatusCheckInterval(interval: number): void {
+    this.requestStatusCheckInterval = interval;
   }
 
   async initialize(): Promise<void> {
@@ -66,16 +73,18 @@ class ShareTransferModule implements IModule {
     await this.setShareTransferStore(newShareTransferStore);
     // watcher
     if (callback) {
-      const timerID = setInterval(async () => {
-        const latestShareTransferStore = await this.getShareTransferStore();
-        if (latestShareTransferStore[encPubKeyX].encShareInTransit) {
-          const shareStoreBuf = await decrypt(toPrivKeyECC(this.currentEncKey), latestShareTransferStore[encPubKeyX].encShareInTransit);
-          const receivedShare = ShareStore.fromJSON(JSON.parse(shareStoreBuf.toString()));
-          await this.tbSDK.inputShareStoreSafe(receivedShare);
-          if (callback) callback(receivedShare);
-          clearInterval(timerID);
-        }
-      }, 1000);
+      this.requestStatusCheckId = Number(
+        setInterval(async () => {
+          const latestShareTransferStore = await this.getShareTransferStore();
+          if (latestShareTransferStore[encPubKeyX].encShareInTransit) {
+            const shareStoreBuf = await decrypt(toPrivKeyECC(this.currentEncKey), latestShareTransferStore[encPubKeyX].encShareInTransit);
+            const receivedShare = ShareStore.fromJSON(JSON.parse(shareStoreBuf.toString()));
+            await this.tbSDK.inputShareStoreSafe(receivedShare);
+            if (callback) callback(receivedShare);
+            clearInterval(this.requestStatusCheckId);
+          }
+        }, this.requestStatusCheckInterval)
+      );
     }
     return encPubKeyX;
   }
@@ -145,7 +154,7 @@ class ShareTransferModule implements IModule {
             clearInterval(this.requestStatusCheckId);
             reject(err);
           }
-        }, 1000)
+        }, this.requestStatusCheckInterval)
       );
     });
   }
