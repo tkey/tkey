@@ -216,9 +216,9 @@ class ThresholdKey implements ITKey {
             // eslint-disable-next-line no-await-in-loop
             const latestShareRes = await this.catchupToLatestShare(sharesForPoly[shareIndexesForPoly[k]], pubPolyID);
             if (latestShareRes.latestShare.polynomialID === pubPolyID) {
-              sharesLeft -= 1;
-              delete shareIndexesRequired[shareIndexesForPoly[k]];
               sharesToInput.push(latestShareRes.latestShare);
+              delete shareIndexesRequired[shareIndexesForPoly[k]];
+              sharesLeft -= 1;
             } else {
               throw new Error("Share found in unexpected polynomial");
             }
