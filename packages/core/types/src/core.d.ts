@@ -43,6 +43,20 @@ declare class ThresholdKey implements ITKey {
     getKey(): BN[];
     getCurrentShareIndexes(): string[];
     getKeyDetails(): KeyDetails;
+    setAuthMetadata(params: {
+        input: Metadata;
+        serviceProvider?: IServiceProvider;
+        privKey?: BN;
+    }): Promise<void>;
+    setAuthMetadataBulk(params: {
+        input: Metadata[];
+        serviceProvider?: IServiceProvider;
+        privKey?: BN[];
+    }): Promise<void>;
+    getAuthMetadata(params: {
+        serviceProvider?: IServiceProvider;
+        privKey?: BN;
+    }): Promise<Metadata>;
     syncShareMetadata(adjustScopedStore?: (ss: unknown) => unknown): Promise<void>;
     syncMultipleShareMetadata(shares: Array<BN>, adjustScopedStore?: (ss: unknown) => unknown): Promise<void>;
     addRefreshMiddleware(moduleName: string, middleware: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap) => unknown): void;

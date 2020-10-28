@@ -206,6 +206,7 @@ class ThresholdKey implements ITKey {
     for (let i = 0; i < fullShareList.length; i += 1) {
       shareIndexesRequired[fullShareList[i]] = true;
     }
+    const sharesToInput = [];
     for (let z = this.metadata.polyIDList.length - 1; z >= 0 && sharesLeft > 0; z -= 1) {
       const sharesForPoly = this.shares[this.metadata.polyIDList[z]];
       if (sharesForPoly) {
@@ -217,7 +218,7 @@ class ThresholdKey implements ITKey {
             if (latestShareRes.latestShare.polynomialID === pubPolyID) {
               sharesLeft -= 1;
               delete shareIndexesRequired[shareIndexesForPoly[k]];
-              this.inputShareStore(latestShareRes.latestShare);
+              sharesToInput.push(latestShareRes.latestShare);
             } else {
               throw new Error("Share found in unexpected polynomial");
             }
@@ -225,6 +226,11 @@ class ThresholdKey implements ITKey {
         }
       }
     }
+
+    // Input shares to ensure atomicity
+    sharesToInput.forEach((share) => {
+      this.inputShareStore(share);
+    });
 
     if (sharesLeft > 0) {
       throw new Error(`not enough shares for reconstruction, require ${requiredThreshold} but have ${sharesLeft - requiredThreshold}`);

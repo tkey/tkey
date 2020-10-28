@@ -25,7 +25,7 @@ const denominator = (i: number, innerPoints: Array<Point>) => {
 const interpolationPoly = (i: number, innerPoints: Array<Point>): BN[] => {
   let coefficients = generateEmptyBNArray(innerPoints.length);
   const d = denominator(i, innerPoints);
-  if (d.cmp(new BN(0))) {
+  if (d.cmp(new BN(0)) === 0) {
     throw new Error("Denominator for interpolationPoly is 0");
   }
   coefficients[0] = d.invm(ecCurve.curve.n);
