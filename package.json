@@ -70,7 +70,7 @@
     }
   },
   "resolutions": {
-    "npm-packlist": "1.1.12"
+    "npm-packlist": "1.4.4"
   },
   "dependencies": {}
 }
