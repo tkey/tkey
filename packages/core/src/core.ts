@@ -5,6 +5,7 @@ import {
   encrypt,
   EncryptedMessage,
   GenerateNewShareResult,
+  generatePrivateExcludingIndexes,
   getPubKeyECC,
   getPubKeyPoint,
   IMetadata,
@@ -37,6 +38,7 @@ import { generatePrivate } from "@toruslabs/eccrypto";
 import BN from "bn.js";
 import stringify from "json-stable-stringify";
 
+import AuthMetadata from "./authMetadata";
 import { generateRandomPolynomial, lagrangeInterpolatePolynomial, lagrangeInterpolation } from "./lagrangeInterpolatePolynomial";
 import Metadata from "./metadata";
 
@@ -166,17 +168,14 @@ class ThresholdKey implements ITKey {
    * @param polyID if specified, polyID to refresh to if it exists
    */
   async catchupToLatestShare(shareStore: ShareStore, polyID?: PolynomialID): Promise<CatchupToLatestShareResult> {
-    let metadata: StringifiedType;
+    let shareMetadata: Metadata;
     try {
-      metadata = await this.storageLayer.getMetadata({ privKey: shareStore.share.share });
+      shareMetadata = await this.getAuthMetadata({ privKey: shareStore.share.share });
     } catch (err) {
       throw new Error(`getMetadata in initialize errored: ${prettyPrintError(err)}`);
     }
 
-    let shareMetadata: Metadata;
     try {
-      // let nextShare: ShareStore;
-      shareMetadata = Metadata.fromJSON(metadata);
       // if matches specified polyID return it
       if (polyID) {
         if (shareStore.polynomialID === polyID) {
@@ -207,6 +206,7 @@ class ThresholdKey implements ITKey {
     for (let i = 0; i < fullShareList.length; i += 1) {
       shareIndexesRequired[fullShareList[i]] = true;
     }
+    const sharesToInput = [];
     for (let z = this.metadata.polyIDList.length - 1; z >= 0 && sharesLeft > 0; z -= 1) {
       const sharesForPoly = this.shares[this.metadata.polyIDList[z]];
       if (sharesForPoly) {
@@ -216,14 +216,21 @@ class ThresholdKey implements ITKey {
             // eslint-disable-next-line no-await-in-loop
             const latestShareRes = await this.catchupToLatestShare(sharesForPoly[shareIndexesForPoly[k]], pubPolyID);
             if (latestShareRes.latestShare.polynomialID === pubPolyID) {
-              sharesLeft -= 1;
+              sharesToInput.push(latestShareRes.latestShare);
               delete shareIndexesRequired[shareIndexesForPoly[k]];
-              this.inputShareStore(latestShareRes.latestShare);
+              sharesLeft -= 1;
+            } else {
+              throw new Error("Share found in unexpected polynomial");
             }
           }
         }
       }
     }
+
+    // Input shares to ensure atomicity
+    sharesToInput.forEach((share) => {
+      this.inputShareStore(share);
+    });
 
     if (sharesLeft > 0) {
       throw new Error(`not enough shares for reconstruction, require ${requiredThreshold} but have ${sharesLeft - requiredThreshold}`);
@@ -275,6 +282,9 @@ class ThresholdKey implements ITKey {
     if (sharesForExistingPoly.length < threshold) {
       throw new Error("not enough shares to reconstruct poly");
     }
+    if (new Set(sharesForExistingPoly).size !== sharesForExistingPoly.length) {
+      throw new Error("share indexes should be unique");
+    }
     for (let i = 0; i < threshold; i += 1) {
       pointsArr.push(new Point(new BN(sharesForExistingPoly[i], "hex"), this.shares[pubPolyID][sharesForExistingPoly[i]].share.share));
     }
@@ -291,11 +301,11 @@ class ThresholdKey implements ITKey {
     const pubPoly = this.metadata.getLatestPublicPolynomial();
     const previousPolyID = pubPoly.getPolynomialID();
     const existingShareIndexes = this.metadata.getShareIndexesForPolynomial(previousPolyID);
-    // check if existing share indexes exist
-    let newShareIndex = new BN(generatePrivate());
-    while (existingShareIndexes.includes(newShareIndex.toString("hex"))) {
-      newShareIndex = new BN(generatePrivate());
-    }
+    const existingShareIndexesBN = existingShareIndexes.map((el) => {
+      return new BN(el, "hex");
+    });
+    const newShareIndex = new BN(generatePrivateExcludingIndexes(existingShareIndexesBN));
+
     const results = await this.refreshShares(pubPoly.getThreshold(), [...existingShareIndexes, newShareIndex.toString("hex")], previousPolyID);
     const newShareStores = results.shareStores;
 
@@ -340,8 +350,6 @@ class ThresholdKey implements ITKey {
       newShareStores[shareIndexHex] = new ShareStore(shares[shareIndexHex], polyID);
     });
 
-    // evaluate oldPoly for old shares and create new metadata with encrypted shares for new polynomial
-
     // evaluate oldPoly for old shares and set new metadata with encrypted share for new polynomial
 
     const m = this.metadata.clone();
@@ -358,7 +366,7 @@ class ThresholdKey implements ITKey {
     m.setScopedStore("encryptedShares", newScopedStore);
     const metadataToPush = Array(sharesToPush.length).fill(m);
 
-    await this.storageLayer.setMetadataBulk({ input: metadataToPush, privKey: sharesToPush });
+    await this.setAuthMetadataBulk({ input: metadataToPush, privKey: sharesToPush });
 
     // set share for serviceProvider encrytion
     if (shareIndexesNeedingEncryption.includes("1")) {
@@ -385,7 +393,7 @@ class ThresholdKey implements ITKey {
       newShareMetadataToPush.push(me);
       return newShareStores[shareIndex].share.share;
     });
-    await this.storageLayer.setMetadataBulk({
+    await this.setAuthMetadataBulk({
       input: newShareMetadataToPush,
       privKey: newShareStoreSharesToPush,
     });
@@ -417,14 +425,14 @@ class ThresholdKey implements ITKey {
 
     // create a random poly and respective shares
     // 1 is defined as the serviceProvider share
-    const shareIndexForDeviceStorage = generatePrivate();
-    const shareIndexes = [new BN(1), new BN(shareIndexForDeviceStorage)];
+    const shareIndexForDeviceStorage = generatePrivateExcludingIndexes([new BN(1), new BN(0)]);
+
+    const shareIndexes = [new BN(1), shareIndexForDeviceStorage];
     let poly: Polynomial;
     if (determinedShare) {
-      const shareIndexForDeterminedShare = generatePrivate();
-      const userShareIndex = new BN(shareIndexForDeterminedShare);
-      poly = generateRandomPolynomial(1, this.privKey, [new Share(userShareIndex, determinedShare)]);
-      shareIndexes.push(userShareIndex);
+      const shareIndexForDeterminedShare = generatePrivateExcludingIndexes([new BN(1), new BN(0)]);
+      poly = generateRandomPolynomial(1, this.privKey, [new Share(shareIndexForDeterminedShare, determinedShare)]);
+      shareIndexes.push(shareIndexForDeterminedShare);
     } else {
       poly = generateRandomPolynomial(1, this.privKey);
     }
@@ -448,7 +456,7 @@ class ThresholdKey implements ITKey {
       metadataToPush.push(metadata);
       return shares[shareIndex.toString("hex")].share;
     });
-    await this.storageLayer.setMetadataBulk({ input: metadataToPush, privKey: sharesToPush });
+    await this.setAuthMetadataBulk({ input: metadataToPush, privKey: sharesToPush });
 
     // store metadata on metadata respective to shares
     for (let index = 0; index < shareIndexes.length; index += 1) {
@@ -564,6 +572,29 @@ class ThresholdKey implements ITKey {
     };
   }
 
+  // Auth functions
+
+  async setAuthMetadata(params: { input: Metadata; serviceProvider?: IServiceProvider; privKey?: BN }): Promise<void> {
+    const { input, serviceProvider, privKey } = params;
+    const authMetadata = new AuthMetadata(input, this.privKey);
+    await this.storageLayer.setMetadata({ input: authMetadata, serviceProvider, privKey });
+  }
+
+  async setAuthMetadataBulk(params: { input: Metadata[]; serviceProvider?: IServiceProvider; privKey?: BN[] }): Promise<void> {
+    const { input, serviceProvider, privKey } = params;
+    const authMetadatas = [];
+    for (let i = 0; i < input.length; i += 1) {
+      authMetadatas.push(new AuthMetadata(input[i], this.privKey));
+    }
+    await this.storageLayer.setMetadataBulk({ input: authMetadatas, serviceProvider, privKey });
+  }
+
+  async getAuthMetadata(params: { serviceProvider?: IServiceProvider; privKey?: BN }): Promise<Metadata> {
+    const raw = await this.storageLayer.getMetadata(params);
+    const authMetadata = AuthMetadata.fromJSON(raw);
+    return authMetadata.metadata;
+  }
+
   // Module functions
 
   async syncShareMetadata(adjustScopedStore?: (ss: unknown) => unknown): Promise<void> {
@@ -590,13 +621,12 @@ class ThresholdKey implements ITKey {
   async syncMultipleShareMetadata(shares: Array<BN>, adjustScopedStore?: (ss: unknown) => unknown): Promise<void> {
     const newMetadataPromise = shares.map(async (share) => {
       const newMetadata = this.metadata.clone();
-      let resp: StringifiedType;
+      let specificShareMetadata: Metadata;
       try {
-        resp = await this.storageLayer.getMetadata({ privKey: share });
+        specificShareMetadata = await this.getAuthMetadata({ privKey: share });
       } catch (err) {
         throw new Error(`getMetadata in syncShareMetadata errored: ${prettyPrintError(err)}`);
       }
-      const specificShareMetadata = Metadata.fromJSON(resp);
 
       let scopedStoreToBeSet;
       if (adjustScopedStore) {
@@ -608,7 +638,7 @@ class ThresholdKey implements ITKey {
       return newMetadata;
     });
     const newMetadata = await Promise.all(newMetadataPromise);
-    await this.storageLayer.setMetadataBulk({ input: newMetadata, privKey: shares });
+    await this.setAuthMetadataBulk({ input: newMetadata, privKey: shares });
   }
 
   addRefreshMiddleware(
@@ -696,7 +726,7 @@ class ThresholdKey implements ITKey {
     const { metadata } = this;
     const rawTkeyStore = metadata.getTkeyStoreDomain(this.tkeyStoreModuleName);
     if (!rawTkeyStore) {
-      throw new Error("Tkey store does not exist. Unable to delete seed hrase");
+      throw new Error("Tkey store does not exist. Unable to delete");
     }
     const moduleStore = rawTkeyStore[moduleName];
     const keyStore = moduleStore[key];
@@ -716,7 +746,12 @@ class ThresholdKey implements ITKey {
     const keyStore = moduleStore[key];
 
     // decrypt and parsing
-    const decryptedKeyStore = await this.decrypt(JSON.parse(keyStore));
+    let decryptedKeyStore;
+    try {
+      decryptedKeyStore = await this.decrypt(JSON.parse(keyStore));
+    } catch (err) {
+      throw new Error("Decryption failed");
+    }
     const newString = decryptedKeyStore.toString();
     const tkeyStoreData = JSON.parse(newString.toString());
     return tkeyStoreData;

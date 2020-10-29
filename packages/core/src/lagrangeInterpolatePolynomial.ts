@@ -1,4 +1,4 @@
-import { ecCurve, Point, Polynomial, Share } from "@tkey/common-types";
+import { ecCurve, generatePrivateExcludingIndexes, Point, Polynomial, Share } from "@tkey/common-types";
 import { generatePrivate } from "@toruslabs/eccrypto";
 import BN from "bn.js";
 import { curve } from "elliptic";
@@ -25,6 +25,9 @@ const denominator = (i: number, innerPoints: Array<Point>) => {
 const interpolationPoly = (i: number, innerPoints: Array<Point>): BN[] => {
   let coefficients = generateEmptyBNArray(innerPoints.length);
   const d = denominator(i, innerPoints);
+  if (d.cmp(new BN(0)) === 0) {
+    throw new Error("Denominator for interpolationPoly is 0");
+  }
   coefficients[0] = d.invm(ecCurve.curve.n);
   for (let k = 0; k < innerPoints.length; k += 1) {
     const newCoefficients = generateEmptyBNArray(innerPoints.length);
@@ -104,12 +107,13 @@ export function lagrangeInterpolation(shares: BN[], nodeIndex: BN[]): BN {
 export function generateRandomPolynomial(degree: number, secret?: BN, determinsticShares?: Array<Share>): Polynomial {
   let actualS = secret;
   if (!secret) {
-    actualS = new BN(generatePrivate());
+    actualS = generatePrivateExcludingIndexes([new BN(0)]);
   }
   if (!determinsticShares) {
     const poly = [actualS];
     for (let i = 0; i < degree; i += 1) {
-      poly.push(new BN(generatePrivate()));
+      const share = generatePrivateExcludingIndexes(poly);
+      poly.push(share);
     }
     return new Polynomial(poly);
   }
@@ -118,16 +122,16 @@ export function generateRandomPolynomial(degree: number, secret?: BN, determinst
   }
 
   if (determinsticShares.length > degree) {
-    throw new TypeError("determinsticShares in generateRandomPolynomial need to be less than degree to ensure an element of randomness");
+    throw new TypeError("determinsticShares in generateRandomPolynomial should be less or equal than degree to ensure an element of randomness");
   }
   const points = {};
   determinsticShares.forEach((share) => {
     points[share.shareIndex.toString("hex")] = new Point(share.shareIndex, share.share);
   });
   for (let i = 0; i < degree - determinsticShares.length; i += 1) {
-    let shareIndex = new BN(generatePrivate());
+    let shareIndex = generatePrivateExcludingIndexes([new BN(0)]);
     while (points[shareIndex.toString("hex")] !== undefined) {
-      shareIndex = new BN(generatePrivate());
+      shareIndex = generatePrivateExcludingIndexes([new BN(0)]);
     }
     points[shareIndex.toString("hex")] = new Point(shareIndex, new BN(generatePrivate()));
   }
