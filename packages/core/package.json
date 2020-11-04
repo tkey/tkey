@@ -1,6 +1,6 @@
 {
   "name": "@tkey/core",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "description": "TKey Core library",
   "main": "dist/core.cjs.js",
   "unpkg": "dist/core.umd.min.js",

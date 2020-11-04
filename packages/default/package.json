@@ -1,6 +1,6 @@
 {
   "name": "@tkey/default",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "description": "TKey default library",
   "main": "dist/default.cjs.js",
   "unpkg": "dist/default.umd.min.js",
@@ -28,7 +28,7 @@
   ],
   "dependencies": {
     "@tkey/common-types": "^3.0.1",
-    "@tkey/core": "^3.0.1",
+    "@tkey/core": "^3.0.2",
     "@tkey/private-keys": "^3.0.1",
     "@tkey/security-questions": "^3.0.1",
     "@tkey/seed-phrase": "^3.0.1",
