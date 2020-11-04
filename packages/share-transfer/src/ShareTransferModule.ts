@@ -59,7 +59,11 @@ class ShareTransferModule implements IModule {
     }
   }
 
-  async requestNewShare(userAgent: string, availableShareIndexes: Array<string>, callback?: (shareStore: ShareStore) => void): Promise<string> {
+  async requestNewShare(
+    userAgent: string,
+    availableShareIndexes: Array<string>,
+    callback?: (err?: Error, shareStore?: ShareStore) => void
+  ): Promise<string> {
     if (this.currentEncKey) throw new Error(`Current request already exists ${this.currentEncKey.toString("hex")}`);
     this.currentEncKey = new BN(generatePrivate());
     const newShareTransferStore = await this.getShareTransferStore();
@@ -69,24 +73,39 @@ class ShareTransferModule implements IModule {
       encShareInTransit: undefined,
       availableShareIndexes,
       userAgent,
+      timestamp: Date.now(),
     });
     await this.setShareTransferStore(newShareTransferStore);
     // watcher
     if (callback) {
       this.requestStatusCheckId = Number(
         setInterval(async () => {
-          const latestShareTransferStore = await this.getShareTransferStore();
-          if (latestShareTransferStore[encPubKeyX].encShareInTransit) {
-            const shareStoreBuf = await decrypt(toPrivKeyECC(this.currentEncKey), latestShareTransferStore[encPubKeyX].encShareInTransit);
-            const receivedShare = ShareStore.fromJSON(JSON.parse(shareStoreBuf.toString()));
-            await this.tbSDK.inputShareStoreSafe(receivedShare);
-            if (callback) callback(receivedShare);
-            clearInterval(this.requestStatusCheckId);
+          try {
+            const latestShareTransferStore = await this.getShareTransferStore();
+            if (!this.currentEncKey) throw new Error("Missing current enc key");
+            if (latestShareTransferStore[encPubKeyX].encShareInTransit) {
+              const shareStoreBuf = await decrypt(toPrivKeyECC(this.currentEncKey), latestShareTransferStore[encPubKeyX].encShareInTransit);
+              const receivedShare = ShareStore.fromJSON(JSON.parse(shareStoreBuf.toString()));
+              await this.tbSDK.inputShareStoreSafe(receivedShare);
+              this._cleanUpCurrentRequest();
+              callback(null, receivedShare);
+            } else if (!latestShareTransferStore[encPubKeyX]) {
+              this._cleanUpCurrentRequest();
+              callback(new Error("User cancelled request"));
+            }
+          } catch (error) {
+            this._cleanUpCurrentRequest();
+            callback(error);
           }
         }, this.requestStatusCheckInterval)
       );
     }
     return encPubKeyX;
+  }
+
+  private _cleanUpCurrentRequest(): void {
+    this.currentEncKey = undefined;
+    clearInterval(this.requestStatusCheckId);
   }
 
   async lookForRequests(): Promise<Array<string>> {
@@ -140,6 +159,7 @@ class ShareTransferModule implements IModule {
         setInterval(async () => {
           try {
             const latestShareTransferStore = await this.getShareTransferStore();
+            if (!this.currentEncKey) throw new Error("Missing current enc key");
             if (latestShareTransferStore[encPubKeyX].encShareInTransit) {
               const shareStoreBuf = await decrypt(toPrivKeyECC(this.currentEncKey), latestShareTransferStore[encPubKeyX].encShareInTransit);
               const receivedShare = ShareStore.fromJSON(JSON.parse(shareStoreBuf.toString()));
@@ -147,11 +167,14 @@ class ShareTransferModule implements IModule {
               if (deleteRequestAfterCompletion) {
                 await this.deleteShareTransferStore(encPubKeyX);
               }
+              this._cleanUpCurrentRequest();
               resolve(receivedShare);
-              clearInterval(this.requestStatusCheckId);
+            } else if (!latestShareTransferStore[encPubKeyX]) {
+              this._cleanUpCurrentRequest();
+              reject(new Error("User cancelled request"));
             }
           } catch (err) {
-            clearInterval(this.requestStatusCheckId);
+            this._cleanUpCurrentRequest();
             reject(err);
           }
         }, this.requestStatusCheckInterval)

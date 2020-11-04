@@ -15,7 +15,8 @@ declare class ShareTransferModule implements IModule {
     setModuleReferences(tbSDK: ITKeyApi): void;
     setRequestStatusCheckInterval(interval: number): void;
     initialize(): Promise<void>;
-    requestNewShare(userAgent: string, availableShareIndexes: Array<string>, callback?: (shareStore: ShareStore) => void): Promise<string>;
+    requestNewShare(userAgent: string, availableShareIndexes: Array<string>, callback?: (err?: Error, shareStore?: ShareStore) => void): Promise<string>;
+    private _cleanUpCurrentRequest;
     lookForRequests(): Promise<Array<string>>;
     approveRequest(encPubKeyX: string, shareStore?: ShareStore): Promise<void>;
     approveRequestWithShareIndex(encPubKeyX: string, shareIndex: string): Promise<void>;
