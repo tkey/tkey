@@ -160,6 +160,7 @@ export interface ShareRequestArgs {
   encShareInTransit: EncryptedMessage;
   availableShareIndexes: string[];
   userAgent: string;
+  timestamp: number;
 }
 
 export interface ISeedPhraseStore {

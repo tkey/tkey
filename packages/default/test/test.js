@@ -131,7 +131,7 @@ describe("tkey", function () {
       fail("key should be able to be reconstructed");
     }
   });
-  it("# should serialize and deserialize correctly with user input", async function () {
+  it("#should serialize and deserialize correctly with user input", async function () {
     let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
     userInput = userInput.umod(ecCurve.curve.n);
     const resp1 = await tb.initializeNewKey({ userInput, initializeModules: true });
@@ -468,7 +468,7 @@ describe("ShareSerializationModule", function () {
       storageLayer: defaultSL,
     });
     await tb2.initialize();
-    await tb2.inputShare(exportedSeedShare, "mnemonic");
+    await tb2.inputShare(exportedSeedShare.toString("hex"), "mnemonic");
     const reconstructedKey = await tb2.reconstructKey();
 
     if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
