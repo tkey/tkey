@@ -179,7 +179,7 @@ describe("polyCommitmentEval", function () {
   });
 });
 
-describe.only("AuthMetadata", function () {
+describe("AuthMetadata", function () {
   it("#should authenticate and  serialize and deserialize into JSON seamlessly", async function () {
     const privKeyBN = new BN(PRIVATE_KEY, 16);
     // create a random poly and respective shares
@@ -191,10 +191,9 @@ describe.only("AuthMetadata", function () {
     metadata.addFromPolynomialAndShares(poly, shares);
     metadata.setGeneralStoreDomain("something", { test: "oh this is an object" });
     const a = new AuthMetadata(metadata, privKeyBN);
-    try {
-      AuthMetadata.fromJSON(a.toJSON());
-    } catch (err) {
-      fail(err);
-    }
+    const stringified = stringify(a);
+    const metadataSerialized = Metadata.fromJSON(JSON.parse(stringify(metadata)));
+    const final = AuthMetadata.fromJSON(JSON.parse(stringified));
+    deepStrictEqual(final.metadata, metadataSerialized, "Must be equal");
   });
 });
