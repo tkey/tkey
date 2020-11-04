@@ -5,6 +5,11 @@ import { keccak256 } from "web3-utils";
 
 import Metadata from "./metadata";
 
+function stripHexPrefix(str: string): string {
+  if (str.slice(0, 2) === "0x") return str.slice(2);
+  return str;
+}
+
 class AuthMetadata {
   metadata: Metadata;
 
@@ -16,10 +21,10 @@ class AuthMetadata {
   }
 
   toJSON(): StringifiedType {
-    const data = this.metadata.toJSON();
+    const data = this.metadata;
 
     const k = toPrivKeyEC(this.privKey);
-    const sig = k.sign(keccak256(stringify(data)));
+    const sig = k.sign(stripHexPrefix(keccak256(stringify(data))));
 
     return {
       data,
@@ -31,8 +36,8 @@ class AuthMetadata {
     const { data, sig } = value;
     const m = Metadata.fromJSON(data);
     const pubK = ecCurve.keyFromPublic({ x: m.pubKey.x.toString("hex", 64), y: m.pubKey.y.toString("hex", 64) }, "hex");
-    if (!pubK.verify(keccak256(stringify(data)), sig)) {
-      throw Error("Signature not valid for returning metdata");
+    if (!pubK.verify(stripHexPrefix(keccak256(stringify(data))), sig)) {
+      throw new Error("Signature not valid for returning metdata");
     }
     return new AuthMetadata(m);
   }
