@@ -1,6 +1,6 @@
 {
   "name": "@tkey/default",
-  "version": "3.0.2",
+  "version": "3.0.3",
   "description": "TKey default library",
   "main": "dist/default.cjs.js",
   "unpkg": "dist/default.umd.min.js",
@@ -35,7 +35,7 @@
     "@tkey/service-provider-base": "^3.0.1",
     "@tkey/service-provider-torus": "^3.0.1",
     "@tkey/share-serialization": "^3.0.1",
-    "@tkey/share-transfer": "^3.0.1",
+    "@tkey/share-transfer": "^3.0.3",
     "@tkey/storage-layer-torus": "^3.0.1",
     "@toruslabs/eccrypto": "^1.1.5",
     "atob": "^2.1.2",
