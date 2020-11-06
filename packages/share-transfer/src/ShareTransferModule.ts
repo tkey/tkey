@@ -160,7 +160,10 @@ class ShareTransferModule implements IModule {
           try {
             const latestShareTransferStore = await this.getShareTransferStore();
             if (!this.currentEncKey) throw new Error("Missing current enc key");
-            if (latestShareTransferStore[encPubKeyX].encShareInTransit) {
+            if (!latestShareTransferStore[encPubKeyX]) {
+              this._cleanUpCurrentRequest();
+              reject(new Error("User cancelled request"));
+            } else if (latestShareTransferStore[encPubKeyX].encShareInTransit) {
               const shareStoreBuf = await decrypt(toPrivKeyECC(this.currentEncKey), latestShareTransferStore[encPubKeyX].encShareInTransit);
               const receivedShare = ShareStore.fromJSON(JSON.parse(shareStoreBuf.toString()));
               await this.tbSDK.inputShareStoreSafe(receivedShare);
@@ -169,9 +172,6 @@ class ShareTransferModule implements IModule {
               }
               this._cleanUpCurrentRequest();
               resolve(receivedShare);
-            } else if (!latestShareTransferStore[encPubKeyX]) {
-              this._cleanUpCurrentRequest();
-              reject(new Error("User cancelled request"));
             }
           } catch (err) {
             this._cleanUpCurrentRequest();
