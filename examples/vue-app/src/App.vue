@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <p class="font-italic"> Note: This is a testing application. Please open console for debugging. </p>
+    <p class="font-italic">Note: This is a testing application. Please open console for debugging.</p>
     <div>
       <span :style="{ marginRight: '20px' }">verifier:</span>
       <select v-model="selectedVerifier">
@@ -48,10 +48,10 @@
 import ThresholdKey from "@tkey/default";
 import TorusServiceProvider from "@tkey/service-provider-torus";
 import TorusStorageLayer from "@tkey/storage-layer-torus";
-import ServiceProviderBase from "@tkey/service-provider-base"
-import WebStorageModule from "@tkey/web-storage"
-import SecurityQuestionsModule from "@tkey/security-questions"
-import ShareTransferModule from "@tkey/share-transfer"
+import ServiceProviderBase from "@tkey/service-provider-base";
+import WebStorageModule from "@tkey/web-storage";
+import SecurityQuestionsModule from "@tkey/security-questions";
+import ShareTransferModule from "@tkey/share-transfer";
 
 // import ServiceProviderBase from '../../../src/serviceProvider/ServiceProviderBase';
 
@@ -207,7 +207,7 @@ export default {
           }
         }
 
-        console.log(this.tbsdk)
+        console.log(this.tbsdk);
 
         const key = await this.tbsdk.reconstructKey();
         // await this.tbsdk.initializeNewKey(undefined, true)
@@ -221,20 +221,41 @@ export default {
     },
     async triggerLogin() {
       try {
-        await this.initTkey()
+        await this.initTkey();
 
         // console.log(this.tbsdk, this.tbsdk.serviceProvider, this.tbsdk.serviceProvider.__proto__ )
         if (!this.tbsdk.serviceProvider) return;
         if (!this.mocked) {
           const jwtParams = this.loginToConnectionMap[this.selectedVerifier] || {};
           const { typeOfLogin, clientId, verifier } = this.verifierMap[this.selectedVerifier];
-          await this.tbsdk.serviceProvider.triggerLogin({
-            typeOfLogin,
-            verifier,
-            clientId,
-            jwtParams
+          // await this.tbsdk.serviceProvider.triggerLogin({
+          //   typeOfLogin,
+          //   verifier,
+          //   clientId,
+          //   jwtParams
+          // });
+
+          await this.tbsdk.serviceProvider.triggerHybridAggregateLogin({
+            singleLogin: {
+              typeOfLogin,
+              verifier,
+              clientId,
+              jwtParams
+            },
+            aggregateLoginParams: {
+              aggregateVerifierType: "single_id_verifier",
+              verifierIdentifier: "tkey-google",
+              subVerifierDetailsArray: [
+                {
+                  clientId: "221898609709-obfn3p63741l5333093430j3qeiinaa8.apps.googleusercontent.com",
+                  typeOfLogin: "google",
+                  verifier: "torus"
+                }
+              ]
+            }
           });
         }
+
         await this.initializeAndReconstruct();
       } catch (error) {
         console.error(error, "caught");
@@ -333,7 +354,7 @@ export default {
     async initializeNewKey() {
       try {
         await this.initTkey();
-        if(!this.mocked) await this.triggerLogin();
+        if (!this.mocked) await this.triggerLogin();
         const res = await this.tbsdk.initializeNewKey({ initializeModules: true });
         this.console(res);
         console.log("new tkey", res);
@@ -367,7 +388,7 @@ export default {
       this.tbsdk = tbsdk;
       this.torusdirectsdk = tbsdk.serviceProvider;
 
-      if(!this.mocked) await tbsdk.serviceProvider.init({ skipSw: false });
+      if (!this.mocked) await tbsdk.serviceProvider.init({ skipSw: false });
     },
     console(text) {
       document.querySelector("#console>p").innerHTML = typeof text === "object" ? JSON.stringify(text) : text;
@@ -412,7 +433,7 @@ export default {
   margin: 0.5em;
   word-wrap: break-word;
 }
-#font-italic{
+#font-italic {
   font-style: italic;
 }
 button {
