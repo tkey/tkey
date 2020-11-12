@@ -3,15 +3,19 @@ import ServiceProviderBase from "@tkey/service-provider-base";
 import DirectWebSDK, {
   AggregateLoginParams,
   DirectWebSDKArgs,
+  HybridAggregateLoginParams,
   InitParams,
   SubVerifierDetails,
   TorusAggregateLoginResponse,
+  TorusHybridAggregateLoginResponse,
   TorusLoginResponse,
 } from "@toruslabs/torus-direct-web-sdk";
 import BN from "bn.js";
 
 class TorusServiceProvider extends ServiceProviderBase {
   directWeb: DirectWebSDK;
+
+  singleLoginKey: BN;
 
   directParams: DirectWebSDKArgs;
 
@@ -34,6 +38,14 @@ class TorusServiceProvider extends ServiceProviderBase {
   async triggerAggregateLogin(params: AggregateLoginParams): Promise<TorusAggregateLoginResponse> {
     const obj = await this.directWeb.triggerAggregateLogin(params);
     this.postboxKey = new BN(obj.privateKey, "hex");
+    return obj;
+  }
+
+  async triggerHybirdLogin(params: HybridAggregateLoginParams): Promise<TorusHybridAggregateLoginResponse> {
+    const obj = await this.directWeb.triggerHybridAggregateLogin(params);
+    const aggregateLoginKey = obj.aggregateLogins[0].privateKey;
+    this.postboxKey = new BN(aggregateLoginKey, "hex");
+    this.singleLoginKey = new BN(obj.singleLogin.privateKey, "hex");
     return obj;
   }
 
