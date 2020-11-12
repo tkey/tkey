@@ -206,10 +206,10 @@
   optionalDependencies:
     secp256k1 "^3.8.0"
 
-"@toruslabs/fetch-node-details@^2.3.1":
-  version "2.3.1"
-  resolved "https://registry.yarnpkg.com/@toruslabs/fetch-node-details/-/fetch-node-details-2.3.1.tgz#64e1cd908bf46552bf882fb214fed826259e6d32"
-  integrity sha512-Q7ONMxQ9fjpzkdEm5iVQAWTIr7wFK9Po2c9WW9qpEzhqhY9/WYThcmH73pvjfQtkzZ2oXq4rjKwDOW0Fdb1Xmw==
+"@toruslabs/fetch-node-details@^2.3.2":
+  version "2.3.2"
+  resolved "https://registry.yarnpkg.com/@toruslabs/fetch-node-details/-/fetch-node-details-2.3.2.tgz#22d110ccd2543b5665df87c92f18fd6ea8dee598"
+  integrity sha512-rYtyeoA9s66w3ZgjuNJ5b3kBHc7JWOHXSZjtK4+1EMa5znjG+dz7UCv6EeYX5gtMGIz7K8zQylAxZfsBsssTLw==
   dependencies:
     web3-eth-contract "^1.3.0"
     web3-utils "^1.3.0"
@@ -221,14 +221,14 @@
   dependencies:
     deepmerge "^4.2.2"
 
-"@toruslabs/torus-direct-web-sdk@^3.5.0":
-  version "3.5.0"
-  resolved "https://registry.yarnpkg.com/@toruslabs/torus-direct-web-sdk/-/torus-direct-web-sdk-3.5.0.tgz#df993c57f6dbc80c357beaab2a5584b5a4d484ab"
-  integrity sha512-7Jb1JVzER+JPHN7N0HHD2nZZyP+mxMBJPuqjDunVirN0ZKfSZyo9HXshCuqnOdlBf9Ym1BfFq2uQ3jBVKC/Gbg==
+"@toruslabs/torus-direct-web-sdk@^3.5.1":
+  version "3.5.1"
+  resolved "https://registry.yarnpkg.com/@toruslabs/torus-direct-web-sdk/-/torus-direct-web-sdk-3.5.1.tgz#22e9c1841b8cdacbd338b921bb8423d05972afd3"
+  integrity sha512-ofOLG+hMwzi7kdP5QL5GrfgKls+s5/6BFR9ghAvUAfwh0ho/DSXhhw/wiplhGk96Snu7ZYKiSgS+zKuk7SbvWw==
   dependencies:
     "@chaitanyapotti/random-id" "^1.0.3"
     "@chaitanyapotti/register-service-worker" "^1.7.3"
-    "@toruslabs/fetch-node-details" "^2.3.1"
+    "@toruslabs/fetch-node-details" "^2.3.2"
     "@toruslabs/http-helpers" "^1.3.5"
     "@toruslabs/torus.js" "^2.2.9"
     broadcast-channel "^3.3.0"
