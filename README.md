@@ -107,7 +107,7 @@ const tkey = new ThresholdKey({
   },
   directParams: {
     baseUrl: "<REDIRECT_URL>",
-    network: "ropsten", // or mainnet
+    network: "testnet", // or mainnet
     proxyContractAddress: "0x4023d2a0D330bF11426B12C6144Cfb96B7fa6183", // corresponding proxy contract address of the specified network
   },
 });
