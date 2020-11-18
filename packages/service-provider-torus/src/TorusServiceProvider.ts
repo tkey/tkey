@@ -41,7 +41,7 @@ class TorusServiceProvider extends ServiceProviderBase {
     return obj;
   }
 
-  async triggerHybirdLogin(params: HybridAggregateLoginParams): Promise<TorusHybridAggregateLoginResponse> {
+  async triggerHybridAggregateLogin(params: HybridAggregateLoginParams): Promise<TorusHybridAggregateLoginResponse> {
     const obj = await this.directWeb.triggerHybridAggregateLogin(params);
     const aggregateLoginKey = obj.aggregateLogins[0].privateKey;
     this.postboxKey = new BN(aggregateLoginKey, "hex");

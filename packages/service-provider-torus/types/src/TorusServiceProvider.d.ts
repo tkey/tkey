@@ -10,7 +10,7 @@ declare class TorusServiceProvider extends ServiceProviderBase {
     init(params: InitParams): Promise<void>;
     triggerLogin(params: SubVerifierDetails): Promise<TorusLoginResponse>;
     triggerAggregateLogin(params: AggregateLoginParams): Promise<TorusAggregateLoginResponse>;
-    triggerHybirdLogin(params: HybridAggregateLoginParams): Promise<TorusHybridAggregateLoginResponse>;
+    triggerHybridAggregateLogin(params: HybridAggregateLoginParams): Promise<TorusHybridAggregateLoginResponse>;
     toJSON(): StringifiedType;
     static fromJSON(value: StringifiedType): TorusServiceProvider;
 }
