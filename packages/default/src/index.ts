@@ -1,4 +1,4 @@
-import { IServiceProvider, IStorageLayer, TKeyArgs } from "@tkey/common-types";
+import { IServiceProvider, IStorageLayer, StringifiedType, TKeyArgs } from "@tkey/common-types";
 import TKey from "@tkey/core";
 import TorusServiceProvider from "@tkey/service-provider-torus";
 import { SHARE_SERIALIZATION_MODULE_NAME, ShareSerializationModule } from "@tkey/share-serialization";
@@ -7,7 +7,7 @@ import TorusStorageLayer from "@tkey/storage-layer-torus";
 
 class ThresholdKey extends TKey {
   constructor(args?: TKeyArgs) {
-    const { modules = {}, serviceProvider, storageLayer, directParams } = args;
+    const { modules = {}, serviceProvider, storageLayer, directParams } = args || {};
     const defaultModules = {
       [SHARE_TRANSFER_MODULE_NAME]: new ShareTransferModule(),
       [SHARE_SERIALIZATION_MODULE_NAME]: new ShareSerializationModule(),
@@ -20,11 +20,37 @@ class ThresholdKey extends TKey {
       finalServiceProvider = serviceProvider;
     }
     if (!storageLayer) {
-      finalStorageLayer = new TorusStorageLayer({ serviceProvider: finalServiceProvider });
+      finalStorageLayer = new TorusStorageLayer({ serviceProvider: finalServiceProvider, hostUrl: "https://metadata.tor.us" });
     } else {
       finalStorageLayer = storageLayer;
     }
-    super({ ...args, modules: { ...defaultModules, ...modules }, serviceProvider: finalServiceProvider, storageLayer: finalStorageLayer });
+    super({ ...(args || {}), modules: { ...defaultModules, ...modules }, serviceProvider: finalServiceProvider, storageLayer: finalStorageLayer });
+  }
+
+  static async fromJSON(value: StringifiedType, args?: TKeyArgs): Promise<ThresholdKey> {
+    const { storageLayer, serviceProvider, modules = {}, directParams } = args || {};
+    const defaultModules = {
+      [SHARE_TRANSFER_MODULE_NAME]: new ShareTransferModule(),
+      [SHARE_SERIALIZATION_MODULE_NAME]: new ShareSerializationModule(),
+    };
+    let finalServiceProvider: IServiceProvider;
+    let finalStorageLayer: IStorageLayer;
+    if (!serviceProvider) {
+      finalServiceProvider = new TorusServiceProvider({ directParams });
+    } else {
+      finalServiceProvider = serviceProvider;
+    }
+    if (!storageLayer) {
+      finalStorageLayer = new TorusStorageLayer({ serviceProvider: finalServiceProvider, hostUrl: "https://metadata.tor.us" });
+    } else {
+      finalStorageLayer = storageLayer;
+    }
+    return super.fromJSON(value, {
+      ...(args || {}),
+      modules: { ...defaultModules, ...modules },
+      serviceProvider: finalServiceProvider,
+      storageLayer: finalStorageLayer,
+    });
   }
 }
 
