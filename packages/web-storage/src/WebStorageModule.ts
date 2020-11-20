@@ -1,7 +1,7 @@
 import { BNString, IModule, ITKeyApi, prettyPrintError, ShareStore } from "@tkey/common-types";
 import BN from "bn.js";
 
-import { getShareFromFileStorage, storeShareOnFileStorage } from "./FileStorageHelpers";
+import { canAccessFileStorage, getShareFromFileStorage, storeShareOnFileStorage } from "./FileStorageHelpers";
 import { getShareFromLocalStorage, storeShareOnLocalStorage } from "./LocalStorageHelpers";
 
 export const WEB_STORAGE_MODULE_NAME = "webStorage";
@@ -16,6 +16,27 @@ class WebStorageModule implements IModule {
   constructor(canUseFileStorage = true) {
     this.moduleName = WEB_STORAGE_MODULE_NAME;
     this.canUseFileStorage = canUseFileStorage;
+    this.setFileStorageAccess();
+  }
+
+  async setFileStorageAccess(): Promise<void> {
+    try {
+      const result = await canAccessFileStorage();
+      if (result.state === "denied") {
+        this.canUseFileStorage = false;
+      } else if (result.state === "granted") {
+        this.canUseFileStorage = true;
+      }
+      // eslint-disable-next-line @typescript-eslint/no-this-alias
+      const self = this;
+      result.onchange = function permissionChange() {
+        if (this.state === "denied") {
+          self.canUseFileStorage = false;
+        } else if (this.state === "granted") {
+          self.canUseFileStorage = true;
+        }
+      };
+    } catch (error) {}
   }
 
   setModuleReferences(tbSDK: ITKeyApi): void {
