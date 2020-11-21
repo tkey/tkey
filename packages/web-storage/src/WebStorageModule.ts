@@ -36,6 +36,7 @@ class WebStorageModule implements IModule {
           self.canUseFileStorage = true;
         }
       };
+      // eslint-disable-next-line no-empty
     } catch (error) {}
   }
 
