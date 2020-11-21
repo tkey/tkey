@@ -5,6 +5,7 @@ declare class WebStorageModule implements IModule {
     tbSDK: ITKeyApi;
     canUseFileStorage: boolean;
     constructor(canUseFileStorage?: boolean);
+    setFileStorageAccess(): Promise<void>;
     setModuleReferences(tbSDK: ITKeyApi): void;
     initialize(): Promise<void>;
     storeDeviceShare(deviceShareStore: ShareStore): Promise<void>;

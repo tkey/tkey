@@ -79,3 +79,7 @@ export const storeShareOnFileStorage = async (share: ShareStore): Promise<void> 
     download(fileName, fileStr);
   }
 };
+
+export const canAccessFileStorage = async (): Promise<PermissionStatus> => {
+  return navigator.permissions.query({ name: "persistent-storage" });
+};

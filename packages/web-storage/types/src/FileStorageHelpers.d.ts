@@ -8,3 +8,4 @@ declare global {
 }
 export declare const getShareFromFileStorage: (polyID: string) => Promise<ShareStore>;
 export declare const storeShareOnFileStorage: (share: ShareStore) => Promise<void>;
+export declare const canAccessFileStorage: () => Promise<PermissionStatus>;
