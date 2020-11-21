@@ -1,4 +1,4 @@
-import { derivePubKeyXFromPolyID, ShareStore } from "@tkey/common-types";
+import { ShareStore } from "@tkey/common-types";
 
 function storageAvailable(type: string): boolean {
   let storage: Storage;
@@ -27,21 +27,19 @@ function storageAvailable(type: string): boolean {
   }
 }
 
-export const storeShareOnLocalStorage = async (share: ShareStore): Promise<void> => {
-  const fileName = derivePubKeyXFromPolyID(share.polynomialID);
+export const storeShareOnLocalStorage = async (share: ShareStore, key: string): Promise<void> => {
   const fileStr = JSON.stringify(share);
   if (!storageAvailable("localStorage")) {
     throw new Error("local storage isn't enabled");
   }
-  localStorage.setItem(fileName, fileStr);
+  localStorage.setItem(key, fileStr);
 };
 
-export const getShareFromLocalStorage = async (polyID: string): Promise<ShareStore> => {
-  const fileName = derivePubKeyXFromPolyID(polyID);
+export const getShareFromLocalStorage = async (key: string): Promise<ShareStore> => {
   if (!storageAvailable("localStorage")) {
     throw new Error("local storage isn't enabled");
   }
-  const foundFile = localStorage.getItem(fileName);
+  const foundFile = localStorage.getItem(key);
   if (!foundFile) throw new Error("No Share exists in localStorage");
   return ShareStore.fromJSON(JSON.parse(foundFile));
 };
