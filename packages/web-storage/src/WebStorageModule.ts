@@ -60,8 +60,10 @@ class WebStorageModule implements IModule {
   }
 
   async storeDeviceShareOnFileStorage(shareIndex: BNString): Promise<void> {
+    const metadata = this.tbSDK.getMetadata();
+    const tkeypubx = metadata.pubKey.x.toString("hex");
     const shareStore = this.tbSDK.outputShareStore(new BN(shareIndex));
-    return storeShareOnFileStorage(shareStore);
+    return storeShareOnFileStorage(shareStore, tkeypubx);
   }
 
   async getDeviceShare(): Promise<ShareStore> {
