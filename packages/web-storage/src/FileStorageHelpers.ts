@@ -1,4 +1,4 @@
-import { derivePubKeyXFromPolyID, ShareStore } from "@tkey/common-types";
+import { ShareStore } from "@tkey/common-types";
 
 // Web Specific declarations
 const requestedBytes = 1024 * 1024 * 10; // 10MB
@@ -41,13 +41,11 @@ async function readFile(fileEntry: FileEntry): Promise<File> {
   });
 }
 
-export const getShareFromFileStorage = async (polyID: string): Promise<ShareStore> => {
-  const fileName = derivePubKeyXFromPolyID(polyID);
+export const getShareFromFileStorage = async (key: string): Promise<ShareStore> => {
   if (window.requestFileSystem) {
-    const grantedBytes = await requestQuota();
-    const fs = await browserRequestFileSystem(grantedBytes);
+    const fs = await browserRequestFileSystem(requestedBytes);
 
-    const fileEntry = await getFile(fs, fileName, true);
+    const fileEntry = await getFile(fs, key, false);
     const file = await readFile(fileEntry);
     const fileStr = await file.text();
     if (!fileStr) {
@@ -58,14 +56,14 @@ export const getShareFromFileStorage = async (polyID: string): Promise<ShareStor
   throw new Error("no requestFileSystem");
 };
 
-export const storeShareOnFileStorage = async (share: ShareStore): Promise<void> => {
+export const storeShareOnFileStorage = async (share: ShareStore, key: string): Promise<void> => {
   // if we're on chrome (thus window.requestFileSystem exists) we use it
-  const fileName = `${derivePubKeyXFromPolyID(share.polynomialID)}.json`;
+  const fileName = `${key}.json`;
   const fileStr = JSON.stringify(share);
   if (window.requestFileSystem) {
     const grantedBytes = await requestQuota();
     const fs = await browserRequestFileSystem(grantedBytes);
-    const fileEntry = await getFile(fs, fileName, true);
+    const fileEntry = await getFile(fs, key, true);
     await new Promise((resolve, reject) => {
       fileEntry.createWriter((fileWriter) => {
         fileWriter.onwriteend = resolve;
