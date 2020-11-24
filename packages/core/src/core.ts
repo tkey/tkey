@@ -69,6 +69,8 @@ class ThresholdKey implements ITKey {
 
   storeDeviceShare: (deviceShareStore: ShareStore) => Promise<void>;
 
+  haveWriteMetadataLock: boolean;
+
   constructor(args?: TKeyArgs) {
     const { enableLogging = false, modules = {}, serviceProvider, storageLayer } = args;
     this.enableLogging = enableLogging;
@@ -593,6 +595,24 @@ class ThresholdKey implements ITKey {
     const raw = await this.storageLayer.getMetadata(params);
     const authMetadata = AuthMetadata.fromJSON(raw);
     return authMetadata.metadata;
+  }
+
+  async acquireWriteMetadataLock(): Promise<number> {
+    if (this.haveWriteMetadataLock) return this.metadata.nonce;
+    // we check the metadata of the service provider's nonce to see if it has been updated
+    const latestMetadata = await this.getAuthMetadata({ serviceProvider: this.serviceProvider });
+    if (latestMetadata.nonce > this.metadata.nonce) {
+      throw new Error(`unable to acquire write access for metadata due to local nonce (${this.metadata.nonce})
+       being lower than last written metadata nonce (${latestMetadata.nonce}). perhpas update metadata SDK`);
+    }
+    // increment metadata nonce for write session
+    this.metadata.nonce += 1;
+    this.haveWriteMetadataLock = true;
+    return this.metadata.nonce;
+  }
+
+  async releaseWriteMetadataLock(): Promise<void> {
+    this.haveWriteMetadataLock = false;
   }
 
   // Module functions
