@@ -1,5 +1,6 @@
 import {
   decrypt,
+  ecCurve,
   encrypt,
   EncryptedMessage,
   getPubKeyECC,
@@ -17,6 +18,12 @@ import { post } from "@toruslabs/http-helpers";
 import BN from "bn.js";
 import stringify from "json-stable-stringify";
 import { keccak256 } from "web3-utils";
+
+function signDataWithPrivKey(data: { timestamp: number }, privKey: BN): string {
+  const sig = ecCurve.sign(stringify(data), toPrivKeyECC(privKey), "utf-8");
+  return sig.toDER();
+  // return Buffer.from(sig.r.toString(16, 64) + sig.s.toString(16, 64) + new BN(0).toString(16, 2), "hex").toString("base64");
+}
 
 class TorusStorageLayer implements IStorageLayer {
   enableLogging: boolean;
@@ -142,18 +149,47 @@ class TorusStorageLayer implements IStorageLayer {
 
   // eslint-disable-next-line class-methods-use-this
   async acquireWriteLock(params: { serviceProvider?: IServiceProvider; privKey?: BN }): Promise<{ status: number; id?: string }> {
-    // MOCKING FUNCTION TODO: IMPLEMENT
-    const i = params.privKey;
-    if (!i) return { status: 0 };
-    return { status: 1, id: "" };
+    const { serviceProvider, privKey } = params;
+    const data = {
+      timestamp: Date.now() / 1000,
+    };
+
+    let signature: string;
+    if (privKey) {
+      signature = signDataWithPrivKey(data, privKey);
+    } else {
+      signature = serviceProvider.sign(stringify(data));
+    }
+
+    const metadataParams = {
+      key: toPrivKeyEC(privKey).getPublic("hex"),
+      data,
+      signature,
+    };
+    return post<{ status: number; id?: string }>(`${this.hostUrl}/acquireLock`, metadataParams);
   }
 
   // eslint-disable-next-line class-methods-use-this
   async releaseWriteLock(params: { id: string; serviceProvider?: IServiceProvider; privKey?: BN }): Promise<{ status: number }> {
-    // MOCKING FUNCTION TODO: IMPLEMENT
-    const i = params.id;
-    if (i === "1") return { status: 0 };
-    return { status: 1 };
+    const { serviceProvider, privKey, id } = params;
+    const data = {
+      timestamp: Date.now() / 1000,
+    };
+
+    let signature: string;
+    if (privKey) {
+      signature = signDataWithPrivKey(data, privKey);
+    } else {
+      signature = serviceProvider.sign(stringify(data));
+    }
+
+    const metadataParams = {
+      key: toPrivKeyEC(privKey).getPublic("hex"),
+      data,
+      signature,
+      id,
+    };
+    return post<{ status: number; id?: string }>(`${this.hostUrl}/releaseLock`, metadataParams);
   }
 
   toJSON(): StringifiedType {

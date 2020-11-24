@@ -644,7 +644,7 @@ describe("Lock", function () {
     const alltbs = [];
     // make moar tbs
     for (let i = 0; i < 5; i += 1) {
-      const temp = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL })
+      const temp = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
       // eslint-disable-next-line no-await-in-loop
       await temp.initialize();
       temp.inputShareStore(resp1.deviceShare);
@@ -658,8 +658,8 @@ describe("Lock", function () {
     }
     const res = await Promise.allSettled(promises);
     let count = 0;
-    for (let i = 0; i < res.length; i +=1) {
-      if (res[i].status === "fulfilled") count +=1
+    for (let i = 0; i < res.length; i += 1) {
+      if (res[i].status === "fulfilled") count += 1;
     }
     if (count !== 1) {
       fail(count);
