@@ -86,6 +86,7 @@ class ThresholdKey implements ITKey {
 
     this.tkeyStoreModuleName = "tkeyStoreModule";
     this.setModuleReferences(); // Providing ITKeyApi access to modules
+    this.haveWriteMetadataLock = false;
   }
 
   getApi(): ITKeyApi {
@@ -466,7 +467,6 @@ class ThresholdKey implements ITKey {
       this.inputShareStore(new ShareStore(shares[shareIndex.toString("hex")], poly.getPolynomialID()));
     }
     this.metadata = metadata;
-
     // initialize modules
     if (initializeModules) {
       await this.initializeModules();
@@ -601,8 +601,10 @@ class ThresholdKey implements ITKey {
     if (!this.privKey) {
       throw new Error("Private key not available. please reconstruct key first");
     }
-    // we check the metadata of the service provider's nonce to see if it has been updated
-    const latestMetadata = await this.getAuthMetadata({ serviceProvider: this.serviceProvider });
+    // we check the metadata of a random share on the latest polynomial we have
+    const shareIndexesExistInSDK = Object.keys(this.shares[this.metadata.getLatestPublicPolynomial().getPolynomialID()]);
+    const randomShare = this.outputShareStore(shareIndexesExistInSDK[Math.floor(Math.random() * (shareIndexesExistInSDK.length - 1))]).share.share;
+    const latestMetadata = await this.getAuthMetadata({ privKey: randomShare });
     if (latestMetadata.nonce > this.metadata.nonce) {
       throw new Error(`unable to acquire write access for metadata due to local nonce (${this.metadata.nonce})
        being lower than last written metadata nonce (${latestMetadata.nonce}). perhpas update metadata SDK (create new tKey and init)`);
@@ -642,7 +644,7 @@ class ThresholdKey implements ITKey {
   }
 
   async syncMultipleShareMetadata(shares: Array<BN>, adjustScopedStore?: (ss: unknown) => unknown): Promise<void> {
-    await this.acquireWriteMetadataLock;
+    await this.acquireWriteMetadataLock();
     const newMetadataPromise = shares.map(async (share) => {
       const newMetadata = this.metadata.clone();
       let specificShareMetadata: Metadata;
