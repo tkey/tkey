@@ -605,7 +605,7 @@ class ThresholdKey implements ITKey {
     const latestMetadata = await this.getAuthMetadata({ serviceProvider: this.serviceProvider });
     if (latestMetadata.nonce > this.metadata.nonce) {
       throw new Error(`unable to acquire write access for metadata due to local nonce (${this.metadata.nonce})
-       being lower than last written metadata nonce (${latestMetadata.nonce}). perhpas update metadata SDK`);
+       being lower than last written metadata nonce (${latestMetadata.nonce}). perhpas update metadata SDK (create new tKey and init)`);
     }
     // increment metadata nonce for write session
     this.metadata.nonce += 1;
