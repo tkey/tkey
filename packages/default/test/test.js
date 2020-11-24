@@ -593,3 +593,68 @@ describe("TkeyStore", function () {
     });
   });
 });
+
+describe.only("Lock", function () {
+  it("#locks should fail when tkey/nonce is updated ", async function () {
+    const tb = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
+    const resp1 = await tb.initializeNewKey({ initializeModules: true });
+    const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
+    await tb2.initialize();
+    tb2.inputShareStore(resp1.deviceShare);
+    const reconstructedKey = await tb2.reconstructKey();
+    if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
+      fail("key should be able to be reconstructed");
+    }
+    await tb2.generateNewShare();
+    let outsideErr;
+    try {
+      await tb.generateNewShare();
+    } catch (err) {
+      outsideErr = err;
+    }
+    if (!outsideErr) {
+      fail("should fail");
+    }
+  });
+
+  it.only("#locks should not allow for writes of the same nonce", async function () {
+    const tb = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
+    const resp1 = await tb.initializeNewKey({ initializeModules: true });
+    const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
+    await tb2.initialize();
+    tb2.inputShareStore(resp1.deviceShare);
+    const reconstructedKey = await tb2.reconstructKey();
+    if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
+      fail("key should be able to be reconstructed");
+    }
+    const alltbs = [];
+    // make moar tbs
+    for (let i = 0; i < 5; i += 1) {
+      const temp = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL })
+      // eslint-disable-next-line no-await-in-loop
+      await temp.initialize();
+      temp.inputShareStore(resp1.deviceShare);
+      // eslint-disable-next-line no-await-in-loop
+      await temp.reconstructKey();
+      alltbs.push(temp);
+    }
+    const promises = [];
+    for (let i = 0; i < alltbs.length; i += 1) {
+      promises.push(alltbs[i].generateNewShare());
+    }
+    debugger
+    const res = await Promise.allSettled(promises);
+    fail()
+
+    // await tb2.generateNewShare();
+    // let outsideErr;
+    // try {
+    //   await tb.generateNewShare();
+    // } catch (err) {
+    //   outsideErr = err;
+    // }
+    // if (!outsideErr) {
+    //   fail("should fail");
+    // }
+  });
+});

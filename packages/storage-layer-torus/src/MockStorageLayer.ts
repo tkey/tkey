@@ -2,9 +2,19 @@ import { getPubKeyPoint, IServiceProvider, IStorageLayer, KEY_NOT_FOUND, MockSto
 import BN from "bn.js";
 import stringify from "json-stable-stringify";
 
+function generateID(): string {
+  // Math.random should be unique because of its seeding algorithm.
+  // Convert it to base 36 (numbers + letters), and grab the first 9 characters
+  // after the decimal.
+  return `${Math.random().toString(36).substr(2, 9)}`;
+}
 class MockStorageLayer implements IStorageLayer {
   dataMap: {
     [key: string]: unknown;
+  };
+
+  lockMap: {
+    [key: string]: string;
   };
 
   serviceProvider: IServiceProvider;
@@ -60,6 +70,28 @@ class MockStorageLayer implements IStorageLayer {
     });
 
     return [{ message: "success" }];
+  }
+
+  async acquireWriteLock(params: { serviceProvider?: IServiceProvider; privKey?: BN }): Promise<{ status: number; id?: string }> {
+    const { serviceProvider, privKey } = params;
+    let usedKey: BN;
+    if (!privKey) usedKey = serviceProvider.retrievePubKeyPoint().getX();
+    else usedKey = getPubKeyPoint(privKey).x;
+    if (this.lockMap[usedKey.toString("hex")]) return { status: 0 };
+    const id = generateID();
+    this.lockMap[usedKey.toString("hex")] = id;
+    return { status: 1, id };
+  }
+
+  async releaseWriteLock(params: { id: string; serviceProvider?: IServiceProvider; privKey?: BN }): Promise<{ status: number }> {
+    const { serviceProvider, privKey, id } = params;
+    let usedKey: BN;
+    if (!privKey) usedKey = serviceProvider.retrievePubKeyPoint().getX();
+    else usedKey = getPubKeyPoint(privKey).x;
+    if (!this.lockMap[usedKey.toString("hex")]) return { status: 0 };
+    if (id !== this.lockMap[usedKey.toString("hex")]) return { status: 2 };
+    this.lockMap[usedKey.toString("hex")] = null;
+    return { status: 1 };
   }
 
   toJSON(): StringifiedType {
