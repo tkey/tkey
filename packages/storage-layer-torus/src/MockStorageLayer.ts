@@ -19,9 +19,10 @@ class MockStorageLayer implements IStorageLayer {
 
   serviceProvider: IServiceProvider;
 
-  constructor({ dataMap, serviceProvider }: MockStorageLayerArgs) {
+  constructor({ dataMap, serviceProvider, lockMap }: MockStorageLayerArgs) {
     this.dataMap = dataMap || {};
     this.serviceProvider = serviceProvider;
+    this.lockMap = lockMap || {};
   }
 
   /**
@@ -102,8 +103,8 @@ class MockStorageLayer implements IStorageLayer {
   }
 
   static fromJSON(value: StringifiedType): MockStorageLayer {
-    const { dataMap, serviceProvider } = value;
-    return new MockStorageLayer({ dataMap, serviceProvider });
+    const { dataMap, serviceProvider, lockMap } = value;
+    return new MockStorageLayer({ dataMap, serviceProvider, lockMap });
   }
 }
 

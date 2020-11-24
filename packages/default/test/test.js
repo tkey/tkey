@@ -594,7 +594,7 @@ describe("TkeyStore", function () {
   });
 });
 
-describe.only("Lock", function () {
+describe("Lock", function () {
   it("#locks should fail when tkey/nonce is updated ", async function () {
     const tb = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
@@ -617,7 +617,7 @@ describe.only("Lock", function () {
     }
   });
 
-  it.only("#locks should not allow for writes of the same nonce", async function () {
+  it("#locks should not allow for writes of the same nonce", async function () {
     const tb = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
     const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
@@ -642,19 +642,13 @@ describe.only("Lock", function () {
     for (let i = 0; i < alltbs.length; i += 1) {
       promises.push(alltbs[i].generateNewShare());
     }
-    debugger
     const res = await Promise.allSettled(promises);
-    fail()
-
-    // await tb2.generateNewShare();
-    // let outsideErr;
-    // try {
-    //   await tb.generateNewShare();
-    // } catch (err) {
-    //   outsideErr = err;
-    // }
-    // if (!outsideErr) {
-    //   fail("should fail");
-    // }
+    let count = 0;
+    for (let i = 0; i < res.length; i +=1) {
+      if (res[i].status === "fulfilled") count +=1
+    }
+    if (count !== 1) {
+      fail(count);
+    }
   });
 });

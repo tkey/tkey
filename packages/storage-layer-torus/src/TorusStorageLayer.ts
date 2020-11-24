@@ -138,6 +138,22 @@ class TorusStorageLayer implements IStorageLayer {
     };
   }
 
+  // eslint-disable-next-line class-methods-use-this
+  async acquireWriteLock(params: { serviceProvider?: IServiceProvider; privKey?: BN }): Promise<{ status: number; id?: string }> {
+    // MOCKING FUNCTION TODO: IMPLEMENT
+    const i = params.privKey;
+    if (!i) return { status: 0 };
+    return { status: 1, id: "" };
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  async releaseWriteLock(params: { id: string; serviceProvider?: IServiceProvider; privKey?: BN }): Promise<{ status: number }> {
+    // MOCKING FUNCTION TODO: IMPLEMENT
+    const i = params.id;
+    if (i === "1") return { status: 0 };
+    return { status: 1 };
+  }
+
   toJSON(): StringifiedType {
     return {
       enableLogging: this.enableLogging,
