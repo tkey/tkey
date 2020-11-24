@@ -69,7 +69,7 @@ class ThresholdKey implements ITKey {
 
   storeDeviceShare: (deviceShareStore: ShareStore) => Promise<void>;
 
-  haveWriteMetadataLock: boolean;
+  haveWriteMetadataLock: string;
 
   constructor(args?: TKeyArgs) {
     const { enableLogging = false, modules = {}, serviceProvider, storageLayer } = args;
@@ -86,7 +86,7 @@ class ThresholdKey implements ITKey {
 
     this.tkeyStoreModuleName = "tkeyStoreModule";
     this.setModuleReferences(); // Providing ITKeyApi access to modules
-    this.haveWriteMetadataLock = false;
+    this.haveWriteMetadataLock = null;
   }
 
   getApi(): ITKeyApi {
@@ -609,15 +609,20 @@ class ThresholdKey implements ITKey {
       throw new Error(`unable to acquire write access for metadata due to local nonce (${this.metadata.nonce})
        being lower than last written metadata nonce (${latestMetadata.nonce}). perhpas update metadata SDK (create new tKey and init)`);
     }
+    const res = await this.storageLayer.acquireWriteLock({ privKey: this.privKey });
+    if (res.status !== 1) throw new Error(`lock cannot be acquired from storage layer status code: ${res.status}`);
+
     // increment metadata nonce for write session
     this.metadata.nonce += 1;
-    this.haveWriteMetadataLock = true;
+    this.haveWriteMetadataLock = res.id;
     return this.metadata.nonce;
   }
 
   async releaseWriteMetadataLock(): Promise<void> {
     if (!this.haveWriteMetadataLock) throw new Error("releaseWriteMetadataLock - don't have metadata lock to release");
-    this.haveWriteMetadataLock = false;
+    const res = await this.storageLayer.releaseWriteLock({ privKey: this.privKey, id: this.haveWriteMetadataLock });
+    if (res.status !== 1) throw new Error(`lock cannot be released from storage layer status code: ${res.status}`);
+    this.haveWriteMetadataLock = null;
   }
 
   // Module functions
