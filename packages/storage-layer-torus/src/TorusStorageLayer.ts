@@ -82,20 +82,22 @@ class TorusStorageLayer implements IStorageLayer {
   async setMetadataBulk<T>(params: { input: Array<T>; serviceProvider?: IServiceProvider; privKey?: Array<BN> }): Promise<{ message: string }[]> {
     const { serviceProvider, privKey, input } = params;
     const newInput = input;
+    const newPrivKey = privKey;
     const encryptedDetailsArray = [];
     while (newInput.length !== 0) {
       const tempInput = newInput.splice(0, 4);
+      const tempPrivateKey = newPrivKey.splice(0, 4);
       const promises = Promise.all(
         tempInput.map(async (el, i) => {
           const bufferMetadata = Buffer.from(stringify(el));
           let encryptedDetails: EncryptedMessage;
-          if (privKey[i]) {
-            encryptedDetails = await encrypt(getPubKeyECC(privKey[i]), bufferMetadata);
+          if (tempPrivateKey[i]) {
+            encryptedDetails = await encrypt(getPubKeyECC(tempPrivateKey[i]), bufferMetadata);
           } else {
             encryptedDetails = await serviceProvider.encrypt(bufferMetadata);
           }
           const serializedEncryptedDetails = btoa(stringify(encryptedDetails));
-          const metadataParams = this.generateMetadataParams(serializedEncryptedDetails, serviceProvider, privKey[i]);
+          const metadataParams = this.generateMetadataParams(serializedEncryptedDetails, serviceProvider, tempPrivateKey[i]);
           return metadataParams;
         })
       );

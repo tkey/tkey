@@ -249,9 +249,23 @@ describe("TorusStorageLayer", function () {
     await storageLayer.setMetadataBulk({ input: [message, message2], privKey: [privKeyBN, privKeyBN2] });
     const resp = await storageLayer.getMetadata({ privKey: privKeyBN });
     const resp2 = await storageLayer.getMetadata({ privKey: privKeyBN2 });
-
     deepStrictEqual(resp, message, "set and get message should be equal");
     deepStrictEqual(resp2, message2, "set and get message should be equal");
+  });
+  it("#should be able to get/set bulk correctly", async function () {
+    const privkeys = [];
+    const messages = [];
+    for (let i = 0; i < 10; i += 1) {
+      privkeys.push(new BN(generatePrivate()));
+      messages.push({ test: Math.random().toString(36).substring(7) });
+    }
+    const tsp = new ServiceProviderBase({ postboxKey: privkeys[0].toString("hex") });
+    const storageLayer = initStorageLayer(mocked, { hostUrl: metadataURL, serviceProvider: tsp });
+    await storageLayer.setMetadataBulk({ input: [...messages], privKey: [...privkeys] });
+    const responses = await Promise.all(privkeys.map((el) => storageLayer.getMetadata({ privKey: el })));
+    for (let i = 0; i < 10; i += 1) {
+      deepStrictEqual(responses[i], messages[i], "set and get message should be equal");
+    }
   });
 });
 
