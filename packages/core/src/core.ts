@@ -315,9 +315,7 @@ class ThresholdKey implements ITKey {
   }
 
   async refreshShares(threshold: number, newShareIndexes: Array<string>, previousPolyID: PolynomialID): Promise<RefreshSharesResult> {
-    if (!this.privKey) {
-      throw new Error("Private key not available. please reconstruct key first");
-    }
+    await this.acquireWriteMetadataLock();
     const poly = generateRandomPolynomial(threshold - 1, this.privKey);
     const shares = poly.generateShares(newShareIndexes);
     const existingShareIndexes = this.metadata.getShareIndexesForPolynomial(previousPolyID);
@@ -405,7 +403,7 @@ class ThresholdKey implements ITKey {
       const shareIndex = newShareIndexes[index];
       this.inputShareStore(newShareStores[shareIndex]);
     }
-
+    await this.releaseWriteMetadataLock();
     return { shareStores: newShareStores };
   }
 
@@ -458,6 +456,7 @@ class ThresholdKey implements ITKey {
       metadataToPush.push(metadata);
       return shares[shareIndex.toString("hex")].share;
     });
+    // because this is the first time we're setting metadata there is no need to acquire a lock
     await this.setAuthMetadataBulk({ input: metadataToPush, privKey: sharesToPush });
 
     // store metadata on metadata respective to shares
@@ -599,6 +598,9 @@ class ThresholdKey implements ITKey {
 
   async acquireWriteMetadataLock(): Promise<number> {
     if (this.haveWriteMetadataLock) return this.metadata.nonce;
+    if (!this.privKey) {
+      throw new Error("Private key not available. please reconstruct key first");
+    }
     // we check the metadata of the service provider's nonce to see if it has been updated
     const latestMetadata = await this.getAuthMetadata({ serviceProvider: this.serviceProvider });
     if (latestMetadata.nonce > this.metadata.nonce) {
@@ -612,6 +614,7 @@ class ThresholdKey implements ITKey {
   }
 
   async releaseWriteMetadataLock(): Promise<void> {
+    if (!this.haveWriteMetadataLock) throw new Error("releaseWriteMetadataLock - don't have metadata lock to release");
     this.haveWriteMetadataLock = false;
   }
 
@@ -639,6 +642,7 @@ class ThresholdKey implements ITKey {
   }
 
   async syncMultipleShareMetadata(shares: Array<BN>, adjustScopedStore?: (ss: unknown) => unknown): Promise<void> {
+    await this.acquireWriteMetadataLock;
     const newMetadataPromise = shares.map(async (share) => {
       const newMetadata = this.metadata.clone();
       let specificShareMetadata: Metadata;
@@ -659,6 +663,7 @@ class ThresholdKey implements ITKey {
     });
     const newMetadata = await Promise.all(newMetadataPromise);
     await this.setAuthMetadataBulk({ input: newMetadata, privKey: shares });
+    await this.releaseWriteMetadataLock();
   }
 
   addRefreshMiddleware(
