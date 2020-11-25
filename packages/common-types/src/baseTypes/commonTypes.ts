@@ -64,6 +64,10 @@ export interface IStorageLayer extends ISerializable {
   setMetadata<T>(params: { input: T; serviceProvider?: IServiceProvider; privKey?: BN }): Promise<{ message: string }>;
 
   setMetadataBulk<T>(params: { input: T[]; serviceProvider?: IServiceProvider; privKey?: BN[] }): Promise<{ message: string }[]>;
+
+  acquireWriteLock(params: { serviceProvider?: IServiceProvider; privKey?: BN }): Promise<{ status: number; id?: string }>;
+
+  releaseWriteLock(params: { id: string; serviceProvider?: IServiceProvider; privKey?: BN }): Promise<{ status: number }>;
 }
 
 export type TorusStorageLayerArgs = {
@@ -76,6 +80,7 @@ export type MockStorageLayerArgs = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   dataMap: any;
   serviceProvider: IServiceProvider;
+  lockMap: any;
 };
 
 export type ShareDescriptionMap = {

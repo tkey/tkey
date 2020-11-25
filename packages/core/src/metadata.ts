@@ -44,6 +44,8 @@ class Metadata implements IMetadata {
     [moduleName: string]: unknown;
   };
 
+  nonce: number;
+
   constructor(input: Point) {
     this.publicPolynomials = {};
     this.publicShares = {};
@@ -52,6 +54,7 @@ class Metadata implements IMetadata {
     this.scopedStore = {};
     this.pubKey = input;
     this.polyIDList = [];
+    this.nonce = 0;
   }
 
   getShareIndexesForPolynomial(polyID: PolynomialID): Array<string> {
@@ -191,11 +194,12 @@ class Metadata implements IMetadata {
       scopedStore: this.scopedStore,
       generalStore: this.generalStore,
       tkeyStore: this.tkeyStore,
+      nonce: this.nonce,
     };
   }
 
   static fromJSON(value: StringifiedType): Metadata {
-    const { pubKey, polyIDList, generalStore, tkeyStore, scopedStore } = value;
+    const { pubKey, polyIDList, generalStore, tkeyStore, scopedStore, nonce } = value;
     const point = Point.fromCompressedPub(pubKey);
     const metadata = new Metadata(point);
     const unserializedPolyIDList = [];
@@ -203,6 +207,7 @@ class Metadata implements IMetadata {
     if (generalStore) metadata.generalStore = generalStore;
     if (tkeyStore) metadata.tkeyStore = tkeyStore;
     if (scopedStore) metadata.scopedStore = scopedStore;
+    if (nonce) metadata.nonce = nonce;
 
     for (let i = 0; i < polyIDList.length; i += 1) {
       const serializedPolyID = polyIDList[i];
