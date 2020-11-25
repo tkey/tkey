@@ -20,7 +20,11 @@ class ThresholdKey extends TKey {
       finalServiceProvider = serviceProvider;
     }
     if (!storageLayer) {
-      finalStorageLayer = new TorusStorageLayer({ serviceProvider: finalServiceProvider, hostUrl: "https://metadata.tor.us" });
+      finalStorageLayer = new TorusStorageLayer({
+        serviceProvider: finalServiceProvider,
+        hostUrl: "https://metadata.tor.us",
+        lockHostUrl: "https://lock.metadata.tor.us",
+      });
     } else {
       finalStorageLayer = storageLayer;
     }
@@ -41,7 +45,11 @@ class ThresholdKey extends TKey {
       finalServiceProvider = serviceProvider;
     }
     if (!storageLayer) {
-      finalStorageLayer = new TorusStorageLayer({ serviceProvider: finalServiceProvider, hostUrl: "https://metadata.tor.us" });
+      finalStorageLayer = new TorusStorageLayer({
+        serviceProvider: finalServiceProvider,
+        hostUrl: "https://metadata.tor.us",
+        lockHostUrl: "https://lock.metadata.tor.us",
+      });
     } else {
       finalStorageLayer = storageLayer;
     }

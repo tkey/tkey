@@ -30,11 +30,19 @@ class TorusStorageLayer implements IStorageLayer {
 
   hostUrl: string;
 
+  lockHostUrl: string;
+
   serviceProvider: IServiceProvider;
 
-  constructor({ enableLogging = false, hostUrl = "http://localhost:5051", serviceProvider }: TorusStorageLayerArgs) {
+  constructor({
+    enableLogging = false,
+    hostUrl = "http://localhost:5051",
+    lockHostUrl = "http://localhost:5052",
+    serviceProvider,
+  }: TorusStorageLayerArgs) {
     this.enableLogging = enableLogging;
     this.hostUrl = hostUrl;
+    this.lockHostUrl = lockHostUrl;
     this.serviceProvider = serviceProvider;
   }
 
@@ -166,7 +174,7 @@ class TorusStorageLayer implements IStorageLayer {
       data,
       signature,
     };
-    return post<{ status: number; id?: string }>(`${this.hostUrl}/acquireLock`, metadataParams);
+    return post<{ status: number; id?: string }>(`${this.lockHostUrl}/lock/acquireLock`, metadataParams);
   }
 
   // eslint-disable-next-line class-methods-use-this
@@ -189,7 +197,7 @@ class TorusStorageLayer implements IStorageLayer {
       signature,
       id,
     };
-    return post<{ status: number; id?: string }>(`${this.hostUrl}/releaseLock`, metadataParams);
+    return post<{ status: number; id?: string }>(`${this.lockHostUrl}/lock/releaseLock`, metadataParams);
   }
 
   toJSON(): StringifiedType {

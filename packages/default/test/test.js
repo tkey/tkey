@@ -23,11 +23,12 @@ function initStorageLayer(mocked, extraParams) {
 
 const mocked = process.env.MOCKED || "false";
 const metadataURL = process.env.METADATA || "http://localhost:5051";
+const lockMetadataURL = process.env.LOCK_METADATA_URL || "http://localhost:5052";
 const PRIVATE_KEY = "e70fb5f5970b363879bc36f54d4fc0ad77863bfd059881159251f50f48863acf";
 const PRIVATE_KEY_2 = "2e6824ef22a58b7b5c8938c38e9debd03611f074244f213943e3fa3047ef2385";
 
 const defaultSP = new ServiceProviderBase({ postboxKey: PRIVATE_KEY });
-const defaultSL = initStorageLayer(mocked, { serviceProvider: defaultSP, hostUrl: metadataURL });
+const defaultSL = initStorageLayer(mocked, { serviceProvider: defaultSP, hostUrl: metadataURL, lockHostUrl: lockMetadataURL });
 
 global.fetch = fetch;
 global.atob = atob;
@@ -204,7 +205,7 @@ describe("tkey reconstruction", function () {
   it("#should be able to detect a new user and reconstruct key on initialize", async function () {
     const privKey = new BN(generatePrivate());
     const uniqueSP = new ServiceProviderBase({ postboxKey: privKey.toString("hex") });
-    const uniqueSL = initStorageLayer(mocked, { serviceProvider: uniqueSP, hostUrl: metadataURL });
+    const uniqueSL = initStorageLayer(mocked, { serviceProvider: uniqueSP, hostUrl: metadataURL, lockHostUrl: lockMetadataURL });
     const tb = new ThresholdKey({ serviceProvider: uniqueSP, storageLayer: uniqueSL });
     await tb.initialize();
     const reconstructedKey = await tb.reconstructKey();
@@ -219,7 +220,7 @@ describe("TorusStorageLayer", function () {
   it("#should get or set correctly", async function () {
     const privKey = PRIVATE_KEY;
     const tsp = new ServiceProviderBase({ postboxKey: privKey });
-    const storageLayer = initStorageLayer(mocked, { hostUrl: metadataURL, serviceProvider: tsp });
+    const storageLayer = initStorageLayer(mocked, { hostUrl: metadataURL, serviceProvider: tsp, lockHostUrl: lockMetadataURL });
     const message = { test: Math.random().toString(36).substring(7) };
     await storageLayer.setMetadata({ input: message, privKey: tsp.postboxKey });
     const resp = await storageLayer.getMetadata({ privKey: tsp.postboxKey });
@@ -229,7 +230,7 @@ describe("TorusStorageLayer", function () {
     const privKey = PRIVATE_KEY;
     const privKeyBN = new BN(privKey, 16);
     const tsp = new ServiceProviderBase({ postboxKey: privKey });
-    const storageLayer = initStorageLayer(mocked, { hostUrl: metadataURL, serviceProvider: tsp });
+    const storageLayer = initStorageLayer(mocked, { hostUrl: metadataURL, serviceProvider: tsp, lockHostUrl: lockMetadataURL });
     const message = { test: Math.random().toString(36).substring(7) };
     await storageLayer.setMetadata({ input: message, privKey: privKeyBN });
     const resp = await storageLayer.getMetadata({ privKey: privKeyBN });
@@ -239,7 +240,7 @@ describe("TorusStorageLayer", function () {
     const privKey = PRIVATE_KEY;
     const privKeyBN = new BN(privKey, 16);
     const tsp = new ServiceProviderBase({ postboxKey: privKey });
-    const storageLayer = initStorageLayer(mocked, { hostUrl: metadataURL, serviceProvider: tsp });
+    const storageLayer = initStorageLayer(mocked, { hostUrl: metadataURL, serviceProvider: tsp, lockHostUrl: lockMetadataURL });
     const message = { test: Math.random().toString(36).substring(7) };
 
     const privKey2 = PRIVATE_KEY_2;
@@ -260,7 +261,7 @@ describe("TorusStorageLayer", function () {
       messages.push({ test: Math.random().toString(36).substring(7) });
     }
     const tsp = new ServiceProviderBase({ postboxKey: privkeys[0].toString("hex") });
-    const storageLayer = initStorageLayer(mocked, { hostUrl: metadataURL, serviceProvider: tsp });
+    const storageLayer = initStorageLayer(mocked, { hostUrl: metadataURL, serviceProvider: tsp, lockHostUrl: lockMetadataURL });
     await storageLayer.setMetadataBulk({ input: [...messages], privKey: [...privkeys] });
     const responses = await Promise.all(privkeys.map((el) => storageLayer.getMetadata({ privKey: el })));
     for (let i = 0; i < 10; i += 1) {
