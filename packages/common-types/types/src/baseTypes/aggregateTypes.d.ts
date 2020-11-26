@@ -35,6 +35,7 @@ export interface IMetadata extends ISerializable {
     scopedStore: {
         [moduleName: string]: unknown;
     };
+    nonce: number;
     getShareIndexesForPolynomial(polyID: PolynomialID): string[];
     getLatestPublicPolynomial(): PublicPolynomial;
     addPublicPolynomial(publicPolynomial: PublicPolynomial): void;

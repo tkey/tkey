@@ -173,7 +173,7 @@ class TorusStorageLayer implements IStorageLayer {
   async releaseWriteLock(params: { id: string; serviceProvider?: IServiceProvider; privKey?: BN }): Promise<{ status: number }> {
     const { serviceProvider, privKey, id } = params;
     const data = {
-      timestamp: Date.now() / 1000,
+      timestamp: Math.floor(Date.now() / 1000),
     };
 
     let signature: string;

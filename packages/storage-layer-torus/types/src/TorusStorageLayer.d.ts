@@ -38,6 +38,20 @@ declare class TorusStorageLayer implements IStorageLayer {
         message: string;
     }[]>;
     generateMetadataParams(message: unknown, serviceProvider?: IServiceProvider, privKey?: BN): TorusStorageLayerAPIParams;
+    acquireWriteLock(params: {
+        serviceProvider?: IServiceProvider;
+        privKey?: BN;
+    }): Promise<{
+        status: number;
+        id?: string;
+    }>;
+    releaseWriteLock(params: {
+        id: string;
+        serviceProvider?: IServiceProvider;
+        privKey?: BN;
+    }): Promise<{
+        status: number;
+    }>;
     toJSON(): StringifiedType;
     static fromJSON(value: StringifiedType): TorusStorageLayer;
 }

@@ -1,14 +1,9 @@
-import { ecCurve, StringifiedType, toPrivKeyEC } from "@tkey/common-types";
+import { ecCurve, StringifiedType, stripHexPrefix, toPrivKeyEC } from "@tkey/common-types";
 import BN from "bn.js";
 import stringify from "json-stable-stringify";
 import { keccak256 } from "web3-utils";
 
 import Metadata from "./metadata";
-
-function stripHexPrefix(str: string): string {
-  if (str.slice(0, 2) === "0x") return str.slice(2);
-  return str;
-}
 
 class AuthMetadata {
   metadata: Metadata;

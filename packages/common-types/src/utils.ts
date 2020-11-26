@@ -90,3 +90,8 @@ export const KEY_NOT_FOUND = "KEY_NOT_FOUND";
 export function derivePubKeyXFromPolyID(polyID: string): string {
   return polyID.split("|")[0].slice(2);
 }
+
+export function stripHexPrefix(str: string): string {
+  if (str.slice(0, 2) === "0x") return str.slice(2);
+  return str;
+}

@@ -4,8 +4,11 @@ declare class MockStorageLayer implements IStorageLayer {
     dataMap: {
         [key: string]: unknown;
     };
+    lockMap: {
+        [key: string]: string;
+    };
     serviceProvider: IServiceProvider;
-    constructor({ dataMap, serviceProvider }: MockStorageLayerArgs);
+    constructor({ dataMap, serviceProvider, lockMap }: MockStorageLayerArgs);
     /**
      *  Get metadata for a key
      * @param privKey If not provided, it will use service provider's share for decryption
@@ -38,6 +41,20 @@ declare class MockStorageLayer implements IStorageLayer {
     }): Promise<{
         message: string;
     }[]>;
+    acquireWriteLock(params: {
+        serviceProvider?: IServiceProvider;
+        privKey?: BN;
+    }): Promise<{
+        status: number;
+        id?: string;
+    }>;
+    releaseWriteLock(params: {
+        id: string;
+        serviceProvider?: IServiceProvider;
+        privKey?: BN;
+    }): Promise<{
+        status: number;
+    }>;
     toJSON(): StringifiedType;
     static fromJSON(value: StringifiedType): MockStorageLayer;
 }
