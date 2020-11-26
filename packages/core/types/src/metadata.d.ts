@@ -14,6 +14,7 @@ declare class Metadata implements IMetadata {
     scopedStore: {
         [moduleName: string]: unknown;
     };
+    nonce: number;
     constructor(input: Point);
     getShareIndexesForPolynomial(polyID: PolynomialID): Array<string>;
     getLatestPublicPolynomial(): PublicPolynomial;

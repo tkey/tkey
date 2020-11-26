@@ -63,6 +63,20 @@ export interface IStorageLayer extends ISerializable {
     }): Promise<{
         message: string;
     }[]>;
+    acquireWriteLock(params: {
+        serviceProvider?: IServiceProvider;
+        privKey?: BN;
+    }): Promise<{
+        status: number;
+        id?: string;
+    }>;
+    releaseWriteLock(params: {
+        id: string;
+        serviceProvider?: IServiceProvider;
+        privKey?: BN;
+    }): Promise<{
+        status: number;
+    }>;
 }
 export declare type TorusStorageLayerArgs = {
     enableLogging?: boolean;
@@ -72,6 +86,7 @@ export declare type TorusStorageLayerArgs = {
 export declare type MockStorageLayerArgs = {
     dataMap: any;
     serviceProvider: IServiceProvider;
+    lockMap: any;
 };
 export declare type ShareDescriptionMap = {
     [shareIndexStr: string]: string[];

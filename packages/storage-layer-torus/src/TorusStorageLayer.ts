@@ -9,6 +9,7 @@ import {
   IStorageLayer,
   KEY_NOT_FOUND,
   StringifiedType,
+  stripHexPrefix,
   toPrivKeyEC,
   toPrivKeyECC,
   TorusStorageLayerAPIParams,
@@ -20,9 +21,8 @@ import stringify from "json-stable-stringify";
 import { keccak256 } from "web3-utils";
 
 function signDataWithPrivKey(data: { timestamp: number }, privKey: BN): string {
-  const sig = ecCurve.sign(stringify(data), toPrivKeyECC(privKey), "utf-8");
+  const sig = ecCurve.sign(stripHexPrefix(keccak256(stringify(data))), toPrivKeyECC(privKey), "utf-8");
   return sig.toDER();
-  // return Buffer.from(sig.r.toString(16, 64) + sig.s.toString(16, 64) + new BN(0).toString(16, 2), "hex").toString("base64");
 }
 
 class TorusStorageLayer implements IStorageLayer {
@@ -151,16 +151,15 @@ class TorusStorageLayer implements IStorageLayer {
   async acquireWriteLock(params: { serviceProvider?: IServiceProvider; privKey?: BN }): Promise<{ status: number; id?: string }> {
     const { serviceProvider, privKey } = params;
     const data = {
-      timestamp: Date.now() / 1000,
+      timestamp: Math.floor(Date.now() / 1000),
     };
 
     let signature: string;
     if (privKey) {
       signature = signDataWithPrivKey(data, privKey);
     } else {
-      signature = serviceProvider.sign(stringify(data));
+      signature = serviceProvider.sign(stripHexPrefix(keccak256(stringify(data))));
     }
-
     const metadataParams = {
       key: toPrivKeyEC(privKey).getPublic("hex"),
       data,
@@ -173,16 +172,15 @@ class TorusStorageLayer implements IStorageLayer {
   async releaseWriteLock(params: { id: string; serviceProvider?: IServiceProvider; privKey?: BN }): Promise<{ status: number }> {
     const { serviceProvider, privKey, id } = params;
     const data = {
-      timestamp: Date.now() / 1000,
+      timestamp: Math.floor(Date.now() / 1000),
     };
 
     let signature: string;
     if (privKey) {
       signature = signDataWithPrivKey(data, privKey);
     } else {
-      signature = serviceProvider.sign(stringify(data));
+      signature = serviceProvider.sign(stripHexPrefix(keccak256(stringify(data))));
     }
-
     const metadataParams = {
       key: toPrivKeyEC(privKey).getPublic("hex"),
       data,
