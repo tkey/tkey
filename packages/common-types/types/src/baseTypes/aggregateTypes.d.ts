@@ -71,6 +71,9 @@ export declare type GenerateNewShareResult = {
     newShareStores: ShareStoreMap;
     newShareIndex: BN;
 };
+export declare type DeleteShareResult = {
+    newShareStores: ShareStoreMap;
+};
 export declare type RefreshSharesResult = {
     shareStores: ShareStoreMap;
 };
@@ -160,6 +163,7 @@ export interface ITKeyApi {
     setDeviceStorage(storeDeviceStorage: (deviceShareStore: ShareStore) => Promise<void>): void;
     addShareDescription(shareIndex: string, description: string, updateMetadata?: boolean): Promise<void>;
     inputShareStore(shareStore: ShareStore): void;
+    deleteShare(shareIndex: BNString): Promise<DeleteShareResult>;
     addRefreshMiddleware(moduleName: string, middleware: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap) => unknown): void;
     addReconstructKeyMiddleware(moduleName: string, middleware: () => Promise<Array<BN>>): void;
     addShareSerializationMiddleware(serialize: (share: BN, type: string) => Promise<unknown>, deserialize: (serializedShare: unknown, type: string) => Promise<BN>): void;
