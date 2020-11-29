@@ -86,7 +86,7 @@ describe("tkey", function () {
       fail("key should be able to be reconstructed");
     }
   });
-  it.only("#should be able to generate and delete shares", async function () {
+  it("#should be able to generate and delete shares", async function () {
     await tb.initializeNewKey({ initializeModules: true });
     const { newShareStores: newShareStores1, newShareIndex: newShareIndex1 } = await tb.generateNewShare();
     const { newShareStores } = await tb.deleteShare(newShareIndex1);
