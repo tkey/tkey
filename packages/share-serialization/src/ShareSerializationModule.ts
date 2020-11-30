@@ -39,7 +39,7 @@ class ShareSerializationModule implements IModule {
   }
 
   serializeMnemonic(share: BN): string {
-    return entropyToMnemonic(share.toString("hex"), this.english);
+    return entropyToMnemonic(share.toString("hex").padStart(64, "0"), this.english);
   }
 
   deserializeMnemonic(share: string): BN {
