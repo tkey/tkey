@@ -86,6 +86,20 @@ describe("tkey", function () {
       fail("key should be able to be reconstructed");
     }
   });
+  it("#should be able to generate and delete shares", async function () {
+    await tb.initializeNewKey({ initializeModules: true });
+    const { newShareStores: newShareStores1, newShareIndex: newShareIndex1 } = await tb.generateNewShare();
+    const { newShareStores } = await tb.deleteShare(newShareIndex1);
+
+    const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
+    await tb2.initialize();
+    // tb2.inputShareStore(resp1.deviceShare);
+    tb2.inputShareStore(newShareStores1[newShareIndex1.toString("hex")]);
+    const newKeys = Object.keys(newShareStores);
+    if (newKeys.find((el) => el === newShareIndex1.toString("hex"))) {
+      fail("Unable to delete share index");
+    }
+  });
   it("#should be able to reshare a key and retrieve from service provider", async function () {
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
     const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });

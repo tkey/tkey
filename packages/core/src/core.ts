@@ -2,6 +2,7 @@ import {
   BNString,
   CatchupToLatestShareResult,
   decrypt,
+  DeleteShareResult,
   encrypt,
   EncryptedMessage,
   GenerateNewShareResult,
@@ -112,6 +113,7 @@ class ThresholdKey implements ITKey {
       getTKeyStore: this.getTKeyStore.bind(this),
       setTKeyStore: this.setTKeyStore.bind(this),
       deleteKey: this.deleteKey.bind(this),
+      deleteShare: this.deleteShare.bind(this),
     };
   }
 
@@ -292,6 +294,42 @@ class ThresholdKey implements ITKey {
       pointsArr.push(new Point(new BN(sharesForExistingPoly[i], "hex"), this.shares[pubPolyID][sharesForExistingPoly[i]].share.share));
     }
     return lagrangeInterpolatePolynomial(pointsArr);
+  }
+
+  async deleteShare(shareIndex: BNString): Promise<DeleteShareResult> {
+    if (!this.metadata) {
+      throw new Error("metadata not found, SDK likely not intialized");
+    }
+    if (!this.privKey) {
+      throw new Error("Private key not available. please reconstruct key first");
+    }
+    const shareIndexToDelete = new BN(shareIndex, "hex");
+    if (shareIndexToDelete.cmp(new BN("1", "hex")) === 0) {
+      throw new Error("Unable to delete service provider share");
+    }
+
+    // Get existing shares
+    const pubPoly = this.metadata.getLatestPublicPolynomial();
+    const previousPolyID = pubPoly.getPolynomialID();
+    const existingShareIndexes = this.metadata.getShareIndexesForPolynomial(previousPolyID);
+    const newShareIndexes = [];
+    existingShareIndexes.forEach((el) => {
+      const bn = new BN(el, "hex");
+      if (bn.cmp(shareIndexToDelete) !== 0) {
+        newShareIndexes.push(bn.toString("hex"));
+      }
+    });
+
+    // Update shares
+    if (existingShareIndexes.length === newShareIndexes.length) {
+      throw new Error("Share index does not exist in latest polynomial");
+    } else if (existingShareIndexes.length < 2) {
+      throw new Error("Minimum 2 shares are required for tkey. Unable to delete share");
+    }
+    const results = await this.refreshShares(pubPoly.getThreshold(), [...newShareIndexes], previousPolyID);
+    const newShareStores = results.shareStores;
+
+    return { newShareStores };
   }
 
   async generateNewShare(): Promise<GenerateNewShareResult> {
