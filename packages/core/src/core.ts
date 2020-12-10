@@ -600,13 +600,24 @@ class ThresholdKey implements ITKey {
 
   getKeyDetails(): KeyDetails {
     const poly = this.metadata.getLatestPublicPolynomial();
-    const requiredShares = poly.getThreshold() - Object.keys(this.shares[poly.getPolynomialID()]).length;
+    const previousPolyID = poly.getPolynomialID();
+    const requiredShares = poly.getThreshold() - Object.keys(this.shares[previousPolyID]).length;
+
+    let shareDescriptions = this.metadata.getShareDescription();
+    if (shareDescriptions) {
+      const existingShareIndexes = this.metadata.getShareIndexesForPolynomial(previousPolyID);
+      shareDescriptions = Object.keys(shareDescriptions).reduce((acc, index) => {
+        if (existingShareIndexes.indexOf(index) >= 0) acc[index] = shareDescriptions[index];
+        return acc;
+      }, {});
+    }
+
     return {
       pubKey: this.metadata.pubKey,
       requiredShares,
       threshold: poly.getThreshold(),
-      totalShares: Object.keys(this.metadata.publicShares[poly.getPolynomialID()]).length,
-      shareDescriptions: this.metadata.getShareDescription(),
+      totalShares: Object.keys(this.metadata.publicShares[previousPolyID]).length,
+      shareDescriptions,
       modules: this.modules,
     };
   }
