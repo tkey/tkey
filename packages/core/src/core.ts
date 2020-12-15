@@ -40,6 +40,7 @@ import BN from "bn.js";
 import stringify from "json-stable-stringify";
 
 import AuthMetadata from "./authMetadata";
+import CoreError from "./errors";
 import { generateRandomPolynomial, lagrangeInterpolatePolynomial, lagrangeInterpolation } from "./lagrangeInterpolatePolynomial";
 import Metadata from "./metadata";
 
@@ -121,7 +122,9 @@ class ThresholdKey implements ITKey {
     if (typeof this.metadata !== "undefined") {
       return this.metadata;
     }
-    throw new Error("metadata undefined");
+
+    throw CoreError.metadataUndefined();
+    // throw new Error("metadata undefined");
   }
 
   async initialize(input?: ShareStore, importKey?: BN): Promise<KeyDetails> {
@@ -143,7 +146,8 @@ class ThresholdKey implements ITKey {
       // else we continue with catching up share and metadata
       shareStore = ShareStore.fromJSON(rawServiceProviderShare);
     } else {
-      throw new TypeError("Input is not supported");
+      throw new CoreError(4000, "Input is not supported");
+      // throw new TypeError("Input is not supported");
     }
 
     // we fetch metadata for the account from the share
