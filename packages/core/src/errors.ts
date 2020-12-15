@@ -40,13 +40,17 @@ class CoreError extends CustomError {
   };
 
   public constructor(code: number, message?: string) {
+    // takes care of stack and proto
     super(message);
+
     this.code = code;
     this.message = message;
+
+    // Set name explicitly as minification can mangle class names
     Object.defineProperty(this, "name", { value: "CoreError" });
   }
 
-  serialize(): SerializedCoreError {
+  toJSON(): SerializedCoreError {
     return {
       code: this.code,
       message: this.message,
@@ -54,7 +58,7 @@ class CoreError extends CustomError {
   }
 
   toString(): string {
-    return stringify(this.serialize());
+    return stringify(this.toJSON());
   }
 
   public static fromCode(code: number): CoreError {

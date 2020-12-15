@@ -13,7 +13,7 @@ describe("Errors", function () {
   it("#serialize", function () {
     throws(
       () => {
-        throw CoreError.metadataUndefined().serialize();
+        throw CoreError.metadataUndefined().toJSON();
       },
       {
         code: 4001,
@@ -25,7 +25,7 @@ describe("Errors", function () {
   it("#fromCode", function () {
     throws(
       () => {
-        throw CoreError.fromCode(4001).serialize();
+        throw CoreError.fromCode(4001).toJSON();
       },
       {
         code: 4001,
