@@ -7,7 +7,7 @@ import stringify from "json-stable-stringify";
 import { AuthMetadata, generateRandomPolynomial, lagrangeInterpolatePolynomial, lagrangeInterpolation, Metadata, polyCommitmentEval } from "../index";
 import CoreError from "../src/errors";
 
-const PRIVATE_KEY = "e70fb5f5970b363879bc36f54d4fc0ad77863bfd059881159251f50f48863acf";
+const PRIVATE_KEY = generatePrivate().toString("hex");
 
 describe("Errors", function () {
   it("#serialize", function () {
