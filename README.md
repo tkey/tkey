@@ -33,6 +33,7 @@ The following are steps of how to use the SDK in your application:
 - Typescript compatible. Includes Type definitions
 - Fully composable API
 - Module support (Include only those modules which you require)
+- [Audited](https://github.com/tkey/audit)
 
 ## Installation
 
