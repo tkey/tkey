@@ -6,7 +6,7 @@ import ServiceProviderBase from "@tkey/service-provider-base";
 import ShareTransferModule from "@tkey/share-transfer";
 import TorusStorageLayer, { MockStorageLayer } from "@tkey/storage-layer-torus";
 import { generatePrivate } from "@toruslabs/eccrypto";
-import { deepStrictEqual, fail, strictEqual } from "assert";
+import { deepStrictEqual, fail, rejects, strictEqual } from "assert";
 import atob from "atob";
 import BN from "bn.js";
 import btoa from "btoa";
@@ -99,6 +99,17 @@ describe("tkey", function () {
     if (newKeys.find((el) => el === newShareIndex1.toString("hex"))) {
       fail("Unable to delete share index");
     }
+  });
+  it.only("#should not be able to add share post deletion", async function () {
+    await tb.initializeNewKey({ initializeModules: true });
+    const { newShareStores: newShareStores1, newShareIndex: newShareIndex1 } = await tb.generateNewShare();
+    await tb.deleteShare(newShareIndex1);
+
+    const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
+    await tb2.initialize();
+    rejects(async () => {
+      await tb2.inputShare(newShareStores1[newShareIndex1.toString("hex")].share.share);
+    }, Error);
   });
   it("#should be able to reshare a key and retrieve from service provider", async function () {
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
