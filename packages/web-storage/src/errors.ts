@@ -19,6 +19,9 @@ class WebStorageError extends CustomError {
     // fileStorage
     3201: "No Share exists in file system",
     3202: "No requestFileSystem",
+    // localstorage
+    3301: "Local storage is not enabled",
+    3302: "No share exists in localstorage",
   };
 
   public constructor(code: number, message?: string) {
@@ -52,12 +55,20 @@ class WebStorageError extends CustomError {
     return WebStorageError.fromCode(3101, extraMessage);
   }
 
-  public static noShareInFileStorage(extraMessage = ""): WebStorageError {
-    return WebStorageError.fromCode(3102, extraMessage);
+  public static shareUnavailableInFileStorage(extraMessage = ""): WebStorageError {
+    return WebStorageError.fromCode(3201, extraMessage);
   }
 
-  public static noFileStorage(extraMessage = ""): WebStorageError {
-    return WebStorageError.fromCode(3101, extraMessage);
+  public static fileStorageUnavailable(extraMessage = ""): WebStorageError {
+    return WebStorageError.fromCode(3202, extraMessage);
+  }
+
+  public static localStorageUnavailable(extraMessage = ""): WebStorageError {
+    return WebStorageError.fromCode(3301, extraMessage);
+  }
+
+  public static shareUnavailableInLocalStorage(extraMessage = ""): WebStorageError {
+    return WebStorageError.fromCode(3302, extraMessage);
   }
 }
 export default WebStorageError;
