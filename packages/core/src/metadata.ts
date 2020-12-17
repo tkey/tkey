@@ -157,7 +157,7 @@ class Metadata implements IMetadata {
       // eslint-disable-next-line consistent-return
       Object.keys(this.publicShares[el]).forEach((pl) => {
         const pubShare = this.publicShares[el][pl];
-        if (pubShare.shareCommitment.x.cmp(pubkey.x) === 0 && pubShare.shareCommitment.y.cmp(pubkey.y) === 0) {
+        if (pubShare.shareCommitment.x.eq(pubkey.x) && pubShare.shareCommitment.y.eq(pubkey.y)) {
           const tempShare = new Share(pubShare.shareIndex, share);
           returnShare = new ShareStore(tempShare, el);
         }
