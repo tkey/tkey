@@ -853,6 +853,12 @@ class ThresholdKey implements ITKey {
       const deserialized = await this.shareSerializationMiddleware.deserialize(share, type);
       shareStore = this.metadata.shareToShareStore(deserialized);
     }
+    const pubPoly = this.metadata.getLatestPublicPolynomial();
+    const pubPolyID = pubPoly.getPolynomialID();
+    const fullShareIndexesList = Object.keys(this.metadata.publicShares[pubPolyID]);
+    if (!fullShareIndexesList.includes(shareStore.share.shareIndex.toString("hex"))) {
+      throw new Error("Latest poly doesn't include this share");
+    }
     this.inputShareStore(shareStore);
   }
 
