@@ -26,17 +26,23 @@ class CoreError extends CustomError {
   message: string;
 
   protected static messages = {
-    4000: "Custom",
-    4001: "metadata not found, SDK likely not intialized",
-    4002: "getMetadata errored",
-    4003: "setMetadata errored",
-    4004: "not enough shares for reconstruction",
-    4005: "reconstructed key is not pub key",
-    4006: "Private key not available. please reconstruct key first",
-    4007: "Share found in unexpected polynomial",
-    4010: "Unable to acquire lock",
-    4011: "Unable to release lock",
-    4020: "Invalid tkeyStore",
+    1000: "Custom",
+    // metadata
+    1001: "metadata not found, SDK likely not intialized",
+    1002: "getMetadata errored",
+    1003: "setMetadata errored",
+    // tkeystore
+    1101: "Invalid tkeyStore",
+    1102: "Encryption failed",
+    1103: "Decryption failed",
+    // shares
+    1201: "Private key not available. please reconstruct key first",
+    1202: "not enough shares for reconstruction",
+    1203: "reconstructed key is not pub key",
+    1204: "Share found in unexpected polynomial",
+    // lock
+    1301: "Unable to acquire lock",
+    1302: "Unable to release lock",
   };
 
   public constructor(code: number, message?: string) {
