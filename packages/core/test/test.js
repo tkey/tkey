@@ -16,7 +16,7 @@ describe("Errors", function () {
         throw CoreError.metadataUndefined().toJSON();
       },
       {
-        code: 4001,
+        code: 1101,
         message: "metadata not found, SDK likely not intialized",
       },
       "metadata error thrown"
@@ -25,10 +25,10 @@ describe("Errors", function () {
   it("#fromCode", function () {
     throws(
       () => {
-        throw CoreError.fromCode(4001).toJSON();
+        throw CoreError.fromCode(1101).toJSON();
       },
       {
-        code: 4001,
+        code: 1101,
         message: "metadata not found, SDK likely not intialized",
       },
       "metadata error thrown"

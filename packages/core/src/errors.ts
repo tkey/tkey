@@ -3,22 +3,10 @@ import { CustomError } from "ts-custom-error";
 
 // @flow
 
-export type SerializedCoreError = {
+type SerializedCoreError = {
   code: number;
   message: string;
 };
-
-export interface CoreCodes {
-  readonly custom: 4000;
-  readonly invalidMetadata: 4001;
-  readonly invalidGetMetadata: 4002;
-  readonly invalidSetMetadata: 4003;
-  readonly unableToAcquireLock: 4010;
-  readonly unableToReleaseLock: 4011;
-  readonly invalidTkeyStore: 4020;
-  readonly encryptFailed: 4030;
-  readonly decryptFailed: 4031;
-}
 
 class CoreError extends CustomError {
   code: number;
@@ -72,7 +60,7 @@ class CoreError extends CustomError {
   }
 
   public static fromCode(code: number, extraMessage = ""): CoreError {
-    return new CoreError(code, `${CoreError.messages[code]} ${extraMessage}`);
+    return new CoreError(code, `${CoreError.messages[code]}${extraMessage}`);
   }
 
   // Custom methods
