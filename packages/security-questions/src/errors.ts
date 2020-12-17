@@ -46,7 +46,6 @@ class SQError extends CustomError {
   }
 
   // Custom methods
-  // Metadata
   public static unavailable(extraMessage = ""): SQError {
     return SQError.fromCode(2101, extraMessage);
   }
