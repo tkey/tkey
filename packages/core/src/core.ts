@@ -882,7 +882,7 @@ class ThresholdKey implements ITKey {
     if (!fullShareIndexesList.includes(shareStore.share.shareIndex.toString("hex"))) {
       throw new Error("Latest poly doesn't include this share");
     }
-    this.inputShareStore(shareStore);
+    await this.inputShareStoreSafe(shareStore);
   }
 
   toJSON(): StringifiedType {
