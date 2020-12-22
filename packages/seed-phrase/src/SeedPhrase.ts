@@ -23,17 +23,23 @@ class SeedPhraseModule implements IModule {
   // eslint-disable-next-line
   async initialize(): Promise<void> {}
 
-  async setSeedPhrase(seedPhrase: string, seedPhraseType: string): Promise<void> {
+  async setSeedPhrase(seedPhraseType: string, seedPhrase?: string): Promise<void> {
     const data = {};
     const format = this.seedPhraseFormats.find((el) => el.seedPhraseType === seedPhraseType);
     if (!format) {
       throw new Error("Seed phrase type is not supported");
     }
-    if (!format.validateSeedPhrase(seedPhrase)) {
+    if (seedPhrase && !format.validateSeedPhrase(seedPhrase)) {
       throw new Error(`Seed phrase is invalid for ${seedPhraseType}`);
     }
     data[seedPhraseType] = await format.createSeedPhraseStore(seedPhrase);
     return this.tbSDK.setTKeyStore(this.moduleName, data);
+  }
+
+  async setSeedPhraseStore(seedPhraseType: string, store: unknown): Promise<void> {
+    const data = {};
+    data[seedPhraseType] = store;
+    return this.tbSDK.setTKeyStore(this.moduleName, store);
   }
 
   async getSeedPhrase(key: string): Promise<ISeedPhraseStore> {

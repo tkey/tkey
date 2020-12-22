@@ -6,7 +6,7 @@ import ServiceProviderBase from "@tkey/service-provider-base";
 import ShareTransferModule from "@tkey/share-transfer";
 import TorusStorageLayer, { MockStorageLayer } from "@tkey/storage-layer-torus";
 import { generatePrivate } from "@toruslabs/eccrypto";
-import { deepStrictEqual, fail, rejects, strictEqual } from "assert";
+import { deepStrictEqual, fail, rejects, strict, strictEqual } from "assert";
 import atob from "atob";
 import BN from "bn.js";
 import btoa from "btoa";
@@ -524,7 +524,7 @@ describe("TkeyStore", function () {
       modules: { seedPhrase: new SeedPhraseModule([metamaskSeedPhraseFormat]) },
     });
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
-    await tb.modules.seedPhrase.setSeedPhrase("seed sock milk update focus rotate barely fade car face mechanic mercy", "HD Key Tree");
+    await tb.modules.seedPhrase.setSeedPhrase("HD Key Tree", "seed sock milk update focus rotate barely fade car face mechanic mercy");
 
     const metamaskSeedPhraseFormat2 = new MetamaskSeedPhraseFormat("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68");
     const tb2 = new ThresholdKey({
@@ -549,10 +549,25 @@ describe("TkeyStore", function () {
       modules: { seedPhrase: new SeedPhraseModule([new MetamaskSeedPhraseFormat("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68")]) },
     });
     await tb.initializeNewKey({ initializeModules: true });
-    await tb.modules.seedPhrase.setSeedPhrase("seed sock milk update focus rotate barely fade car face mechanic mercy", "HD Key Tree");
+    await tb.modules.seedPhrase.setSeedPhrase("HD Key Tree", "seed sock milk update focus rotate barely fade car face mechanic mercy");
     const actualPrivateKeys = [new BN("70dc3117300011918e26b02176945cc15c3d548cf49fd8418d97f93af699e46", "hex")];
     const derivedKeys = await tb.modules.seedPhrase.getAccounts();
     compareBNArray(actualPrivateKeys, derivedKeys, "key should be same");
+  });
+
+  it("#should be able to generate seed phrase if not given", async function () {
+    const seedPhraseFormat = new MetamaskSeedPhraseFormat("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68");
+    const tb = new ThresholdKey({
+      serviceProvider: defaultSP,
+      storageLayer: defaultSL,
+      modules: { seedPhrase: new SeedPhraseModule([seedPhraseFormat]) },
+    });
+    await tb.initializeNewKey({ initializeModules: true });
+    await tb.modules.seedPhrase.setSeedPhrase("HD Key Tree");
+    const seed = await tb.modules.seedPhrase.getSeedPhrase("HD Key Tree");
+    const derivedKeys = await tb.modules.seedPhrase.getAccounts();
+    strict(seedPhraseFormat.validateSeedPhrase(seed.seedPhrase), "Seed Phrase must be valid");
+    strict(derivedKeys.length >= 1, "Atleast one account must be generated");
   });
 
   it("#should be able to get/set private keys", async function () {
@@ -589,7 +604,7 @@ describe("TkeyStore", function () {
     });
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
 
-    await tb.modules.seedPhrase.setSeedPhrase("seed sock milk update focus rotate barely fade car face mechanic mercy", "HD Key Tree");
+    await tb.modules.seedPhrase.setSeedPhrase("HD Key Tree", "seed sock milk update focus rotate barely fade car face mechanic mercy");
 
     const actualPrivateKeys = [
       new BN("4bd0041b7654a9b16a7268a5de7982f2422b15635c4fd170c140dc4897624390", "hex"),

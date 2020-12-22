@@ -10,6 +10,6 @@ declare class MetamaskSeedPhraseFormat implements ISeedPhraseFormat {
     constructor(ethProvider: provider);
     validateSeedPhrase(seedPhrase: string): boolean;
     deriveKeysFromSeedPhrase(seedPhraseStore: ISeedPhraseStore): Array<BN>;
-    createSeedPhraseStore(seedPhrase: string): Promise<MetamaskSeedPhraseStore>;
+    createSeedPhraseStore(seedPhrase?: string): Promise<MetamaskSeedPhraseStore>;
 }
 export default MetamaskSeedPhraseFormat;

@@ -775,7 +775,7 @@ class ThresholdKey implements ITKey {
   async setTKeyStore(moduleName: string, data: unknown): Promise<void> {
     const { metadata } = this;
     const rawTkeyStore = metadata.getTkeyStoreDomain(this.tkeyStoreModuleName) || {};
-    rawTkeyStore[moduleName] = {};
+    rawTkeyStore[moduleName] = rawTkeyStore[moduleName] || {};
 
     // Encryption promises
     const newData = data;

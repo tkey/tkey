@@ -193,7 +193,7 @@ export interface ISeedPhraseFormat {
   seedPhraseType: string;
   validateSeedPhrase(seedPhrase: string): boolean;
   deriveKeysFromSeedPhrase(seedPhraseStore: ISeedPhraseStore): Array<BN>;
-  createSeedPhraseStore(seedPhrase: string): Promise<ISeedPhraseStore>;
+  createSeedPhraseStore(seedPhrase?: string): Promise<ISeedPhraseStore>;
 }
 
 export interface IPrivateKeyFormat {

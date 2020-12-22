@@ -1,5 +1,5 @@
 import { generateAddressFromPublicKey, ISeedPhraseFormat, ISeedPhraseStore, MetamaskSeedPhraseStore } from "@tkey/common-types";
-import { mnemonicToSeedSync, validateMnemonic } from "bip39";
+import { generateMnemonic, mnemonicToSeedSync, validateMnemonic } from "bip39";
 import BN from "bn.js";
 import HDKey from "hdkey";
 import { provider } from "web3-core";
@@ -49,11 +49,12 @@ class MetamaskSeedPhraseFormat implements ISeedPhraseFormat {
     return wallets;
   }
 
-  async createSeedPhraseStore(seedPhrase: string): Promise<MetamaskSeedPhraseStore> {
+  async createSeedPhraseStore(seedPhrase?: string): Promise<MetamaskSeedPhraseStore> {
     let numberOfWallets = 0;
+    const finalSeedPhrase = seedPhrase || generateMnemonic();
     let lastBalance: string;
     const web3 = new Web3Eth(this.provider);
-    const hdkey = HDKey.fromMasterSeed(seedPhrase);
+    const hdkey = HDKey.fromMasterSeed(finalSeedPhrase);
     const root = hdkey.derive(this.hdPathString);
 
     // seek out the first zero balance
@@ -70,7 +71,7 @@ class MetamaskSeedPhraseFormat implements ISeedPhraseFormat {
 
     return {
       seedPhraseType: this.seedPhraseType,
-      seedPhrase,
+      seedPhrase: finalSeedPhrase,
       numberOfWallets,
     };
   }
