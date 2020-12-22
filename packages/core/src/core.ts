@@ -785,11 +785,11 @@ class ThresholdKey implements ITKey {
       return this.encrypt(newBuffer);
     });
 
-    let encryptedDataArray;
+    let encryptedDataArray: EncryptedMessage[];
     try {
       encryptedDataArray = await Promise.all(newEncryptedPromises);
     } catch (err) {
-      throw new Error("Unable to encrypt data");
+      throw new Error(`Unable to encrypt data ${err}`);
     }
 
     // Type cast as dictionary
@@ -827,7 +827,7 @@ class ThresholdKey implements ITKey {
     const keyStore = moduleStore[key];
 
     // decrypt and parsing
-    let decryptedKeyStore;
+    let decryptedKeyStore: Buffer;
     try {
       decryptedKeyStore = await this.decrypt(JSON.parse(keyStore));
     } catch (err) {
