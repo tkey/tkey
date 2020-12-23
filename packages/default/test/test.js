@@ -10,6 +10,7 @@ import { deepStrictEqual, fail, rejects, strictEqual } from "assert";
 import atob from "atob";
 import BN from "bn.js";
 import btoa from "btoa";
+import { assert } from "console";
 import fetch from "node-fetch";
 import { keccak256 } from "web3-utils";
 
@@ -100,7 +101,7 @@ describe("tkey", function () {
       fail("Unable to delete share index");
     }
   });
-  it.only("#should not be able to add share post deletion", async function () {
+  it("#should not be able to add share post deletion", async function () {
     await tb.initializeNewKey({ initializeModules: true });
     const { newShareStores: newShareStores1, newShareIndex: newShareIndex1 } = await tb.generateNewShare();
     await tb.deleteShare(newShareIndex1);
@@ -134,7 +135,7 @@ describe("tkey", function () {
     userInput = userInput.umod(ecCurve.curve.n);
     const resp1 = await tb.initializeNewKey({ userInput, initializeModules: true });
     const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
-    await tb2.initialize(resp1.userShare);
+    await tb2.initialize({ input: resp1.userShare });
     tb2.inputShareStore(resp1.deviceShare);
     const reconstructedKey = await tb2.reconstructKey();
     // compareBNArray(resp1.privKey, reconstructedKey, "key should be able to be reconstructed");
@@ -148,7 +149,7 @@ describe("tkey", function () {
     const resp1 = await tb.initializeNewKey({ userInput, initializeModules: true });
     const newShares = await tb.generateNewShare();
     const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
-    await tb2.initialize(resp1.userShare);
+    await tb2.initialize({ input: resp1.userShare });
     tb2.inputShareStore(newShares.newShareStores[resp1.deviceShare.share.shareIndex.toString("hex")]);
     const reconstructedKey = await tb2.reconstructKey();
     // compareBNArray(resp1.privKey, reconstructedKey, "key should be able to be reconstructed");
@@ -162,7 +163,7 @@ describe("tkey", function () {
     const resp1 = await tb.initializeNewKey({ userInput, initializeModules: true });
     const newShares = await tb.generateNewShare();
     const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
-    await tb2.initialize(resp1.userShare);
+    await tb2.initialize({ input: resp1.userShare });
     tb2.inputShareStore(newShares.newShareStores[resp1.deviceShare.share.shareIndex.toString("hex")]);
     const reconstructedKey = await tb2.reconstructKey();
     // compareBNArray(resp1.privKey, reconstructedKey, "key should be able to be reconstructed");
@@ -222,6 +223,13 @@ describe("tkey", function () {
     if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
       fail("key should be able to be reconstructed");
     }
+  });
+  it("#should be able to not create a new key if initialize is called with neverInitializeNewKey", async function () {
+    const newSP = new ServiceProviderBase({ postboxKey: new BN(generatePrivate()).toString("hex") });
+    const tb2 = new ThresholdKey({ serviceProvider: newSP, storageLayer: defaultSL });
+    rejects(async () => {
+      await tb2.initialize({ neverInitializeNewKey: true });
+    }, Error);
   });
 });
 

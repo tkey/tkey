@@ -156,7 +156,11 @@ export interface ISubTkeyModule extends IModule {
 export interface ITKeyApi {
     storageLayer: IStorageLayer;
     getMetadata(): IMetadata;
-    initialize(input?: ShareStore, importKey?: BN): Promise<KeyDetails>;
+    initialize(params: {
+        input?: ShareStore;
+        importKey?: BN;
+        neverInitializeNewKey?: boolean;
+    }): Promise<KeyDetails>;
     catchupToLatestShare(shareStore: ShareStore): Promise<CatchupToLatestShareResult>;
     syncShareMetadata(adjustScopedStore?: (ss: unknown) => unknown): Promise<void>;
     inputShareStoreSafe(shareStore: ShareStore): Promise<void>;
@@ -186,7 +190,11 @@ export interface ITKey extends ITKeyApi, ISerializable {
     refreshMiddleware: RefreshMiddlewareMap;
     reconstructKeyMiddleware: ReconstructKeyMiddlewareMap;
     shareSerializationMiddleware: ShareSerializationMiddleware;
-    initialize(input: ShareStore): Promise<KeyDetails>;
+    initialize(params: {
+        input?: ShareStore;
+        importKey?: BN;
+        neverInitializeNewKey?: boolean;
+    }): Promise<KeyDetails>;
     reconstructKey(): Promise<ReconstructedKeyResult>;
     reconstructLatestPoly(): Polynomial;
     refreshShares(threshold: number, newShareIndexes: Array<string>, previousPolyID: PolynomialID): Promise<RefreshSharesResult>;
