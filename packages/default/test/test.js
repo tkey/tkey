@@ -100,7 +100,7 @@ describe("tkey", function () {
       fail("Unable to delete share index");
     }
   });
-  it.only("#should not be able to add share post deletion", async function () {
+  it("#should not be able to add share post deletion", async function () {
     await tb.initializeNewKey({ initializeModules: true });
     const { newShareStores: newShareStores1, newShareIndex: newShareIndex1 } = await tb.generateNewShare();
     await tb.deleteShare(newShareIndex1);
@@ -568,6 +568,21 @@ describe("TkeyStore", function () {
     const derivedKeys = await tb.modules.seedPhrase.getAccounts();
     strict(seedPhraseFormat.validateSeedPhrase(seed.seedPhrase), "Seed Phrase must be valid");
     strict(derivedKeys.length >= 1, "Atleast one account must be generated");
+  });
+
+  it("#should not be able to replace seed phrase module", async function () {
+    const seedPhraseFormat = new MetamaskSeedPhraseFormat("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68");
+    const tb = new ThresholdKey({
+      serviceProvider: defaultSP,
+      storageLayer: defaultSL,
+      modules: { seedPhrase: new SeedPhraseModule([seedPhraseFormat]) },
+    });
+    await tb.initializeNewKey({ initializeModules: true });
+    await tb.modules.seedPhrase.setSeedPhrase("HD Key Tree");
+    // console.log("%O", tb.metadata);
+    rejects(async () => {
+      await tb.modules.seedPhrase.setSeedPhrase("HD Key Tree");
+    }, Error);
   });
 
   it("#should be able to get/set private keys", async function () {

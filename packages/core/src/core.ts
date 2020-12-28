@@ -58,8 +58,6 @@ class ThresholdKey implements ITKey {
 
   privKey: BN;
 
-  tkeyStoreModuleName: string;
-
   metadata: Metadata;
 
   refreshMiddleware: RefreshMiddlewareMap;
@@ -85,7 +83,6 @@ class ThresholdKey implements ITKey {
     this.shareSerializationMiddleware = undefined;
     this.storeDeviceShare = undefined;
 
-    this.tkeyStoreModuleName = "tkeyStoreModule";
     this.setModuleReferences(); // Providing ITKeyApi access to modules
     this.haveWriteMetadataLock = null;
   }
@@ -774,8 +771,7 @@ class ThresholdKey implements ITKey {
 
   async setTKeyStore(moduleName: string, data: unknown): Promise<void> {
     const { metadata } = this;
-    const rawTkeyStore = metadata.getTkeyStoreDomain(this.tkeyStoreModuleName) || {};
-    rawTkeyStore[moduleName] = rawTkeyStore[moduleName] || {};
+    const rawTkeyStore = metadata.getTkeyStoreDomain(moduleName) || {};
 
     // Encryption promises
     const newData = data;
@@ -794,36 +790,37 @@ class ThresholdKey implements ITKey {
 
     // Type cast as dictionary
     Object.keys(newData).forEach((el, index) => {
+      if (rawTkeyStore[el]) throw new Error("Cannot replace key store");
       newData[el] = stringify(encryptedDataArray[index]);
-      rawTkeyStore[moduleName][el] = newData[el];
+      rawTkeyStore[el] = newData[el];
     });
 
     // update metadatStore
-    metadata.setTkeyStoreDomain(this.tkeyStoreModuleName, rawTkeyStore);
+    metadata.setTkeyStoreDomain(moduleName, rawTkeyStore);
     await this.syncShareMetadata();
   }
 
   async deleteKey(moduleName: string, key: string): Promise<void> {
     const { metadata } = this;
-    const rawTkeyStore = metadata.getTkeyStoreDomain(this.tkeyStoreModuleName);
+    const rawTkeyStore = metadata.getTkeyStoreDomain(moduleName);
     if (!rawTkeyStore) {
       throw new Error("Tkey store does not exist. Unable to delete");
     }
-    const moduleStore = rawTkeyStore[moduleName];
+    const moduleStore = rawTkeyStore;
     const keyStore = moduleStore[key];
     delete keyStore[key];
-    metadata.setTkeyStoreDomain(this.tkeyStoreModuleName, keyStore);
+    metadata.setTkeyStoreDomain(moduleName, keyStore);
     await this.syncShareMetadata();
   }
 
   async getTKeyStore(moduleName: string, key: string): Promise<unknown> {
     // Get tkey domain
     const { metadata } = this;
-    const rawTkeyStore = metadata.getTkeyStoreDomain(this.tkeyStoreModuleName);
+    const rawTkeyStore = metadata.getTkeyStoreDomain(moduleName);
     if (!rawTkeyStore) throw new Error("tkey store doesn't exist");
 
     // get module store
-    const moduleStore = rawTkeyStore[moduleName];
+    const moduleStore = rawTkeyStore;
     const keyStore = moduleStore[key];
 
     // decrypt and parsing
