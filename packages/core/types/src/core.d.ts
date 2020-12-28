@@ -9,7 +9,6 @@ declare class ThresholdKey implements ITKey {
     storageLayer: IStorageLayer;
     shares: ShareStorePolyIDShareIndexMap;
     privKey: BN;
-    tkeyStoreModuleName: string;
     metadata: Metadata;
     refreshMiddleware: RefreshMiddlewareMap;
     reconstructKeyMiddleware: ReconstructKeyMiddlewareMap;
