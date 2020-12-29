@@ -10,7 +10,6 @@ import { deepStrictEqual, fail, rejects, strictEqual } from "assert";
 import atob from "atob";
 import BN from "bn.js";
 import btoa from "btoa";
-import { assert } from "console";
 import fetch from "node-fetch";
 import { keccak256 } from "web3-utils";
 
