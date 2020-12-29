@@ -609,7 +609,7 @@ describe("TkeyStore", function () {
     );
   });
 
-  it.only("#should be able to get/set private keys and seed phrase", async function () {
+  it("#should be able to get/set private keys and seed phrase", async function () {
     const privateKeyFormat = new SECP256k1Format();
     const metamaskSeedPhraseFormat = new MetamaskSeedPhraseFormat("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68");
     const tb = new ThresholdKey({
