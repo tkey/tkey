@@ -8,7 +8,7 @@ declare class PrivateKeyModule implements IModule {
     constructor(formats: IPrivateKeyFormat[]);
     setModuleReferences(tbSDK: ITKeyApi): void;
     initialize(): Promise<void>;
-    setPrivateKey(privateKey: BN, privateKeyType: string): Promise<void>;
+    setPrivateKey(privateKeyType: string, privateKey?: BN): Promise<void>;
     getPrivateKeys(): Promise<IPrivateKeyStore[]>;
     getAccounts(): Promise<BN[]>;
 }

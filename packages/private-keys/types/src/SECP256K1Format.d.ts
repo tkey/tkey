@@ -6,6 +6,6 @@ declare class SECP256K1Format implements IPrivateKeyFormat {
     type: string;
     constructor(privateKey: BN);
     validatePrivateKey(privateKey: BN): boolean;
-    createPrivateKeyStore(privateKey: BN): SECP256k1NStore;
+    createPrivateKeyStore(privateKey?: BN): SECP256k1NStore;
 }
 export default SECP256K1Format;

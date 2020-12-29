@@ -606,13 +606,29 @@ describe("TkeyStore", function () {
       new BN("4bd0041b7654a9b16a7268a5de7982f2422b15635c4fd170c140dc4897624390", "hex"),
       new BN("1ea6edde61c750ec02896e9ac7fe9ac0b48a3630594fdf52ad5305470a2635c0", "hex"),
     ];
-    await tb.modules.privateKeyModule.setPrivateKey(actualPrivateKeys[0], "secp256k1n");
-    await tb.modules.privateKeyModule.setPrivateKey(actualPrivateKeys[1], "secp256k1n");
+    await tb.modules.privateKeyModule.setPrivateKey("secp256k1n", actualPrivateKeys[0]);
+    await tb.modules.privateKeyModule.setPrivateKey("secp256k1n", actualPrivateKeys[1]);
     const getAccounts = await tb.modules.privateKeyModule.getAccounts();
     deepStrictEqual(
       actualPrivateKeys.map((x) => x.toString("hex")),
       getAccounts.map((x) => x.toString("hex"))
     );
+  });
+
+  it("#should be able to generate private key if not given", async function () {
+    const privateKeyFormat = new SECP256k1Format();
+    const tb = new ThresholdKey({
+      serviceProvider: defaultSP,
+      storageLayer: defaultSL,
+      modules: { privateKeyModule: new PrivateKeyModule([privateKeyFormat]) },
+    });
+    await tb.initializeNewKey({ initializeModules: true });
+
+    await tb.modules.privateKeyModule.setPrivateKey("secp256k1n");
+    await tb.modules.privateKeyModule.setPrivateKey("secp256k1n");
+
+    const accounts = await tb.modules.privateKeyModule.getAccounts();
+    strictEqual(accounts.length, 2);
   });
 
   it("#should be able to get/set private keys and seed phrase", async function () {
@@ -632,8 +648,8 @@ describe("TkeyStore", function () {
       new BN("4bd0041b7654a9b16a7268a5de7982f2422b15635c4fd170c140dc4897624390", "hex"),
       new BN("1ea6edde61c750ec02896e9ac7fe9ac0b48a3630594fdf52ad5305470a2635c0", "hex"),
     ];
-    await tb.modules.privateKeyModule.setPrivateKey(actualPrivateKeys[0], "secp256k1n");
-    await tb.modules.privateKeyModule.setPrivateKey(actualPrivateKeys[1], "secp256k1n");
+    await tb.modules.privateKeyModule.setPrivateKey("secp256k1n", actualPrivateKeys[0]);
+    await tb.modules.privateKeyModule.setPrivateKey("secp256k1n", actualPrivateKeys[1]);
 
     const metamaskSeedPhraseFormat2 = new MetamaskSeedPhraseFormat("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68");
     const tb2 = new ThresholdKey({
