@@ -1,4 +1,4 @@
-import { IModule, IPrivateKeyFormat, ITKeyApi } from "@tkey/common-types";
+import { IModule, IPrivateKeyFormat, IPrivateKeyStore, ITKeyApi } from "@tkey/common-types";
 import BN from "bn.js";
 export declare const PRIVATE_KEY_MODULE_NAME = "privateKeyModule";
 declare class PrivateKeyModule implements IModule {
@@ -8,8 +8,8 @@ declare class PrivateKeyModule implements IModule {
     constructor(formats: IPrivateKeyFormat[]);
     setModuleReferences(tbSDK: ITKeyApi): void;
     initialize(): Promise<void>;
-    setPrivateKeys(privateKeys: BN[], privateKeyType: string): Promise<void>;
-    getPrivateKeys(key: string): Promise<unknown>;
-    getAccounts(): Promise<Array<BN>>;
+    setPrivateKey(privateKey: BN, privateKeyType: string): Promise<void>;
+    getPrivateKeys(): Promise<IPrivateKeyStore[]>;
+    getAccounts(): Promise<BN[]>;
 }
 export default PrivateKeyModule;

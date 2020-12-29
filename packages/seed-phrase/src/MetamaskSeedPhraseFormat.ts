@@ -1,4 +1,4 @@
-import { generateAddressFromPublicKey, ISeedPhraseFormat, ISeedPhraseStore, MetamaskSeedPhraseStore } from "@tkey/common-types";
+import { generateAddressFromPublicKey, generateID, ISeedPhraseFormat, ISeedPhraseStore, MetamaskSeedPhraseStore } from "@tkey/common-types";
 import { generateMnemonic, mnemonicToSeedSync, validateMnemonic } from "bip39";
 import BN from "bn.js";
 import HDKey from "hdkey";
@@ -8,7 +8,7 @@ import { fromWei } from "web3-utils";
 import Web3Eth from "./web3";
 
 class MetamaskSeedPhraseFormat implements ISeedPhraseFormat {
-  seedPhraseType: string;
+  type: string;
 
   hdPathString: string;
 
@@ -18,7 +18,7 @@ class MetamaskSeedPhraseFormat implements ISeedPhraseFormat {
 
   constructor(ethProvider: provider) {
     this.hdPathString = `m/44'/60'/0'/0`;
-    this.seedPhraseType = "HD Key Tree";
+    this.type = "HD Key Tree";
     this.provider = ethProvider;
   }
 
@@ -32,7 +32,7 @@ class MetamaskSeedPhraseFormat implements ISeedPhraseFormat {
     return validateMnemonic(seedPhrase);
   }
 
-  deriveKeysFromSeedPhrase(seedPhraseStore: ISeedPhraseStore): Array<BN> {
+  deriveKeysFromSeedPhrase(seedPhraseStore: ISeedPhraseStore): BN[] {
     const mmStore = seedPhraseStore as MetamaskSeedPhraseStore;
     const { seedPhrase } = mmStore;
     const seed = mnemonicToSeedSync(seedPhrase);
@@ -40,7 +40,7 @@ class MetamaskSeedPhraseFormat implements ISeedPhraseFormat {
     const root = hdkey.derive(this.hdPathString);
 
     const numOfWallets = mmStore.numberOfWallets;
-    const wallets = [];
+    const wallets: BN[] = [];
     for (let i = 0; i < numOfWallets; i += 1) {
       const child = root.deriveChild(i);
       const wallet = new BN(child.privateKey);
@@ -70,7 +70,8 @@ class MetamaskSeedPhraseFormat implements ISeedPhraseFormat {
     }
 
     return {
-      seedPhraseType: this.seedPhraseType,
+      id: generateID(),
+      type: this.type,
       seedPhrase: finalSeedPhrase,
       numberOfWallets,
     };

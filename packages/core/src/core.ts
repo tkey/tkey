@@ -33,6 +33,7 @@ import {
   ShareStorePolyIDShareIndexMap,
   StringifiedType,
   TKeyArgs,
+  TkeyStoreItemType,
   toPrivKeyECC,
 } from "@tkey/common-types";
 import { generatePrivate } from "@toruslabs/eccrypto";
@@ -108,8 +109,9 @@ class ThresholdKey implements ITKey {
       encrypt: this.encrypt.bind(this),
       decrypt: this.decrypt.bind(this),
       getTKeyStore: this.getTKeyStore.bind(this),
-      setTKeyStore: this.setTKeyStore.bind(this),
-      deleteKey: this.deleteKey.bind(this),
+      getTKeyStoreItem: this.getTKeyStoreItem.bind(this),
+      setTKeyStoreItem: this.setTKeyStoreItem.bind(this),
+      deleteTKeyStoreItem: this.deleteTKeyStoreItem.bind(this),
       deleteShare: this.deleteShare.bind(this),
     };
   }
@@ -769,70 +771,63 @@ class ThresholdKey implements ITKey {
     return decrypt(toPrivKeyECC(this.privKey), encryptedMessage);
   }
 
-  async setTKeyStore(moduleName: string, data: unknown): Promise<void> {
-    const { metadata } = this;
-    const rawTkeyStore = metadata.getTkeyStoreDomain(moduleName) || {};
-
-    // Encryption promises
-    const newData = data;
-    const newEncryptedPromises = Object.keys(newData).map((el) => {
-      const value = JSON.stringify(data[el]);
-      const newBuffer = Buffer.from(value);
-      return this.encrypt(newBuffer);
-    });
-
-    let encryptedDataArray: EncryptedMessage[];
-    try {
-      encryptedDataArray = await Promise.all(newEncryptedPromises);
-    } catch (err) {
-      throw new Error(`Unable to encrypt data ${err}`);
+  async setTKeyStoreItem(moduleName: string, data: TkeyStoreItemType): Promise<void> {
+    const rawTkeyStoreItems: EncryptedMessage[] = (this.metadata.getTkeyStoreDomain(moduleName) as EncryptedMessage[]) || [];
+    const decryptedItems = await Promise.all(
+      rawTkeyStoreItems.map(async (x) => {
+        const decryptedItem = await this.decrypt(x);
+        return JSON.parse(decryptedItem.toString()) as TkeyStoreItemType;
+      })
+    );
+    const encryptedData = await this.encrypt(Buffer.from(stringify(data)));
+    const duplicateItemIndex = decryptedItems.findIndex((x) => x.id === data.id);
+    if (duplicateItemIndex > -1) {
+      rawTkeyStoreItems[duplicateItemIndex] = encryptedData;
+    } else {
+      rawTkeyStoreItems.push(encryptedData);
     }
 
-    // Type cast as dictionary
-    Object.keys(newData).forEach((el, index) => {
-      if (rawTkeyStore[el]) throw new Error("Cannot replace key store");
-      newData[el] = stringify(encryptedDataArray[index]);
-      rawTkeyStore[el] = newData[el];
-    });
-
-    // update metadatStore
-    metadata.setTkeyStoreDomain(moduleName, rawTkeyStore);
+    // update metadataStore
+    this.metadata.setTkeyStoreDomain(moduleName, rawTkeyStoreItems);
     await this.syncShareMetadata();
   }
 
-  async deleteKey(moduleName: string, key: string): Promise<void> {
-    const { metadata } = this;
-    const rawTkeyStore = metadata.getTkeyStoreDomain(moduleName);
-    if (!rawTkeyStore) {
-      throw new Error("Tkey store does not exist. Unable to delete");
-    }
-    const moduleStore = rawTkeyStore;
-    const keyStore = moduleStore[key];
-    delete keyStore[key];
-    metadata.setTkeyStoreDomain(moduleName, keyStore);
+  async deleteTKeyStoreItem(moduleName: string, id: string): Promise<void> {
+    const rawTkeyStoreItems = (this.metadata.getTkeyStoreDomain(moduleName) as EncryptedMessage[]) || [];
+    const decryptedItems = await Promise.all(
+      rawTkeyStoreItems.map(async (x) => {
+        const decryptedItem = await this.decrypt(x);
+        return JSON.parse(decryptedItem.toString()) as TkeyStoreItemType;
+      })
+    );
+    const finalItems = decryptedItems.filter((x) => x.id !== id);
+    this.metadata.setTkeyStoreDomain(moduleName, finalItems);
     await this.syncShareMetadata();
   }
 
-  async getTKeyStore(moduleName: string, key: string): Promise<unknown> {
-    // Get tkey domain
-    const { metadata } = this;
-    const rawTkeyStore = metadata.getTkeyStoreDomain(moduleName);
-    if (!rawTkeyStore) throw new Error("tkey store doesn't exist");
+  async getTKeyStore(moduleName: string): Promise<TkeyStoreItemType[]> {
+    const rawTkeyStoreItems = (this.metadata.getTkeyStoreDomain(moduleName) as EncryptedMessage[]) || [];
 
-    // get module store
-    const moduleStore = rawTkeyStore;
-    const keyStore = moduleStore[key];
+    const decryptedItems = await Promise.all(
+      rawTkeyStoreItems.map(async (x) => {
+        const decryptedItem = await this.decrypt(x);
+        return JSON.parse(decryptedItem.toString()) as TkeyStoreItemType;
+      })
+    );
+    return decryptedItems;
+  }
 
-    // decrypt and parsing
-    let decryptedKeyStore: Buffer;
-    try {
-      decryptedKeyStore = await this.decrypt(JSON.parse(keyStore));
-    } catch (err) {
-      throw new Error("Decryption failed");
-    }
-    const newString = decryptedKeyStore.toString();
-    const tkeyStoreData = JSON.parse(newString.toString());
-    return tkeyStoreData;
+  async getTKeyStoreItem(moduleName: string, id: string): Promise<TkeyStoreItemType> {
+    const rawTkeyStoreItems = (this.metadata.getTkeyStoreDomain(moduleName) as EncryptedMessage[]) || [];
+
+    const decryptedItems = await Promise.all(
+      rawTkeyStoreItems.map(async (x) => {
+        const decryptedItem = await this.decrypt(x);
+        return JSON.parse(decryptedItem.toString()) as TkeyStoreItemType;
+      })
+    );
+    const item = decryptedItems.find((x) => x.id === id);
+    return item;
   }
 
   // Import export shares

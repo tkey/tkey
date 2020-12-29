@@ -86,8 +86,8 @@ class Metadata implements IMetadata {
     return this.generalStore[key];
   }
 
-  setTkeyStoreDomain(key: string, obj: unknown): void {
-    this.tkeyStore[key] = obj;
+  setTkeyStoreDomain(key: string, arr: unknown): void {
+    this.tkeyStore[key] = arr;
   }
 
   getTkeyStoreDomain(key: string): unknown {

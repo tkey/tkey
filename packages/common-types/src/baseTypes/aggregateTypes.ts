@@ -73,7 +73,7 @@ export interface IMetadata extends ISerializable {
   addPublicShare(polynomialID: PolynomialID, publicShare: PublicShare): void;
   setGeneralStoreDomain(key: string, obj: unknown): void;
   getGeneralStoreDomain(key: string): unknown;
-  setTkeyStoreDomain(key: string, obj: unknown): void;
+  setTkeyStoreDomain(key: string, arr: unknown): void;
   getTkeyStoreDomain(key: string): unknown;
   addFromPolynomialAndShares(polynomial: Polynomial, shares: Array<Share> | ShareMap): void;
   setScopedStore(domain: string, data: unknown): void;
@@ -169,44 +169,37 @@ export interface ShareRequestArgs {
   timestamp: number;
 }
 
-export interface ISeedPhraseStore {
-  seedPhraseType: string;
+export type TkeyStoreItemType = {
+  id: string;
+  type: string;
+};
+
+export type ISeedPhraseStore = TkeyStoreItemType & {
   seedPhrase: string;
-}
-export type MetamaskSeedPhraseStore = {
-  seedPhraseType: string;
-  seedPhrase: string;
+};
+
+export type MetamaskSeedPhraseStore = ISeedPhraseStore & {
   numberOfWallets: number;
 };
 
-export interface ISECP256k1NStore {
-  privateKeys: BN[];
-  privateKeyType: string;
-}
-
-export type SECP256k1NStore = {
-  privateKeys: BN[];
-  privateKeyType: string;
+export type IPrivateKeyStore = TkeyStoreItemType & {
+  privateKey: BN;
 };
 
+export type SECP256k1NStore = IPrivateKeyStore;
+
 export interface ISeedPhraseFormat {
-  seedPhraseType: string;
+  type: string;
   validateSeedPhrase(seedPhrase: string): boolean;
   deriveKeysFromSeedPhrase(seedPhraseStore: ISeedPhraseStore): Array<BN>;
   createSeedPhraseStore(seedPhrase?: string): Promise<ISeedPhraseStore>;
 }
 
 export interface IPrivateKeyFormat {
-  privateKeys: BN[];
-  privateKeyType: string;
-  validatePrivateKeys(privateKey: BN): boolean;
-  createPrivateKeyStore(privateKey: BN[]): SECP256k1NStore;
-}
-
-export interface ISubTkeyModule extends IModule {
-  setTKeyStore(moduleName: string, data: unknown): Promise<void>;
-  deleteKey(moduleName: string, key: string);
-  getTKeyStore(moduleName: string, key: string): Promise<unknown>;
+  privateKey: BN;
+  type: string;
+  validatePrivateKey(privateKey: BN): boolean;
+  createPrivateKeyStore(privateKey: BN): SECP256k1NStore;
 }
 
 export interface ITKeyApi {
@@ -236,9 +229,11 @@ export interface ITKeyApi {
   outputShare(shareIndex: BNString, type: string): Promise<unknown>;
   encrypt(data: Buffer): Promise<EncryptedMessage>;
   decrypt(encryptedMesage: EncryptedMessage): Promise<Buffer>;
-  getTKeyStore(moduleName: string, key: string): Promise<unknown>;
-  deleteKey(moduleName: string, key: string);
-  setTKeyStore(moduleName: string, data: unknown): Promise<void>;
+
+  getTKeyStoreItem(moduleName: string, id: string): Promise<TkeyStoreItemType>;
+  getTKeyStore(moduleName: string): Promise<TkeyStoreItemType[]>;
+  deleteTKeyStoreItem(moduleName: string, id: string): Promise<void>;
+  setTKeyStoreItem(moduleName: string, data: TkeyStoreItemType): Promise<void>;
 }
 
 // eslint-disable-next-line no-use-before-define
@@ -272,10 +267,4 @@ export interface ITKey extends ITKeyApi, ISerializable {
   setKey(privKey: BN): void;
 
   getKeyDetails(): KeyDetails;
-
-  encrypt(data: Buffer): Promise<EncryptedMessage>;
-  decrypt(encryptedMesage: EncryptedMessage): Promise<Buffer>;
-  getTKeyStore(moduleName: string, key: string): Promise<unknown>;
-  deleteKey(moduleName: string, key: string);
-  setTKeyStore(moduleName: string, data: unknown): Promise<void>;
 }

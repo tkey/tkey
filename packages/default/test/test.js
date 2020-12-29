@@ -564,13 +564,13 @@ describe("TkeyStore", function () {
     });
     await tb.initializeNewKey({ initializeModules: true });
     await tb.modules.seedPhrase.setSeedPhrase("HD Key Tree");
-    const seed = await tb.modules.seedPhrase.getSeedPhrase("HD Key Tree");
+    const [seed] = await tb.modules.seedPhrase.getSeedPhrases();
     const derivedKeys = await tb.modules.seedPhrase.getAccounts();
     strict(seedPhraseFormat.validateSeedPhrase(seed.seedPhrase), "Seed Phrase must be valid");
     strict(derivedKeys.length >= 1, "Atleast one account must be generated");
   });
 
-  it("#should not be able to replace seed phrase module", async function () {
+  it("#should be able to replace numberOfWallets seed phrase module", async function () {
     const seedPhraseFormat = new MetamaskSeedPhraseFormat("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68");
     const tb = new ThresholdKey({
       serviceProvider: defaultSP,
@@ -579,13 +579,15 @@ describe("TkeyStore", function () {
     });
     await tb.initializeNewKey({ initializeModules: true });
     await tb.modules.seedPhrase.setSeedPhrase("HD Key Tree");
-    // console.log("%O", tb.metadata);
-    rejects(async () => {
-      await tb.modules.seedPhrase.setSeedPhrase("HD Key Tree");
-    }, Error);
+    const [seedPhraseStore] = await tb.modules.seedPhrase.getSeedPhrases();
+    // console.log("%O", tb.metadata.tkeyStore);
+    await tb.modules.seedPhrase.setSeedPhraseStoreItem({ id: seedPhraseStore.id, seedPhrase: seedPhraseStore.seedPhrase, numberOfWallets: 2 });
+    // console.log(storedSeedPhrase);
+    const [secondStoredSeedPhrase] = await tb.modules.seedPhrase.getSeedPhrases();
+    strictEqual(secondStoredSeedPhrase.numberOfWallets, 2);
   });
 
-  it("#should be able to get/set private keys", async function () {
+  it("#should be able to get/set private key", async function () {
     const privateKeyFormat = new SECP256k1Format();
     const tb = new ThresholdKey({
       serviceProvider: defaultSP,
@@ -597,11 +599,9 @@ describe("TkeyStore", function () {
     const actualPrivateKeys = [
       new BN("4bd0041b7654a9b16a7268a5de7982f2422b15635c4fd170c140dc4897624390", "hex"),
       new BN("1ea6edde61c750ec02896e9ac7fe9ac0b48a3630594fdf52ad5305470a2635c0", "hex"),
-      new BN("7749e59f398c5ccc01f3131e00abd1d061a03ae2ae59c49bebcee61d419f7cf0", "hex"),
-      new BN("1a99651a0aab297997bb3374451a2c40c927fab93903c1957fa9444bc4e2c770", "hex"),
-      new BN("220dad2d2bbb8bc2f731981921a49ee6059ef9d1e5d55ee203527a3157fb7284", "hex"),
     ];
-    await tb.modules.privateKeyModule.setPrivateKeys(actualPrivateKeys, "secp256k1n");
+    await tb.modules.privateKeyModule.setPrivateKey(actualPrivateKeys[0], "secp256k1n");
+    await tb.modules.privateKeyModule.setPrivateKey(actualPrivateKeys[1], "secp256k1n");
     const getAccounts = await tb.modules.privateKeyModule.getAccounts();
     deepStrictEqual(
       actualPrivateKeys.map((x) => x.toString("hex")),
@@ -624,11 +624,9 @@ describe("TkeyStore", function () {
     const actualPrivateKeys = [
       new BN("4bd0041b7654a9b16a7268a5de7982f2422b15635c4fd170c140dc4897624390", "hex"),
       new BN("1ea6edde61c750ec02896e9ac7fe9ac0b48a3630594fdf52ad5305470a2635c0", "hex"),
-      new BN("7749e59f398c5ccc01f3131e00abd1d061a03ae2ae59c49bebcee61d419f7cf0", "hex"),
-      new BN("1a99651a0aab297997bb3374451a2c40c927fab93903c1957fa9444bc4e2c770", "hex"),
-      new BN("220dad2d2bbb8bc2f731981921a49ee6059ef9d1e5d55ee203527a3157fb7284", "hex"),
     ];
-    await tb.modules.privateKeyModule.setPrivateKeys(actualPrivateKeys, "secp256k1n");
+    await tb.modules.privateKeyModule.setPrivateKey(actualPrivateKeys[0], "secp256k1n");
+    await tb.modules.privateKeyModule.setPrivateKey(actualPrivateKeys[1], "secp256k1n");
 
     const metamaskSeedPhraseFormat2 = new MetamaskSeedPhraseFormat("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68");
     const tb2 = new ThresholdKey({
@@ -646,18 +644,12 @@ describe("TkeyStore", function () {
       privateKeyModule: [
         new BN("4bd0041b7654a9b16a7268a5de7982f2422b15635c4fd170c140dc4897624390", "hex"),
         new BN("1ea6edde61c750ec02896e9ac7fe9ac0b48a3630594fdf52ad5305470a2635c0", "hex"),
-        new BN("7749e59f398c5ccc01f3131e00abd1d061a03ae2ae59c49bebcee61d419f7cf0", "hex"),
-        new BN("1a99651a0aab297997bb3374451a2c40c927fab93903c1957fa9444bc4e2c770", "hex"),
-        new BN("220dad2d2bbb8bc2f731981921a49ee6059ef9d1e5d55ee203527a3157fb7284", "hex"),
       ],
       allKeys: [
         resp1.privKey,
         new BN("70dc3117300011918e26b02176945cc15c3d548cf49fd8418d97f93af699e46", "hex"),
         new BN("4bd0041b7654a9b16a7268a5de7982f2422b15635c4fd170c140dc4897624390", "hex"),
         new BN("1ea6edde61c750ec02896e9ac7fe9ac0b48a3630594fdf52ad5305470a2635c0", "hex"),
-        new BN("7749e59f398c5ccc01f3131e00abd1d061a03ae2ae59c49bebcee61d419f7cf0", "hex"),
-        new BN("1a99651a0aab297997bb3374451a2c40c927fab93903c1957fa9444bc4e2c770", "hex"),
-        new BN("220dad2d2bbb8bc2f731981921a49ee6059ef9d1e5d55ee203527a3157fb7284", "hex"),
       ],
     });
   });

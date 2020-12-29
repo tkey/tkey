@@ -1,33 +1,33 @@
-import { ecCurve, IPrivateKeyFormat, SECP256k1NStore } from "@tkey/common-types";
+import { ecCurve, generateID, IPrivateKeyFormat, SECP256k1NStore } from "@tkey/common-types";
 import BN from "bn.js";
 
 class SECP256K1Format implements IPrivateKeyFormat {
-  privateKeys: BN[];
+  privateKey: BN;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ecParams: any;
 
-  privateKeyType: string;
+  type: string;
 
-  constructor(privateKeys: BN[]) {
-    this.privateKeys = privateKeys;
+  constructor(privateKey: BN) {
+    this.privateKey = privateKey;
     this.ecParams = ecCurve.curve;
-    this.privateKeyType = "secp256k1n";
+    this.type = "secp256k1n";
   }
 
-  validatePrivateKeys(privateKey: BN): boolean {
+  validatePrivateKey(privateKey: BN): boolean {
     return privateKey.cmp(this.ecParams.n) < 0 && !privateKey.isZero();
   }
 
-  createPrivateKeyStore(privateKeys: BN[]): SECP256k1NStore {
-    privateKeys.forEach((el) => {
-      if (!this.validatePrivateKeys(el)) {
-        throw new Error("validation failed");
-      }
-    });
+  createPrivateKeyStore(privateKey: BN): SECP256k1NStore {
+    if (!this.validatePrivateKey(privateKey)) {
+      throw new Error("validation failed");
+    }
+
     return {
-      privateKeys,
-      privateKeyType: this.privateKeyType,
+      id: generateID(),
+      privateKey,
+      type: this.type,
     };
   }
 }
