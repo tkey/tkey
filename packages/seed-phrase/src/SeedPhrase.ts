@@ -23,34 +23,37 @@ class SeedPhraseModule implements IModule {
   // eslint-disable-next-line
   async initialize(): Promise<void> {}
 
-  async setSeedPhrase(seedPhrase: string, seedPhraseType: string): Promise<void> {
-    const data = {};
-    const format = this.seedPhraseFormats.find((el) => el.seedPhraseType === seedPhraseType);
+  async setSeedPhrase(seedPhraseType: string, seedPhrase?: string): Promise<void> {
+    const format = this.seedPhraseFormats.find((el) => el.type === seedPhraseType);
     if (!format) {
       throw new Error("Seed phrase type is not supported");
     }
-    if (!format.validateSeedPhrase(seedPhrase)) {
+    if (seedPhrase && !format.validateSeedPhrase(seedPhrase)) {
       throw new Error(`Seed phrase is invalid for ${seedPhraseType}`);
     }
-    data[seedPhraseType] = await format.createSeedPhraseStore(seedPhrase);
-    return this.tbSDK.setTKeyStore(this.moduleName, data);
+    const seedPhraseStore = await format.createSeedPhraseStore(seedPhrase);
+    return this.tbSDK.setTKeyStoreItem(this.moduleName, seedPhraseStore);
   }
 
-  async getSeedPhrase(key: string): Promise<ISeedPhraseStore> {
-    return (this.tbSDK.getTKeyStore(this.moduleName, key) as unknown) as ISeedPhraseStore;
+  async setSeedPhraseStoreItem(partialStore: ISeedPhraseStore): Promise<void> {
+    const seedPhraseItem = (await this.tbSDK.getTKeyStoreItem(this.moduleName, partialStore.id)) as ISeedPhraseStore;
+    const originalItem: ISeedPhraseStore = { id: seedPhraseItem.id, type: seedPhraseItem.type, seedPhrase: seedPhraseItem.seedPhrase };
+    // Disallow editing critical fields
+    const finalItem = { ...partialStore, ...originalItem };
+    return this.tbSDK.setTKeyStoreItem(this.moduleName, finalItem);
   }
 
-  async getAccounts(): Promise<Array<BN>> {
+  async getSeedPhrases(): Promise<ISeedPhraseStore[]> {
+    return this.tbSDK.getTKeyStore(this.moduleName) as Promise<ISeedPhraseStore[]>;
+  }
+
+  async getAccounts(): Promise<BN[]> {
     try {
       // Get seed phrases for all available formats from tkeystore
-      const promisesArray = this.seedPhraseFormats.map((el) => {
-        return this.getSeedPhrase(el.seedPhraseType);
-      });
-      const seedPhrases = await Promise.all(promisesArray);
-
-      // Derive keys for all formats.
-      return this.seedPhraseFormats.reduce((acc, x, index) => {
-        acc.push(...x.deriveKeysFromSeedPhrase(seedPhrases[index]));
+      const seedPhrases = await this.getSeedPhrases();
+      return seedPhrases.reduce((acc: BN[], x) => {
+        const suitableFormat = this.seedPhraseFormats.find((y) => y.type === x.type);
+        acc.push(...suitableFormat.deriveKeysFromSeedPhrase(x));
         return acc;
       }, []);
     } catch (err) {
