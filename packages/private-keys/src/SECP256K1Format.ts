@@ -1,6 +1,8 @@
 import { ecCurve, IPrivateKeyFormat, SECP256k1NStore } from "@tkey/common-types";
 import BN from "bn.js";
 
+import PrivateKeysError from "./errors";
+
 class SECP256K1Format implements IPrivateKeyFormat {
   privateKeys: BN[];
 
@@ -22,7 +24,8 @@ class SECP256K1Format implements IPrivateKeyFormat {
   createPrivateKeyStore(privateKeys: BN[]): SECP256k1NStore {
     privateKeys.forEach((el) => {
       if (!this.validatePrivateKeys(el)) {
-        throw new Error("validation failed");
+        // throw new Error("validation failed");
+        throw PrivateKeysError.validationFailed();
       }
     });
     return {

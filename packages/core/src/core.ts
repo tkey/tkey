@@ -885,7 +885,8 @@ class ThresholdKey implements ITKey {
     const pubPolyID = pubPoly.getPolynomialID();
     const fullShareIndexesList = Object.keys(this.metadata.publicShares[pubPolyID]);
     if (!fullShareIndexesList.includes(shareStore.share.shareIndex.toString("hex"))) {
-      throw new Error("Latest poly doesn't include this share");
+      // throw new Error("Latest poly doesn't include this share");
+      throw new CoreError(4000, "Latest poly doesn't include this share");
     }
     await this.inputShareStoreSafe(shareStore);
   }
