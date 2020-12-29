@@ -609,7 +609,7 @@ describe("TkeyStore", function () {
     );
   });
 
-  it("#should be able to get/set private keys and seed phrase", async function () {
+  it.only("#should be able to get/set private keys and seed phrase", async function () {
     const privateKeyFormat = new SECP256k1Format();
     const metamaskSeedPhraseFormat = new MetamaskSeedPhraseFormat("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68");
     const tb = new ThresholdKey({
@@ -620,6 +620,7 @@ describe("TkeyStore", function () {
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
 
     await tb.modules.seedPhrase.setSeedPhrase("HD Key Tree", "seed sock milk update focus rotate barely fade car face mechanic mercy");
+    await tb.modules.seedPhrase.setSeedPhrase("HD Key Tree", "chapter gas cost saddle annual mouse chef unknown edit pen stairs claw");
 
     const actualPrivateKeys = [
       new BN("4bd0041b7654a9b16a7268a5de7982f2422b15635c4fd170c140dc4897624390", "hex"),
@@ -637,10 +638,13 @@ describe("TkeyStore", function () {
     await tb2.initialize();
     tb2.inputShareStore(resp1.deviceShare);
     const reconstuctedKey = await tb2.reconstructKey();
-    // console.log(reconstuctedKey);
+    // console.log(tb2.metadata.tkeyStore);
     compareReconstructedKeys(reconstuctedKey, {
       privKey: resp1.privKey,
-      seedPhraseModule: [new BN("70dc3117300011918e26b02176945cc15c3d548cf49fd8418d97f93af699e46", "hex")],
+      seedPhraseModule: [
+        new BN("70dc3117300011918e26b02176945cc15c3d548cf49fd8418d97f93af699e46", "hex"),
+        new BN("4d62a55af3496a7b290a12dd5fd5ef3e051d787dbc005fb74536136949602f9e", "hex"),
+      ],
       privateKeyModule: [
         new BN("4bd0041b7654a9b16a7268a5de7982f2422b15635c4fd170c140dc4897624390", "hex"),
         new BN("1ea6edde61c750ec02896e9ac7fe9ac0b48a3630594fdf52ad5305470a2635c0", "hex"),
@@ -648,6 +652,7 @@ describe("TkeyStore", function () {
       allKeys: [
         resp1.privKey,
         new BN("70dc3117300011918e26b02176945cc15c3d548cf49fd8418d97f93af699e46", "hex"),
+        new BN("4d62a55af3496a7b290a12dd5fd5ef3e051d787dbc005fb74536136949602f9e", "hex"),
         new BN("4bd0041b7654a9b16a7268a5de7982f2422b15635c4fd170c140dc4897624390", "hex"),
         new BN("1ea6edde61c750ec02896e9ac7fe9ac0b48a3630594fdf52ad5305470a2635c0", "hex"),
       ],
