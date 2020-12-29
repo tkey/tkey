@@ -1,5 +1,12 @@
 # vue-app
 
+## Create a local build of tKey
+```
+yarn
+yarn bootstrap
+yarn pack:lerna
+```
+
 ## Project setup
 ```
 npm install:local

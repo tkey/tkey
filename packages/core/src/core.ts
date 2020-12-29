@@ -126,7 +126,9 @@ class ThresholdKey implements ITKey {
     throw CoreError.metadataUndefined();
   }
 
-  async initialize(input?: ShareStore, importKey?: BN): Promise<KeyDetails> {
+  async initialize(params?: { input?: ShareStore; importKey?: BN; neverInitializeNewKey?: boolean }): Promise<KeyDetails> {
+    const p = params || {};
+    const { input, importKey, neverInitializeNewKey } = p;
     let shareStore: ShareStore;
     if (input instanceof ShareStore) {
       shareStore = input;
@@ -138,6 +140,9 @@ class ThresholdKey implements ITKey {
       const rawServiceProviderShare = await this.storageLayer.getMetadata<{ message?: string }>({ serviceProvider: this.serviceProvider });
 
       if (rawServiceProviderShare.message === KEY_NOT_FOUND) {
+        if (neverInitializeNewKey) {
+          throw new Error("key has not yet been generated");
+        }
         // no metadata set, assumes new user
         await this.initializeNewKey({ initializeModules: true, importedKey: importKey });
         return this.getKeyDetails();
