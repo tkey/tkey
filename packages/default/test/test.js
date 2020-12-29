@@ -579,12 +579,18 @@ describe("TkeyStore", function () {
     });
     await tb.initializeNewKey({ initializeModules: true });
     await tb.modules.seedPhrase.setSeedPhrase("HD Key Tree");
-    const [seedPhraseStore] = await tb.modules.seedPhrase.getSeedPhrases();
+    await tb.modules.seedPhrase.setSeedPhrase("HD Key Tree");
+    const seedPhraseStores = await tb.modules.seedPhrase.getSeedPhrases();
     // console.log("%O", tb.metadata.tkeyStore);
-    await tb.modules.seedPhrase.setSeedPhraseStoreItem({ id: seedPhraseStore.id, seedPhrase: seedPhraseStore.seedPhrase, numberOfWallets: 2 });
+    await tb.modules.seedPhrase.setSeedPhraseStoreItem({
+      id: seedPhraseStores[1].id,
+      seedPhrase: seedPhraseStores[1].seedPhrase,
+      numberOfWallets: 2,
+    });
     // console.log(storedSeedPhrase);
-    const [secondStoredSeedPhrase] = await tb.modules.seedPhrase.getSeedPhrases();
-    strictEqual(secondStoredSeedPhrase.numberOfWallets, 2);
+    const secondStoredSeedPhrases = await tb.modules.seedPhrase.getSeedPhrases();
+    strictEqual(secondStoredSeedPhrases[0].numberOfWallets, 1);
+    strictEqual(secondStoredSeedPhrases[1].numberOfWallets, 2);
   });
 
   it("#should be able to get/set private key", async function () {
