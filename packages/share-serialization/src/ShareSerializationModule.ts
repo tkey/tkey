@@ -2,6 +2,7 @@ import { IModule, ITKeyApi } from "@tkey/common-types";
 import BN from "bn.js";
 
 import { english } from "./english";
+import ShareSerializationError from "./errors";
 import { entropyToMnemonic, mnemonicToEntropy } from "./utils";
 
 export const SHARE_SERIALIZATION_MODULE_NAME = "shareSerialization";
@@ -30,12 +31,12 @@ class ShareSerializationModule implements IModule {
     if (type === "mnemonic") {
       return this.serializeMnemonic(share);
     }
-    throw new Error("Type is not supported");
+    throw ShareSerializationError.typeNotSupported();
   }
 
   async deserialize(serializedShare: unknown, type: string): Promise<BN> {
     if (type === "mnemonic") return this.deserializeMnemonic(serializedShare as string);
-    throw new Error("Type is not supported");
+    throw ShareSerializationError.typeNotSupported();
   }
 
   serializeMnemonic(share: BN): string {

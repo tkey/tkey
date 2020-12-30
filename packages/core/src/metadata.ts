@@ -21,6 +21,7 @@ import {
 import BN from "bn.js";
 import stringify from "json-stable-stringify";
 
+import CoreError from "./errors";
 import { polyCommitmentEval } from "./lagrangeInterpolatePolynomial";
 
 class Metadata implements IMetadata {
@@ -118,11 +119,11 @@ class Metadata implements IMetadata {
     const pubShare = shareStore.share.getPublicShare();
     const encryptedShareStore = this.scopedStore.encryptedShares;
     if (!encryptedShareStore) {
-      throw new Error(`no encrypted share store for share exists:  ${shareStore}`);
+      throw CoreError.encryptedShareStoreUnavailable(`${shareStore}`);
     }
     const encryptedShare = encryptedShareStore[pubShare.shareCommitment.x.toString("hex")];
     if (!encryptedShare) {
-      throw new Error(`no encrypted share for share store exists:  ${shareStore}`);
+      throw CoreError.encryptedShareStoreUnavailable(`${shareStore}`);
     }
     const rawDecrypted = await decrypt(toPrivKeyECC(shareStore.share.share), encryptedShare as EncryptedMessage);
     return ShareStore.fromJSON(JSON.parse(rawDecrypted.toString()));
@@ -164,7 +165,7 @@ class Metadata implements IMetadata {
       });
     });
     if (returnShare) return returnShare;
-    throw new Error("Share doesn't exist");
+    throw CoreError.default("Share doesn't exist");
   }
 
   clone(): Metadata {

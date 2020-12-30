@@ -42,6 +42,8 @@ class CoreError extends CustomError {
     1303: "reconstructed key is not pub key",
     1304: "Share found in unexpected polynomial",
     1305: "Input is not supported",
+    1306: "no encrypted share store for share exists",
+    1307: "Share doesn't exist",
     // lock
     1401: "Unable to acquire lock",
     1402: "Unable to release lock",
@@ -115,6 +117,10 @@ class CoreError extends CustomError {
 
   public static incorrectReconstruction(extraMessage = ""): CoreError {
     return CoreError.fromCode(1303, extraMessage);
+  }
+
+  public static encryptedShareStoreUnavailable(extraMessage = ""): CoreError {
+    return CoreError.fromCode(1306, extraMessage);
   }
 
   // Metadata locks

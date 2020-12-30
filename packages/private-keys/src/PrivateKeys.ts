@@ -29,10 +29,9 @@ class PrivateKeyModule implements IModule {
     const format = this.privateKeyFormats.find((el) => el.type === privateKeyType);
     if (!format) {
       throw PrivateKeysError.notSupported();
-      // throw new Error("Private key type is not supported");
     }
     if (privateKey && !format.validatePrivateKey(privateKey)) {
-      throw new Error(`Invalid private key ${privateKey}`);
+      throw PrivateKeysError.invalidPrivateKey(`${privateKey}`);
     }
     const privateKeyStore = format.createPrivateKeyStore(privateKey);
     return this.tbSDK.setTKeyStoreItem(this.moduleName, privateKeyStore);

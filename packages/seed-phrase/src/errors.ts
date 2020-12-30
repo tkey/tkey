@@ -18,6 +18,7 @@ class SeedPhraseError extends CustomError {
     // Misc
     6010: "Private key type is not supported",
     6011: "validation failed",
+    6012: "Seed phrase is invalid for ",
   };
 
   public constructor(code: number, message?: string) {
@@ -48,11 +49,15 @@ class SeedPhraseError extends CustomError {
 
   // Custom methods
   public static notSupported(extraMessage = ""): SeedPhraseError {
-    return SeedPhraseError.fromCode(5010, extraMessage);
+    return SeedPhraseError.fromCode(6010, extraMessage);
   }
 
   public static validationFailed(extraMessage = ""): SeedPhraseError {
-    return SeedPhraseError.fromCode(5011, extraMessage);
+    return SeedPhraseError.fromCode(6011, extraMessage);
+  }
+
+  public static invalid(extraMessage = ""): SeedPhraseError {
+    return SeedPhraseError.fromCode(6012, extraMessage);
   }
 }
 export default SeedPhraseError;

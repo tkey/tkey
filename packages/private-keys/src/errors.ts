@@ -18,6 +18,7 @@ class PrivateKeysError extends CustomError {
     // Misc
     5010: "Private key type is not supported",
     5011: "validation failed",
+    5012: "Invalid private key",
   };
 
   public constructor(code: number, message?: string) {
@@ -53,6 +54,10 @@ class PrivateKeysError extends CustomError {
 
   public static validationFailed(extraMessage = ""): PrivateKeysError {
     return PrivateKeysError.fromCode(5011, extraMessage);
+  }
+
+  public static invalidPrivateKey(extraMessage = ""): PrivateKeysError {
+    return PrivateKeysError.fromCode(5012, extraMessage);
   }
 }
 export default PrivateKeysError;

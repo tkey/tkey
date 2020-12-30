@@ -29,10 +29,9 @@ class SeedPhraseModule implements IModule {
     const format = this.seedPhraseFormats.find((el) => el.type === seedPhraseType);
     if (!format) {
       throw SeedPhraseError.notSupported();
-      // throw new Error("Seed phrase type is not supported");
     }
     if (seedPhrase && !format.validateSeedPhrase(seedPhrase)) {
-      throw new Error(`Seed phrase is invalid for ${seedPhraseType}`);
+      throw SeedPhraseError.invalid(`${seedPhraseType}`);
     }
     const seedPhraseStore = await format.createSeedPhraseStore(seedPhrase);
     return this.tbSDK.setTKeyStoreItem(this.moduleName, seedPhraseStore);

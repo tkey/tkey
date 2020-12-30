@@ -1,5 +1,7 @@
 import createHash from "create-hash";
 
+import ShareSerializationError from "./errors";
+
 export function normalize(str?: string): string {
   return (str || "").normalize("NFKD");
 }
@@ -36,13 +38,13 @@ export function entropyToMnemonic(entropy: Buffer | string, english: string[]): 
 
   // 128 <= ENT <= 256
   if (newEntropy.length < 16) {
-    throw new TypeError("Invalid Entropy");
+    throw ShareSerializationError.invalidEntropy();
   }
   if (newEntropy.length > 32) {
-    throw new TypeError("Invalid Entropy");
+    throw ShareSerializationError.invalidEntropy();
   }
   if (newEntropy.length % 4 !== 0) {
-    throw new TypeError("Invalid Entropy");
+    throw ShareSerializationError.invalidEntropy();
   }
 
   const entropyBits = bytesToBinary(Array.from(newEntropy));
@@ -63,7 +65,7 @@ export function entropyToMnemonic(entropy: Buffer | string, english: string[]): 
 export function mnemonicToEntropy(mnemonic: string, english: string[]): string {
   const words = normalize(mnemonic).split(" ");
   if (words.length % 3 !== 0) {
-    throw new Error("Invalid mnemonic");
+    throw ShareSerializationError.invalidMnemonic();
   }
 
   // convert word indices to 11 bit binary strings
@@ -71,7 +73,7 @@ export function mnemonicToEntropy(mnemonic: string, english: string[]): string {
     .map((word: string): string => {
       const index = english!.indexOf(word);
       if (index === -1) {
-        throw new Error("Invalid mnemonic");
+        throw ShareSerializationError.invalidMnemonic();
       }
 
       return lpad(index.toString(2), "0", 11);
@@ -86,19 +88,19 @@ export function mnemonicToEntropy(mnemonic: string, english: string[]): string {
   // calculate the checksum and compare
   const entropyBytes = entropyBits.match(/(.{1,8})/g)!.map(binaryToByte);
   if (entropyBytes.length < 16) {
-    throw new Error("Invalid Entropy");
+    throw ShareSerializationError.invalidEntropy();
   }
   if (entropyBytes.length > 32) {
-    throw new Error("Invalid Entropy");
+    throw ShareSerializationError.invalidEntropy();
   }
   if (entropyBytes.length % 4 !== 0) {
-    throw new Error("Invalid Entropy");
+    throw ShareSerializationError.invalidEntropy();
   }
 
   const entropy = Buffer.from(entropyBytes);
   const newChecksum = deriveChecksumBits(entropy);
   if (newChecksum !== checksumBits) {
-    throw new Error("Invalid Checksum");
+    throw ShareSerializationError.invalidChecksum();
   }
 
   return entropy.toString("hex");

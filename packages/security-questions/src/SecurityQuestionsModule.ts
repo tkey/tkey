@@ -12,7 +12,7 @@ import {
 import BN from "bn.js";
 import { keccak256 } from "web3-utils";
 
-import SQError from "./errors";
+import SecurityQuestionsError from "./errors";
 import SecurityQuestionStore from "./SecurityQuestionStore";
 
 function answerToUserInputHashBN(answerString: string): BN {
@@ -46,8 +46,7 @@ class SecurityQuestionsModule implements IModule {
   async generateNewShareWithSecurityQuestions(answerString: string, questions: string): Promise<GenerateNewShareResult> {
     const metadata = this.tbSDK.getMetadata();
     const rawSqStore = metadata.getGeneralStoreDomain(this.moduleName);
-    if (rawSqStore) throw SQError.unableToReplace();
-    // if (rawSqStore) throw new Error("security questions exists, cant replace, maybe change?");
+    if (rawSqStore) throw SecurityQuestionsError.unableToReplace();
 
     const newSharesDetails = await this.tbSDK.generateNewShare();
     const newShareStore = newSharesDetails.newShareStores[newSharesDetails.newShareIndex.toString("hex")];
@@ -79,8 +78,7 @@ class SecurityQuestionsModule implements IModule {
   async inputShareFromSecurityQuestions(answerString: string): Promise<void> {
     const metadata = this.tbSDK.getMetadata();
     const rawSqStore = metadata.getGeneralStoreDomain(this.moduleName);
-    if (!rawSqStore) throw SQError.unavailable();
-    // if (!rawSqStore) throw new Error("security questions might not exist/be setup");
+    if (!rawSqStore) throw SecurityQuestionsError.unavailable();
 
     const sqStore = new SecurityQuestionStore(rawSqStore as SecurityQuestionStoreArgs);
     const userInputHash = answerToUserInputHashBN(answerString);
@@ -90,8 +88,7 @@ class SecurityQuestionsModule implements IModule {
     // validate if share is correct
     const derivedPublicShare = shareStore.share.getPublicShare();
     if (derivedPublicShare.shareCommitment.x.cmp(sqStore.sqPublicShare.shareCommitment.x) !== 0) {
-      // throw new Error("wrong password");
-      throw SQError.incorrectAnswer();
+      throw SecurityQuestionsError.incorrectAnswer();
     }
 
     const latestShareDetails = await this.tbSDK.catchupToLatestShare(shareStore);
@@ -103,8 +100,7 @@ class SecurityQuestionsModule implements IModule {
   async changeSecurityQuestionAndAnswer(newAnswerString: string, newQuestions: string): Promise<void> {
     const metadata = this.tbSDK.getMetadata();
     const rawSqStore = metadata.getGeneralStoreDomain(this.moduleName);
-    if (!rawSqStore) throw SQError.unavailable();
-    // if (!rawSqStore) throw new Error("security questions might not exist/be setup");
+    if (!rawSqStore) throw SecurityQuestionsError.unavailable();
 
     const sqStore = new SecurityQuestionStore(rawSqStore as SecurityQuestionStoreArgs);
 

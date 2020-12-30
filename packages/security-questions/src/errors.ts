@@ -3,12 +3,12 @@ import { CustomError } from "ts-custom-error";
 
 // @flow
 
-type SerializedSQError = {
+type SerializedSecurityQuestionsError = {
   code: number;
   message: string;
 };
 
-class SQError extends CustomError {
+class SecurityQuestionsError extends CustomError {
   code: number;
 
   message: string;
@@ -27,10 +27,10 @@ class SQError extends CustomError {
     this.message = message;
 
     // Set name explicitly as minification can mangle class names
-    Object.defineProperty(this, "name", { value: "SQError" });
+    Object.defineProperty(this, "name", { value: "SecurityQuestionsError" });
   }
 
-  toJSON(): SerializedSQError {
+  toJSON(): SerializedSecurityQuestionsError {
     return {
       code: this.code,
       message: this.message,
@@ -41,21 +41,21 @@ class SQError extends CustomError {
     return stringify(this.toJSON());
   }
 
-  public static fromCode(code: number, extraMessage = ""): SQError {
-    return new SQError(code, `${SQError.messages[code]}${extraMessage}`);
+  public static fromCode(code: number, extraMessage = ""): SecurityQuestionsError {
+    return new SecurityQuestionsError(code, `${SecurityQuestionsError.messages[code]}${extraMessage}`);
   }
 
   // Custom methods
-  public static unavailable(extraMessage = ""): SQError {
-    return SQError.fromCode(2101, extraMessage);
+  public static unavailable(extraMessage = ""): SecurityQuestionsError {
+    return SecurityQuestionsError.fromCode(2101, extraMessage);
   }
 
-  public static unableToReplace(extraMessage = ""): SQError {
-    return SQError.fromCode(2101, extraMessage);
+  public static unableToReplace(extraMessage = ""): SecurityQuestionsError {
+    return SecurityQuestionsError.fromCode(2101, extraMessage);
   }
 
-  public static incorrectAnswer(extraMessage = ""): SQError {
-    return SQError.fromCode(2102, extraMessage);
+  public static incorrectAnswer(extraMessage = ""): SecurityQuestionsError {
+    return SecurityQuestionsError.fromCode(2102, extraMessage);
   }
 }
-export default SQError;
+export default SecurityQuestionsError;
