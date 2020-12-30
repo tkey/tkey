@@ -8,8 +8,9 @@ declare class SeedPhraseModule implements IModule {
     constructor(formats: ISeedPhraseFormat[]);
     setModuleReferences(tbSDK: ITKeyApi): void;
     initialize(): Promise<void>;
-    setSeedPhrase(seedPhrase: string, seedPhraseType: string): Promise<void>;
-    getSeedPhrase(key: string): Promise<ISeedPhraseStore>;
-    getAccounts(): Promise<Array<BN>>;
+    setSeedPhrase(seedPhraseType: string, seedPhrase?: string): Promise<void>;
+    setSeedPhraseStoreItem(partialStore: ISeedPhraseStore): Promise<void>;
+    getSeedPhrases(): Promise<ISeedPhraseStore[]>;
+    getAccounts(): Promise<BN[]>;
 }
 export default SeedPhraseModule;

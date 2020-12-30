@@ -1,5 +1,5 @@
 /// <reference types="node" />
-import { BNString, CatchupToLatestShareResult, DeleteShareResult, EncryptedMessage, GenerateNewShareResult, IMetadata, InitializeNewKeyResult, IServiceProvider, IStorageLayer, ITKey, ITKeyApi, KeyDetails, ModuleMap, Polynomial, PolynomialID, ReconstructedKeyResult, ReconstructKeyMiddlewareMap, RefreshMiddlewareMap, RefreshSharesResult, ShareSerializationMiddleware, ShareStore, ShareStoreMap, ShareStorePolyIDShareIndexMap, StringifiedType, TKeyArgs } from "@tkey/common-types";
+import { BNString, CatchupToLatestShareResult, DeleteShareResult, EncryptedMessage, GenerateNewShareResult, IMetadata, InitializeNewKeyResult, IServiceProvider, IStorageLayer, ITKey, ITKeyApi, KeyDetails, ModuleMap, Polynomial, PolynomialID, ReconstructedKeyResult, ReconstructKeyMiddlewareMap, RefreshMiddlewareMap, RefreshSharesResult, ShareSerializationMiddleware, ShareStore, ShareStoreMap, ShareStorePolyIDShareIndexMap, StringifiedType, TKeyArgs, TkeyStoreItemType } from "@tkey/common-types";
 import BN from "bn.js";
 import Metadata from "./metadata";
 declare class ThresholdKey implements ITKey {
@@ -9,7 +9,6 @@ declare class ThresholdKey implements ITKey {
     storageLayer: IStorageLayer;
     shares: ShareStorePolyIDShareIndexMap;
     privKey: BN;
-    tkeyStoreModuleName: string;
     metadata: Metadata;
     refreshMiddleware: RefreshMiddlewareMap;
     reconstructKeyMiddleware: ReconstructKeyMiddlewareMap;
@@ -75,9 +74,10 @@ declare class ThresholdKey implements ITKey {
     deleteShareDescription(shareIndex: string, description: string, updateMetadata?: boolean): Promise<void>;
     encrypt(data: Buffer): Promise<EncryptedMessage>;
     decrypt(encryptedMessage: EncryptedMessage): Promise<Buffer>;
-    setTKeyStore(moduleName: string, data: unknown): Promise<void>;
-    deleteKey(moduleName: string, key: string): Promise<void>;
-    getTKeyStore(moduleName: string, key: string): Promise<unknown>;
+    setTKeyStoreItem(moduleName: string, data: TkeyStoreItemType): Promise<void>;
+    deleteTKeyStoreItem(moduleName: string, id: string): Promise<void>;
+    getTKeyStore(moduleName: string): Promise<TkeyStoreItemType[]>;
+    getTKeyStoreItem(moduleName: string, id: string): Promise<TkeyStoreItemType>;
     outputShare(shareIndex: BNString, type?: string): Promise<unknown>;
     inputShare(share: unknown, type?: string): Promise<void>;
     toJSON(): StringifiedType;

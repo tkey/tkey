@@ -14,3 +14,4 @@ export declare function generatePrivateExcludingIndexes(shareIndexes: Array<BN>)
 export declare const KEY_NOT_FOUND = "KEY_NOT_FOUND";
 export declare function derivePubKeyXFromPolyID(polyID: string): string;
 export declare function stripHexPrefix(str: string): string;
+export declare function generateID(): string;

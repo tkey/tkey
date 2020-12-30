@@ -1,4 +1,4 @@
-import { IModule, IPrivateKeyFormat, ISECP256k1NStore, ITKeyApi } from "@tkey/common-types";
+import { IModule, IPrivateKeyFormat, IPrivateKeyStore, ITKeyApi } from "@tkey/common-types";
 import BN from "bn.js";
 
 import PrivateKeysError from "./errors";
@@ -25,33 +25,29 @@ class PrivateKeyModule implements IModule {
   // eslint-disable-next-line
   async initialize(): Promise<void> {}
 
-  async setPrivateKeys(privateKeys: BN[], privateKeyType: string): Promise<void> {
-    const data = {};
-    const format = this.privateKeyFormats.find((el) => el.privateKeyType === privateKeyType);
+  async setPrivateKey(privateKeyType: string, privateKey?: BN): Promise<void> {
+    const format = this.privateKeyFormats.find((el) => el.type === privateKeyType);
     if (!format) {
       throw PrivateKeysError.notSupported();
       // throw new Error("Private key type is not supported");
     }
-    data[privateKeyType] = format.createPrivateKeyStore(privateKeys);
-    return this.tbSDK.setTKeyStore(this.moduleName, data);
+    if (privateKey && !format.validatePrivateKey(privateKey)) {
+      throw new Error(`Invalid private key ${privateKey}`);
+    }
+    const privateKeyStore = format.createPrivateKeyStore(privateKey);
+    return this.tbSDK.setTKeyStoreItem(this.moduleName, privateKeyStore);
   }
 
-  async getPrivateKeys(key: string): Promise<unknown> {
-    return this.tbSDK.getTKeyStore(this.moduleName, key);
+  async getPrivateKeys(): Promise<IPrivateKeyStore[]> {
+    return this.tbSDK.getTKeyStore(this.moduleName) as Promise<IPrivateKeyStore[]>;
   }
 
-  async getAccounts(): Promise<Array<BN>> {
+  async getAccounts(): Promise<BN[]> {
     try {
       // Get all private keys
-      const promisesArray = this.privateKeyFormats.map((el) => {
-        return this.getPrivateKeys(el.privateKeyType);
-      });
-      const results = (await Promise.all(promisesArray)) as [ISECP256k1NStore];
-      return results.reduce((acc, el) => {
-        const bns = el.privateKeys.map((pl) => {
-          return new BN(pl, "hex");
-        });
-        acc.push(...bns);
+      const privateKeys = await this.getPrivateKeys();
+      return privateKeys.reduce((acc: BN[], x) => {
+        acc.push(BN.isBN(x.privateKey) ? x.privateKey : new BN(x.privateKey, "hex"));
         return acc;
       }, []);
     } catch (err) {
