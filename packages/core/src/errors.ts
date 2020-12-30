@@ -8,6 +8,16 @@ type SerializedCoreError = {
   message: string;
 };
 
+/**
+ * CoreError, extension for Error using CustomError
+ * details: github.com/Microsoft/TypeScript-wiki/blob/master/Breaking-Changes.md#extending-built-ins-like-error-array-and-map-may-no-longer-work
+ *
+ * Usage:
+ * 1. throw CoreError.metadataUndefined() // regularly used errors
+ * 2. throw CoreError.fromCode(1304); // throw via code
+ * 3. throw new CoreError(1000, "share indexes should be unique"); // for scarce errors
+
+ */
 class CoreError extends CustomError {
   code: number;
 
@@ -37,11 +47,11 @@ class CoreError extends CustomError {
     1402: "Unable to release lock",
   };
 
-  public constructor(code: number, message?: string) {
+  public constructor(code?: number, message?: string) {
     // takes care of stack and proto
     super(message);
 
-    this.code = code;
+    this.code = code || 1000;
     this.message = message;
 
     // Set name explicitly as minification can mangle class names
@@ -61,6 +71,10 @@ class CoreError extends CustomError {
 
   public static fromCode(code: number, extraMessage = ""): CoreError {
     return new CoreError(code, `${CoreError.messages[code]}${extraMessage}`);
+  }
+
+  public static default(extraMessage = ""): CoreError {
+    return new CoreError(1000, `${CoreError.messages[1000]}${extraMessage}`);
   }
 
   // Custom methods
@@ -91,7 +105,7 @@ class CoreError extends CustomError {
   }
 
   // Shares
-  public static privateKeyUnAvailable(extraMessage = ""): CoreError {
+  public static privateKeyUnavailable(extraMessage = ""): CoreError {
     return CoreError.fromCode(1301, extraMessage);
   }
 
