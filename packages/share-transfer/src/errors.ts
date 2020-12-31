@@ -14,12 +14,11 @@ class ShareTransferError extends CustomError {
   message: string;
 
   protected static messages = {
-    7000: "Custom",
+    8000: "Custom",
     // Misc
-    7010: "Type is not supported",
-    7011: "Invalid Entropy",
-    7012: "Invalid Checksum",
-    7013: "Invalid mnemonic",
+    8010: "Missing current enc key",
+    8011: "Current request already exists",
+    8012: "User cancelled request",
   };
 
   public constructor(code: number, message?: string) {
@@ -49,24 +48,20 @@ class ShareTransferError extends CustomError {
   }
 
   public static default(extraMessage = ""): ShareTransferError {
-    return new ShareTransferError(7000, `${ShareTransferError.messages[7000]}${extraMessage}`);
+    return new ShareTransferError(8000, `${ShareTransferError.messages[8000]}${extraMessage}`);
   }
 
   // Custom methods
-  public static typeNotSupported(extraMessage = ""): ShareTransferError {
-    return ShareTransferError.fromCode(7010, extraMessage);
+  public static missingEncryptionKey(extraMessage = ""): ShareTransferError {
+    return ShareTransferError.fromCode(8010, extraMessage);
   }
 
-  public static invalidEntropy(extraMessage = ""): ShareTransferError {
-    return ShareTransferError.fromCode(7011, extraMessage);
+  public static requestExists(extraMessage = ""): ShareTransferError {
+    return ShareTransferError.fromCode(8011, extraMessage);
   }
 
-  public static invalidChecksum(extraMessage = ""): ShareTransferError {
-    return ShareTransferError.fromCode(7012, extraMessage);
-  }
-
-  public static invalidMnemonic(extraMessage = ""): ShareTransferError {
-    return ShareTransferError.fromCode(7013, extraMessage);
+  public static userCancelledRequest(extraMessage = ""): ShareTransferError {
+    return ShareTransferError.fromCode(8012, extraMessage);
   }
 }
 export default ShareTransferError;
