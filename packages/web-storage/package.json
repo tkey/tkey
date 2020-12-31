@@ -40,7 +40,10 @@
     "bn.js": "^5.1.3"
   },
   "devDependencies": {
-    "@types/filesystem": "^0.0.29"
+    "@types/filesystem": "^0.0.29",
+    "@tkey/core": "^3.4.0",
+    "@tkey/storage-layer-torus": "^3.4.0",
+    "@tkey/service-provider-base": "^3.4.0"
   },
   "bugs": {
     "url": "https://github.com/torusresearch/tkey/issues"
