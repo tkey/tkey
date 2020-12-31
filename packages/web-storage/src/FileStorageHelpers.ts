@@ -52,12 +52,10 @@ export const getShareFromFileStorage = async (key: string): Promise<ShareStore> 
     const fileStr = await file.text();
     if (!fileStr) {
       throw WebStorageError.shareUnavailableInFileStorage();
-      // throw new Error("No Share exists in file system");
     }
     return ShareStore.fromJSON(JSON.parse(fileStr));
   }
   throw WebStorageError.fileStorageUnavailable();
-  // throw new Error("no requestFileSystem");
 };
 
 export const storeShareOnFileStorage = async (share: ShareStore, key: string): Promise<void> => {

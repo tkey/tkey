@@ -16,7 +16,16 @@ type SerializedCoreError = {
  * 1. throw CoreError.metadataUndefined() // regularly used errors
  * 2. throw CoreError.fromCode(1304); // throw via code
  * 3. throw new CoreError(1000, "share indexes should be unique"); // for scarce errors
-
+ *
+ * Guide:
+ * 1000 - core
+ * 2000 - security questions
+ * 3000 - webstorage
+ * 4000 - common types (code reserved for future implementation)
+ * 5000 - private key
+ * 6000 - seed phrase
+ * 7000 - share serialization
+ * 8000 - share transfer
  */
 class CoreError extends CustomError {
   code: number;
