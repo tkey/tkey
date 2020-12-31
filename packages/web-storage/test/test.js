@@ -29,7 +29,7 @@ describe("web storage", function () {
   });
 
   it("#should be able to input share from web storage", async function () {
-    await tb.initialize();
+    await tb.initializeNewKey({ initializeModules: true });
     const reconstructedKey = await tb.reconstructKey();
     await tb2.initialize();
     await tb2.modules[WEB_STORAGE_MODULE_NAME].inputShareFromWebStorage();
