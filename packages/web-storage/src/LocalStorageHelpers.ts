@@ -35,7 +35,7 @@ export const storeShareOnLocalStorage = async (share: ShareStore, key: string): 
     throw WebStorageError.localStorageUnavailable();
     // throw new Error("local storage isn't enabled");
   }
-  localStorage.setItem(key, fileStr);
+  window.localStorage.setItem(key, fileStr);
 };
 
 export const getShareFromLocalStorage = async (key: string): Promise<ShareStore> => {
@@ -43,8 +43,7 @@ export const getShareFromLocalStorage = async (key: string): Promise<ShareStore>
     throw WebStorageError.localStorageUnavailable();
     // throw new Error("local storage isn't enabled");
   }
-  const foundFile = localStorage.getItem(key);
+  const foundFile = window.localStorage.getItem(key);
   if (!foundFile) throw WebStorageError.shareUnavailableInLocalStorage();
-  // if (!foundFile) throw new Error("No Share exists in localStorage");
   return ShareStore.fromJSON(JSON.parse(foundFile));
 };
