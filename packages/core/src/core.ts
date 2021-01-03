@@ -231,7 +231,7 @@ class ThresholdKey implements ITKey {
               delete shareIndexesRequired[shareIndexesForPoly[k]];
               sharesLeft -= 1;
             } else {
-              throw CoreError.fromCode(1304); // Share found in unexpected polynomial
+              throw new CoreError(1304, "Share found in unexpected polynomial"); // Share found in unexpected polynomial
             }
           }
         }
@@ -311,7 +311,7 @@ class ThresholdKey implements ITKey {
     }
     const shareIndexToDelete = new BN(shareIndex, "hex");
     if (shareIndexToDelete.cmp(new BN("1", "hex")) === 0) {
-      throw CoreError.fromCode(1001);
+      throw new CoreError(1001, "Unable to delete service provider share");
     }
 
     // Get existing shares
