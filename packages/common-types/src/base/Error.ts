@@ -1,4 +1,3 @@
-import stringify from "json-stable-stringify";
 import { CustomError } from "ts-custom-error";
 
 // @flow
@@ -36,6 +35,6 @@ export abstract class TkeyError extends CustomError {
   }
 
   toString(): string {
-    return stringify(this.toJSON());
+    return JSON.stringify(this.toJSON());
   }
 }

@@ -368,7 +368,7 @@ class ThresholdKey implements ITKey {
     const pointsArr = [];
     const sharesForExistingPoly = Object.keys(this.shares[previousPolyID]);
     if (sharesForExistingPoly.length < threshold) {
-      throw CoreError.unableToReconstruct("Not enought shares for ploynomial reconstruction");
+      throw CoreError.unableToReconstruct("Not enough shares for polynomial reconstruction");
     }
     for (let i = 0; i < threshold; i += 1) {
       pointsArr.push(new Point(new BN(sharesForExistingPoly[i], "hex"), this.shares[previousPolyID][sharesForExistingPoly[i]].share.share));
@@ -662,7 +662,7 @@ class ThresholdKey implements ITKey {
     const latestMetadata = await this.getAuthMetadata({ privKey: randomShare });
     if (latestMetadata.nonce > this.metadata.nonce) {
       throw CoreError.acquireLockFailed(`unable to acquire write access for metadata due to local nonce (${this.metadata.nonce})
-       being lower than last written metadata nonce (${latestMetadata.nonce}). perhpas update metadata SDK (create new tKey and init)`);
+       being lower than last written metadata nonce (${latestMetadata.nonce}). perhaps update metadata SDK (create new tKey and init)`);
     }
     const res = await this.storageLayer.acquireWriteLock({ privKey: this.privKey });
     if (res.status !== 1) throw CoreError.acquireLockFailed(`lock cannot be acquired from storage layer status code: ${res.status}`);

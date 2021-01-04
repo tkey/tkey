@@ -105,13 +105,13 @@ export function lagrangeInterpolation(shares: BN[], nodeIndex: BN[]): BN {
   return secret.umod(ecCurve.curve.n);
 }
 
-// generateRandomPolynomial - determinsiticShares are assumed random
-export function generateRandomPolynomial(degree: number, secret?: BN, determinsticShares?: Array<Share>): Polynomial {
+// generateRandomPolynomial - determinisiticShares are assumed random
+export function generateRandomPolynomial(degree: number, secret?: BN, deterministicShares?: Array<Share>): Polynomial {
   let actualS = secret;
   if (!secret) {
     actualS = generatePrivateExcludingIndexes([new BN(0)]);
   }
-  if (!determinsticShares) {
+  if (!deterministicShares) {
     const poly = [actualS];
     for (let i = 0; i < degree; i += 1) {
       const share = generatePrivateExcludingIndexes(poly);
@@ -119,18 +119,18 @@ export function generateRandomPolynomial(degree: number, secret?: BN, determinst
     }
     return new Polynomial(poly);
   }
-  if (!Array.isArray(determinsticShares)) {
-    throw CoreError.default("determinisitc shares in generateRandomPolynomial should be an array");
+  if (!Array.isArray(deterministicShares)) {
+    throw CoreError.default("deterministic shares in generateRandomPolynomial should be an array");
   }
 
-  if (determinsticShares.length > degree) {
-    throw CoreError.default("determinsticShares in generateRandomPolynomial should be less or equal than degree to ensure an element of randomness");
+  if (deterministicShares.length > degree) {
+    throw CoreError.default("deterministicShares in generateRandomPolynomial should be less or equal than degree to ensure an element of randomness");
   }
   const points = {};
-  determinsticShares.forEach((share) => {
+  deterministicShares.forEach((share) => {
     points[share.shareIndex.toString("hex")] = new Point(share.shareIndex, share.share);
   });
-  for (let i = 0; i < degree - determinsticShares.length; i += 1) {
+  for (let i = 0; i < degree - deterministicShares.length; i += 1) {
     let shareIndex = generatePrivateExcludingIndexes([new BN(0)]);
     while (points[shareIndex.toString("hex")] !== undefined) {
       shareIndex = generatePrivateExcludingIndexes([new BN(0)]);

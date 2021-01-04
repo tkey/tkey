@@ -33,7 +33,7 @@ class AuthMetadata {
     const m = Metadata.fromJSON(data);
     const pubK = ecCurve.keyFromPublic({ x: m.pubKey.x.toString("hex", 64), y: m.pubKey.y.toString("hex", 64) }, "hex");
     if (!pubK.verify(stripHexPrefix(keccak256(stringify(data))), sig)) {
-      throw CoreError.default("Signature not valid for returning metdata");
+      throw CoreError.default("Signature not valid for returning metadata");
     }
     return new AuthMetadata(m);
   }
