@@ -8,4 +8,5 @@ export * from "./Polynomial";
 export * from "./PublicPolynomial";
 export * from "./PublicShare";
 export { default as ShareStore } from "./ShareStore";
+export * from "./Error";
 export * from "./BNUtils";

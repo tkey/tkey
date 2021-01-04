@@ -25,7 +25,7 @@ class ShareSerializationModule implements IModule {
   }
 
   // eslint-disable-next-line
-  async initialize(): Promise<void> { }
+  async initialize(): Promise<void> {}
 
   async serialize(share: BN, type: string): Promise<unknown> {
     if (type === "mnemonic") {

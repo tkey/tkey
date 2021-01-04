@@ -1,7 +1,8 @@
 /// <reference types="node" />
 import BN from "bn.js";
+import { ec as EC } from "elliptic";
 import { EncryptedMessage } from "./baseTypes/commonTypes";
-export declare const ecCurve: any;
+export declare const ecCurve: EC;
 export declare function encrypt(publicKey: Buffer, msg: Buffer): Promise<EncryptedMessage>;
 export declare function decrypt(privKey: Buffer, msg: EncryptedMessage): Promise<Buffer>;
 export declare function isEmptyObject(obj: unknown): boolean;
