@@ -1,19 +1,11 @@
-import stringify from "json-stable-stringify";
-import { CustomError } from "ts-custom-error";
+import { ErrorCodes, ITkeyError, TkeyError } from "@tkey/common-types";
 
-// @flow
-
-type SerializedSeedPhraseError = {
-  code: number;
-  message: string;
-};
-
-class SeedPhraseError extends CustomError {
+class SeedPhraseError extends TkeyError {
   code: number;
 
   message: string;
 
-  protected static messages = {
+  protected static messages: ErrorCodes = {
     6000: "Custom",
     // Misc
     6010: "Private key type is not supported",
@@ -23,40 +15,25 @@ class SeedPhraseError extends CustomError {
 
   public constructor(code: number, message?: string) {
     // takes care of stack and proto
-    super(message);
-
-    this.code = code;
-    this.message = message;
-
+    super(code, message);
     // Set name explicitly as minification can mangle class names
     Object.defineProperty(this, "name", { value: "SeedPhraseError" });
   }
 
-  toJSON(): SerializedSeedPhraseError {
-    return {
-      code: this.code,
-      message: this.message,
-    };
-  }
-
-  toString(): string {
-    return stringify(this.toJSON());
-  }
-
-  public static fromCode(code: number, extraMessage = ""): SeedPhraseError {
+  public static fromCode(code: number, extraMessage = ""): ITkeyError {
     return new SeedPhraseError(code, `${SeedPhraseError.messages[code]}${extraMessage}`);
   }
 
   // Custom methods
-  public static notSupported(extraMessage = ""): SeedPhraseError {
+  public static notSupported(extraMessage = ""): ITkeyError {
     return SeedPhraseError.fromCode(6010, extraMessage);
   }
 
-  public static validationFailed(extraMessage = ""): SeedPhraseError {
+  public static validationFailed(extraMessage = ""): ITkeyError {
     return SeedPhraseError.fromCode(6011, extraMessage);
   }
 
-  public static invalid(extraMessage = ""): SeedPhraseError {
+  public static invalid(extraMessage = ""): ITkeyError {
     return SeedPhraseError.fromCode(6012, extraMessage);
   }
 }

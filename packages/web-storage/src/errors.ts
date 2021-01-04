@@ -1,19 +1,11 @@
-import stringify from "json-stable-stringify";
-import { CustomError } from "ts-custom-error";
+import { ErrorCodes, ITkeyError, TkeyError } from "@tkey/common-types";
 
-// @flow
-
-type SerializedWebStorageError = {
-  code: number;
-  message: string;
-};
-
-class WebStorageError extends CustomError {
+class WebStorageError extends TkeyError {
   code: number;
 
   message: string;
 
-  protected static messages = {
+  protected static messages: ErrorCodes = {
     // module
     3101: "unableToReadFromStorage",
     // fileStorage
@@ -26,48 +18,33 @@ class WebStorageError extends CustomError {
 
   public constructor(code: number, message?: string) {
     // takes care of stack and proto
-    super(message);
-
-    this.code = code;
-    this.message = message;
-
+    super(code, message);
     // Set name explicitly as minification can mangle class names
     Object.defineProperty(this, "name", { value: "WebStorageError" });
   }
 
-  toJSON(): SerializedWebStorageError {
-    return {
-      code: this.code,
-      message: this.message,
-    };
-  }
-
-  toString(): string {
-    return stringify(this.toJSON());
-  }
-
-  public static fromCode(code: number, extraMessage = ""): WebStorageError {
+  public static fromCode(code: number, extraMessage = ""): ITkeyError {
     return new WebStorageError(code, `${WebStorageError.messages[code]}${extraMessage}`);
   }
 
   // Custom methods
-  public static unableToReadFromStorage(extraMessage = ""): WebStorageError {
+  public static unableToReadFromStorage(extraMessage = ""): ITkeyError {
     return WebStorageError.fromCode(3101, extraMessage);
   }
 
-  public static shareUnavailableInFileStorage(extraMessage = ""): WebStorageError {
+  public static shareUnavailableInFileStorage(extraMessage = ""): ITkeyError {
     return WebStorageError.fromCode(3201, extraMessage);
   }
 
-  public static fileStorageUnavailable(extraMessage = ""): WebStorageError {
+  public static fileStorageUnavailable(extraMessage = ""): ITkeyError {
     return WebStorageError.fromCode(3202, extraMessage);
   }
 
-  public static localStorageUnavailable(extraMessage = ""): WebStorageError {
+  public static localStorageUnavailable(extraMessage = ""): ITkeyError {
     return WebStorageError.fromCode(3301, extraMessage);
   }
 
-  public static shareUnavailableInLocalStorage(extraMessage = ""): WebStorageError {
+  public static shareUnavailableInLocalStorage(extraMessage = ""): ITkeyError {
     return WebStorageError.fromCode(3302, extraMessage);
   }
 }

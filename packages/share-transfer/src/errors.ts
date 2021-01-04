@@ -1,19 +1,11 @@
-import stringify from "json-stable-stringify";
-import { CustomError } from "ts-custom-error";
+import { ErrorCodes, ITkeyError, TkeyError } from "@tkey/common-types";
 
-// @flow
-
-type SerializedShareTransferError = {
-  code: number;
-  message: string;
-};
-
-class ShareTransferError extends CustomError {
+class ShareTransferError extends TkeyError {
   code: number;
 
   message: string;
 
-  protected static messages = {
+  protected static messages: ErrorCodes = {
     8000: "Custom",
     // Misc
     8010: "Missing current enc key",
@@ -23,44 +15,29 @@ class ShareTransferError extends CustomError {
 
   public constructor(code: number, message?: string) {
     // takes care of stack and proto
-    super(message);
-
-    this.code = code;
-    this.message = message;
-
+    super(code, message);
     // Set name explicitly as minification can mangle class names
     Object.defineProperty(this, "name", { value: "ShareTransferError" });
   }
 
-  toJSON(): SerializedShareTransferError {
-    return {
-      code: this.code,
-      message: this.message,
-    };
-  }
-
-  toString(): string {
-    return stringify(this.toJSON());
-  }
-
-  public static fromCode(code: number, extraMessage = ""): ShareTransferError {
+  public static fromCode(code: number, extraMessage = ""): ITkeyError {
     return new ShareTransferError(code, `${ShareTransferError.messages[code]}${extraMessage}`);
   }
 
-  public static default(extraMessage = ""): ShareTransferError {
+  public static default(extraMessage = ""): ITkeyError {
     return new ShareTransferError(8000, `${ShareTransferError.messages[8000]}${extraMessage}`);
   }
 
   // Custom methods
-  public static missingEncryptionKey(extraMessage = ""): ShareTransferError {
+  public static missingEncryptionKey(extraMessage = ""): ITkeyError {
     return ShareTransferError.fromCode(8010, extraMessage);
   }
 
-  public static requestExists(extraMessage = ""): ShareTransferError {
+  public static requestExists(extraMessage = ""): ITkeyError {
     return ShareTransferError.fromCode(8011, extraMessage);
   }
 
-  public static userCancelledRequest(extraMessage = ""): ShareTransferError {
+  public static userCancelledRequest(extraMessage = ""): ITkeyError {
     return ShareTransferError.fromCode(8012, extraMessage);
   }
 }

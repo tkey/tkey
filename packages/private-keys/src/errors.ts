@@ -1,19 +1,7 @@
-import stringify from "json-stable-stringify";
-import { CustomError } from "ts-custom-error";
+import { ErrorCodes, ITkeyError, TkeyError } from "@tkey/common-types";
 
-// @flow
-
-type SerializedPrivateKeysError = {
-  code: number;
-  message: string;
-};
-
-class PrivateKeysError extends CustomError {
-  code: number;
-
-  message: string;
-
-  protected static messages = {
+class PrivateKeysError extends TkeyError {
+  protected static messages: ErrorCodes = {
     5000: "Custom",
     // Misc
     5010: "Private key type is not supported",
@@ -23,40 +11,26 @@ class PrivateKeysError extends CustomError {
 
   public constructor(code: number, message?: string) {
     // takes care of stack and proto
-    super(message);
-
-    this.code = code;
-    this.message = message;
+    super(code, message);
 
     // Set name explicitly as minification can mangle class names
     Object.defineProperty(this, "name", { value: "PrivateKeysError" });
   }
 
-  toJSON(): SerializedPrivateKeysError {
-    return {
-      code: this.code,
-      message: this.message,
-    };
-  }
-
-  toString(): string {
-    return stringify(this.toJSON());
-  }
-
-  public static fromCode(code: number, extraMessage = ""): PrivateKeysError {
+  public static fromCode(code: number, extraMessage = ""): ITkeyError {
     return new PrivateKeysError(code, `${PrivateKeysError.messages[code]}${extraMessage}`);
   }
 
   // Custom methods
-  public static notSupported(extraMessage = ""): PrivateKeysError {
+  public static notSupported(extraMessage = ""): ITkeyError {
     return PrivateKeysError.fromCode(5010, extraMessage);
   }
 
-  public static validationFailed(extraMessage = ""): PrivateKeysError {
+  public static validationFailed(extraMessage = ""): ITkeyError {
     return PrivateKeysError.fromCode(5011, extraMessage);
   }
 
-  public static invalidPrivateKey(extraMessage = ""): PrivateKeysError {
+  public static invalidPrivateKey(extraMessage = ""): ITkeyError {
     return PrivateKeysError.fromCode(5012, extraMessage);
   }
 }

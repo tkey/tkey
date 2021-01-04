@@ -5,6 +5,7 @@ import {
   getPubKeyPoint,
   IModule,
   ITKeyApi,
+  ITkeyError,
   ShareStore,
   ShareTransferStorePointerArgs,
   toPrivKeyECC,
@@ -63,7 +64,7 @@ class ShareTransferModule implements IModule {
   async requestNewShare(
     userAgent: string,
     availableShareIndexes: Array<string>,
-    callback?: (err?: Error, shareStore?: ShareStore) => void
+    callback?: (err?: ITkeyError, shareStore?: ShareStore) => void
   ): Promise<string> {
     if (this.currentEncKey) throw ShareTransferError.requestExists(`${this.currentEncKey.toString("hex")}`);
     this.currentEncKey = new BN(generatePrivate());

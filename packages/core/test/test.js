@@ -9,7 +9,7 @@ import CoreError from "../src/errors";
 
 const PRIVATE_KEY = generatePrivate().toString("hex");
 
-describe("Errors", function () {
+describe.only("Errors", function () {
   it("#serialize", function () {
     throws(
       () => {

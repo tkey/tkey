@@ -1,19 +1,7 @@
-import stringify from "json-stable-stringify";
-import { CustomError } from "ts-custom-error";
+import { ErrorCodes, ITkeyError, TkeyError } from "@tkey/common-types";
 
-// @flow
-
-type SerializedSecurityQuestionsError = {
-  code: number;
-  message: string;
-};
-
-class SecurityQuestionsError extends CustomError {
-  code: number;
-
-  message: string;
-
-  protected static messages = {
+class SecurityQuestionsError extends TkeyError {
+  protected static messages: ErrorCodes = {
     2101: "security questions might not exist/be setup",
     2102: "security questions exists, cant replace, maybe change?",
     2103: "Incorrect answer",
@@ -21,40 +9,26 @@ class SecurityQuestionsError extends CustomError {
 
   public constructor(code: number, message?: string) {
     // takes care of stack and proto
-    super(message);
-
-    this.code = code;
-    this.message = message;
+    super(code, message);
 
     // Set name explicitly as minification can mangle class names
     Object.defineProperty(this, "name", { value: "SecurityQuestionsError" });
   }
 
-  toJSON(): SerializedSecurityQuestionsError {
-    return {
-      code: this.code,
-      message: this.message,
-    };
-  }
-
-  toString(): string {
-    return stringify(this.toJSON());
-  }
-
-  public static fromCode(code: number, extraMessage = ""): SecurityQuestionsError {
+  public static fromCode(code: number, extraMessage = ""): ITkeyError {
     return new SecurityQuestionsError(code, `${SecurityQuestionsError.messages[code]}${extraMessage}`);
   }
 
   // Custom methods
-  public static unavailable(extraMessage = ""): SecurityQuestionsError {
+  public static unavailable(extraMessage = ""): ITkeyError {
     return SecurityQuestionsError.fromCode(2101, extraMessage);
   }
 
-  public static unableToReplace(extraMessage = ""): SecurityQuestionsError {
+  public static unableToReplace(extraMessage = ""): ITkeyError {
     return SecurityQuestionsError.fromCode(2101, extraMessage);
   }
 
-  public static incorrectAnswer(extraMessage = ""): SecurityQuestionsError {
+  public static incorrectAnswer(extraMessage = ""): ITkeyError {
     return SecurityQuestionsError.fromCode(2102, extraMessage);
   }
 }
