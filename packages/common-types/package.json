@@ -1,6 +1,6 @@
 {
   "name": "@tkey/common-types",
-  "version": "3.5.0",
+  "version": "3.6.0",
   "description": "TKey common types",
   "author": "Torus Labs",
   "homepage": "https://github.com/torusresearch/tkey#readme",
@@ -40,8 +40,8 @@
     "@toruslabs/torus-direct-web-sdk": "^3.5.1",
     "bn.js": "^5.1.3",
     "elliptic": "^6.5.3",
-    "web3-utils": "^1.3.0",
-    "ts-custom-error": "^3.2.0"
+    "ts-custom-error": "^3.2.0",
+    "web3-utils": "^1.3.0"
   },
   "devDependencies": {
     "@types/elliptic": "^6.4.12"
