@@ -264,20 +264,19 @@ class ThresholdKey implements ITKey {
 
     const returnObject = {
       privKey,
-    } as ReconstructedKeyResult;
+      allKeys: [privKey],
+    };
 
     // retireve/reconstruct extra keys that live on metadata
     if (Object.keys(this.reconstructKeyMiddleware).length !== 0) {
-      let allKeys = [];
       for (const moduleName in this.reconstructKeyMiddleware) {
         if (Object.prototype.hasOwnProperty.call(this.reconstructKeyMiddleware, moduleName)) {
           // eslint-disable-next-line no-await-in-loop
           const extraKeys = await this.reconstructKeyMiddleware[moduleName]();
           returnObject[moduleName] = extraKeys;
-          allKeys = allKeys.concat(extraKeys);
+          returnObject.allKeys.push(...extraKeys);
         }
       }
-      returnObject.allKeys = [privKey].concat(allKeys);
     }
 
     return returnObject;
