@@ -18,8 +18,8 @@ function initStorageLayer(mocked, extraParams) {
 
 const mocked = process.env.MOCKED || "false";
 const metadataURL = process.env.METADATA || "http://localhost:5051";
-const PRIVATE_KEY = "e70fb5f5970b363879bc36f54d4fc0ad77863bfd059881159251f50f48863acf";
-const PRIVATE_KEY_2 = "2e6824ef22a58b7b5c8938c38e9debd03611f074244f213943e3fa3047ef2385";
+const PRIVATE_KEY = generatePrivate().toString("hex");
+const PRIVATE_KEY_2 = generatePrivate().toString("hex");
 
 const defaultSP = new ServiceProviderBase({ postboxKey: PRIVATE_KEY });
 const defaultSL = initStorageLayer(mocked, { serviceProvider: defaultSP, hostUrl: metadataURL });

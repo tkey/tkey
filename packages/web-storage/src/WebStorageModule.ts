@@ -1,6 +1,7 @@
 import { BNString, IModule, ITKeyApi, prettyPrintError, ShareStore } from "@tkey/common-types";
 import BN from "bn.js";
 
+import WebStorageError from "./errors";
 import { canAccessFileStorage, getShareFromFileStorage, storeShareOnFileStorage } from "./FileStorageHelpers";
 import { getShareFromLocalStorage, storeShareOnLocalStorage } from "./LocalStorageHelpers";
 
@@ -81,10 +82,12 @@ class WebStorageModule implements IModule {
             // User has denied access to storage. stop asking for every share
             this.canUseFileStorage = false;
           }
-          throw new Error(`Error inputShareFromWebStorage: ${prettyPrintError(localErr)} and ${prettyPrintError(fileErr)}`);
+          throw WebStorageError.unableToReadFromStorage(
+            `Error inputShareFromWebStorage: ${prettyPrintError(localErr)} and ${prettyPrintError(fileErr)}`
+          );
         }
       }
-      throw new Error(`Error inputShareFromWebStorage: ${prettyPrintError(localErr)}`);
+      throw WebStorageError.unableToReadFromStorage(`Error inputShareFromWebStorage: ${prettyPrintError(localErr)}`);
     }
     return shareStore;
   }

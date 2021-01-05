@@ -1,6 +1,8 @@
 import { IModule, ISeedPhraseFormat, ISeedPhraseStore, ITKeyApi } from "@tkey/common-types";
 import BN from "bn.js";
 
+import SeedPhraseError from "./errors";
+
 export const SEED_PHRASE_MODULE_NAME = "seedPhraseModule";
 
 class SeedPhraseModule implements IModule {
@@ -26,10 +28,10 @@ class SeedPhraseModule implements IModule {
   async setSeedPhrase(seedPhraseType: string, seedPhrase?: string): Promise<void> {
     const format = this.seedPhraseFormats.find((el) => el.type === seedPhraseType);
     if (!format) {
-      throw new Error("Seed phrase type is not supported");
+      throw SeedPhraseError.notSupported();
     }
     if (seedPhrase && !format.validateSeedPhrase(seedPhrase)) {
-      throw new Error(`Seed phrase is invalid for ${seedPhraseType}`);
+      throw SeedPhraseError.invalid(`${seedPhraseType}`);
     }
     const seedPhraseStore = await format.createSeedPhraseStore(seedPhrase);
     return this.tbSDK.setTKeyStoreItem(this.moduleName, seedPhraseStore);

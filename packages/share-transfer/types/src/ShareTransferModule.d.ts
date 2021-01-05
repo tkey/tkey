@@ -1,4 +1,4 @@
-import { IModule, ITKeyApi, ShareStore } from "@tkey/common-types";
+import { IModule, ITKeyApi, ITkeyError, ShareStore } from "@tkey/common-types";
 import BN from "bn.js";
 import ShareRequest from "./ShareRequest";
 export declare type ShareTransferStore = {
@@ -15,7 +15,7 @@ declare class ShareTransferModule implements IModule {
     setModuleReferences(tbSDK: ITKeyApi): void;
     setRequestStatusCheckInterval(interval: number): void;
     initialize(): Promise<void>;
-    requestNewShare(userAgent: string, availableShareIndexes: Array<string>, callback?: (err?: Error, shareStore?: ShareStore) => void): Promise<string>;
+    requestNewShare(userAgent: string, availableShareIndexes: Array<string>, callback?: (err?: ITkeyError, shareStore?: ShareStore) => void): Promise<string>;
     private _cleanUpCurrentRequest;
     lookForRequests(): Promise<Array<string>>;
     approveRequest(encPubKeyX: string, shareStore?: ShareStore): Promise<void>;

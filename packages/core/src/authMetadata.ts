@@ -3,6 +3,7 @@ import BN from "bn.js";
 import stringify from "json-stable-stringify";
 import { keccak256 } from "web3-utils";
 
+import CoreError from "./errors";
 import Metadata from "./metadata";
 
 class AuthMetadata {
@@ -32,7 +33,7 @@ class AuthMetadata {
     const m = Metadata.fromJSON(data);
     const pubK = ecCurve.keyFromPublic({ x: m.pubKey.x.toString("hex", 64), y: m.pubKey.y.toString("hex", 64) }, "hex");
     if (!pubK.verify(stripHexPrefix(keccak256(stringify(data))), sig)) {
-      throw new Error("Signature not valid for returning metdata");
+      throw CoreError.default("Signature not valid for returning metadata");
     }
     return new AuthMetadata(m);
   }

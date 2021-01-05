@@ -41,6 +41,7 @@ import BN from "bn.js";
 import stringify from "json-stable-stringify";
 
 import AuthMetadata from "./authMetadata";
+import CoreError from "./errors";
 import { generateRandomPolynomial, lagrangeInterpolatePolynomial, lagrangeInterpolation } from "./lagrangeInterpolatePolynomial";
 import Metadata from "./metadata";
 
@@ -120,7 +121,8 @@ class ThresholdKey implements ITKey {
     if (typeof this.metadata !== "undefined") {
       return this.metadata;
     }
-    throw new Error("metadata undefined");
+
+    throw CoreError.metadataUndefined();
   }
 
   async initialize(params?: { input?: ShareStore; importKey?: BN; neverInitializeNewKey?: boolean }): Promise<KeyDetails> {
@@ -138,7 +140,7 @@ class ThresholdKey implements ITKey {
 
       if (rawServiceProviderShare.message === KEY_NOT_FOUND) {
         if (neverInitializeNewKey) {
-          throw new Error("key has not yet been generated");
+          throw CoreError.default("key has not yet been generated");
         }
         // no metadata set, assumes new user
         await this.initializeNewKey({ initializeModules: true, importedKey: importKey });
@@ -147,7 +149,7 @@ class ThresholdKey implements ITKey {
       // else we continue with catching up share and metadata
       shareStore = ShareStore.fromJSON(rawServiceProviderShare);
     } else {
-      throw new TypeError("Input is not supported");
+      throw CoreError.default("Input is not supported");
     }
 
     // we fetch metadata for the account from the share
@@ -181,7 +183,7 @@ class ThresholdKey implements ITKey {
     try {
       shareMetadata = await this.getAuthMetadata({ privKey: shareStore.share.share });
     } catch (err) {
-      throw new Error(`getMetadata in initialize errored: ${prettyPrintError(err)}`);
+      throw CoreError.metadataGetFailed(`${prettyPrintError(err)}`);
     }
 
     try {
@@ -200,7 +202,7 @@ class ThresholdKey implements ITKey {
 
   async reconstructKey(): Promise<ReconstructedKeyResult> {
     if (!this.metadata) {
-      throw new Error("metadata not found, SDK likely not intialized");
+      throw CoreError.metadataUndefined();
     }
     const pubPoly = this.metadata.getLatestPublicPolynomial();
     const requiredThreshold = pubPoly.getThreshold();
@@ -229,7 +231,7 @@ class ThresholdKey implements ITKey {
               delete shareIndexesRequired[shareIndexesForPoly[k]];
               sharesLeft -= 1;
             } else {
-              throw new Error("Share found in unexpected polynomial");
+              throw new CoreError(1304, "Share found in unexpected polynomial"); // Share found in unexpected polynomial
             }
           }
         }
@@ -242,7 +244,7 @@ class ThresholdKey implements ITKey {
     });
 
     if (sharesLeft > 0) {
-      throw new Error(`not enough shares for reconstruction, require ${requiredThreshold} but have ${sharesLeft - requiredThreshold}`);
+      throw CoreError.unableToReconstruct(`require ${requiredThreshold} but have ${sharesLeft - requiredThreshold}`);
     }
 
     const polyShares = Object.keys(this.shares[pubPolyID]);
@@ -256,7 +258,7 @@ class ThresholdKey implements ITKey {
     // check that priv key regenerated is correct
     const reconstructedPubKey = getPubKeyPoint(privKey);
     if (this.metadata.pubKey.x.cmp(reconstructedPubKey.x) !== 0) {
-      throw new Error(`reconstructed key is not pub key`);
+      throw CoreError.incorrectReconstruction();
     }
     this.setKey(privKey);
 
@@ -289,10 +291,10 @@ class ThresholdKey implements ITKey {
     const pointsArr = [];
     const sharesForExistingPoly = Object.keys(this.shares[pubPolyID]);
     if (sharesForExistingPoly.length < threshold) {
-      throw new Error("not enough shares to reconstruct poly");
+      throw CoreError.unableToReconstruct("not enough shares to reconstruct poly");
     }
     if (new Set(sharesForExistingPoly).size !== sharesForExistingPoly.length) {
-      throw new Error("share indexes should be unique");
+      throw CoreError.default("share indexes should be unique");
     }
     for (let i = 0; i < threshold; i += 1) {
       pointsArr.push(new Point(new BN(sharesForExistingPoly[i], "hex"), this.shares[pubPolyID][sharesForExistingPoly[i]].share.share));
@@ -302,14 +304,14 @@ class ThresholdKey implements ITKey {
 
   async deleteShare(shareIndex: BNString): Promise<DeleteShareResult> {
     if (!this.metadata) {
-      throw new Error("metadata not found, SDK likely not intialized");
+      throw CoreError.metadataUndefined();
     }
     if (!this.privKey) {
-      throw new Error("Private key not available. please reconstruct key first");
+      throw CoreError.privateKeyUnavailable();
     }
     const shareIndexToDelete = new BN(shareIndex, "hex");
     if (shareIndexToDelete.cmp(new BN("1", "hex")) === 0) {
-      throw new Error("Unable to delete service provider share");
+      throw new CoreError(1001, "Unable to delete service provider share");
     }
 
     // Get existing shares
@@ -326,9 +328,9 @@ class ThresholdKey implements ITKey {
 
     // Update shares
     if (existingShareIndexes.length === newShareIndexes.length) {
-      throw new Error("Share index does not exist in latest polynomial");
+      throw CoreError.default("Share index does not exist in latest polynomial");
     } else if (existingShareIndexes.length < 2) {
-      throw new Error("Minimum 2 shares are required for tkey. Unable to delete share");
+      throw CoreError.default("Minimum 2 shares are required for tkey. Unable to delete share");
     }
     const results = await this.refreshShares(pubPoly.getThreshold(), [...newShareIndexes], previousPolyID);
     const newShareStores = results.shareStores;
@@ -338,10 +340,10 @@ class ThresholdKey implements ITKey {
 
   async generateNewShare(): Promise<GenerateNewShareResult> {
     if (!this.metadata) {
-      throw new Error("metadata not found, SDK likely not intialized");
+      throw CoreError.metadataUndefined();
     }
     if (!this.privKey) {
-      throw new Error("Private key not available. please reconstruct key first");
+      throw CoreError.privateKeyUnavailable();
     }
     const pubPoly = this.metadata.getLatestPublicPolynomial();
     const previousPolyID = pubPoly.getPolynomialID();
@@ -366,7 +368,7 @@ class ThresholdKey implements ITKey {
     const pointsArr = [];
     const sharesForExistingPoly = Object.keys(this.shares[previousPolyID]);
     if (sharesForExistingPoly.length < threshold) {
-      throw new Error("not enough shares to reconstruct poly");
+      throw CoreError.unableToReconstruct("Not enough shares for polynomial reconstruction");
     }
     for (let i = 0; i < threshold; i += 1) {
       pointsArr.push(new Point(new BN(sharesForExistingPoly[i], "hex"), this.shares[previousPolyID][sharesForExistingPoly[i]].share.share));
@@ -491,7 +493,7 @@ class ThresholdKey implements ITKey {
     try {
       await this.storageLayer.setMetadata({ input: shareStore, serviceProvider: this.serviceProvider });
     } catch (err) {
-      throw new Error(`setMetadata errored: ${JSON.stringify(err)}`);
+      throw CoreError.metadataPostFailed(`setMetadata errored: ${JSON.stringify(err)}`);
     }
 
     const metadataToPush = [];
@@ -536,7 +538,7 @@ class ThresholdKey implements ITKey {
     } else if (typeof shareStore === "object") {
       ss = ShareStore.fromJSON(shareStore);
     } else {
-      throw new TypeError("can only add type ShareStore into shares");
+      throw CoreError.default("can only add type ShareStore into shares");
     }
     if (!(ss.polynomialID in this.shares)) {
       this.shares[ss.polynomialID] = {};
@@ -552,7 +554,7 @@ class ThresholdKey implements ITKey {
     } else if (typeof shareStore === "object") {
       ss = ShareStore.fromJSON(shareStore);
     } else {
-      throw new TypeError("can only add type ShareStore into shares");
+      throw CoreError.default("can only add type ShareStore into shares");
     }
     const latestShareRes = await this.catchupToLatestShare(ss);
     // if not in poly id list, metadata is probably outdated
@@ -577,7 +579,7 @@ class ThresholdKey implements ITKey {
 
     const latestPolyID = this.metadata.getLatestPublicPolynomial().getPolynomialID();
     if (!this.metadata.publicShares[latestPolyID][shareIndexParsed.toString("hex")]) {
-      throw new Error("no such share index created");
+      throw new CoreError(1002, "no such share index created");
     }
     const shareFromStore = this.shares[latestPolyID][shareIndexParsed.toString("hex")];
     if (shareFromStore) return shareFromStore;
@@ -652,18 +654,18 @@ class ThresholdKey implements ITKey {
   async acquireWriteMetadataLock(): Promise<number> {
     if (this.haveWriteMetadataLock) return this.metadata.nonce;
     if (!this.privKey) {
-      throw new Error("Private key not available. please reconstruct key first");
+      throw CoreError.privateKeyUnavailable();
     }
     // we check the metadata of a random share on the latest polynomial we have
     const shareIndexesExistInSDK = Object.keys(this.shares[this.metadata.getLatestPublicPolynomial().getPolynomialID()]);
     const randomShare = this.outputShareStore(shareIndexesExistInSDK[Math.floor(Math.random() * (shareIndexesExistInSDK.length - 1))]).share.share;
     const latestMetadata = await this.getAuthMetadata({ privKey: randomShare });
     if (latestMetadata.nonce > this.metadata.nonce) {
-      throw new Error(`unable to acquire write access for metadata due to local nonce (${this.metadata.nonce})
-       being lower than last written metadata nonce (${latestMetadata.nonce}). perhpas update metadata SDK (create new tKey and init)`);
+      throw CoreError.acquireLockFailed(`unable to acquire write access for metadata due to local nonce (${this.metadata.nonce})
+       being lower than last written metadata nonce (${latestMetadata.nonce}). perhaps update metadata SDK (create new tKey and init)`);
     }
     const res = await this.storageLayer.acquireWriteLock({ privKey: this.privKey });
-    if (res.status !== 1) throw new Error(`lock cannot be acquired from storage layer status code: ${res.status}`);
+    if (res.status !== 1) throw CoreError.acquireLockFailed(`lock cannot be acquired from storage layer status code: ${res.status}`);
 
     // increment metadata nonce for write session
     this.metadata.nonce += 1;
@@ -672,9 +674,9 @@ class ThresholdKey implements ITKey {
   }
 
   async releaseWriteMetadataLock(): Promise<void> {
-    if (!this.haveWriteMetadataLock) throw new Error("releaseWriteMetadataLock - don't have metadata lock to release");
+    if (!this.haveWriteMetadataLock) throw CoreError.releaseLockFailed("releaseWriteMetadataLock - don't have metadata lock to release");
     const res = await this.storageLayer.releaseWriteLock({ privKey: this.privKey, id: this.haveWriteMetadataLock });
-    if (res.status !== 1) throw new Error(`lock cannot be released from storage layer status code: ${res.status}`);
+    if (res.status !== 1) throw CoreError.releaseLockFailed(`lock cannot be released from storage layer status code: ${res.status}`);
     this.haveWriteMetadataLock = null;
   }
 
@@ -689,7 +691,7 @@ class ThresholdKey implements ITKey {
     const pointsArr = [];
     const sharesForExistingPoly = Object.keys(this.shares[pubPolyID]);
     if (sharesForExistingPoly.length < threshold) {
-      throw new Error("not enough shares to reconstruct poly");
+      throw CoreError.unableToReconstruct("not enough shares to reconstruct poly");
     }
     for (let i = 0; i < threshold; i += 1) {
       pointsArr.push(new Point(new BN(sharesForExistingPoly[i], "hex"), this.shares[pubPolyID][sharesForExistingPoly[i]].share.share));
@@ -709,7 +711,7 @@ class ThresholdKey implements ITKey {
       try {
         specificShareMetadata = await this.getAuthMetadata({ privKey: share });
       } catch (err) {
-        throw new Error(`getMetadata in syncShareMetadata errored: ${prettyPrintError(err)}`);
+        throw CoreError.metadataGetFailed(`${prettyPrintError(err)}`);
       }
 
       let scopedStoreToBeSet;
@@ -749,7 +751,7 @@ class ThresholdKey implements ITKey {
 
   setDeviceStorage(storeDeviceStorage: (deviceShareStore: ShareStore) => Promise<void>): void {
     if (this.storeDeviceShare) {
-      throw new Error("storeDeviceShare already set");
+      throw CoreError.default("storeDeviceShare already set");
     }
     this.storeDeviceShare = storeDeviceStorage;
   }
@@ -854,7 +856,7 @@ class ThresholdKey implements ITKey {
     const pubPolyID = pubPoly.getPolynomialID();
     const fullShareIndexesList = Object.keys(this.metadata.publicShares[pubPolyID]);
     if (!fullShareIndexesList.includes(shareStore.share.shareIndex.toString("hex"))) {
-      throw new Error("Latest poly doesn't include this share");
+      throw CoreError.default("Latest poly doesn't include this share");
     }
     await this.inputShareStoreSafe(shareStore);
   }

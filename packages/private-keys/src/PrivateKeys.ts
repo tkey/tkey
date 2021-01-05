@@ -1,6 +1,8 @@
 import { IModule, IPrivateKeyFormat, IPrivateKeyStore, ITKeyApi } from "@tkey/common-types";
 import BN from "bn.js";
 
+import PrivateKeysError from "./errors";
+
 export const PRIVATE_KEY_MODULE_NAME = "privateKeyModule";
 
 class PrivateKeyModule implements IModule {
@@ -26,10 +28,10 @@ class PrivateKeyModule implements IModule {
   async setPrivateKey(privateKeyType: string, privateKey?: BN): Promise<void> {
     const format = this.privateKeyFormats.find((el) => el.type === privateKeyType);
     if (!format) {
-      throw new Error("Private key type is not supported");
+      throw PrivateKeysError.notSupported();
     }
     if (privateKey && !format.validatePrivateKey(privateKey)) {
-      throw new Error(`Invalid private key ${privateKey}`);
+      throw PrivateKeysError.invalidPrivateKey(`${privateKey}`);
     }
     const privateKeyStore = format.createPrivateKeyStore(privateKey);
     return this.tbSDK.setTKeyStoreItem(this.moduleName, privateKeyStore);

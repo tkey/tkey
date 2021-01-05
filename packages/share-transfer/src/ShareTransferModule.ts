@@ -5,6 +5,7 @@ import {
   getPubKeyPoint,
   IModule,
   ITKeyApi,
+  ITkeyError,
   ShareStore,
   ShareTransferStorePointerArgs,
   toPrivKeyECC,
@@ -12,6 +13,7 @@ import {
 import { generatePrivate } from "@toruslabs/eccrypto";
 import BN from "bn.js";
 
+import ShareTransferError from "./errors";
 import ShareRequest from "./ShareRequest";
 import ShareTransferStorePointer from "./ShareTransferStorePointer";
 
@@ -62,9 +64,9 @@ class ShareTransferModule implements IModule {
   async requestNewShare(
     userAgent: string,
     availableShareIndexes: Array<string>,
-    callback?: (err?: Error, shareStore?: ShareStore) => void
+    callback?: (err?: ITkeyError, shareStore?: ShareStore) => void
   ): Promise<string> {
-    if (this.currentEncKey) throw new Error(`Current request already exists ${this.currentEncKey.toString("hex")}`);
+    if (this.currentEncKey) throw ShareTransferError.requestExists(`${this.currentEncKey.toString("hex")}`);
     this.currentEncKey = new BN(generatePrivate());
     const newShareTransferStore = await this.getShareTransferStore();
     const encPubKeyX = getPubKeyPoint(this.currentEncKey).x.toString("hex");
@@ -82,7 +84,7 @@ class ShareTransferModule implements IModule {
         setInterval(async () => {
           try {
             const latestShareTransferStore = await this.getShareTransferStore();
-            if (!this.currentEncKey) throw new Error("Missing current enc key");
+            if (!this.currentEncKey) throw ShareTransferError.missingEncryptionKey();
             if (latestShareTransferStore[encPubKeyX].encShareInTransit) {
               const shareStoreBuf = await decrypt(toPrivKeyECC(this.currentEncKey), latestShareTransferStore[encPubKeyX].encShareInTransit);
               const receivedShare = ShareStore.fromJSON(JSON.parse(shareStoreBuf.toString()));
@@ -91,7 +93,7 @@ class ShareTransferModule implements IModule {
               callback(null, receivedShare);
             } else if (!latestShareTransferStore[encPubKeyX]) {
               this._cleanUpCurrentRequest();
-              callback(new Error("User cancelled request"));
+              callback(ShareTransferError.userCancelledRequest());
             }
           } catch (error) {
             this._cleanUpCurrentRequest();
@@ -159,10 +161,10 @@ class ShareTransferModule implements IModule {
         setInterval(async () => {
           try {
             const latestShareTransferStore = await this.getShareTransferStore();
-            if (!this.currentEncKey) throw new Error("Missing current enc key");
+            if (!this.currentEncKey) throw ShareTransferError.missingEncryptionKey();
             if (!latestShareTransferStore[encPubKeyX]) {
               this._cleanUpCurrentRequest();
-              reject(new Error("User cancelled request"));
+              reject(ShareTransferError.userCancelledRequest());
             } else if (latestShareTransferStore[encPubKeyX].encShareInTransit) {
               const shareStoreBuf = await decrypt(toPrivKeyECC(this.currentEncKey), latestShareTransferStore[encPubKeyX].encShareInTransit);
               const receivedShare = ShareStore.fromJSON(JSON.parse(shareStoreBuf.toString()));

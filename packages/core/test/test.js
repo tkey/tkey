@@ -1,12 +1,40 @@
 import { generatePrivateExcludingIndexes, getPubKeyPoint, Point, Polynomial } from "@tkey/common-types";
 import { generatePrivate } from "@toruslabs/eccrypto";
-import { deepStrictEqual, fail } from "assert";
+import { deepStrictEqual, fail, throws } from "assert";
 import BN from "bn.js";
 import stringify from "json-stable-stringify";
 
 import { AuthMetadata, generateRandomPolynomial, lagrangeInterpolatePolynomial, lagrangeInterpolation, Metadata, polyCommitmentEval } from "../index";
+import CoreError from "../src/errors";
 
-const PRIVATE_KEY = "e70fb5f5970b363879bc36f54d4fc0ad77863bfd059881159251f50f48863acf";
+const PRIVATE_KEY = generatePrivate().toString("hex");
+
+describe.only("Errors", function () {
+  it("#serialize", function () {
+    throws(
+      () => {
+        throw CoreError.metadataUndefined().toJSON();
+      },
+      {
+        code: 1101,
+        message: "metadata not found, SDK likely not intialized",
+      },
+      "metadata error thrown"
+    );
+  });
+  it("#fromCode", function () {
+    throws(
+      () => {
+        throw CoreError.fromCode(1101).toJSON();
+      },
+      {
+        code: 1101,
+        message: "metadata not found, SDK likely not intialized",
+      },
+      "metadata error thrown"
+    );
+  });
+});
 
 describe("Metadata", function () {
   it("#should serialize and deserialize into JSON seamlessly", async function () {

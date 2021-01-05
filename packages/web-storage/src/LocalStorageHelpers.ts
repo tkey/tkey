@@ -1,5 +1,7 @@
 import { ShareStore } from "@tkey/common-types";
 
+import WebStorageError from "./errors";
+
 function storageAvailable(type: string): boolean {
   let storage: Storage;
   try {
@@ -30,16 +32,16 @@ function storageAvailable(type: string): boolean {
 export const storeShareOnLocalStorage = async (share: ShareStore, key: string): Promise<void> => {
   const fileStr = JSON.stringify(share);
   if (!storageAvailable("localStorage")) {
-    throw new Error("local storage isn't enabled");
+    throw WebStorageError.localStorageUnavailable();
   }
   window.localStorage.setItem(key, fileStr);
 };
 
 export const getShareFromLocalStorage = async (key: string): Promise<ShareStore> => {
   if (!storageAvailable("localStorage")) {
-    throw new Error("local storage isn't enabled");
+    throw WebStorageError.localStorageUnavailable();
   }
   const foundFile = window.localStorage.getItem(key);
-  if (!foundFile) throw new Error("No Share exists in localStorage");
+  if (!foundFile) throw WebStorageError.shareUnavailableInLocalStorage();
   return ShareStore.fromJSON(JSON.parse(foundFile));
 };

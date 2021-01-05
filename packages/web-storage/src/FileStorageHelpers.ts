@@ -1,5 +1,7 @@
 import { ShareStore } from "@tkey/common-types";
 
+import WebStorageError from "./errors";
+
 // Web Specific declarations
 const requestedBytes = 1024 * 1024 * 10; // 10MB
 window.requestFileSystem = window.requestFileSystem || window.webkitRequestFileSystem;
@@ -49,11 +51,11 @@ export const getShareFromFileStorage = async (key: string): Promise<ShareStore> 
     const file = await readFile(fileEntry);
     const fileStr = await file.text();
     if (!fileStr) {
-      throw new Error("No Share exists in file system");
+      throw WebStorageError.shareUnavailableInFileStorage();
     }
     return ShareStore.fromJSON(JSON.parse(fileStr));
   }
-  throw new Error("no requestFileSystem");
+  throw WebStorageError.fileStorageUnavailable();
 };
 
 export const storeShareOnFileStorage = async (share: ShareStore, key: string): Promise<void> => {

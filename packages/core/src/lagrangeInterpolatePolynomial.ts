@@ -3,6 +3,8 @@ import { generatePrivate } from "@toruslabs/eccrypto";
 import BN from "bn.js";
 import { curve } from "elliptic";
 
+import CoreError from "./errors";
+
 const generateEmptyBNArray = (length: number): BN[] => {
   return Array.from({ length }, () => new BN(0));
 };
@@ -26,7 +28,7 @@ const interpolationPoly = (i: number, innerPoints: Array<Point>): BN[] => {
   let coefficients = generateEmptyBNArray(innerPoints.length);
   const d = denominator(i, innerPoints);
   if (d.cmp(new BN(0)) === 0) {
-    throw new Error("Denominator for interpolationPoly is 0");
+    throw CoreError.default("Denominator for interpolationPoly is 0");
   }
   coefficients[0] = d.invm(ecCurve.curve.n);
   for (let k = 0; k < innerPoints.length; k += 1) {
@@ -81,7 +83,7 @@ export function lagrangeInterpolatePolynomial(points: Array<Point>): Polynomial 
 
 export function lagrangeInterpolation(shares: BN[], nodeIndex: BN[]): BN {
   if (shares.length !== nodeIndex.length) {
-    throw new Error("shares not equal to nodeIndex length in lagrangeInterpolation");
+    throw CoreError.default("shares not equal to nodeIndex length in lagrangeInterpolation");
   }
   let secret = new BN(0);
   for (let i = 0; i < shares.length; i += 1) {
@@ -103,13 +105,13 @@ export function lagrangeInterpolation(shares: BN[], nodeIndex: BN[]): BN {
   return secret.umod(ecCurve.curve.n);
 }
 
-// generateRandomPolynomial - determinsiticShares are assumed random
-export function generateRandomPolynomial(degree: number, secret?: BN, determinsticShares?: Array<Share>): Polynomial {
+// generateRandomPolynomial - determinisiticShares are assumed random
+export function generateRandomPolynomial(degree: number, secret?: BN, deterministicShares?: Array<Share>): Polynomial {
   let actualS = secret;
   if (!secret) {
     actualS = generatePrivateExcludingIndexes([new BN(0)]);
   }
-  if (!determinsticShares) {
+  if (!deterministicShares) {
     const poly = [actualS];
     for (let i = 0; i < degree; i += 1) {
       const share = generatePrivateExcludingIndexes(poly);
@@ -117,18 +119,18 @@ export function generateRandomPolynomial(degree: number, secret?: BN, determinst
     }
     return new Polynomial(poly);
   }
-  if (!Array.isArray(determinsticShares)) {
-    throw new TypeError("determinisitc shares in generateRandomPolynomial should be an array");
+  if (!Array.isArray(deterministicShares)) {
+    throw CoreError.default("deterministic shares in generateRandomPolynomial should be an array");
   }
 
-  if (determinsticShares.length > degree) {
-    throw new TypeError("determinsticShares in generateRandomPolynomial should be less or equal than degree to ensure an element of randomness");
+  if (deterministicShares.length > degree) {
+    throw CoreError.default("deterministicShares in generateRandomPolynomial should be less or equal than degree to ensure an element of randomness");
   }
   const points = {};
-  determinsticShares.forEach((share) => {
+  deterministicShares.forEach((share) => {
     points[share.shareIndex.toString("hex")] = new Point(share.shareIndex, share.share);
   });
-  for (let i = 0; i < degree - determinsticShares.length; i += 1) {
+  for (let i = 0; i < degree - deterministicShares.length; i += 1) {
     let shareIndex = generatePrivateExcludingIndexes([new BN(0)]);
     while (points[shareIndex.toString("hex")] !== undefined) {
       shareIndex = generatePrivateExcludingIndexes([new BN(0)]);
