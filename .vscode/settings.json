@@ -58,7 +58,8 @@
         }
       ],
       "no-restricted-syntax": 0,
-      "simple-import-sort/sort": "error",
+      "simple-import-sort/imports": "error",
+      "simple-import-sort/exports": "error",
       "operator-linebreak": 0,
       "object-curly-newline": 0,
       "no-underscore-dangle": 0,
@@ -72,7 +73,8 @@
       "no-nested-ternary": 0,
       "no-confusing-arrow": 0,
       "linebreak-style": 0,
-      "no-unused-vars": [2, { "args": "after-used", "argsIgnorePattern": "_" }],
+      "no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": ["error", { "args": "after-used", "argsIgnorePattern": "_" }],
       "no-param-reassign": [
         "error",
         {

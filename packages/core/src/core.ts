@@ -347,9 +347,7 @@ class ThresholdKey implements ITKey {
     const pubPoly = this.metadata.getLatestPublicPolynomial();
     const previousPolyID = pubPoly.getPolynomialID();
     const existingShareIndexes = this.metadata.getShareIndexesForPolynomial(previousPolyID);
-    const existingShareIndexesBN = existingShareIndexes.map((el) => {
-      return new BN(el, "hex");
-    });
+    const existingShareIndexesBN = existingShareIndexes.map((el) => new BN(el, "hex"));
     const newShareIndex = new BN(generatePrivateExcludingIndexes(existingShareIndexesBN));
 
     const results = await this.refreshShares(pubPoly.getThreshold(), [...existingShareIndexes, newShareIndex.toString("hex")], previousPolyID);

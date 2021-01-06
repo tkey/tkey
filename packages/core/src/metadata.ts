@@ -178,9 +178,7 @@ class Metadata implements IMetadata {
     for (let i = 0; i < this.polyIDList.length; i += 1) {
       const polyID = this.polyIDList[i];
       const shareIndexes = Object.keys(this.publicShares[polyID]);
-      const sortedShareIndexes = shareIndexes.sort((a: string, b: string) => {
-        return new BN(a, "hex").cmp(new BN(b, "hex"));
-      });
+      const sortedShareIndexes = shareIndexes.sort((a: string, b: string) => new BN(a, "hex").cmp(new BN(b, "hex")));
       const serializedPolyID = polyID
         .split(`|`)
         .concat("0x0")
@@ -215,16 +213,9 @@ class Metadata implements IMetadata {
       const arrPolyID = serializedPolyID.split("|");
       const firstHalf = arrPolyID.slice(
         0,
-        arrPolyID.findIndex((v) => {
-          return v === "0x0";
-        })
+        arrPolyID.findIndex((v) => v === "0x0")
       );
-      const secondHalf = arrPolyID.slice(
-        arrPolyID.findIndex((v) => {
-          return v === "0x0";
-        }) + 1,
-        arrPolyID.length
-      );
+      const secondHalf = arrPolyID.slice(arrPolyID.findIndex((v) => v === "0x0") + 1, arrPolyID.length);
       // for publicPolynomials
       const pubPolyID = firstHalf.join("|");
       const pointCommitments = [];

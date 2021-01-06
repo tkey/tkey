@@ -5,9 +5,7 @@ import { curve } from "elliptic";
 
 import CoreError from "./errors";
 
-const generateEmptyBNArray = (length: number): BN[] => {
-  return Array.from({ length }, () => new BN(0));
-};
+const generateEmptyBNArray = (length: number): BN[] => Array.from({ length }, () => new BN(0));
 
 const denominator = (i: number, innerPoints: Array<Point>) => {
   let result = new BN(1);

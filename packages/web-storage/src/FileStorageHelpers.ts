@@ -80,6 +80,4 @@ export const storeShareOnFileStorage = async (share: ShareStore, key: string): P
   }
 };
 
-export const canAccessFileStorage = async (): Promise<PermissionStatus> => {
-  return navigator.permissions.query({ name: "persistent-storage" });
-};
+export const canAccessFileStorage = async (): Promise<PermissionStatus> => navigator.permissions.query({ name: "persistent-storage" });

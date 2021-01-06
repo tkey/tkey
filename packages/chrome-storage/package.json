@@ -42,7 +42,7 @@
     "@tkey/common-types": "^3.6.1"
   },
   "devDependencies": {
-    "@types/chrome": "^0.0.124"
+    "@types/chrome": "^0.0.127"
   },
   "lint-staged": {
     "!(*d).ts": [
