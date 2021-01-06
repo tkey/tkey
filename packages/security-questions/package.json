@@ -28,7 +28,7 @@
     "dev": "rimraf dist/ && cross-env NODE_ENV=development parallel-webpack --no-stats",
     "build": "rimraf dist/ && cross-env NODE_ENV=production parallel-webpack --no-stats",
     "build:types": "rimraf types/ && tsc --project tsconfig.types.json",
-    "lint": "eslint --fix 'src/**/*.ts'",
+    "lint": "eslint --fix 'src/**/*.ts' 'index.ts'",
     "prepack": "yarn run build && yarn run build:types",
     "pre-commit": "lint-staged"
   },
@@ -46,7 +46,7 @@
   "lint-staged": {
     "!(*d).ts": [
       "yarn run lint --",
-      "prettier --write 'src/**/*.ts'"
+      "prettier --write 'src/**/*.ts' 'index.ts'"
     ]
   },
   "gitHead": "9d4db2955bbfd2876fddf1e31ebf357ef577eb56"

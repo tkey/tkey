@@ -1,12 +1,12 @@
+export * from "./BNUtils";
+export * from "./Error";
 export { default as Point } from "./Point";
 export { default as Polynomial } from "./Polynomial";
+export * from "./Polynomial";
 export { default as PublicPolynomial } from "./PublicPolynomial";
+export * from "./PublicPolynomial";
 export { default as PublicShare } from "./PublicShare";
+export * from "./PublicShare";
 export { default as Share } from "./Share";
 export * from "./ShareStore";
-export * from "./Polynomial";
-export * from "./PublicPolynomial";
-export * from "./PublicShare";
 export { default as ShareStore } from "./ShareStore";
-export * from "./Error";
-export * from "./BNUtils";
