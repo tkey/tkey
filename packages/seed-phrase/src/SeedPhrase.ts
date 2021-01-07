@@ -1,4 +1,4 @@
-import { IModule, ISeedPhraseFormat, ISeedPhraseStore, ITKeyApi } from "@tkey/common-types";
+import { IModule, ISeedPhraseFormat, ISeedPhraseStore, ISeedPhraseStoreWithKeys, ITKeyApi } from "@tkey/common-types";
 import BN from "bn.js";
 
 import SeedPhraseError from "./errors";
@@ -47,6 +47,19 @@ class SeedPhraseModule implements IModule {
 
   async getSeedPhrases(): Promise<ISeedPhraseStore[]> {
     return this.tbSDK.getTKeyStore(this.moduleName) as Promise<ISeedPhraseStore[]>;
+  }
+
+  async getSeedPhrasesWithAccounts(): Promise<ISeedPhraseStoreWithKeys[]> {
+    try {
+      // Get seed phrases for all available formats from tkeystore
+      const seedPhrases = await this.getSeedPhrases();
+      return seedPhrases.map((x) => {
+        const suitableFormat = this.seedPhraseFormats.find((y) => y.type === x.type);
+        return { ...x, keys: suitableFormat.deriveKeysFromSeedPhrase(x) };
+      });
+    } catch (err) {
+      return [];
+    }
   }
 
   async getAccounts(): Promise<BN[]> {

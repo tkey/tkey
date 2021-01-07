@@ -1,4 +1,4 @@
-import { IModule, ISeedPhraseFormat, ISeedPhraseStore, ITKeyApi } from "@tkey/common-types";
+import { IModule, ISeedPhraseFormat, ISeedPhraseStore, ISeedPhraseStoreWithKeys, ITKeyApi } from "@tkey/common-types";
 import BN from "bn.js";
 export declare const SEED_PHRASE_MODULE_NAME = "seedPhraseModule";
 declare class SeedPhraseModule implements IModule {
@@ -11,6 +11,7 @@ declare class SeedPhraseModule implements IModule {
     setSeedPhrase(seedPhraseType: string, seedPhrase?: string): Promise<void>;
     setSeedPhraseStoreItem(partialStore: ISeedPhraseStore): Promise<void>;
     getSeedPhrases(): Promise<ISeedPhraseStore[]>;
+    getSeedPhrasesWithAccounts(): Promise<ISeedPhraseStoreWithKeys[]>;
     getAccounts(): Promise<BN[]>;
 }
 export default SeedPhraseModule;

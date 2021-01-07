@@ -178,6 +178,10 @@ export type ISeedPhraseStore = TkeyStoreItemType & {
   seedPhrase: string;
 };
 
+export type ISeedPhraseStoreWithKeys = ISeedPhraseStore & {
+  keys: BN[];
+};
+
 export type MetamaskSeedPhraseStore = ISeedPhraseStore & {
   numberOfWallets: number;
 };
@@ -191,7 +195,7 @@ export type SECP256k1NStore = IPrivateKeyStore;
 export interface ISeedPhraseFormat {
   type: string;
   validateSeedPhrase(seedPhrase: string): boolean;
-  deriveKeysFromSeedPhrase(seedPhraseStore: ISeedPhraseStore): Array<BN>;
+  deriveKeysFromSeedPhrase(seedPhraseStore: ISeedPhraseStore): BN[];
   createSeedPhraseStore(seedPhrase?: string): Promise<ISeedPhraseStore>;
 }
 
