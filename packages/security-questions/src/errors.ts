@@ -25,11 +25,11 @@ class SecurityQuestionsError extends TkeyError {
   }
 
   public static unableToReplace(extraMessage = ""): ITkeyError {
-    return SecurityQuestionsError.fromCode(2101, extraMessage);
+    return SecurityQuestionsError.fromCode(2102, extraMessage);
   }
 
   public static incorrectAnswer(extraMessage = ""): ITkeyError {
-    return SecurityQuestionsError.fromCode(2102, extraMessage);
+    return SecurityQuestionsError.fromCode(2103, extraMessage);
   }
 }
 export default SecurityQuestionsError;

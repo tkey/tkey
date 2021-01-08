@@ -6,6 +6,7 @@ class WebStorageError extends TkeyError {
   message: string;
 
   protected static messages: ErrorCodes = {
+    3000: "default",
     // module
     3101: "unableToReadFromStorage",
     // fileStorage
@@ -25,6 +26,10 @@ class WebStorageError extends TkeyError {
 
   public static fromCode(code: number, extraMessage = ""): ITkeyError {
     return new WebStorageError(code, `${WebStorageError.messages[code]}${extraMessage}`);
+  }
+
+  public static default(extraMessage = ""): ITkeyError {
+    return new WebStorageError(3000, `${WebStorageError.messages[3000]}${extraMessage}`);
   }
 
   // Custom methods
