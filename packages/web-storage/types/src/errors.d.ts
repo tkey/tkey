@@ -5,6 +5,7 @@ declare class WebStorageError extends TkeyError {
     protected static messages: ErrorCodes;
     constructor(code: number, message?: string);
     static fromCode(code: number, extraMessage?: string): ITkeyError;
+    static default(extraMessage?: string): ITkeyError;
     static unableToReadFromStorage(extraMessage?: string): ITkeyError;
     static shareUnavailableInFileStorage(extraMessage?: string): ITkeyError;
     static fileStorageUnavailable(extraMessage?: string): ITkeyError;

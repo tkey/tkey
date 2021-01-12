@@ -200,7 +200,7 @@ class ThresholdKey implements ITKey {
     }
   }
 
-  async reconstructKey(): Promise<ReconstructedKeyResult> {
+  async reconstructKey(reconstructKeyMiddleware = true): Promise<ReconstructedKeyResult> {
     if (!this.metadata) {
       throw CoreError.metadataUndefined();
     }
@@ -267,18 +267,19 @@ class ThresholdKey implements ITKey {
       allKeys: [privKey],
     };
 
-    // retireve/reconstruct extra keys that live on metadata
-    if (Object.keys(this.reconstructKeyMiddleware).length !== 0) {
-      for (const moduleName in this.reconstructKeyMiddleware) {
-        if (Object.prototype.hasOwnProperty.call(this.reconstructKeyMiddleware, moduleName)) {
-          // eslint-disable-next-line no-await-in-loop
-          const extraKeys = await this.reconstructKeyMiddleware[moduleName]();
-          returnObject[moduleName] = extraKeys;
-          returnObject.allKeys.push(...extraKeys);
+    if (reconstructKeyMiddleware) {
+      if (Object.keys(this.reconstructKeyMiddleware).length !== 0) {
+        // retireve/reconstruct extra keys that live on metadata
+        for (const moduleName in this.reconstructKeyMiddleware) {
+          if (Object.prototype.hasOwnProperty.call(this.reconstructKeyMiddleware, moduleName)) {
+            // eslint-disable-next-line no-await-in-loop
+            const extraKeys = await this.reconstructKeyMiddleware[moduleName]();
+            returnObject[moduleName] = extraKeys;
+            returnObject.allKeys.push(...extraKeys);
+          }
         }
       }
     }
-
     return returnObject;
   }
 

@@ -1,5 +1,5 @@
 import { generateAddressFromPublicKey, generateID, ISeedPhraseFormat, ISeedPhraseStore, MetamaskSeedPhraseStore } from "@tkey/common-types";
-import { generateMnemonic, mnemonicToSeedSync, validateMnemonic } from "bip39";
+import { generateMnemonic, mnemonicToSeed, validateMnemonic } from "bip39";
 import BN from "bn.js";
 import HDKey from "hdkey";
 import { provider } from "web3-core";
@@ -32,10 +32,10 @@ class MetamaskSeedPhraseFormat implements ISeedPhraseFormat {
     return validateMnemonic(seedPhrase);
   }
 
-  deriveKeysFromSeedPhrase(seedPhraseStore: ISeedPhraseStore): BN[] {
+  async deriveKeysFromSeedPhrase(seedPhraseStore: ISeedPhraseStore): Promise<BN[]> {
     const mmStore = seedPhraseStore as MetamaskSeedPhraseStore;
     const { seedPhrase } = mmStore;
-    const seed = mnemonicToSeedSync(seedPhrase);
+    const seed = await mnemonicToSeed(seedPhrase);
     const hdkey = HDKey.fromMasterSeed(seed);
     const root = hdkey.derive(this.hdPathString);
 

@@ -31,7 +31,7 @@ declare class ThresholdKey implements ITKey {
      * @param polyID if specified, polyID to refresh to if it exists
      */
     catchupToLatestShare(shareStore: ShareStore, polyID?: PolynomialID): Promise<CatchupToLatestShareResult>;
-    reconstructKey(): Promise<ReconstructedKeyResult>;
+    reconstructKey(reconstructKeyMiddleware?: boolean): Promise<ReconstructedKeyResult>;
     reconstructLatestPoly(): Polynomial;
     deleteShare(shareIndex: BNString): Promise<DeleteShareResult>;
     generateNewShare(): Promise<GenerateNewShareResult>;

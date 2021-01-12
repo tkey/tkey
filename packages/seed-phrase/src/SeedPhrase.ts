@@ -53,10 +53,15 @@ class SeedPhraseModule implements IModule {
     try {
       // Get seed phrases for all available formats from tkeystore
       const seedPhrases = await this.getSeedPhrases();
-      return seedPhrases.map((x) => {
-        const suitableFormat = this.seedPhraseFormats.find((y) => y.type === x.type);
-        return { ...x, keys: suitableFormat.deriveKeysFromSeedPhrase(x) };
-      });
+      const keysArray = [];
+      await Promise.all(
+        seedPhrases.map(async (x) => {
+          const suitableFormat = this.seedPhraseFormats.find((y) => y.type === x.type);
+          keysArray.push({ ...x, keys: await suitableFormat.deriveKeysFromSeedPhrase(x) });
+        })
+      );
+      // await Promise.all(promises);
+      return keysArray;
     } catch (err) {
       return [];
     }
@@ -66,11 +71,14 @@ class SeedPhraseModule implements IModule {
     try {
       // Get seed phrases for all available formats from tkeystore
       const seedPhrases = await this.getSeedPhrases();
-      return seedPhrases.reduce((acc: BN[], x) => {
-        const suitableFormat = this.seedPhraseFormats.find((y) => y.type === x.type);
-        acc.push(...suitableFormat.deriveKeysFromSeedPhrase(x));
-        return acc;
-      }, []);
+      const acc: BN[] = [];
+      await Promise.all(
+        seedPhrases.map(async (x) => {
+          const suitableFormat = this.seedPhraseFormats.find((y) => y.type === x.type);
+          acc.push(...(await suitableFormat.deriveKeysFromSeedPhrase(x)));
+        })
+      );
+      return acc;
     } catch (err) {
       return [];
     }

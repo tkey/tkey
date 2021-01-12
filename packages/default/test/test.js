@@ -657,9 +657,8 @@ describe("TkeyStore", function () {
     });
     await tb2.initialize();
     tb2.inputShareStore(resp1.deviceShare);
-    const reconstuctedKey = await tb2.reconstructKey();
-    // console.log(tb2.metadata.tkeyStore);
-    compareReconstructedKeys(reconstuctedKey, {
+    const reconstructedKey = await tb2.reconstructKey();
+    compareReconstructedKeys(reconstructedKey, {
       privKey: resp1.privKey,
       seedPhraseModule: [
         new BN("70dc3117300011918e26b02176945cc15c3d548cf49fd8418d97f93af699e46", "hex"),
@@ -676,6 +675,12 @@ describe("TkeyStore", function () {
         new BN("4bd0041b7654a9b16a7268a5de7982f2422b15635c4fd170c140dc4897624390", "hex"),
         new BN("1ea6edde61c750ec02896e9ac7fe9ac0b48a3630594fdf52ad5305470a2635c0", "hex"),
       ],
+    });
+
+    const reconstructedKey2 = await tb.reconstructKey(false);
+    compareReconstructedKeys(reconstructedKey2, {
+      privKey: resp1.privKey,
+      allKeys: [resp1.privKey],
     });
   });
 });

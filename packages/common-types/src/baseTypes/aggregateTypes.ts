@@ -195,7 +195,7 @@ export type SECP256k1NStore = IPrivateKeyStore;
 export interface ISeedPhraseFormat {
   type: string;
   validateSeedPhrase(seedPhrase: string): boolean;
-  deriveKeysFromSeedPhrase(seedPhraseStore: ISeedPhraseStore): BN[];
+  deriveKeysFromSeedPhrase(seedPhraseStore: ISeedPhraseStore): Promise<BN[]>;
   createSeedPhraseStore(seedPhrase?: string): Promise<ISeedPhraseStore>;
 }
 
