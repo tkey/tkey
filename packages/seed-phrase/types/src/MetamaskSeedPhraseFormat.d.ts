@@ -9,7 +9,7 @@ declare class MetamaskSeedPhraseFormat implements ISeedPhraseFormat {
     root: HDKey;
     constructor(ethProvider: provider);
     validateSeedPhrase(seedPhrase: string): boolean;
-    deriveKeysFromSeedPhrase(seedPhraseStore: ISeedPhraseStore): BN[];
+    deriveKeysFromSeedPhrase(seedPhraseStore: ISeedPhraseStore): Promise<BN[]>;
     createSeedPhraseStore(seedPhrase?: string): Promise<MetamaskSeedPhraseStore>;
 }
 export default MetamaskSeedPhraseFormat;

@@ -25,18 +25,18 @@ const defaultSP = new ServiceProviderBase({ postboxKey: PRIVATE_KEY });
 const defaultSL = initStorageLayer(mocked, { serviceProvider: defaultSP, hostUrl: metadataURL });
 
 function compareBNArray(a, b, message) {
-  if (a.length !== b.length) fail(message);
-  return a.map((el, index) => {
+  if (a.length !== b.length) throw new Error(message);
+  return a.map((el) => {
     // console.log(el, b[index], el.cmp(b[index]));
-    // eslint-disable-next-line no-unused-expressions
-    el.cmp(b[index]) !== 0 ? fail(message) : undefined;
+    const found = b.find((pl) => pl.cmp(el) === 0);
+    if (!found) throw new Error(message);
     return 0;
   });
 }
 
 function compareReconstructedKeys(a, b, message) {
   // eslint-disable-next-line no-unused-expressions
-  a.privKey.cmp(b.privKey) !== 0 ? fail(message) : undefined;
+  if (a.privKey.cmp(b.privKey) !== 0) throw new Error(message);
   if (a.seedPhraseModule && b.seedPhraseModule) {
     compareBNArray(a.seedPhraseModule, b.seedPhraseModule, message);
   }
@@ -657,9 +657,9 @@ describe("TkeyStore", function () {
     });
     await tb2.initialize();
     tb2.inputShareStore(resp1.deviceShare);
-    const reconstuctedKey = await tb2.reconstructKey();
-    // console.log(tb2.metadata.tkeyStore);
-    compareReconstructedKeys(reconstuctedKey, {
+    const reconstructedKey = await tb2.reconstructKey();
+
+    compareReconstructedKeys(reconstructedKey, {
       privKey: resp1.privKey,
       seedPhraseModule: [
         new BN("70dc3117300011918e26b02176945cc15c3d548cf49fd8418d97f93af699e46", "hex"),
@@ -676,6 +676,12 @@ describe("TkeyStore", function () {
         new BN("4bd0041b7654a9b16a7268a5de7982f2422b15635c4fd170c140dc4897624390", "hex"),
         new BN("1ea6edde61c750ec02896e9ac7fe9ac0b48a3630594fdf52ad5305470a2635c0", "hex"),
       ],
+    });
+
+    const reconstructedKey2 = await tb2.reconstructKey(false);
+    compareReconstructedKeys(reconstructedKey2, {
+      privKey: resp1.privKey,
+      allKeys: [resp1.privKey],
     });
   });
 });

@@ -53,10 +53,12 @@ class SeedPhraseModule implements IModule {
     try {
       // Get seed phrases for all available formats from tkeystore
       const seedPhrases = await this.getSeedPhrases();
-      return seedPhrases.map((x) => {
-        const suitableFormat = this.seedPhraseFormats.find((y) => y.type === x.type);
-        return { ...x, keys: suitableFormat.deriveKeysFromSeedPhrase(x) };
-      });
+      return Promise.all(
+        seedPhrases.map(async (x) => {
+          const suitableFormat = this.seedPhraseFormats.find((y) => y.type === x.type);
+          return { ...x, keys: await suitableFormat.deriveKeysFromSeedPhrase(x) };
+        })
+      );
     } catch (err) {
       return [];
     }
@@ -66,11 +68,13 @@ class SeedPhraseModule implements IModule {
     try {
       // Get seed phrases for all available formats from tkeystore
       const seedPhrases = await this.getSeedPhrases();
-      return seedPhrases.reduce((acc: BN[], x) => {
-        const suitableFormat = this.seedPhraseFormats.find((y) => y.type === x.type);
-        acc.push(...suitableFormat.deriveKeysFromSeedPhrase(x));
-        return acc;
-      }, []);
+      const responses = await Promise.all(
+        seedPhrases.map(async (x) => {
+          const suitableFormat = this.seedPhraseFormats.find((y) => y.type === x.type);
+          return suitableFormat.deriveKeysFromSeedPhrase(x);
+        })
+      );
+      return responses.flatMap((x) => x);
     } catch (err) {
       return [];
     }
