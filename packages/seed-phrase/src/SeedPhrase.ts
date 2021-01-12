@@ -68,14 +68,13 @@ class SeedPhraseModule implements IModule {
     try {
       // Get seed phrases for all available formats from tkeystore
       const seedPhrases = await this.getSeedPhrases();
-      const acc: BN[] = [];
-      await Promise.all(
+      const responses = await Promise.all(
         seedPhrases.map(async (x) => {
           const suitableFormat = this.seedPhraseFormats.find((y) => y.type === x.type);
-          acc.push(...(await suitableFormat.deriveKeysFromSeedPhrase(x)));
+          return suitableFormat.deriveKeysFromSeedPhrase(x);
         })
       );
-      return acc;
+      return responses.flatMap((x) => x);
     } catch (err) {
       return [];
     }
