@@ -25,7 +25,7 @@ const defaultSP = new ServiceProviderBase({ postboxKey: PRIVATE_KEY });
 const defaultSL = initStorageLayer(mocked, { serviceProvider: defaultSP, hostUrl: metadataURL });
 
 function compareBNArray(a, b, message) {
-  if (a.length !== b.length) fail(message);
+  if (a.length !== b.length) fail([message]);
   return a.map((el, index) => {
     // console.log(el, b[index], el.cmp(b[index]));
     // eslint-disable-next-line no-unused-expressions
@@ -677,7 +677,7 @@ describe("TkeyStore", function () {
       ],
     });
 
-    const reconstructedKey2 = await tb.reconstructKey(false);
+    const reconstructedKey2 = await tb2.reconstructKey(false);
     compareReconstructedKeys(reconstructedKey2, {
       privKey: resp1.privKey,
       allKeys: [resp1.privKey],
