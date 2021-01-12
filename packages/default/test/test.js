@@ -658,7 +658,6 @@ describe("TkeyStore", function () {
     await tb2.initialize();
     tb2.inputShareStore(resp1.deviceShare);
     const reconstructedKey = await tb2.reconstructKey();
-    console.log(reconstructedKey);
 
     compareReconstructedKeys(reconstructedKey, {
       privKey: resp1.privKey,
@@ -680,7 +679,6 @@ describe("TkeyStore", function () {
     });
 
     const reconstructedKey2 = await tb2.reconstructKey(false);
-    console.log(reconstructedKey2);
     compareReconstructedKeys(reconstructedKey2, {
       privKey: resp1.privKey,
       allKeys: [resp1.privKey],
