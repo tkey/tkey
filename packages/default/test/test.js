@@ -25,18 +25,18 @@ const defaultSP = new ServiceProviderBase({ postboxKey: PRIVATE_KEY });
 const defaultSL = initStorageLayer(mocked, { serviceProvider: defaultSP, hostUrl: metadataURL });
 
 function compareBNArray(a, b, message) {
-  if (a.length !== b.length) fail([message]);
-  return a.map((el, index) => {
+  if (a.length !== b.length) throw new Error(message);
+  return a.map((el) => {
     // console.log(el, b[index], el.cmp(b[index]));
-    // eslint-disable-next-line no-unused-expressions
-    el.cmp(b[index]) !== 0 ? fail(message) : undefined;
+    const found = b.find((pl) => pl.cmp(el) === 0);
+    if (!found) throw new Error(message);
     return 0;
   });
 }
 
 function compareReconstructedKeys(a, b, message) {
   // eslint-disable-next-line no-unused-expressions
-  a.privKey.cmp(b.privKey) !== 0 ? fail(message) : undefined;
+  if (a.privKey.cmp(b.privKey) !== 0) throw new Error(message);
   if (a.seedPhraseModule && b.seedPhraseModule) {
     compareBNArray(a.seedPhraseModule, b.seedPhraseModule, message);
   }
@@ -658,6 +658,8 @@ describe("TkeyStore", function () {
     await tb2.initialize();
     tb2.inputShareStore(resp1.deviceShare);
     const reconstructedKey = await tb2.reconstructKey();
+    console.log(reconstructedKey);
+
     compareReconstructedKeys(reconstructedKey, {
       privKey: resp1.privKey,
       seedPhraseModule: [
@@ -678,6 +680,7 @@ describe("TkeyStore", function () {
     });
 
     const reconstructedKey2 = await tb2.reconstructKey(false);
+    console.log(reconstructedKey2);
     compareReconstructedKeys(reconstructedKey2, {
       privKey: resp1.privKey,
       allKeys: [resp1.privKey],
