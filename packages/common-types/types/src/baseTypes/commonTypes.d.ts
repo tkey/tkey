@@ -81,7 +81,7 @@ export interface IStorageLayer extends ISerializable {
 export declare type TorusStorageLayerArgs = {
     enableLogging?: boolean;
     hostUrl?: string;
-    serviceProvider: IServiceProvider;
+    serviceProvider?: IServiceProvider;
 };
 export declare type MockStorageLayerArgs = {
     dataMap: any;
