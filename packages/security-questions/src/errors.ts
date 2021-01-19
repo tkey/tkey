@@ -5,6 +5,7 @@ class SecurityQuestionsError extends TkeyError {
     2101: "security questions might not exist/be setup",
     2102: "security questions exists, cant replace, maybe change?",
     2103: "Incorrect answer",
+    2104: "no password saved on tkeyStore",
   };
 
   public constructor(code: number, message?: string) {
@@ -30,6 +31,10 @@ class SecurityQuestionsError extends TkeyError {
 
   public static incorrectAnswer(extraMessage = ""): ITkeyError {
     return SecurityQuestionsError.fromCode(2103, extraMessage);
+  }
+
+  public static noPasswordSaved(extraMessage = ""): ITkeyError {
+    return SecurityQuestionsError.fromCode(2104, extraMessage);
   }
 }
 export default SecurityQuestionsError;
