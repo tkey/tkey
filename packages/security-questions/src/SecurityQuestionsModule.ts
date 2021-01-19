@@ -8,6 +8,7 @@ import {
   Share,
   ShareStore,
   ShareStoreMap,
+  ISQAnswerStore,
 } from "@tkey/common-types";
 import BN from "bn.js";
 import { keccak256 } from "web3-utils";
@@ -31,7 +32,10 @@ class SecurityQuestionsModule implements IModule {
 
   tbSDK: ITKeyApi;
 
-  constructor() {
+  saveAnswers: boolean;
+
+  constructor(saveAnswers?: boolean) {
+    this.saveAnswers = saveAnswers;
     this.moduleName = SECURITY_QUESTIONS_MODULE_NAME;
   }
 
@@ -61,11 +65,14 @@ class SecurityQuestionsModule implements IModule {
       polynomialID: newShareStore.polynomialID,
     });
     metadata.setGeneralStoreDomain(this.moduleName, sqStore);
+
     await this.tbSDK.addShareDescription(
       newSharesDetails.newShareIndex.toString("hex"),
       JSON.stringify({ module: this.moduleName, questions, dateAdded: Date.now() }),
-      true // sync metadata
+      false // READ TODO1 (don't sync metadata)
     );
+    // set on tkey store
+    await this.saveAnswerOnTkeyStore(answerString);
     return newSharesDetails;
   }
 
@@ -117,7 +124,8 @@ class SecurityQuestionsModule implements IModule {
       questions: newQuestions,
     });
     metadata.setGeneralStoreDomain(this.moduleName, newSqStore);
-    await this.tbSDK.syncShareMetadata();
+    await this.saveAnswerOnTkeyStore(newAnswerString);
+    // await this.tbSDK.syncShareMetadata(); READ TODO1
   }
 
   static refreshSecurityQuestionsMiddleware(generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap): unknown {
@@ -136,6 +144,20 @@ class SecurityQuestionsModule implements IModule {
       shareIndex: sqStore.shareIndex,
       questions: sqStore.questions,
     });
+  }
+
+  async saveAnswerOnTkeyStore(answerString: string): Promise<void> {
+    //  TODO: TODO1 edit setTKeyStoreItem to not sync all the time.
+    if (this.saveAnswers) {
+      const answerStore: ISQAnswerStore = {
+        answer: answerString,
+        id: "answer",
+      };
+      await this.tbSDK.setTKeyStoreItem(this.moduleName, answerStore);
+    } else {
+      // TODO: TODO1 REMOVE THIS
+      await this.tbSDK.syncShareMetadata();
+    }
   }
 }
 
