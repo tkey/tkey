@@ -3,12 +3,12 @@ import {
   GenerateNewShareResult,
   IModule,
   isEmptyObject,
+  ISQAnswerStore,
   ITKeyApi,
   SecurityQuestionStoreArgs,
   Share,
   ShareStore,
   ShareStoreMap,
-  ISQAnswerStore,
 } from "@tkey/common-types";
 import BN from "bn.js";
 import { keccak256 } from "web3-utils";
@@ -21,11 +21,7 @@ function answerToUserInputHashBN(answerString: string): BN {
 }
 
 export const SECURITY_QUESTIONS_MODULE_NAME = "securityQuestions";
-
-// password + nonce = share
-// password has changed to password2
-
-// password2 + newNonce = share
+const TKEYSTORE_ID = "answer";
 
 class SecurityQuestionsModule implements IModule {
   moduleName: string;
@@ -151,13 +147,22 @@ class SecurityQuestionsModule implements IModule {
     if (this.saveAnswers) {
       const answerStore: ISQAnswerStore = {
         answer: answerString,
-        id: "answer",
+        id: TKEYSTORE_ID,
       };
       await this.tbSDK.setTKeyStoreItem(this.moduleName, answerStore);
     } else {
       // TODO: TODO1 REMOVE THIS
       await this.tbSDK.syncShareMetadata();
     }
+  }
+
+  async getAnswer(): Promise<string> {
+    //  TODO: TODO1 edit setTKeyStoreItem to not sync all the time.
+    if (this.saveAnswers) {
+      const answerStore = (await this.tbSDK.getTKeyStoreItem(this.moduleName, TKEYSTORE_ID)) as ISQAnswerStore;
+      return answerStore.answer;
+    }
+    throw SecurityQuestionsError.noPasswordSaved();
   }
 }
 
