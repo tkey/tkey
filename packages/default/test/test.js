@@ -379,6 +379,42 @@ describe("SecurityQuestionsModule", function () {
     const finalKeyPostSerialization = await tb4.reconstructKey();
     strictEqual(finalKeyPostSerialization.toString("hex"), reconstructedKey.toString("hex"), "Incorrect serialization");
   });
+  it("#should be able to get answers, even when they change", async function () {
+    tb = new ThresholdKey({
+      serviceProvider: defaultSP,
+      storageLayer: defaultSL,
+      modules: { securityQuestions: new SecurityQuestionsModule(true) },
+    });
+    const resp1 = await tb.initializeNewKey({ initializeModules: true });
+    const qn = "who is your cat?";
+    const ans1 = "blublu";
+    const ans2 = "dodo";
+    await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions(ans1, qn);
+    let gotAnswer = await tb.modules.securityQuestions.getAnswer();
+    if (gotAnswer !== ans1) {
+      fail("answers should be the same")
+    }
+    await tb.modules.securityQuestions.changeSecurityQuestionAndAnswer(ans2, qn);
+
+    const tb2 = new ThresholdKey({
+      serviceProvider: defaultSP,
+      storageLayer: defaultSL,
+      modules: { securityQuestions: new SecurityQuestionsModule(true) },
+    });
+    await tb2.initialize();
+
+    await tb2.modules.securityQuestions.inputShareFromSecurityQuestions("dodo");
+    const reconstructedKey = await tb2.reconstructKey();
+    // compareBNArray(resp1.privKey, reconstructedKey, "key should be able to be reconstructed");
+    if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
+      fail("key should be able to be reconstructed");
+    }
+
+    gotAnswer = await tb2.modules.securityQuestions.getAnswer();
+    if (gotAnswer !== ans2) {
+      fail("answers should be the same")
+    }
+  });
 });
 
 describe("ShareTransferModule", function () {
