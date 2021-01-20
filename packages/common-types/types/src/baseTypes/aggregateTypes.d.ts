@@ -121,10 +121,13 @@ export interface ShareRequestArgs {
 }
 export declare type TkeyStoreItemType = {
     id: string;
-    type: string;
 };
 export declare type ISeedPhraseStore = TkeyStoreItemType & {
     seedPhrase: string;
+    type: string;
+};
+export declare type ISQAnswerStore = TkeyStoreItemType & {
+    answer: string;
 };
 export declare type ISeedPhraseStoreWithKeys = ISeedPhraseStore & {
     keys: BN[];
@@ -134,6 +137,7 @@ export declare type MetamaskSeedPhraseStore = ISeedPhraseStore & {
 };
 export declare type IPrivateKeyStore = TkeyStoreItemType & {
     privateKey: BN;
+    type: string;
 };
 export declare type SECP256k1NStore = IPrivateKeyStore;
 export interface ISeedPhraseFormat {
@@ -175,7 +179,7 @@ export interface ITKeyApi {
     getTKeyStoreItem(moduleName: string, id: string): Promise<TkeyStoreItemType>;
     getTKeyStore(moduleName: string): Promise<TkeyStoreItemType[]>;
     deleteTKeyStoreItem(moduleName: string, id: string): Promise<void>;
-    setTKeyStoreItem(moduleName: string, data: TkeyStoreItemType): Promise<void>;
+    setTKeyStoreItem(moduleName: string, data: TkeyStoreItemType, sync?: boolean): Promise<void>;
 }
 export interface ITKey extends ITKeyApi, ISerializable {
     modules: ModuleMap;

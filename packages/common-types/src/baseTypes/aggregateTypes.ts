@@ -242,7 +242,7 @@ export interface ITKeyApi {
   getTKeyStoreItem(moduleName: string, id: string): Promise<TkeyStoreItemType>;
   getTKeyStore(moduleName: string): Promise<TkeyStoreItemType[]>;
   deleteTKeyStoreItem(moduleName: string, id: string): Promise<void>;
-  setTKeyStoreItem(moduleName: string, data: TkeyStoreItemType): Promise<void>;
+  setTKeyStoreItem(moduleName: string, data: TkeyStoreItemType, sync?: boolean): Promise<void>;
 }
 
 // eslint-disable-next-line no-use-before-define

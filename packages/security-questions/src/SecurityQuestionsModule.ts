@@ -69,6 +69,7 @@ class SecurityQuestionsModule implements IModule {
     );
     // set on tkey store
     await this.saveAnswerOnTkeyStore(answerString);
+    await this.tbSDK.syncShareMetadata();
     return newSharesDetails;
   }
 
@@ -121,7 +122,7 @@ class SecurityQuestionsModule implements IModule {
     });
     metadata.setGeneralStoreDomain(this.moduleName, newSqStore);
     await this.saveAnswerOnTkeyStore(newAnswerString);
-    // await this.tbSDK.syncShareMetadata(); READ TODO1
+    await this.tbSDK.syncShareMetadata();
   }
 
   static refreshSecurityQuestionsMiddleware(generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap): unknown {
@@ -143,17 +144,13 @@ class SecurityQuestionsModule implements IModule {
   }
 
   async saveAnswerOnTkeyStore(answerString: string): Promise<void> {
-    //  TODO: TODO1 edit setTKeyStoreItem to not sync all the time.
-    if (this.saveAnswers) {
-      const answerStore: ISQAnswerStore = {
-        answer: answerString,
-        id: TKEYSTORE_ID,
-      };
-      await this.tbSDK.setTKeyStoreItem(this.moduleName, answerStore);
-    } else {
-      // TODO: TODO1 REMOVE THIS
-      await this.tbSDK.syncShareMetadata();
-    }
+    if (!this.saveAnswers) return;
+
+    const answerStore: ISQAnswerStore = {
+      answer: answerString,
+      id: TKEYSTORE_ID,
+    };
+    await this.tbSDK.setTKeyStoreItem(this.moduleName, answerStore, false);
   }
 
   async getAnswer(): Promise<string> {
