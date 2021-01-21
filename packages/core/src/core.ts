@@ -92,6 +92,7 @@ class ThresholdKey implements ITKey {
   getApi(): ITKeyApi {
     return {
       getMetadata: this.getMetadata.bind(this),
+      updateMetadata: this.updateMetadata.bind(this),
       storageLayer: this.storageLayer,
       initialize: this.initialize.bind(this),
       catchupToLatestShare: this.catchupToLatestShare.bind(this),
@@ -123,6 +124,15 @@ class ThresholdKey implements ITKey {
     }
 
     throw CoreError.metadataUndefined();
+  }
+
+  async updateMetadata(): Promise<IMetadata> {
+    const shareIndexesExistInSDK = Object.keys(this.shares[this.metadata.getLatestPublicPolynomial().getPolynomialID()]);
+    const randomShare = this.outputShareStore(shareIndexesExistInSDK[Math.floor(Math.random() * (shareIndexesExistInSDK.length - 1))]).share.share;
+    const latestMetadata = await this.getAuthMetadata({ privKey: randomShare });
+    this.metadata = latestMetadata;
+    await this.reconstructKey();
+    return latestMetadata;
   }
 
   async initialize(params?: { input?: ShareStore; importKey?: BN; neverInitializeNewKey?: boolean }): Promise<KeyDetails> {
@@ -226,11 +236,6 @@ class ThresholdKey implements ITKey {
           if (shareIndexesForPoly[k] in shareIndexesRequired) {
             // eslint-disable-next-line no-await-in-loop
             const latestShareRes = await this.catchupToLatestShare(sharesForPoly[shareIndexesForPoly[k]], pubPolyID);
-
-            if (!this.metadata.polyIDList.includes(latestShareRes.latestShare.polynomialID)) {
-              this.metadata = latestShareRes.shareMetadata;
-            }
-
             if (latestShareRes.latestShare.polynomialID === pubPolyID) {
               sharesToInput.push(latestShareRes.latestShare);
               delete shareIndexesRequired[shareIndexesForPoly[k]];
@@ -249,7 +254,7 @@ class ThresholdKey implements ITKey {
     });
 
     if (sharesLeft > 0) {
-      throw CoreError.unableToReconstruct(`require ${requiredThreshold} but have ${sharesLeft - requiredThreshold}`);
+      throw CoreError.unableToReconstruct(` require ${requiredThreshold} but have ${sharesLeft - requiredThreshold}`);
     }
 
     const polyShares = Object.keys(this.shares[pubPolyID]);
@@ -628,13 +633,6 @@ class ThresholdKey implements ITKey {
       shareDescriptions,
       modules: this.modules,
     };
-  }
-
-  async updateMetadata(): Promise<void> {
-    const shareIndexesExistInSDK = Object.keys(this.shares[this.metadata.getLatestPublicPolynomial().getPolynomialID()]);
-    const randomShare = this.outputShareStore(shareIndexesExistInSDK[Math.floor(Math.random() * (shareIndexesExistInSDK.length - 1))]).share.share;
-    const latestMetadata = await this.getAuthMetadata({ privKey: randomShare });
-    this.metadata = latestMetadata;
   }
 
   // Auth functions

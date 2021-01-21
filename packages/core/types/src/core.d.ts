@@ -18,6 +18,7 @@ declare class ThresholdKey implements ITKey {
     constructor(args?: TKeyArgs);
     getApi(): ITKeyApi;
     getMetadata(): IMetadata;
+    updateMetadata(): Promise<IMetadata>;
     initialize(params?: {
         input?: ShareStore;
         importKey?: BN;
@@ -62,7 +63,7 @@ declare class ThresholdKey implements ITKey {
         serviceProvider?: IServiceProvider;
         privKey?: BN;
     }): Promise<Metadata>;
-    acquireWriteMetadataLock(maximumCalls?: number): Promise<number>;
+    acquireWriteMetadataLock(): Promise<number>;
     releaseWriteMetadataLock(): Promise<void>;
     syncShareMetadata(adjustScopedStore?: (ss: unknown) => unknown): Promise<void>;
     syncMultipleShareMetadata(shares: Array<BN>, adjustScopedStore?: (ss: unknown) => unknown): Promise<void>;

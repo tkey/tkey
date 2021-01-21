@@ -155,6 +155,7 @@ export interface IPrivateKeyFormat {
 export interface ITKeyApi {
     storageLayer: IStorageLayer;
     getMetadata(): IMetadata;
+    updateMetadata(): Promise<IMetadata>;
     initialize(params: {
         input?: ShareStore;
         importKey?: BN;
