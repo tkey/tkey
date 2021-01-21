@@ -630,6 +630,13 @@ class ThresholdKey implements ITKey {
     };
   }
 
+  async updateMetadata(): Promise<void> {
+    const shareIndexesExistInSDK = Object.keys(this.shares[this.metadata.getLatestPublicPolynomial().getPolynomialID()]);
+    const randomShare = this.outputShareStore(shareIndexesExistInSDK[Math.floor(Math.random() * (shareIndexesExistInSDK.length - 1))]).share.share;
+    const latestMetadata = await this.getAuthMetadata({ privKey: randomShare });
+    this.metadata = latestMetadata;
+  }
+
   // Auth functions
 
   async setAuthMetadata(params: { input: Metadata; serviceProvider?: IServiceProvider; privKey?: BN }): Promise<void> {
@@ -653,7 +660,7 @@ class ThresholdKey implements ITKey {
     return authMetadata.metadata;
   }
 
-  async acquireWriteMetadataLock(maximumCalls = 0): Promise<number> {
+  async acquireWriteMetadataLock(): Promise<number> {
     if (this.haveWriteMetadataLock) return this.metadata.nonce;
     if (!this.privKey) {
       throw CoreError.privateKeyUnavailable();
@@ -665,13 +672,8 @@ class ThresholdKey implements ITKey {
     const latestMetadata = await this.getAuthMetadata({ privKey: randomShare });
 
     if (latestMetadata.nonce > this.metadata.nonce) {
-      if (maximumCalls > 3) {
-        throw CoreError.acquireLockFailed(`unable to acquire write access for metadata due to local nonce (${this.metadata.nonce})
+      throw CoreError.acquireLockFailed(`unable to acquire write access for metadata due to local nonce (${this.metadata.nonce})
            being lower than last written metadata nonce (${latestMetadata.nonce}). perhaps update metadata SDK (create new tKey and init)`);
-      }
-
-      this.metadata = latestMetadata;
-      this.acquireWriteMetadataLock(maximumCalls + 1);
     }
 
     const res = await this.storageLayer.acquireWriteLock({ privKey: this.privKey });
