@@ -226,6 +226,11 @@ class ThresholdKey implements ITKey {
           if (shareIndexesForPoly[k] in shareIndexesRequired) {
             // eslint-disable-next-line no-await-in-loop
             const latestShareRes = await this.catchupToLatestShare(sharesForPoly[shareIndexesForPoly[k]], pubPolyID);
+
+            if (!this.metadata.polyIDList.includes(latestShareRes.latestShare.polynomialID)) {
+              this.metadata = latestShareRes.shareMetadata;
+            }
+
             if (latestShareRes.latestShare.polynomialID === pubPolyID) {
               sharesToInput.push(latestShareRes.latestShare);
               delete shareIndexesRequired[shareIndexesForPoly[k]];
@@ -648,19 +653,27 @@ class ThresholdKey implements ITKey {
     return authMetadata.metadata;
   }
 
-  async acquireWriteMetadataLock(): Promise<number> {
+  async acquireWriteMetadataLock(maximumCalls = 0): Promise<number> {
     if (this.haveWriteMetadataLock) return this.metadata.nonce;
     if (!this.privKey) {
       throw CoreError.privateKeyUnavailable();
     }
+
     // we check the metadata of a random share on the latest polynomial we have
     const shareIndexesExistInSDK = Object.keys(this.shares[this.metadata.getLatestPublicPolynomial().getPolynomialID()]);
     const randomShare = this.outputShareStore(shareIndexesExistInSDK[Math.floor(Math.random() * (shareIndexesExistInSDK.length - 1))]).share.share;
     const latestMetadata = await this.getAuthMetadata({ privKey: randomShare });
+
     if (latestMetadata.nonce > this.metadata.nonce) {
-      throw CoreError.acquireLockFailed(`unable to acquire write access for metadata due to local nonce (${this.metadata.nonce})
-       being lower than last written metadata nonce (${latestMetadata.nonce}). perhaps update metadata SDK (create new tKey and init)`);
+      if (maximumCalls > 3) {
+        throw CoreError.acquireLockFailed(`unable to acquire write access for metadata due to local nonce (${this.metadata.nonce})
+           being lower than last written metadata nonce (${latestMetadata.nonce}). perhaps update metadata SDK (create new tKey and init)`);
+      }
+
+      this.metadata = latestMetadata;
+      this.acquireWriteMetadataLock(maximumCalls + 1);
     }
+
     const res = await this.storageLayer.acquireWriteLock({ privKey: this.privKey });
     if (res.status !== 1) throw CoreError.acquireLockFailed(`lock cannot be acquired from storage layer status code: ${res.status}`);
 

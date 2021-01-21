@@ -6,5 +6,6 @@ declare class SecurityQuestionsError extends TkeyError {
     static unavailable(extraMessage?: string): ITkeyError;
     static unableToReplace(extraMessage?: string): ITkeyError;
     static incorrectAnswer(extraMessage?: string): ITkeyError;
+    static noPasswordSaved(extraMessage?: string): ITkeyError;
 }
 export default SecurityQuestionsError;

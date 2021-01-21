@@ -392,7 +392,7 @@ describe("SecurityQuestionsModule", function () {
     await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions(ans1, qn);
     let gotAnswer = await tb.modules.securityQuestions.getAnswer();
     if (gotAnswer !== ans1) {
-      fail("answers should be the same")
+      fail("answers should be the same");
     }
     await tb.modules.securityQuestions.changeSecurityQuestionAndAnswer(ans2, qn);
 
@@ -412,7 +412,7 @@ describe("SecurityQuestionsModule", function () {
 
     gotAnswer = await tb2.modules.securityQuestions.getAnswer();
     if (gotAnswer !== ans2) {
-      fail("answers should be the same")
+      fail("answers should be the same");
     }
   });
 });
@@ -723,7 +723,7 @@ describe("TkeyStore", function () {
 });
 
 describe("Lock", function () {
-  it("#locks should fail when tkey/nonce is updated ", async function () {
+  it("#locks shouldn't fail when tkey/nonce is updated", async function () {
     const tb = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
     const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
@@ -736,11 +736,11 @@ describe("Lock", function () {
     await tb2.generateNewShare();
     let outsideErr;
     try {
-      await tb.generateNewShare();
+      await tb.generateNewShare(); // auto updates metadata
     } catch (err) {
       outsideErr = err;
     }
-    if (!outsideErr) {
+    if (outsideErr) {
       fail("should fail");
     }
   });
