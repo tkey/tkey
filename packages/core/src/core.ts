@@ -128,11 +128,12 @@ class ThresholdKey implements ITKey {
 
   async updateMetadata(): Promise<IMetadata> {
     const shareIndexesExistInSDK = Object.keys(this.shares[this.metadata.getLatestPublicPolynomial().getPolynomialID()]);
-    const randomShare = this.outputShareStore(shareIndexesExistInSDK[Math.floor(Math.random() * (shareIndexesExistInSDK.length - 1))]).share.share;
-    const latestMetadata = await this.getAuthMetadata({ privKey: randomShare });
-    this.metadata = latestMetadata;
+    const randomShareStore = this.outputShareStore(shareIndexesExistInSDK[Math.floor(Math.random() * (shareIndexesExistInSDK.length - 1))]);
+    const latestShareDetails = await this.catchupToLatestShare(randomShareStore);
+    this.metadata = latestShareDetails.shareMetadata;
+
     await this.reconstructKey();
-    return latestMetadata;
+    return latestShareDetails.shareMetadata;
   }
 
   async initialize(params?: { input?: ShareStore; importKey?: BN; neverInitializeNewKey?: boolean }): Promise<KeyDetails> {
@@ -781,10 +782,12 @@ class ThresholdKey implements ITKey {
   }
 
   async encrypt(data: Buffer): Promise<EncryptedMessage> {
+    if (!this.privKey) throw CoreError.privateKeyUnavailable();
     return encrypt(getPubKeyECC(this.privKey), data);
   }
 
   async decrypt(encryptedMessage: EncryptedMessage): Promise<Buffer> {
+    if (!this.privKey) throw CoreError.privateKeyUnavailable();
     return decrypt(toPrivKeyECC(this.privKey), encryptedMessage);
   }
 
