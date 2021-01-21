@@ -754,7 +754,7 @@ describe("Lock", function () {
     await tb2.generateNewShare();
     let outsideErr;
     try {
-      await tb.generateNewShare(); // auto updates metadata
+      await tb.generateNewShare();
     } catch (err) {
       outsideErr = err;
     }
