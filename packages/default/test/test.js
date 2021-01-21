@@ -235,7 +235,6 @@ describe("tkey", function () {
       await tb2.generateNewShare();
     }, Error);
 
-    debugger;
     // try creating again
     await tb2.updateMetadata();
     await tb2.generateNewShare();
