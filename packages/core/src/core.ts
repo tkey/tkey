@@ -794,7 +794,7 @@ class ThresholdKey implements ITKey {
     // update metadataStore
     this.metadata.setTkeyStoreDomain(moduleName, rawTkeyStoreItems);
 
-    const shouldSync = sync == null ? true : sync;
+    const shouldSync = sync === null || sync === undefined ? true : sync;
     if (shouldSync) await this.syncShareMetadata();
   }
 
