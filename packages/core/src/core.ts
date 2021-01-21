@@ -92,6 +92,7 @@ class ThresholdKey implements ITKey {
   getApi(): ITKeyApi {
     return {
       getMetadata: this.getMetadata.bind(this),
+      updateMetadata: this.updateMetadata.bind(this),
       storageLayer: this.storageLayer,
       initialize: this.initialize.bind(this),
       catchupToLatestShare: this.catchupToLatestShare.bind(this),
@@ -123,6 +124,16 @@ class ThresholdKey implements ITKey {
     }
 
     throw CoreError.metadataUndefined();
+  }
+
+  async updateMetadata(): Promise<IMetadata> {
+    const shareIndexesExistInSDK = Object.keys(this.shares[this.metadata.getLatestPublicPolynomial().getPolynomialID()]);
+    const randomShareStore = this.outputShareStore(shareIndexesExistInSDK[Math.floor(Math.random() * (shareIndexesExistInSDK.length - 1))]);
+    const latestShareDetails = await this.catchupToLatestShare(randomShareStore);
+    this.metadata = latestShareDetails.shareMetadata;
+
+    await this.reconstructKey();
+    return latestShareDetails.shareMetadata;
   }
 
   async initialize(params?: { input?: ShareStore; importKey?: BN; neverInitializeNewKey?: boolean }): Promise<KeyDetails> {
@@ -244,7 +255,7 @@ class ThresholdKey implements ITKey {
     });
 
     if (sharesLeft > 0) {
-      throw CoreError.unableToReconstruct(`require ${requiredThreshold} but have ${sharesLeft - requiredThreshold}`);
+      throw CoreError.unableToReconstruct(` require ${requiredThreshold} but have ${sharesLeft - requiredThreshold}`);
     }
 
     const polyShares = Object.keys(this.shares[pubPolyID]);
@@ -653,14 +664,17 @@ class ThresholdKey implements ITKey {
     if (!this.privKey) {
       throw CoreError.privateKeyUnavailable();
     }
+
     // we check the metadata of a random share on the latest polynomial we have
     const shareIndexesExistInSDK = Object.keys(this.shares[this.metadata.getLatestPublicPolynomial().getPolynomialID()]);
     const randomShare = this.outputShareStore(shareIndexesExistInSDK[Math.floor(Math.random() * (shareIndexesExistInSDK.length - 1))]).share.share;
     const latestMetadata = await this.getAuthMetadata({ privKey: randomShare });
+
     if (latestMetadata.nonce > this.metadata.nonce) {
       throw CoreError.acquireLockFailed(`unable to acquire write access for metadata due to local nonce (${this.metadata.nonce})
-       being lower than last written metadata nonce (${latestMetadata.nonce}). perhaps update metadata SDK (create new tKey and init)`);
+           being lower than last written metadata nonce (${latestMetadata.nonce}). perhaps update metadata SDK (create new tKey and init)`);
     }
+
     const res = await this.storageLayer.acquireWriteLock({ privKey: this.privKey });
     if (res.status !== 1) throw CoreError.acquireLockFailed(`lock cannot be acquired from storage layer status code: ${res.status}`);
 
@@ -768,10 +782,12 @@ class ThresholdKey implements ITKey {
   }
 
   async encrypt(data: Buffer): Promise<EncryptedMessage> {
+    if (!this.privKey) throw CoreError.privateKeyUnavailable();
     return encrypt(getPubKeyECC(this.privKey), data);
   }
 
   async decrypt(encryptedMessage: EncryptedMessage): Promise<Buffer> {
+    if (!this.privKey) throw CoreError.privateKeyUnavailable();
     return decrypt(toPrivKeyECC(this.privKey), encryptedMessage);
   }
 

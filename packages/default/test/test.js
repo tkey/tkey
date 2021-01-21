@@ -221,6 +221,24 @@ describe("tkey", function () {
       await tb2.initialize({ neverInitializeNewKey: true });
     }, Error);
   });
+  it.only("#should be able to update metadata", async function () {
+    const resp1 = await tb.initializeNewKey({ initializeModules: true });
+
+    const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
+    await tb2.initialize();
+    tb2.inputShareStore(resp1.deviceShare);
+    await tb2.reconstructKey();
+
+    // try creating new shares
+    await tb.generateNewShare();
+    rejects(async () => {
+      await tb2.generateNewShare();
+    }, Error);
+
+    // try creating again
+    await tb2.updateMetadata();
+    await tb2.generateNewShare();
+  });
 });
 
 describe("tkey reconstruction", function () {
@@ -392,7 +410,7 @@ describe("SecurityQuestionsModule", function () {
     await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions(ans1, qn);
     let gotAnswer = await tb.modules.securityQuestions.getAnswer();
     if (gotAnswer !== ans1) {
-      fail("answers should be the same")
+      fail("answers should be the same");
     }
     await tb.modules.securityQuestions.changeSecurityQuestionAndAnswer(ans2, qn);
 
@@ -412,7 +430,7 @@ describe("SecurityQuestionsModule", function () {
 
     gotAnswer = await tb2.modules.securityQuestions.getAnswer();
     if (gotAnswer !== ans2) {
-      fail("answers should be the same")
+      fail("answers should be the same");
     }
   });
 });
@@ -723,7 +741,7 @@ describe("TkeyStore", function () {
 });
 
 describe("Lock", function () {
-  it("#locks should fail when tkey/nonce is updated ", async function () {
+  it("#locks should fail when tkey/nonce is updated", async function () {
     const tb = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
     const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });

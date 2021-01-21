@@ -18,6 +18,7 @@ declare class ThresholdKey implements ITKey {
     constructor(args?: TKeyArgs);
     getApi(): ITKeyApi;
     getMetadata(): IMetadata;
+    updateMetadata(): Promise<IMetadata>;
     initialize(params?: {
         input?: ShareStore;
         importKey?: BN;

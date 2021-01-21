@@ -121,10 +121,13 @@ export interface ShareRequestArgs {
 }
 export declare type TkeyStoreItemType = {
     id: string;
-    type: string;
 };
 export declare type ISeedPhraseStore = TkeyStoreItemType & {
     seedPhrase: string;
+    type: string;
+};
+export declare type ISQAnswerStore = TkeyStoreItemType & {
+    answer: string;
 };
 export declare type ISeedPhraseStoreWithKeys = ISeedPhraseStore & {
     keys: BN[];
@@ -134,6 +137,7 @@ export declare type MetamaskSeedPhraseStore = ISeedPhraseStore & {
 };
 export declare type IPrivateKeyStore = TkeyStoreItemType & {
     privateKey: BN;
+    type: string;
 };
 export declare type SECP256k1NStore = IPrivateKeyStore;
 export interface ISeedPhraseFormat {
@@ -151,6 +155,7 @@ export interface IPrivateKeyFormat {
 export interface ITKeyApi {
     storageLayer: IStorageLayer;
     getMetadata(): IMetadata;
+    updateMetadata(): Promise<IMetadata>;
     initialize(params: {
         input?: ShareStore;
         importKey?: BN;
