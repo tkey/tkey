@@ -54,6 +54,25 @@ describe("tkey", function () {
     tb = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
   });
 
+  it("#should be able to update metadata", async function () {
+    const resp1 = await tb.initializeNewKey({ initializeModules: true });
+
+    const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
+    await tb2.initialize();
+    tb2.inputShareStore(resp1.deviceShare);
+    await tb2.reconstructKey();
+
+    // try creating new shares
+    await tb.generateNewShare();
+    rejects(async () => {
+      await tb2.generateNewShare();
+    }, Error);
+
+    // try creating again
+    await tb2.updateMetadata();
+    await tb2.generateNewShare();
+  });
+
   it("#should be able to reconstruct key when initializing a key", async function () {
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
     const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
@@ -220,24 +239,6 @@ describe("tkey", function () {
     rejects(async () => {
       await tb2.initialize({ neverInitializeNewKey: true });
     }, Error);
-  });
-  it("#should be able to update metadata", async function () {
-    const resp1 = await tb.initializeNewKey({ initializeModules: true });
-
-    const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
-    await tb2.initialize();
-    tb2.inputShareStore(resp1.deviceShare);
-    await tb2.reconstructKey();
-
-    // try creating new shares
-    await tb.generateNewShare();
-    rejects(async () => {
-      await tb2.generateNewShare();
-    }, Error);
-
-    // try creating again
-    await tb2.updateMetadata();
-    await tb2.generateNewShare();
   });
 });
 
