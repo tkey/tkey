@@ -179,7 +179,7 @@ export interface ITKeyApi {
     getTKeyStoreItem(moduleName: string, id: string): Promise<TkeyStoreItemType>;
     getTKeyStore(moduleName: string): Promise<TkeyStoreItemType[]>;
     deleteTKeyStoreItem(moduleName: string, id: string): Promise<void>;
-    setTKeyStoreItem(moduleName: string, data: TkeyStoreItemType, sync?: boolean): Promise<void>;
+    setTKeyStoreItem(moduleName: string, data: TkeyStoreItemType, updateMetadata?: boolean): Promise<void>;
 }
 export interface ITKey extends ITKeyApi, ISerializable {
     modules: ModuleMap;

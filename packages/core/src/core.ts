@@ -775,7 +775,7 @@ class ThresholdKey implements ITKey {
     return decrypt(toPrivKeyECC(this.privKey), encryptedMessage);
   }
 
-  async setTKeyStoreItem(moduleName: string, data: TkeyStoreItemType, sync?: boolean): Promise<void> {
+  async setTKeyStoreItem(moduleName: string, data: TkeyStoreItemType, updateMetadata?: boolean): Promise<void> {
     const rawTkeyStoreItems: EncryptedMessage[] = (this.metadata.getTkeyStoreDomain(moduleName) as EncryptedMessage[]) || [];
     const decryptedItems = await Promise.all(
       rawTkeyStoreItems.map(async (x) => {
@@ -794,7 +794,7 @@ class ThresholdKey implements ITKey {
     // update metadataStore
     this.metadata.setTkeyStoreDomain(moduleName, rawTkeyStoreItems);
 
-    const shouldSync = sync === null || sync === undefined ? true : sync;
+    const shouldSync = updateMetadata === null || updateMetadata === undefined ? true : updateMetadata;
     if (shouldSync) await this.syncShareMetadata();
   }
 
