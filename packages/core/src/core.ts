@@ -235,15 +235,20 @@ class ThresholdKey implements ITKey {
         const shareIndexesForPoly = Object.keys(sharesForPoly);
         for (let k = 0; k < shareIndexesForPoly.length && sharesLeft > 0; k += 1) {
           if (shareIndexesForPoly[k] in shareIndexesRequired) {
-            // eslint-disable-next-line no-await-in-loop
-            const latestShareRes = await this.catchupToLatestShare(sharesForPoly[shareIndexesForPoly[k]], pubPolyID);
-            if (latestShareRes.latestShare.polynomialID === pubPolyID) {
-              sharesToInput.push(latestShareRes.latestShare);
-              delete shareIndexesRequired[shareIndexesForPoly[k]];
-              sharesLeft -= 1;
+            const currentShareForPoly = sharesForPoly[shareIndexesForPoly[k]];
+            if (currentShareForPoly.polynomialID === pubPolyID) {
+              sharesToInput.push(currentShareForPoly);
             } else {
-              throw new CoreError(1304, "Share found in unexpected polynomial"); // Share found in unexpected polynomial
+              // eslint-disable-next-line no-await-in-loop
+              const latestShareRes = await this.catchupToLatestShare(currentShareForPoly, pubPolyID);
+              if (latestShareRes.latestShare.polynomialID === pubPolyID) {
+                sharesToInput.push(latestShareRes.latestShare);
+              } else {
+                throw new CoreError(1304, "Share found in unexpected polynomial"); // Share found in unexpected polynomial
+              }
             }
+            delete shareIndexesRequired[shareIndexesForPoly[k]];
+            sharesLeft -= 1;
           }
         }
       }
