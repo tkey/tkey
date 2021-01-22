@@ -94,11 +94,14 @@ class WebStorageModule implements IModule {
 
   async inputShareFromWebStorage(): Promise<void> {
     const shareStore = await this.getDeviceShare();
-    const latestShareDetails = await this.tbSDK.catchupToLatestShare(shareStore);
+    let latestShareStore = shareStore;
     const metadata = this.tbSDK.getMetadata();
-    const tkeypubx = metadata.pubKey.x.toString("hex");
-    await storeShareOnLocalStorage(latestShareDetails.latestShare, tkeypubx);
-    this.tbSDK.inputShareStore(latestShareDetails.latestShare);
+    if (metadata.getLatestPublicPolynomial().getPolynomialID() !== shareStore.polynomialID) {
+      latestShareStore = (await this.tbSDK.catchupToLatestShare(shareStore)).latestShare;
+      const tkeypubx = metadata.pubKey.x.toString("hex");
+      await storeShareOnLocalStorage(latestShareStore, tkeypubx);
+    }
+    this.tbSDK.inputShareStore(latestShareStore);
   }
 }
 

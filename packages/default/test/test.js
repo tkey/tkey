@@ -221,7 +221,7 @@ describe("tkey", function () {
       await tb2.initialize({ neverInitializeNewKey: true });
     }, Error);
   });
-  it.only("#should be able to update metadata", async function () {
+  it("#should be able to update metadata", async function () {
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
 
     const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
