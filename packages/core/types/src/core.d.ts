@@ -75,7 +75,7 @@ declare class ThresholdKey implements ITKey {
     deleteShareDescription(shareIndex: string, description: string, updateMetadata?: boolean): Promise<void>;
     encrypt(data: Buffer): Promise<EncryptedMessage>;
     decrypt(encryptedMessage: EncryptedMessage): Promise<Buffer>;
-    setTKeyStoreItem(moduleName: string, data: TkeyStoreItemType): Promise<void>;
+    setTKeyStoreItem(moduleName: string, data: TkeyStoreItemType, updateMetadata?: boolean): Promise<void>;
     deleteTKeyStoreItem(moduleName: string, id: string): Promise<void>;
     getTKeyStore(moduleName: string): Promise<TkeyStoreItemType[]>;
     getTKeyStoreItem(moduleName: string, id: string): Promise<TkeyStoreItemType>;
