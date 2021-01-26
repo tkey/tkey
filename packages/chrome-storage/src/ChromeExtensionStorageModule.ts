@@ -1,4 +1,5 @@
 import { IModule, ITKeyApi, ShareStore } from "@tkey/common-types";
+import { browser } from "webextension-polyfill-ts";
 
 export const CHROME_EXTENSION_STORAGE_MODULE_NAME = "chromeExtensionStorage";
 
@@ -31,29 +32,18 @@ export default class ChromeExtensionStorageModule implements IModule {
   async storeShareOnChromeExtensionStorage(share: ShareStore): Promise<void> {
     const metadata = this.tbSDK.getMetadata();
     const key = metadata.pubKey.x.toString("hex"); // tbkey public
-    return new Promise((resolve, reject) => {
-      if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
-      else chrome.storage.sync.set({ [key]: JSON.stringify(share) }, resolve);
-    });
+    if (browser.runtime.lastError) throw browser.runtime.lastError;
+    else return browser.storage.sync.set({ [key]: JSON.stringify(share) });
   }
 
   async getStoreFromChromeExtensionStorage(): Promise<ShareStore> {
     const metadata = this.tbSDK.getMetadata();
     const key = metadata.pubKey.x.toString("hex"); // tbkey public
-    return new Promise((resolve, reject) => {
-      chrome.storage.sync.get([key], async (result) => {
-        if (chrome.runtime.lastError) reject(chrome.runtime.lastError);
-        else {
-          try {
-            const verifierIdObj: ShareStore = JSON.parse(result[key]);
-            this.tbSDK.inputShareStore(verifierIdObj);
-            resolve(verifierIdObj);
-          } catch (err) {
-            reject(err);
-          }
-        }
-      });
-    });
+    const result = await browser.storage.sync.get(key);
+    if (browser.runtime.lastError) throw browser.runtime.lastError;
+    const verifierIdObj: ShareStore = JSON.parse(result[key]);
+    this.tbSDK.inputShareStore(verifierIdObj);
+    return verifierIdObj;
   }
 
   async inputShareFromChromeExtensionStorage(): Promise<void> {
