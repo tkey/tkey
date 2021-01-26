@@ -54,7 +54,7 @@ Creation Flow:
 // This function initializes the login/creates tkey using the modules
 // Say if webstorage module is used,
 // serviceProvider is the first share and localStorage is the second and (2/2) is created
-await tKey.initialize();
+await tKey.initialize({ input: metadata }); // metadata is from the above step
 
 // If you add password using security questions module
 await tKey.modules[SECURITY_QUESTIONS_MODULE_KEY].generateNewShareWithSecurityQuestions(password, "What is your password?")
