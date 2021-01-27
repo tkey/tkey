@@ -35,6 +35,9 @@
   "peerDependencies": {
     "@babel/runtime": "7.x"
   },
+  "devDependencies": {
+    "@types/bn.js": "^5.1.0"
+  },
   "dependencies": {
     "@tkey/common-types": "^3.8.0",
     "bn.js": "^5.1.3",

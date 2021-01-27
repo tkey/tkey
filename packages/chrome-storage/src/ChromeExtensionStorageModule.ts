@@ -32,8 +32,7 @@ export default class ChromeExtensionStorageModule implements IModule {
   async storeShareOnChromeExtensionStorage(share: ShareStore): Promise<void> {
     const metadata = this.tbSDK.getMetadata();
     const key = metadata.pubKey.x.toString("hex"); // tbkey public
-    if (browser.runtime.lastError) throw browser.runtime.lastError;
-    else return browser.storage.sync.set({ [key]: JSON.stringify(share) });
+    return browser.storage.sync.set({ [key]: JSON.stringify(share) });
   }
 
   async getStoreFromChromeExtensionStorage(): Promise<ShareStore> {
