@@ -49,7 +49,8 @@ class ServiceProviderBase implements IServiceProvider {
   }
 
   sign(msg: BNString): string {
-    const sig = toPrivKeyEC(this.postboxKey).sign(msg);
+    const tmp = new BN(msg, "hex");
+    const sig = toPrivKeyEC(this.postboxKey).sign(tmp.toString("hex"));
     return Buffer.from(sig.r.toString(16, 64) + sig.s.toString(16, 64) + new BN(0).toString(16, 2), "hex").toString("base64");
   }
 
