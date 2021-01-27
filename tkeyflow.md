@@ -105,3 +105,65 @@ const requiredShareStore = shareCreated.newShareStores[shareCreated.newShareInde
 const serializedShare = await tKey.modules[SHARE_SERIALIZATION_MODULE_KEY].serialize(requiredShareStore.share.share, 'mnemonic')
 // Now, this serializedShare is a mnemonic which you can display to user/send mail
 ```
+
+- To allow for Share Transfer
+
+Add ShareTransferModule to initial set of modules while creating tKey
+
+Start listening on the original device
+```js 
+
+const TKEY_SHARE_TRANSFER_INTERVAL = 5000 //ms
+// we use bowser to parse the userAgent to display in UI which device the share is coming from
+async function getPendingShareTransferRequests(tKey) {
+  const latestShareTransferStore = await tKey.modules[SHARE_TRANSFER_MODULE_KEY].getShareTransferStore()
+  const pendingRequests = Object.keys(latestShareTransferStore).reduce((acc, x) => {
+    const browserDetail = bowser.parse(latestShareTransferStore[x].userAgent)
+    if (!latestShareTransferStore[x].encShareInTransit) acc.push({ ...latestShareTransferStore[x], browserDetail, encPubKeyX: x })
+    return acc
+  }, [])
+  return pendingRequests
+}
+
+let requestStatusCheckId
+
+const checkFn = async () => {
+  try {
+    const pendingRequests = await getPendingShareTransferRequests(tKey);
+    if (Object.keys(pendingRequests).length > 0) {
+      // Once we see some pending requests, we stop the interval, display to user for confirmation of share transfer
+      clearInterval(requestStatusCheckId)
+    }
+  } catch (error) {
+    clearInterval(requestStatusCheckId)
+  }
+}
+checkFn()
+requestStatusCheckId = setInterval(checkFn, TKEY_SHARE_TRANSFER_INTERVAL)
+
+// Once the user approves, call
+// encPubKeyX is available in pendingRequests
+await tKey.modules[SHARE_TRANSFER_MODULE_KEY].approveRequest(encPubKeyX)
+await tKey.syncShareMetadata()
+// You can start the interval again
+requestStatusCheckId = setInterval(checkFn, TKEY_SHARE_TRANSFER_INTERVAL)
+```
+
+In the new device,
+```js
+// Make the request for share transfer
+const currentEncPubKeyX = await tKey.modules[SHARE_TRANSFER_MODULE_KEY].requestNewShare(
+          window.navigator.userAgent,
+          tKey.getCurrentShareIndexes()
+        )
+// shareStore is the received share store after approval on the original device
+const shareStore = await tKey.modules[SHARE_TRANSFER_MODULE_KEY].startRequestStatusCheck(currentEncPubKeyX, true)
+const { privKey } = await tKey.reconstructKey(false)
+```
+
+Post share transfer your tKey on either device maybe of lower nonce. (can be detected from error code)
+You can fix that by using
+
+```js
+await tKey.updateMetadata()
+```
