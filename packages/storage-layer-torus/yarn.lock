@@ -96,9 +96,9 @@ eth-lib@0.2.8:
     xhr-request-promise "^0.1.2"
 
 ethereum-bloom-filters@^1.0.6:
-  version "1.0.8"
-  resolved "https://registry.yarnpkg.com/ethereum-bloom-filters/-/ethereum-bloom-filters-1.0.8.tgz#0834ea39e139034b051cd5323355e23b6c76b23d"
-  integrity sha512-cF4B4aVaHQ/R2dgYSI4g1OZHOopi5KDgfGkxhTONlmzh0h+u7H1v0f/TXyzaq9lpfK34pTnOwBo4a1rspTAsxA==
+  version "1.0.9"
+  resolved "https://registry.yarnpkg.com/ethereum-bloom-filters/-/ethereum-bloom-filters-1.0.9.tgz#4a59dead803af0c9e33834170bd7695df67061ec"
+  integrity sha512-GiK/RQkAkcVaEdxKVkPcG07PQ5vD7v2MFSHgZmBJSfMzNRHimntdBithsHAT89tAXnIpzVDWt8iaCD1DvkaxGg==
   dependencies:
     js-sha3 "^0.8.0"
 
