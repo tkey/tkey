@@ -39,9 +39,8 @@ export default class ChromeExtensionStorageModule implements IModule {
     const metadata = this.tbSDK.getMetadata();
     const key = metadata.pubKey.x.toString("hex"); // tbkey public
     const result = await browser.storage.sync.get(key);
-    if (browser.runtime.lastError) throw browser.runtime.lastError;
     const verifierIdObj: ShareStore = JSON.parse(result[key]);
-    this.tbSDK.inputShareStore(verifierIdObj);
+    await this.tbSDK.inputShareStoreSafe(verifierIdObj);
     return verifierIdObj;
   }
 
