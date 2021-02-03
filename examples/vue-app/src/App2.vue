@@ -70,7 +70,7 @@ export default {
     return {
       consoleOutput: "",
       isMocked: true,
-      loginHint: '',
+      loginHint: "",
       selectedVerifier: "google",
       verifiers: {
         [GOOGLE]: {
@@ -232,6 +232,7 @@ export default {
     },
     console(output) {
       this.consoleOutput = typeof output === "string" ? output : JSON.stringify(output, null, 2);
+      console.log(output);
     },
   },
   async mounted() {
