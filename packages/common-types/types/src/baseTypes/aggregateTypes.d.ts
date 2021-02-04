@@ -83,7 +83,6 @@ export declare type KeyDetails = {
     threshold: number;
     totalShares: number;
     shareDescriptions: ShareDescriptionMap;
-    modules: ModuleMap;
 };
 export declare type TKeyArgs = {
     enableLogging?: boolean;
