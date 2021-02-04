@@ -171,11 +171,15 @@ export interface ShareRequestArgs {
 
 export type TkeyStoreItemType = {
   id: string;
-  type: string;
 };
 
 export type ISeedPhraseStore = TkeyStoreItemType & {
   seedPhrase: string;
+  type: string;
+};
+
+export type ISQAnswerStore = TkeyStoreItemType & {
+  answer: string;
 };
 
 export type ISeedPhraseStoreWithKeys = ISeedPhraseStore & {
@@ -188,6 +192,7 @@ export type MetamaskSeedPhraseStore = ISeedPhraseStore & {
 
 export type IPrivateKeyStore = TkeyStoreItemType & {
   privateKey: BN;
+  type: string;
 };
 
 export type SECP256k1NStore = IPrivateKeyStore;
@@ -210,6 +215,7 @@ export interface ITKeyApi {
   storageLayer: IStorageLayer;
 
   getMetadata(): IMetadata;
+  updateMetadata(): Promise<IMetadata>;
   initialize(params: { input?: ShareStore; importKey?: BN; neverInitializeNewKey?: boolean }): Promise<KeyDetails>;
   catchupToLatestShare(shareStore: ShareStore): Promise<CatchupToLatestShareResult>;
   syncShareMetadata(adjustScopedStore?: (ss: unknown) => unknown): Promise<void>;
@@ -237,7 +243,7 @@ export interface ITKeyApi {
   getTKeyStoreItem(moduleName: string, id: string): Promise<TkeyStoreItemType>;
   getTKeyStore(moduleName: string): Promise<TkeyStoreItemType[]>;
   deleteTKeyStoreItem(moduleName: string, id: string): Promise<void>;
-  setTKeyStoreItem(moduleName: string, data: TkeyStoreItemType): Promise<void>;
+  setTKeyStoreItem(moduleName: string, data: TkeyStoreItemType, updateMetadata?: boolean): Promise<void>;
 }
 
 // eslint-disable-next-line no-use-before-define

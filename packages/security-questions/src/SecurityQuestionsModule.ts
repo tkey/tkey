@@ -3,6 +3,7 @@ import {
   GenerateNewShareResult,
   IModule,
   isEmptyObject,
+  ISQAnswerStore,
   ITKeyApi,
   SecurityQuestionStoreArgs,
   Share,
@@ -20,18 +21,17 @@ function answerToUserInputHashBN(answerString: string): BN {
 }
 
 export const SECURITY_QUESTIONS_MODULE_NAME = "securityQuestions";
-
-// password + nonce = share
-// password has changed to password2
-
-// password2 + newNonce = share
+const TKEYSTORE_ID = "answer";
 
 class SecurityQuestionsModule implements IModule {
   moduleName: string;
 
   tbSDK: ITKeyApi;
 
-  constructor() {
+  saveAnswers: boolean;
+
+  constructor(saveAnswers?: boolean) {
+    this.saveAnswers = saveAnswers;
     this.moduleName = SECURITY_QUESTIONS_MODULE_NAME;
   }
 
@@ -61,11 +61,15 @@ class SecurityQuestionsModule implements IModule {
       polynomialID: newShareStore.polynomialID,
     });
     metadata.setGeneralStoreDomain(this.moduleName, sqStore);
+
     await this.tbSDK.addShareDescription(
       newSharesDetails.newShareIndex.toString("hex"),
       JSON.stringify({ module: this.moduleName, questions, dateAdded: Date.now() }),
-      true // sync metadata
+      false // READ TODO1 (don't sync metadata)
     );
+    // set on tkey store
+    await this.saveAnswerOnTkeyStore(answerString);
+    await this.tbSDK.syncShareMetadata();
     return newSharesDetails;
   }
 
@@ -117,6 +121,7 @@ class SecurityQuestionsModule implements IModule {
       questions: newQuestions,
     });
     metadata.setGeneralStoreDomain(this.moduleName, newSqStore);
+    await this.saveAnswerOnTkeyStore(newAnswerString);
     await this.tbSDK.syncShareMetadata();
   }
 
@@ -136,6 +141,25 @@ class SecurityQuestionsModule implements IModule {
       shareIndex: sqStore.shareIndex,
       questions: sqStore.questions,
     });
+  }
+
+  async saveAnswerOnTkeyStore(answerString: string): Promise<void> {
+    if (!this.saveAnswers) return;
+
+    const answerStore: ISQAnswerStore = {
+      answer: answerString,
+      id: TKEYSTORE_ID,
+    };
+    await this.tbSDK.setTKeyStoreItem(this.moduleName, answerStore, false);
+  }
+
+  async getAnswer(): Promise<string> {
+    //  TODO: TODO1 edit setTKeyStoreItem to not sync all the time.
+    if (this.saveAnswers) {
+      const answerStore = (await this.tbSDK.getTKeyStoreItem(this.moduleName, TKEYSTORE_ID)) as ISQAnswerStore;
+      return answerStore.answer;
+    }
+    throw SecurityQuestionsError.noPasswordSaved();
   }
 }
 

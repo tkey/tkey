@@ -55,11 +55,11 @@ class CoreError extends TkeyError {
   }
 
   public static fromCode(code: number, extraMessage = ""): ITkeyError {
-    return new CoreError(code, `${CoreError.messages[code]}${extraMessage}`);
+    return new CoreError(code, `${CoreError.messages[code]} ${extraMessage}`);
   }
 
   public static default(extraMessage = ""): ITkeyError {
-    return new CoreError(1000, `${CoreError.messages[1000]}${extraMessage}`);
+    return new CoreError(1000, `${CoreError.messages[1000]} ${extraMessage}`);
   }
 
   // Custom methods

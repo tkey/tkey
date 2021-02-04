@@ -1,6 +1,6 @@
 {
   "name": "@tkey/private-keys",
-  "version": "3.6.5",
+  "version": "3.9.0",
   "description": "TKey Private Keys Module",
   "author": "Torus Labs",
   "homepage": "https://github.com/torusresearch/tkey#readme",
@@ -35,8 +35,11 @@
   "peerDependencies": {
     "@babel/runtime": "7.x"
   },
+  "devDependencies": {
+    "@types/bn.js": "^5.1.0"
+  },
   "dependencies": {
-    "@tkey/common-types": "^3.6.5",
+    "@tkey/common-types": "^3.9.0",
     "bn.js": "^5.1.3",
     "randombytes": "^2.1.0"
   },

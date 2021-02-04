@@ -17,7 +17,7 @@ describe("Errors", function () {
       },
       {
         code: 1101,
-        message: "metadata not found, SDK likely not intialized",
+        message: "metadata not found, SDK likely not intialized ",
       },
       "metadata error thrown"
     );
@@ -29,7 +29,7 @@ describe("Errors", function () {
       },
       {
         code: 1101,
-        message: "metadata not found, SDK likely not intialized",
+        message: "metadata not found, SDK likely not intialized ",
       },
       "metadata error thrown"
     );

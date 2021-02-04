@@ -149,7 +149,8 @@ export function polyCommitmentEval(polyCommitments: Array<Point>, index: BN): Po
   }
   let shareCommitment = basePtPolyCommitments[0];
   for (let i = 1; i < basePtPolyCommitments.length; i += 1) {
-    const e = basePtPolyCommitments[i].mul(index.pow(new BN(i)).umod(ecCurve.n));
+    const factor = index.pow(new BN(i)).umod(ecCurve.n);
+    const e = basePtPolyCommitments[i].mul(factor);
     shareCommitment = shareCommitment.add(e);
   }
   return new Point(shareCommitment.getX(), shareCommitment.getY());
