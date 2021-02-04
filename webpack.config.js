@@ -3,9 +3,7 @@ const path = require("path");
 const ESLintPlugin = require("eslint-webpack-plugin");
 const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
 
-const generateLibraryName = (pkgName) => {
-  return pkgName.charAt(0).toUpperCase() + pkgName.slice(1);
-};
+const generateLibraryName = (pkgName) => pkgName.charAt(0).toUpperCase() + pkgName.slice(1);
 
 // loaders execute right to left
 
