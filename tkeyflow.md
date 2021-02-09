@@ -37,8 +37,8 @@ const postboxKey = tKey.serviceProvider.postboxKey.toString('hex');
 4. Depending on your UI flows, you may wish to check if user already has a tkey or not
    This is where you educate an user about tkey and device storage etc.
 ```js
-const metadata = await tKey.storageLayer.getMetadata({ privKey: postboxKey });
-const isNewKey = metadata.message === "KEY_NOT_FOUND";
+const shareStore = await tKey.storageLayer.getMetadata({ privKey: postboxKey });
+const isNewKey = shareStore.message === "KEY_NOT_FOUND";
 ```
 The flow is of two parts here: 
 a: creation
@@ -54,7 +54,7 @@ Creation Flow:
 // This function initializes the login/creates tkey using the modules
 // Say if webstorage module is used,
 // serviceProvider is the first share and localStorage is the second and (2/2) is created
-await tKey.initialize({ input: metadata }); // metadata is from the above step
+await tKey.initialize({ input: shareStore }); // metadata is from the above step
 
 // If you add password using security questions module
 await tKey.modules[SECURITY_QUESTIONS_MODULE_KEY].generateNewShareWithSecurityQuestions(password, "What is your password?")
