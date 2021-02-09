@@ -173,8 +173,8 @@ export interface ITKeyApi {
     addShareSerializationMiddleware(serialize: (share: BN, type: string) => Promise<unknown>, deserialize: (serializedShare: unknown, type: string) => Promise<BN>): void;
     generateNewShare(): Promise<GenerateNewShareResult>;
     outputShareStore(shareIndex: BNString): ShareStore;
-    inputShare(share: unknown, type: string): Promise<void>;
-    outputShare(shareIndex: BNString, type: string): Promise<unknown>;
+    inputShare(share: unknown, type?: string): Promise<void>;
+    outputShare(shareIndex: BNString, type?: string): Promise<unknown>;
     encrypt(data: Buffer): Promise<EncryptedMessage>;
     decrypt(encryptedMesage: EncryptedMessage): Promise<Buffer>;
     getTKeyStoreItem(moduleName: string, id: string): Promise<TkeyStoreItemType>;
