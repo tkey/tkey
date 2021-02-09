@@ -167,3 +167,19 @@ You can fix that by using
 ```js
 await tKey.updateMetadata()
 ```
+
+- Export a Share
+
+```js
+const shareStore = await tKey.outputShareStore(shareIndex)
+const serializedShare = await tKey.modules[SHARE_SERIALIZATION_MODULE_KEY].serialize(shareStore.share.share, 'mnemonic')
+```
+
+- Import a Serialized Share
+
+```js
+
+const deserializedShare = await this.tKey.modules[SHARE_SERIALIZATION_MODULE_KEY].deserialize(shareMnemonic, 'mnemonic')
+await this.tKey.inputShare(deserializedShare)
+
+```
