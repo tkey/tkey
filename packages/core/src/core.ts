@@ -643,19 +643,33 @@ class ThresholdKey implements ITKey {
 
   // Auth functions
 
-  async setAuthMetadata(params: { input: Metadata; serviceProvider?: IServiceProvider; privKey?: BN }): Promise<void> {
+  async setAuthMetadata(params: {
+    input: Metadata;
+    serviceProvider?: IServiceProvider;
+    privKey?: BN;
+  }): Promise<{
+    message: string;
+  }> {
     const { input, serviceProvider, privKey } = params;
     const authMetadata = new AuthMetadata(input, this.privKey);
-    await this.storageLayer.setMetadata({ input: authMetadata, serviceProvider, privKey });
+    return this.storageLayer.setMetadata({ input: authMetadata, serviceProvider, privKey });
   }
 
-  async setAuthMetadataBulk(params: { input: Metadata[]; serviceProvider?: IServiceProvider; privKey?: BN[] }): Promise<void> {
+  async setAuthMetadataBulk(params: {
+    input: Metadata[];
+    serviceProvider?: IServiceProvider;
+    privKey?: BN[];
+  }): Promise<
+    {
+      message: string;
+    }[]
+  > {
     const { input, serviceProvider, privKey } = params;
     const authMetadatas = [];
     for (let i = 0; i < input.length; i += 1) {
       authMetadatas.push(new AuthMetadata(input[i], this.privKey));
     }
-    await this.storageLayer.setMetadataBulk({ input: authMetadatas, serviceProvider, privKey });
+    return this.storageLayer.setMetadataBulkStream({ input: authMetadatas, serviceProvider, privKey });
   }
 
   async getAuthMetadata(params: { serviceProvider?: IServiceProvider; privKey?: BN }): Promise<Metadata> {

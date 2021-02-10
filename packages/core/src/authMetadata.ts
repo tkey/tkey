@@ -30,7 +30,11 @@ class AuthMetadata {
 
   static fromJSON(value: StringifiedType): AuthMetadata {
     const { data, sig } = value;
+
     const m = Metadata.fromJSON(data);
+    if (!m || !m.pubKey) {
+      console.log(m);
+    }
     const pubK = ecCurve.keyFromPublic({ x: m.pubKey.x.toString("hex", 64), y: m.pubKey.y.toString("hex", 64) }, "hex");
     if (!pubK.verify(stripHexPrefix(keccak256(stringify(data))), sig)) {
       throw CoreError.default("Signature not valid for returning metadata");

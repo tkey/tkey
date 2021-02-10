@@ -62,6 +62,52 @@ class TorusStorageLayer implements IStorageLayer {
     return JSON.parse(decrypted.toString()) as T;
   }
 
+  async setMetadataBulkStream<T>(params: {
+    input: Array<T>;
+    serviceProvider?: IServiceProvider;
+    privKey?: Array<BN>;
+  }): Promise<{ message: string }[]> {
+    const { serviceProvider, privKey, input } = params;
+    const newInput = input;
+    const finalMetadataParams = await Promise.all(
+      newInput.map(async (el, i) => {
+        const bufferMetadata = Buffer.from(stringify(el));
+        let encryptedDetails: EncryptedMessage;
+        if (privKey[i]) {
+          encryptedDetails = await encrypt(getPubKeyECC(privKey[i]), bufferMetadata);
+        } else {
+          encryptedDetails = await serviceProvider.encrypt(bufferMetadata);
+        }
+        const serializedEncryptedDetails = btoa(stringify(encryptedDetails));
+        const metadataParams = this.generateMetadataParams(serializedEncryptedDetails, serviceProvider, privKey[i]);
+        return metadataParams;
+      })
+    );
+
+    // console.log(metadataParams);
+    const XHR = new XMLHttpRequest();
+    const FD = new FormData();
+    // FD.append("test", metadataParams);
+
+    finalMetadataParams.forEach((el, index) => {
+      FD.append(index.toString(), JSON.stringify(el));
+    });
+    // console.log(FD.forEach(console.log));
+
+    XHR.open("POST", `${this.hostUrl}/bulk_set_stream`);
+    XHR.send(FD);
+
+    // const defaultOptions: RequestInit = {
+    //   mode: "cors",
+    //   body: FD,
+    //   method: "POST",
+    // };
+
+    // const data = await fetch(`${this.hostUrl}/bulk_set_stream`, defaultOptions);
+    // console.log(data);
+    return [{ message: "hello" }];
+  }
+
   /**
    * Set Metadata for a key
    * @param input data to post
