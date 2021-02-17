@@ -53,12 +53,16 @@ declare class ThresholdKey implements ITKey {
         input: Metadata;
         serviceProvider?: IServiceProvider;
         privKey?: BN;
-    }): Promise<void>;
+    }): Promise<{
+        message: string;
+    }>;
     setAuthMetadataBulk(params: {
         input: Metadata[];
         serviceProvider?: IServiceProvider;
         privKey?: BN[];
-    }): Promise<void>;
+    }): Promise<{
+        message: string;
+    }[]>;
     getAuthMetadata(params: {
         serviceProvider?: IServiceProvider;
         privKey?: BN;

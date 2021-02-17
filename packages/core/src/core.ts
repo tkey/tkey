@@ -424,13 +424,13 @@ class ThresholdKey implements ITKey {
     m.setScopedStore("encryptedShares", newScopedStore);
     const metadataToPush = Array(sharesToPush.length).fill(m);
 
-    await this.setAuthMetadataBulk({ input: metadataToPush, privKey: sharesToPush });
+    // await this.setAuthMetadataBulk({ input: metadataToPush, privKey: sharesToPush });
 
     // set share for serviceProvider encrytion
-    if (shareIndexesNeedingEncryption.includes("1")) {
-      await this.storageLayer.setMetadata({ input: newShareStores["1"], serviceProvider: this.serviceProvider });
-      // TODO: handle failure gracefully
-    }
+    // if (shareIndexesNeedingEncryption.includes("1")) {
+    //   await this.storageLayer.setMetadata({ input: newShareStores["1"], serviceProvider: this.serviceProvider });
+    //   // TODO: handle failure gracefully
+    // }
 
     // run refreshShare middleware
     for (const moduleName in this.refreshMiddleware) {
@@ -452,8 +452,8 @@ class ThresholdKey implements ITKey {
       return newShareStores[shareIndex].share.share;
     });
     await this.setAuthMetadataBulk({
-      input: newShareMetadataToPush,
-      privKey: newShareStoreSharesToPush,
+      input: [...metadataToPush, ...newShareMetadataToPush],
+      privKey: [...sharesToPush, ...newShareStoreSharesToPush],
     });
 
     // set metadata for all new shares
@@ -514,6 +514,7 @@ class ThresholdKey implements ITKey {
       metadataToPush.push(metadata);
       return shares[shareIndex.toString("hex")].share;
     });
+
     // because this is the first time we're setting metadata there is no need to acquire a lock
     await this.setAuthMetadataBulk({ input: metadataToPush, privKey: sharesToPush });
 

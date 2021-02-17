@@ -155,7 +155,7 @@ export default {
         await serviceProvider.init({ skipSw: false });
       }
 
-      const storageLayer = new TorusStorageLayer({ hostUrl: "https://metadata.tor.us", serviceProvider });
+      const storageLayer = new TorusStorageLayer({ hostUrl: "http://ec2-52-68-162-65.ap-northeast-1.compute.amazonaws.com", serviceProvider });
       const webStorage = new WebStorageModule();
 
       this.tKey = new ThresholdKey({
