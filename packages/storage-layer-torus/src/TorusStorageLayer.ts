@@ -86,18 +86,10 @@ class TorusStorageLayer implements IStorageLayer {
       })
     );
 
-    // console.log(metadataParams);
-    // const XHR = new XMLHttpRequest();
     const FD = new FormData();
-    // FD.append("test", metadataParams);
-
     finalMetadataParams.forEach((el, index) => {
       FD.append(index.toString(), JSON.stringify(el));
     });
-    // console.log(FD.forEach(console.log));
-
-    // XHR.open("POST", `${this.hostUrl}/bulk_set_stream`);
-    // XHR.send(FD);
 
     const defaultOptions = {
       mode: "cors",
@@ -106,7 +98,6 @@ class TorusStorageLayer implements IStorageLayer {
     };
 
     await fetch(`${this.hostUrl}/bulk_set_stream`, defaultOptions);
-    // console.log(data);
     return [{ message: "hello" }];
   }
 

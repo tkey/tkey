@@ -58,29 +58,29 @@ function generateWebpackConfig({ pkg, pkgName, currentPath, alias }) {
     },
   };
 
-  const umdPolyfilledConfig = {
-    ...baseConfig,
-    output: {
-      ...baseConfig.output,
-      filename: `${pkgName}.polyfill.umd.min.js`,
-      libraryTarget: "umd",
-    },
-    module: {
-      rules: [babelLoaderWithPolyfills],
-    },
-  };
+  // const umdPolyfilledConfig = {
+  //   ...baseConfig,
+  //   output: {
+  //     ...baseConfig.output,
+  //     filename: `${pkgName}.polyfill.umd.min.js`,
+  //     libraryTarget: "umd",
+  //   },
+  //   module: {
+  //     rules: [babelLoaderWithPolyfills],
+  //   },
+  // };
 
-  const umdConfig = {
-    ...baseConfig,
-    output: {
-      ...baseConfig.output,
-      filename: `${pkgName}.umd.min.js`,
-      libraryTarget: "umd",
-    },
-    module: {
-      rules: [babelLoader],
-    },
-  };
+  // const umdConfig = {
+  //   ...baseConfig,
+  //   output: {
+  //     ...baseConfig.output,
+  //     filename: `${pkgName}.umd.min.js`,
+  //     libraryTarget: "umd",
+  //   },
+  //   module: {
+  //     rules: [babelLoader],
+  //   },
+  // };
 
   const cjsConfig = {
     ...baseConfig,
@@ -94,33 +94,27 @@ function generateWebpackConfig({ pkg, pkgName, currentPath, alias }) {
       rules: [babelLoader],
     },
     externals: [...Object.keys(pkg.dependencies), /^(@babel\/runtime)/i],
-    plugins: [
-      new ESLintPlugin({
-        extensions: ".ts",
-        cwd: path.resolve(currentPath, "../../"),
-      }),
-    ],
     node: {
       ...baseConfig.node,
       Buffer: false,
     },
   };
 
-  const cjsBundledConfig = {
-    ...baseConfig,
-    ...optimization,
-    output: {
-      ...baseConfig.output,
-      filename: `${pkgName}-bundled.cjs.js`,
-      libraryTarget: "commonjs2",
-    },
-    module: {
-      rules: [babelLoader],
-    },
-    externals: [...Object.keys(pkg.dependencies).filter((x) => !packagesToInclude.includes(x)), /^(@babel\/runtime)/i],
-  };
+  // const cjsBundledConfig = {
+  //   ...baseConfig,
+  //   ...optimization,
+  //   output: {
+  //     ...baseConfig.output,
+  //     filename: `${pkgName}-bundled.cjs.js`,
+  //     libraryTarget: "commonjs2",
+  //   },
+  //   module: {
+  //     rules: [babelLoader],
+  //   },
+  //   externals: [...Object.keys(pkg.dependencies).filter((x) => !packagesToInclude.includes(x)), /^(@babel\/runtime)/i],
+  // };
 
-  return [umdPolyfilledConfig, umdConfig, cjsConfig, cjsBundledConfig];
+  return [cjsConfig];
 }
 
 module.exports = generateWebpackConfig;

@@ -497,13 +497,6 @@ class ThresholdKey implements ITKey {
     const serviceProviderShare = shares[shareIndexes[0].toString("hex")];
     const shareStore = new ShareStore(serviceProviderShare, poly.getPolynomialID());
 
-    // store torus share on metadata
-    // try {
-    //   await this.storageLayer.setMetadata({ input: shareStore, serviceProvider: this.serviceProvider });
-    // } catch (err) {
-    //   throw CoreError.metadataPostFailed(`setMetadata errored: ${JSON.stringify(err)}`);
-    // }
-
     const metadataToPush = [];
     const sharesToPush = shareIndexes.map((shareIndex) => {
       metadataToPush.push(metadata);

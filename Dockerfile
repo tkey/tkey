@@ -10,8 +10,8 @@ RUN apk add --no-cache --virtual .gyp \
         python \
         make \
         g++ \
-        && apk del .gyp && yarn && yarn run bootstrap && yarn run build && npm i -g artillery
+        && apk del .gyp && yarn && yarn run bootstrap && yarn run build && yarn global add artillery
 
 COPY . .
 
-CMD yarn run bootstrap
+CMD echo "done"
