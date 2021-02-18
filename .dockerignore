@@ -46,7 +46,7 @@ typings/
 
 # User-specific stuff
 .idea/
-
+examples/
 documentation/
 .vscode
 .drone.yml
@@ -54,7 +54,6 @@ documentation/
 .env
 .eslintignore
 .eslintrc.json
-.mocharc.json
 .prettierignore
 .prettierrc.yaml
 Dockerfile.dev

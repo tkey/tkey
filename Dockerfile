@@ -10,7 +10,7 @@ RUN apk add --no-cache --virtual .gyp \
         python \
         make \
         g++ \
-        && yarn install && apk del .gyp
+        && yarn install && apk del .gyp && npm i -g artillery
 
 COPY . .
 

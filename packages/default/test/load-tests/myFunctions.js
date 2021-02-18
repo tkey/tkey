@@ -5,9 +5,14 @@
 //
 // my-functions.js
 //
-global.fetch = fetch;
-global.atob = atob;
-global.btoa = btoa;
+
+const nodefetch = require("node-fetch");
+const nodeatob = require("atob");
+const nodebtoa = require("btoa");
+
+global.fetch = nodefetch;
+global.atob = nodeatob;
+global.btoa = nodebtoa;
 
 const TorusStorageLayer = require("@tkey/storage-layer-torus").default;
 const { MockStorageLayer } = require("@tkey/storage-layer-torus");
@@ -15,7 +20,7 @@ const { MockStorageLayer } = require("@tkey/storage-layer-torus");
 const { generatePrivate } = require("@toruslabs/eccrypto");
 
 const ServiceProviderBase = require("@tkey/service-provider-base").default;
-const ThresholdKey = require("../../types").default;
+const ThresholdKey = require("../..").default;
 
 function initStorageLayer(mocked, extraParams) {
   return mocked === "true" ? new MockStorageLayer({ serviceProvider: extraParams.serviceProvider }) : new TorusStorageLayer(extraParams);
