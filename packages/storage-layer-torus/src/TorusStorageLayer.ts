@@ -17,7 +17,9 @@ import {
 } from "@tkey/common-types";
 import { post } from "@toruslabs/http-helpers";
 import BN from "bn.js";
+import FormData from "form-data";
 import stringify from "json-stable-stringify";
+import fetch from "node-fetch";
 import { keccak256 } from "web3-utils";
 
 function signDataWithPrivKey(data: { timestamp: number }, privKey: BN): string {
@@ -85,7 +87,7 @@ class TorusStorageLayer implements IStorageLayer {
     );
 
     // console.log(metadataParams);
-    const XHR = new XMLHttpRequest();
+    // const XHR = new XMLHttpRequest();
     const FD = new FormData();
     // FD.append("test", metadataParams);
 
@@ -94,16 +96,16 @@ class TorusStorageLayer implements IStorageLayer {
     });
     // console.log(FD.forEach(console.log));
 
-    XHR.open("POST", `${this.hostUrl}/bulk_set_stream`);
-    XHR.send(FD);
+    // XHR.open("POST", `${this.hostUrl}/bulk_set_stream`);
+    // XHR.send(FD);
 
-    // const defaultOptions: RequestInit = {
-    //   mode: "cors",
-    //   body: FD,
-    //   method: "POST",
-    // };
+    const defaultOptions = {
+      mode: "cors",
+      body: FD,
+      method: "POST",
+    };
 
-    // const data = await fetch(`${this.hostUrl}/bulk_set_stream`, defaultOptions);
+    await fetch(`${this.hostUrl}/bulk_set_stream`, defaultOptions);
     // console.log(data);
     return [{ message: "hello" }];
   }
