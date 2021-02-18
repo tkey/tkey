@@ -52,8 +52,6 @@ documentation/
 .drone.yml
 .editorconfig
 .env
-.eslintignore
-.eslintrc.json
 .prettierignore
 .prettierrc.yaml
 Dockerfile.dev
