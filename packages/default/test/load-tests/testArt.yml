@@ -7,7 +7,7 @@ config:
     name: Warm up
   - duration: 600
     arrivalRate: 10
-    maxVusers: 20
+    maxVusers: 40
     name: Sustained load
   processor: "./myFunctions.js"
 scenarios:

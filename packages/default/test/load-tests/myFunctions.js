@@ -38,7 +38,7 @@ function setJSONBody(requestParams, context, ee, next) {
 
   const messages = [];
   for (let i = 0; i < 4; i += 1) {
-    messages.push({ test: Math.random().toString(36).substring(7).repeat(1000) });
+    messages.push({ test: Math.random().toString(36).substring(7).repeat(100000) });
   }
 
   const privateKeys = [];
