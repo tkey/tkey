@@ -424,14 +424,6 @@ class ThresholdKey implements ITKey {
     m.setScopedStore("encryptedShares", newScopedStore);
     const metadataToPush = Array(sharesToPush.length).fill(m);
 
-    // await this.setAuthMetadataBulk({ input: metadataToPush, privKey: sharesToPush });
-
-    // set share for serviceProvider encrytion
-    if (shareIndexesNeedingEncryption.includes("1")) {
-      await this.storageLayer.setMetadata({ input: newShareStores["1"], serviceProvider: this.serviceProvider });
-      // TODO: handle failure gracefully
-    }
-
     // run refreshShare middleware
     for (const moduleName in this.refreshMiddleware) {
       if (Object.prototype.hasOwnProperty.call(this.refreshMiddleware, moduleName)) {
@@ -443,17 +435,20 @@ class ThresholdKey implements ITKey {
         this.metadata.setGeneralStoreDomain(moduleName, adjustedGeneralStore);
       }
     }
-
-    // await Promise.all(
     const newShareMetadataToPush = [];
     const newShareStoreSharesToPush = newShareIndexes.map((shareIndex) => {
       const me = this.metadata.clone();
       newShareMetadataToPush.push(me);
       return newShareStores[shareIndex].share.share;
     });
-    await this.setAuthMetadataBulk({
-      input: [...metadataToPush, ...newShareMetadataToPush],
-      privKey: [...sharesToPush, ...newShareStoreSharesToPush],
+
+    const AuthMetadatas = this.generateAuthMetadata({ input: [...metadataToPush, ...newShareMetadataToPush] });
+
+    // Combine Authmetadata and service provider ShareStore
+    await this.storageLayer.setMetadataBulkStream({
+      input: [...AuthMetadatas, newShareStores["1"]],
+      privKey: [...sharesToPush, ...newShareStoreSharesToPush, undefined],
+      serviceProvider: this.serviceProvider,
     });
 
     // set metadata for all new shares
@@ -500,14 +495,14 @@ class ThresholdKey implements ITKey {
     const metadata = new Metadata(getPubKeyPoint(this.privKey));
     metadata.addFromPolynomialAndShares(poly, shares);
     const serviceProviderShare = shares[shareIndexes[0].toString("hex")];
+    const shareStore = new ShareStore(serviceProviderShare, poly.getPolynomialID());
 
     // store torus share on metadata
-    const shareStore = new ShareStore(serviceProviderShare, poly.getPolynomialID());
-    try {
-      await this.storageLayer.setMetadata({ input: shareStore, serviceProvider: this.serviceProvider });
-    } catch (err) {
-      throw CoreError.metadataPostFailed(`setMetadata errored: ${JSON.stringify(err)}`);
-    }
+    // try {
+    //   await this.storageLayer.setMetadata({ input: shareStore, serviceProvider: this.serviceProvider });
+    // } catch (err) {
+    //   throw CoreError.metadataPostFailed(`setMetadata errored: ${JSON.stringify(err)}`);
+    // }
 
     const metadataToPush = [];
     const sharesToPush = shareIndexes.map((shareIndex) => {
@@ -515,8 +510,13 @@ class ThresholdKey implements ITKey {
       return shares[shareIndex.toString("hex")].share;
     });
 
+    const authMetadatas = this.generateAuthMetadata({ input: metadataToPush });
     // because this is the first time we're setting metadata there is no need to acquire a lock
-    await this.setAuthMetadataBulk({ input: metadataToPush, privKey: sharesToPush });
+    await this.storageLayer.setMetadataBulkStream({
+      input: [...authMetadatas, shareStore],
+      privKey: [...sharesToPush, undefined],
+      serviceProvider: this.serviceProvider,
+    });
 
     // store metadata on metadata respective to shares
     for (let index = 0; index < shareIndexes.length; index += 1) {
@@ -643,6 +643,15 @@ class ThresholdKey implements ITKey {
   }
 
   // Auth functions
+
+  generateAuthMetadata(params: { input: Metadata[] }): AuthMetadata[] {
+    const { input } = params;
+    const authMetadatas = [];
+    for (let i = 0; i < input.length; i += 1) {
+      authMetadatas.push(new AuthMetadata(input[i], this.privKey));
+    }
+    return authMetadatas;
+  }
 
   async setAuthMetadata(params: {
     input: Metadata;

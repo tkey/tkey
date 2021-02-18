@@ -51,27 +51,30 @@ function compareReconstructedKeys(a, b, message) {
 describe("tkey", function () {
   let tb;
   beforeEach("Setup ThresholdKey", async function () {
-    tb = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
+    const tempSP = new ServiceProviderBase({ postboxKey: PRIVATE_KEY });
+    const tempSL = initStorageLayer(mocked, { serviceProvider: tempSP, hostUrl: metadataURL });
+
+    tb = new ThresholdKey({ serviceProvider: tempSP, storageLayer: tempSL });
   });
 
-  it("#should be able to update metadata", async function () {
-    const resp1 = await tb.initializeNewKey({ initializeModules: true });
+  // it.only("#should be able to update metadata", async function () {
+  //   const resp1 = await tb.initializeNewKey({ initializeModules: true });
 
-    const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
-    await tb2.initialize();
-    tb2.inputShareStore(resp1.deviceShare);
-    await tb2.reconstructKey();
+  //   const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
+  //   await tb2.initialize();
+  //   tb2.inputShareStore(resp1.deviceShare);
+  //   await tb2.reconstructKey();
 
-    // try creating new shares
-    await tb.generateNewShare();
-    // rejects(async () => {
-    //   await tb2.generateNewShare();
-    // }, Error);
+  //   // try creating new shares
+  //   await tb.generateNewShare();
+  //   rejects(async () => {
+  //     await tb2.generateNewShare();
+  //   }, Error);
 
-    // try creating again
-    await tb2.updateMetadata();
-    await tb2.generateNewShare();
-  });
+  //   // try creating again
+  //   await tb2.updateMetadata();
+  //   await tb2.generateNewShare();
+  // });
 
   it("#should be able to reconstruct key when initializing a key", async function () {
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
@@ -100,8 +103,7 @@ describe("tkey", function () {
     await tb.initializeNewKey({ initializeModules: true });
     const { newShareStores: newShareStores1, newShareIndex: newShareIndex1 } = await tb.generateNewShare();
     const { newShareStores } = await tb.deleteShare(newShareIndex1);
-
-    const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
+    const tb2 = new ThresholdKey({ serviceProvider: tb.serviceProvider, storageLayer: tb.storageLayer });
     await tb2.initialize();
     // tb2.inputShareStore(resp1.deviceShare);
     tb2.inputShareStore(newShareStores1[newShareIndex1.toString("hex")]);
