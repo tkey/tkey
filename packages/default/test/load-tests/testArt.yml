@@ -6,7 +6,7 @@ config:
     arrivalRate: 5
     name: Warm up
   - duration: 600
-    arrivalRate: 15
+    arrivalRate: 10
     name: Sustained load
   processor: "./myFunctions.js"
 scenarios:

@@ -427,10 +427,10 @@ class ThresholdKey implements ITKey {
     // await this.setAuthMetadataBulk({ input: metadataToPush, privKey: sharesToPush });
 
     // set share for serviceProvider encrytion
-    // if (shareIndexesNeedingEncryption.includes("1")) {
-    //   await this.storageLayer.setMetadata({ input: newShareStores["1"], serviceProvider: this.serviceProvider });
-    //   // TODO: handle failure gracefully
-    // }
+    if (shareIndexesNeedingEncryption.includes("1")) {
+      await this.storageLayer.setMetadata({ input: newShareStores["1"], serviceProvider: this.serviceProvider });
+      // TODO: handle failure gracefully
+    }
 
     // run refreshShare middleware
     for (const moduleName in this.refreshMiddleware) {
