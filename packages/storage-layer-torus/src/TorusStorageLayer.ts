@@ -62,6 +62,51 @@ class TorusStorageLayer implements IStorageLayer {
     return JSON.parse(decrypted.toString()) as T;
   }
 
+  async setMetadataBulkStream<T>(params: {
+    input: Array<T>;
+    serviceProvider?: IServiceProvider;
+    privKey?: Array<BN>;
+  }): Promise<{ message: string }[]> {
+    const { serviceProvider, privKey, input } = params;
+    const newInput = input;
+    const finalMetadataParams = await Promise.all(
+      newInput.map(async (el, i) => {
+        const bufferMetadata = Buffer.from(stringify(el));
+        let encryptedDetails: EncryptedMessage;
+        if (privKey[i]) {
+          encryptedDetails = await encrypt(getPubKeyECC(privKey[i]), bufferMetadata);
+        } else {
+          encryptedDetails = await serviceProvider.encrypt(bufferMetadata);
+        }
+        const serializedEncryptedDetails = btoa(stringify(encryptedDetails));
+        const metadataParams = this.generateMetadataParams(serializedEncryptedDetails, serviceProvider, privKey[i]);
+        return metadataParams;
+      })
+    );
+
+    const FD = new FormData();
+    finalMetadataParams.forEach((el, index) => {
+      FD.append(index.toString(), JSON.stringify(el));
+    });
+    const options: RequestInit = {
+      mode: "cors",
+      method: "POST",
+      headers: {
+        // client will automatically add multipart boundary , if it is undefined
+        "Content-Type": undefined,
+      },
+    };
+
+    const customOptions = {
+      isUrlEncodedData: true,
+    };
+    // await fetch(`${this.hostUrl}/bulk_set_stream`, options);
+    // console.log("fd",FD)
+    await post<{ message: string }>(`${this.hostUrl}/bulk_set_stream`, FD, options, customOptions);
+
+    return [{ message: "hello" }];
+  }
+
   /**
    * Set Metadata for a key
    * @param input data to post

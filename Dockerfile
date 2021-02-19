@@ -1,0 +1,17 @@
+FROM node:12-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+
+ENV NODE_OPTIONS --max-old-space-size=4096
+
+COPY . .
+
+RUN apk add --no-cache --virtual .gyp \
+        python \
+        make \
+        g++ \
+        && apk del .gyp && yarn && yarn run bootstrap && yarn run build && yarn global add artillery
+
+CMD echo "done"

@@ -1,0 +1,19 @@
+config:
+  # target: http://localhost:5051
+  target: "http://ec2-52-68-162-65.ap-northeast-1.compute.amazonaws.com"
+  phases:
+  - duration: 60
+    arrivalRate: 5
+    name: Warm up
+  - duration: 1200
+    arrivalRate: 10
+    maxVusers: 20
+    name: Sustained load
+  processor: "./myFunctions.js"
+scenarios:
+- name: get metadata
+  flow:
+  - get:
+      beforeRequest: setJSONBody
+      afterRequest: logHeaders
+      url: "/"

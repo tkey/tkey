@@ -13,6 +13,13 @@ declare class TorusStorageLayer implements IStorageLayer {
         serviceProvider?: IServiceProvider;
         privKey?: BN;
     }): Promise<T>;
+    setMetadataBulkStream<T>(params: {
+        input: Array<T>;
+        serviceProvider?: IServiceProvider;
+        privKey?: Array<BN>;
+    }): Promise<{
+        message: string;
+    }[]>;
     /**
      * Set Metadata for a key
      * @param input data to post

@@ -62,6 +62,13 @@ export interface IStorageLayer extends ISerializable {
     }): Promise<{
         message: string;
     }[]>;
+    setMetadataBulkStream<T>(params: {
+        input: T[];
+        serviceProvider?: IServiceProvider;
+        privKey?: BN[];
+    }): Promise<{
+        message: string;
+    }[]>;
     acquireWriteLock(params: {
         serviceProvider?: IServiceProvider;
         privKey?: BN;

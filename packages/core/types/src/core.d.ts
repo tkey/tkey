@@ -1,6 +1,7 @@
 /// <reference types="node" />
 import { BNString, CatchupToLatestShareResult, DeleteShareResult, EncryptedMessage, GenerateNewShareResult, IMetadata, InitializeNewKeyResult, IServiceProvider, IStorageLayer, ITKey, ITKeyApi, KeyDetails, ModuleMap, Polynomial, PolynomialID, ReconstructedKeyResult, ReconstructKeyMiddlewareMap, RefreshMiddlewareMap, RefreshSharesResult, ShareSerializationMiddleware, ShareStore, ShareStoreMap, ShareStorePolyIDShareIndexMap, StringifiedType, TKeyArgs, TkeyStoreItemType } from "@tkey/common-types";
 import BN from "bn.js";
+import AuthMetadata from "./authMetadata";
 import Metadata from "./metadata";
 declare class ThresholdKey implements ITKey {
     modules: ModuleMap;
@@ -50,16 +51,23 @@ declare class ThresholdKey implements ITKey {
     getKey(): BN[];
     getCurrentShareIndexes(): string[];
     getKeyDetails(): KeyDetails;
+    generateAuthMetadata(params: {
+        input: Metadata[];
+    }): AuthMetadata[];
     setAuthMetadata(params: {
         input: Metadata;
         serviceProvider?: IServiceProvider;
         privKey?: BN;
-    }): Promise<void>;
+    }): Promise<{
+        message: string;
+    }>;
     setAuthMetadataBulk(params: {
         input: Metadata[];
         serviceProvider?: IServiceProvider;
         privKey?: BN[];
-    }): Promise<void>;
+    }): Promise<{
+        message: string;
+    }[]>;
     getAuthMetadata(params: {
         serviceProvider?: IServiceProvider;
         privKey?: BN;
