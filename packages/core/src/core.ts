@@ -122,14 +122,6 @@ class ThresholdKey implements ITKey {
     return this.storageLayer;
   }
 
-  // async storageLayerGetMetadata<T>(params: { serviceProvider?: IServiceProvider; privKey?: BN }): Promise<T> {
-  //   return this.storageLayer.getMetadata(params);
-  // }
-
-  // async storageLayerSetMetadata<T>(params: { input: T; serviceProvider?: IServiceProvider; privKey?: BN }): Promise<{ message: string }> {
-  //   return this.storageLayer.setMetadata(params);
-  // }
-
   getMetadata(): IMetadata {
     if (typeof this.metadata !== "undefined") {
       return this.metadata;
