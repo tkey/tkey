@@ -93,8 +93,7 @@ class ThresholdKey implements ITKey {
     return {
       getMetadata: this.getMetadata.bind(this),
       updateMetadata: this.updateMetadata.bind(this),
-      storageLayerGetMetadata: this.storageLayerGetMetadata.bind(this),
-      storageLayerSetMetadata: this.storageLayerSetMetadata.bind(this),
+      getStorageLayer: this.getStorageLayer.bind(this),
       initialize: this.initialize.bind(this),
       catchupToLatestShare: this.catchupToLatestShare.bind(this),
       syncShareMetadata: this.syncShareMetadata.bind(this),
@@ -119,13 +118,17 @@ class ThresholdKey implements ITKey {
     };
   }
 
-  async storageLayerGetMetadata<T>(params: { serviceProvider?: IServiceProvider; privKey?: BN }): Promise<T> {
-    return this.storageLayer.getMetadata(params);
+  getStorageLayer(): IStorageLayer {
+    return this.storageLayer;
   }
 
-  async storageLayerSetMetadata<T>(params: { input: T; serviceProvider?: IServiceProvider; privKey?: BN }): Promise<{ message: string }> {
-    return this.storageLayer.setMetadata(params);
-  }
+  // async storageLayerGetMetadata<T>(params: { serviceProvider?: IServiceProvider; privKey?: BN }): Promise<T> {
+  //   return this.storageLayer.getMetadata(params);
+  // }
+
+  // async storageLayerSetMetadata<T>(params: { input: T; serviceProvider?: IServiceProvider; privKey?: BN }): Promise<{ message: string }> {
+  //   return this.storageLayer.setMetadata(params);
+  // }
 
   getMetadata(): IMetadata {
     if (typeof this.metadata !== "undefined") {

@@ -213,8 +213,7 @@ export interface IPrivateKeyFormat {
 
 export interface ITKeyApi {
   getMetadata(): IMetadata;
-  storageLayerGetMetadata<T>(params: { serviceProvider?: IServiceProvider; privKey?: BN }): Promise<T>;
-  storageLayerSetMetadata<T>(params: { input: T; serviceProvider?: IServiceProvider; privKey?: BN }): Promise<{ message: string }>;
+  getStorageLayer(): IStorageLayer;
   updateMetadata(): Promise<IMetadata>;
   initialize(params: { input?: ShareStore; importKey?: BN; neverInitializeNewKey?: boolean }): Promise<KeyDetails>;
   catchupToLatestShare(shareStore: ShareStore): Promise<CatchupToLatestShareResult>;
