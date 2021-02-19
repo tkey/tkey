@@ -12,18 +12,15 @@ import {
   toPrivKeyECC,
 } from "@tkey/common-types";
 import BN from "bn.js";
-import { curve, ec as EC } from "elliptic";
+import { curve } from "elliptic";
 
 class ServiceProviderBase implements IServiceProvider {
-  ec: EC;
-
   enableLogging: boolean;
 
   // For easy serialization
   postboxKey: BN;
 
   constructor({ enableLogging = false, postboxKey }: ServiceProviderArgs) {
-    this.ec = new EC("secp256k1");
     this.enableLogging = enableLogging;
     this.postboxKey = new BN(postboxKey, "hex");
   }
