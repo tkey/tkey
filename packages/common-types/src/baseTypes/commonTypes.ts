@@ -1,6 +1,6 @@
 import { DirectWebSDKArgs } from "@toruslabs/torus-direct-web-sdk";
 import BN from "bn.js";
-import { curve, ec as EC } from "elliptic";
+import { curve } from "elliptic";
 
 export type PubKeyType = "ecc";
 
@@ -38,8 +38,6 @@ export interface IPoint extends ISerializable {
 }
 
 export interface IServiceProvider extends ISerializable {
-  ec: EC;
-
   enableLogging: boolean;
 
   postboxKey: BN;
