@@ -152,8 +152,8 @@ export interface IPrivateKeyFormat {
     createPrivateKeyStore(privateKey: BN): SECP256k1NStore;
 }
 export interface ITKeyApi {
-    storageLayer: IStorageLayer;
     getMetadata(): IMetadata;
+    getStorageLayer(): IStorageLayer;
     updateMetadata(): Promise<IMetadata>;
     initialize(params: {
         input?: ShareStore;

@@ -86,14 +86,14 @@ class ThresholdKey implements ITKey {
     this.storeDeviceShare = undefined;
 
     this.setModuleReferences(); // Providing ITKeyApi access to modules
-    this.haveWriteMetadataLock = null;
+    this.haveWriteMetadataLock = "";
   }
 
   getApi(): ITKeyApi {
     return {
       getMetadata: this.getMetadata.bind(this),
       updateMetadata: this.updateMetadata.bind(this),
-      storageLayer: this.storageLayer,
+      getStorageLayer: this.getStorageLayer.bind(this),
       initialize: this.initialize.bind(this),
       catchupToLatestShare: this.catchupToLatestShare.bind(this),
       syncShareMetadata: this.syncShareMetadata.bind(this),
@@ -116,6 +116,10 @@ class ThresholdKey implements ITKey {
       deleteTKeyStoreItem: this.deleteTKeyStoreItem.bind(this),
       deleteShare: this.deleteShare.bind(this),
     };
+  }
+
+  getStorageLayer(): IStorageLayer {
+    return this.storageLayer;
   }
 
   getMetadata(): IMetadata {
@@ -692,7 +696,7 @@ class ThresholdKey implements ITKey {
     if (!this.haveWriteMetadataLock) throw CoreError.releaseLockFailed("releaseWriteMetadataLock - don't have metadata lock to release");
     const res = await this.storageLayer.releaseWriteLock({ privKey: this.privKey, id: this.haveWriteMetadataLock });
     if (res.status !== 1) throw CoreError.releaseLockFailed(`lock cannot be released from storage layer status code: ${res.status}`);
-    this.haveWriteMetadataLock = null;
+    this.haveWriteMetadataLock = "";
   }
 
   // Module functions

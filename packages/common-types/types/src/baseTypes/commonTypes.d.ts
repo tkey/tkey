@@ -1,7 +1,7 @@
 /// <reference types="node" />
 import { DirectWebSDKArgs } from "@toruslabs/torus-direct-web-sdk";
 import BN from "bn.js";
-import { curve, ec as EC } from "elliptic";
+import { curve } from "elliptic";
 export declare type PubKeyType = "ecc";
 export declare type PolynomialID = string;
 export declare type BNString = string | BN;
@@ -28,7 +28,6 @@ export interface IPoint extends ISerializable {
     encode(enc: string, params?: unknown): Buffer;
 }
 export interface IServiceProvider extends ISerializable {
-    ec: EC;
     enableLogging: boolean;
     postboxKey: BN;
     encrypt(msg: Buffer): Promise<EncryptedMessage>;
