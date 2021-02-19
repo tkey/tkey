@@ -121,7 +121,6 @@ export type KeyDetails = {
   threshold: number;
   totalShares: number;
   shareDescriptions: ShareDescriptionMap;
-  modules: ModuleMap;
 };
 
 export type TKeyArgs = {
