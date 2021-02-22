@@ -445,7 +445,7 @@ class ThresholdKey implements ITKey {
     const AuthMetadatas = this.generateAuthMetadata({ input: [...metadataToPush, ...newShareMetadataToPush] });
 
     // Combine Authmetadata and service provider ShareStore
-    await this.storageLayer.setMetadataBulkStream({
+    await this.storageLayer.setMetadataStream({
       input: [...AuthMetadatas, newShareStores["1"]],
       privKey: [...sharesToPush, ...newShareStoreSharesToPush, undefined],
       serviceProvider: this.serviceProvider,
@@ -505,7 +505,7 @@ class ThresholdKey implements ITKey {
 
     const authMetadatas = this.generateAuthMetadata({ input: metadataToPush });
     // because this is the first time we're setting metadata there is no need to acquire a lock
-    await this.storageLayer.setMetadataBulkStream({
+    await this.storageLayer.setMetadataStream({
       input: [...authMetadatas, shareStore],
       privKey: [...sharesToPush, undefined],
       serviceProvider: this.serviceProvider,
@@ -670,7 +670,7 @@ class ThresholdKey implements ITKey {
     for (let i = 0; i < input.length; i += 1) {
       authMetadatas.push(new AuthMetadata(input[i], this.privKey));
     }
-    return this.storageLayer.setMetadataBulkStream({ input: authMetadatas, serviceProvider, privKey });
+    return this.storageLayer.setMetadataStream({ input: authMetadatas, serviceProvider, privKey });
   }
 
   async getAuthMetadata(params: { serviceProvider?: IServiceProvider; privKey?: BN }): Promise<Metadata> {

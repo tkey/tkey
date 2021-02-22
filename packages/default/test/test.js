@@ -19,7 +19,7 @@ function initStorageLayer(mocked, extraParams) {
 const mocked = process.env.MOCKED || "false";
 const metadataURL = process.env.METADATA || "http://localhost:5051";
 const PRIVATE_KEY = generatePrivate().toString("hex");
-const PRIVATE_KEY_2 = generatePrivate().toString("hex");
+// const PRIVATE_KEY_2 = generatePrivate().toString("hex");
 
 const defaultSP = new ServiceProviderBase({ postboxKey: PRIVATE_KEY });
 const defaultSL = initStorageLayer(mocked, { serviceProvider: defaultSP, hostUrl: metadataURL });
@@ -300,7 +300,7 @@ describe("TorusStorageLayer", function () {
     const privKeyBN2 = new BN(privKey2, 16);
     const message2 = { test: Math.random().toString(36).substring(7) };
 
-    await storageLayer.setMetadataBulkStream({ input: [message, message2], privKey: [privKeyBN, privKeyBN2] });
+    await storageLayer.setMetadataStream({ input: [message, message2], privKey: [privKeyBN, privKeyBN2] });
     const resp = await storageLayer.getMetadata({ privKey: privKeyBN });
     const resp2 = await storageLayer.getMetadata({ privKey: privKeyBN2 });
 
@@ -318,7 +318,7 @@ describe("TorusStorageLayer", function () {
     }
     const tsp = new ServiceProviderBase({ postboxKey: privkeys[0].toString("hex") });
     const storageLayer = initStorageLayer(mocked, { hostUrl: metadataURL, serviceProvider: tsp });
-    await storageLayer.setMetadataBulkStream({ input: [...messages], privKey: [...privkeys] });
+    await storageLayer.setMetadataStream({ input: [...messages], privKey: [...privkeys] });
     const responses = await Promise.all(privkeys.map((el) => storageLayer.getMetadata({ privKey: el })));
     for (let i = 0; i < 10; i += 1) {
       deepStrictEqual(responses[i], messages[i], "set and get message should be equal");
