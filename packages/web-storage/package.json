@@ -3,7 +3,7 @@
   "version": "3.10.0",
   "description": "TKey Web Storage Module",
   "author": "Torus Labs",
-  "homepage": "https://github.com/torusresearch/tkey#readme",
+  "homepage": "https://github.com/tkey/tkey#readme",
   "license": "MIT",
   "main": "dist/web-storage.cjs.js",
   "unpkg": "dist/web-storage.umd.min.js",
@@ -18,7 +18,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/torusresearch/tkey.git"
+    "url": "git+https://github.com/tkey/tkey.git"
   },
   "scripts": {
     "test": "cross-env MOCKED=true mocha --config ../../.mocharc.json ",
@@ -47,7 +47,7 @@
     "@types/filesystem": "^0.0.29"
   },
   "bugs": {
-    "url": "https://github.com/torusresearch/tkey/issues"
+    "url": "https://github.com/tkey/tkey/issues"
   },
   "lint-staged": {
     "!(*d).ts": [

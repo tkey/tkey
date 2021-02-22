@@ -20,7 +20,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/torusresearch/tkey.git"
+    "url": "git+https://github.com/tkey/tkey.git"
   },
   "files": [
     "dist",
@@ -56,9 +56,9 @@
   "author": "Torus Labs",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/torusresearch/tkey/issues"
+    "url": "https://github.com/tkey/tkey/issues"
   },
-  "homepage": "https://github.com/torusresearch/tkey#readme",
+  "homepage": "https://github.com/tkey/tkey#readme",
   "keywords": [
     "torus-direct-web-sdk",
     "torus-threshold-bak",

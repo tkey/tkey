@@ -3,7 +3,7 @@
   "version": "3.10.0",
   "description": "TKey Torus Service Provider Module",
   "author": "Torus Labs",
-  "homepage": "https://github.com/torusresearch/tkey#readme",
+  "homepage": "https://github.com/tkey/tkey#readme",
   "license": "MIT",
   "main": "dist/service-provider-torus.cjs.js",
   "unpkg": "dist/service-provider-torus.umd.min.js",
@@ -18,7 +18,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/torusresearch/tkey.git"
+    "url": "git+https://github.com/tkey/tkey.git"
   },
   "scripts": {
     "test": "cross-env MOCKED=true mocha --config ../../.mocharc.json ",
@@ -47,7 +47,7 @@
     "@types/elliptic": "^6.4.12"
   },
   "bugs": {
-    "url": "https://github.com/torusresearch/tkey/issues"
+    "url": "https://github.com/tkey/tkey/issues"
   },
   "lint-staged": {
     "!(*d).ts": [

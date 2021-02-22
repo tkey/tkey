@@ -3,7 +3,7 @@
   "version": "3.10.0",
   "description": "TKey Security Questions Module",
   "author": "Torus Labs",
-  "homepage": "https://github.com/torusresearch/tkey#readme",
+  "homepage": "https://github.com/tkey/tkey#readme",
   "license": "MIT",
   "main": "dist/security-questions.cjs.js",
   "unpkg": "dist/security-questions.umd.min.js",
@@ -18,7 +18,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/torusresearch/tkey.git"
+    "url": "git+https://github.com/tkey/tkey.git"
   },
   "scripts": {
     "test": "cross-env MOCKED=true mocha --config ../../.mocharc.json ",
@@ -33,7 +33,7 @@
     "pre-commit": "lint-staged"
   },
   "bugs": {
-    "url": "https://github.com/torusresearch/tkey/issues"
+    "url": "https://github.com/tkey/tkey/issues"
   },
   "peerDependencies": {
     "@babel/runtime": "7.x"
