@@ -49,25 +49,22 @@ jobs:
           restore-keys: |
             ${{ matrix.os }}-yarn-
         
-      - name: Go into tkey repo
+      - name: Install dependencies and bootstrap
         run: |
-          ls
           cd ./tkey
-        
-      - name: Install dependencies
-        run: yarn install --frozen-lockfile
-
-      - name: Bootstrap dependencies
-        run: yarn run bootstrap
+          yarn install --frozen-lockfile
+          yarn run bootstrap
 
       - name: Test Development
-        run: yarn run test
+        run: |
+          cd ./tkey
+          yarn run test
       
 #       - name: Pack
 #         run: yarn run pack:lerna
       
-      - name: go back out
-        run: cd ..
+#   - name: go back out
+#         run: cd ..
         
       - name: clone comp tests
         uses: actions/checkout@master
@@ -86,7 +83,9 @@ jobs:
           done
           
       - name: run comp tests
-        run: npm test
+        run: |
+          cd ./backward-compatibility-tests
+          npm test
           
 
 
