@@ -17,9 +17,7 @@ import {
 } from "@tkey/common-types";
 import { post } from "@toruslabs/http-helpers";
 import BN from "bn.js";
-import FormData from "form-data";
 import stringify from "json-stable-stringify";
-import fetch from "node-fetch";
 import { keccak256 } from "web3-utils";
 
 function signDataWithPrivKey(data: { timestamp: number }, privKey: BN): string {
@@ -64,11 +62,26 @@ class TorusStorageLayer implements IStorageLayer {
     return JSON.parse(decrypted.toString()) as T;
   }
 
-  async setMetadataBulkStream<T>(params: {
-    input: Array<T>;
-    serviceProvider?: IServiceProvider;
-    privKey?: Array<BN>;
-  }): Promise<{ message: string }[]> {
+  /**
+   * Set Metadata for a key
+   * @param input data to post
+   * @param privKey If not provided, it will use service provider's share for encryption
+   */
+  async setMetadata<T>(params: { input: T; serviceProvider?: IServiceProvider; privKey?: BN }): Promise<{ message: string }> {
+    const { serviceProvider, privKey, input } = params;
+    const bufferMetadata = Buffer.from(stringify(input));
+    let encryptedDetails: EncryptedMessage;
+    if (privKey) {
+      encryptedDetails = await encrypt(getPubKeyECC(privKey), bufferMetadata);
+    } else {
+      encryptedDetails = await serviceProvider.encrypt(bufferMetadata);
+    }
+    const serializedEncryptedDetails = btoa(stringify(encryptedDetails));
+    const metadataParams = this.generateMetadataParams(serializedEncryptedDetails, serviceProvider, privKey);
+    return post<{ message: string }>(`${this.hostUrl}/set`, metadataParams);
+  }
+
+  async setMetadataStream<T>(params: { input: Array<T>; serviceProvider?: IServiceProvider; privKey?: Array<BN> }): Promise<{ message: string }> {
     const { serviceProvider, privKey, input } = params;
     const newInput = input;
     const finalMetadataParams = await Promise.all(
@@ -90,70 +103,18 @@ class TorusStorageLayer implements IStorageLayer {
     finalMetadataParams.forEach((el, index) => {
       FD.append(index.toString(), JSON.stringify(el));
     });
-
-    const defaultOptions = {
+    const options: RequestInit = {
       mode: "cors",
-      body: FD,
       method: "POST",
+      headers: {
+        "Content-Type": undefined,
+      },
     };
 
-    await fetch(`${this.hostUrl}/bulk_set_stream`, defaultOptions);
-    return [{ message: "hello" }];
-  }
-
-  /**
-   * Set Metadata for a key
-   * @param input data to post
-   * @param privKey If not provided, it will use service provider's share for encryption
-   */
-  async setMetadata<T>(params: { input: T; serviceProvider?: IServiceProvider; privKey?: BN }): Promise<{ message: string }> {
-    const { serviceProvider, privKey, input } = params;
-    const bufferMetadata = Buffer.from(stringify(input));
-    let encryptedDetails: EncryptedMessage;
-    if (privKey) {
-      encryptedDetails = await encrypt(getPubKeyECC(privKey), bufferMetadata);
-    } else {
-      encryptedDetails = await serviceProvider.encrypt(bufferMetadata);
-    }
-    const serializedEncryptedDetails = btoa(stringify(encryptedDetails));
-    const metadataParams = this.generateMetadataParams(serializedEncryptedDetails, serviceProvider, privKey);
-    return post<{ message: string }>(`${this.hostUrl}/set`, metadataParams);
-  }
-
-  /**
-   * Set Metadata for keys
-   * @param input data to post
-   * @param privKey If not provided, it will use service provider's share for encryption
-   */
-  async setMetadataBulk<T>(params: { input: Array<T>; serviceProvider?: IServiceProvider; privKey?: Array<BN> }): Promise<{ message: string }[]> {
-    const { serviceProvider, privKey, input } = params;
-    const newInput = input;
-    const newPrivKey = privKey;
-    const encryptedDetailsArray = [];
-    while (newInput.length !== 0) {
-      const tempInput = newInput.splice(0, 4);
-      const tempPrivateKey = newPrivKey.splice(0, 4);
-      const promises = Promise.all(
-        tempInput.map(async (el, i) => {
-          const bufferMetadata = Buffer.from(stringify(el));
-          let encryptedDetails: EncryptedMessage;
-          if (tempPrivateKey[i]) {
-            encryptedDetails = await encrypt(getPubKeyECC(tempPrivateKey[i]), bufferMetadata);
-          } else {
-            encryptedDetails = await serviceProvider.encrypt(bufferMetadata);
-          }
-          const serializedEncryptedDetails = btoa(stringify(encryptedDetails));
-          const metadataParams = this.generateMetadataParams(serializedEncryptedDetails, serviceProvider, tempPrivateKey[i]);
-          return metadataParams;
-        })
-      );
-      // eslint-disable-next-line no-await-in-loop
-      const finalMetadataParams = await promises;
-      encryptedDetailsArray.push(
-        post<{ message: string }>(`${this.hostUrl}/bulk_set`, { shares: finalMetadataParams })
-      );
-    }
-    return Promise.all(encryptedDetailsArray);
+    const customOptions = {
+      isUrlEncodedData: true,
+    };
+    return post<{ message: string }>(`${this.hostUrl}/bulk_set_stream`, FD, options, customOptions);
   }
 
   generateMetadataParams(message: unknown, serviceProvider?: IServiceProvider, privKey?: BN): TorusStorageLayerAPIParams {
