@@ -665,11 +665,9 @@ class ThresholdKey implements ITKey {
     input: Metadata[];
     serviceProvider?: IServiceProvider;
     privKey?: BN[];
-  }): Promise<
-    {
-      message: string;
-    }[]
-  > {
+  }): Promise<{
+    message: string;
+  }> {
     const { input, serviceProvider, privKey } = params;
     const authMetadatas = [];
     for (let i = 0; i < input.length; i += 1) {

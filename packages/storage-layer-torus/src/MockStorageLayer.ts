@@ -75,11 +75,7 @@ class MockStorageLayer implements IStorageLayer {
     return [{ message: "success" }];
   }
 
-  async setMetadataBulkStream<T>(params: {
-    input: Array<T>;
-    serviceProvider?: IServiceProvider;
-    privKey?: Array<BN>;
-  }): Promise<{ message: string }[]> {
+  async setMetadataBulkStream<T>(params: { input: Array<T>; serviceProvider?: IServiceProvider; privKey?: Array<BN> }): Promise<{ message: string }> {
     const { serviceProvider, privKey, input } = params;
     input.forEach((el, index) => {
       let usedKey: BN;
@@ -88,7 +84,7 @@ class MockStorageLayer implements IStorageLayer {
       this.dataMap[usedKey.toString("hex")] = stringify(el);
     });
 
-    return [{ message: "success" }];
+    return { message: "success" };
   }
 
   async acquireWriteLock(params: { serviceProvider?: IServiceProvider; privKey?: BN }): Promise<{ status: number; id?: string }> {

@@ -62,11 +62,7 @@ class TorusStorageLayer implements IStorageLayer {
     return JSON.parse(decrypted.toString()) as T;
   }
 
-  async setMetadataBulkStream<T>(params: {
-    input: Array<T>;
-    serviceProvider?: IServiceProvider;
-    privKey?: Array<BN>;
-  }): Promise<{ message: string }[]> {
+  async setMetadataBulkStream<T>(params: { input: Array<T>; serviceProvider?: IServiceProvider; privKey?: Array<BN> }): Promise<{ message: string }> {
     const { serviceProvider, privKey, input } = params;
     const newInput = input;
     const finalMetadataParams = await Promise.all(
@@ -100,11 +96,8 @@ class TorusStorageLayer implements IStorageLayer {
     const customOptions = {
       isUrlEncodedData: true,
     };
-    // await fetch(`${this.hostUrl}/bulk_set_stream`, options);
-    // console.log("fd",FD)
-    await post<{ message: string }>(`${this.hostUrl}/bulk_set_stream`, FD, options, customOptions);
 
-    return [{ message: "hello" }];
+    return post<{ message: string }>(`${this.hostUrl}/bulk_set_stream`, FD, options, customOptions);
   }
 
   /**
