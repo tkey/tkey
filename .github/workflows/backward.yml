@@ -15,6 +15,7 @@ on:
 
 jobs:
   test:
+    name: Backward Compatibility Tests
     strategy:
       matrix:
         node: ["12.x"]
@@ -49,40 +50,32 @@ jobs:
           restore-keys: |
             ${{ matrix.os }}-yarn-
         
-      - name: Install dependencies and bootstrap
+      - name: Install dependencies, bootstrap, pack
         run: |
           cd ./tkey
           yarn install --frozen-lockfile
           yarn run bootstrap
-
-      - name: Test Development
-        run: |
-          cd ./tkey
-          yarn run test
-      
-#       - name: Pack
-#         run: yarn run pack:lerna
-      
-#   - name: go back out
-#         run: cd ..
+          yarn run test    
+          yarn run pack:lerna
         
-      - name: clone comp tests
+      - name: Clone comp tests
         uses: actions/checkout@master
         with:
           repository: tkey/backward-compatibility-tests
           path: ./backward-compatibility-tests
       
-      - name: go into comp tests
+      - name: Setup comp tests
         run: |
           cd ./backward-compatibility-tests
           npm i
           for filename in ../tkey/packages/* ; do
             echo "installing $filename" || continue
             # ... install packed packages
-            npm i "${filename}"
+            packagename="`ls ${filename}| grep tkey`"
+            npm i "${filename}/${packagename}"
           done
           
-      - name: run comp tests
+      - name: Running comp tests
         run: |
           cd ./backward-compatibility-tests
           npm test
