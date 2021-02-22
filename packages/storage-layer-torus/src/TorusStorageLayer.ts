@@ -17,9 +17,7 @@ import {
 } from "@tkey/common-types";
 import { post } from "@toruslabs/http-helpers";
 import BN from "bn.js";
-import FormData from "form-data";
 import stringify from "json-stable-stringify";
-import fetch from "node-fetch";
 import { keccak256 } from "web3-utils";
 
 function signDataWithPrivKey(data: { timestamp: number }, privKey: BN): string {
@@ -64,11 +62,7 @@ class TorusStorageLayer implements IStorageLayer {
     return JSON.parse(decrypted.toString()) as T;
   }
 
-  async setMetadataBulkStream<T>(params: {
-    input: Array<T>;
-    serviceProvider?: IServiceProvider;
-    privKey?: Array<BN>;
-  }): Promise<{ message: string }[]> {
+  async setMetadataBulkStream<T>(params: { input: Array<T>; serviceProvider?: IServiceProvider; privKey?: Array<BN> }): Promise<{ message: string }> {
     const { serviceProvider, privKey, input } = params;
     const newInput = input;
     const finalMetadataParams = await Promise.all(
@@ -90,15 +84,21 @@ class TorusStorageLayer implements IStorageLayer {
     finalMetadataParams.forEach((el, index) => {
       FD.append(index.toString(), JSON.stringify(el));
     });
-
-    const defaultOptions = {
+    const options: RequestInit = {
       mode: "cors",
-      body: FD,
       method: "POST",
+      headers: {
+        // client will automatically add multipart boundary , if it is undefined
+        "Content-Type": undefined,
+      },
     };
 
-    await fetch(`${this.hostUrl}/bulk_set_stream`, defaultOptions);
-    return [{ message: "hello" }];
+    const customOptions = {
+      isUrlEncodedData: true,
+    };
+    // await fetch(`${this.hostUrl}/bulk_set_stream`, options);
+    // console.log("fd",FD)
+    return post<{ message: string }>(`${this.hostUrl}/bulk_set_stream`, FD, options, customOptions);
   }
 
   /**

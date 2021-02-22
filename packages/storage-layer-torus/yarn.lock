@@ -2,10 +2,9 @@
 # yarn lockfile v1
 
 
-"@toruslabs/http-helpers@^1.3.5":
-  version "1.3.5"
-  resolved "https://registry.yarnpkg.com/@toruslabs/http-helpers/-/http-helpers-1.3.5.tgz#b278e9e3d5872fc1df4955c864627c8d005c2278"
-  integrity sha512-Bg9AE3lPaPCv9OQAFusQlCE5TxxJCuT3R9ilGMhDiOfWQdtdW0f+cfzoRSQGA1I/lq0V217MNvWeJNLejLdsSA==
+"@toruslabs/http-helpers@file:../../toruslabs-http-helpers-1.3.7.tgz":
+  version "1.3.6"
+  resolved "file:../../toruslabs-http-helpers-1.3.7.tgz#1c7276b43fcc1fbadc74e4e9c651d2d1bedbf577"
   dependencies:
     deepmerge "^4.2.2"
 
