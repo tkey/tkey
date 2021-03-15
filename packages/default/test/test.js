@@ -18,6 +18,7 @@ function initStorageLayer(mocked, extraParams) {
 
 const mocked = process.env.MOCKED || "false";
 const metadataURL = process.env.METADATA || "http://localhost:5051";
+// const metadataURL = "http://metadata-load-balancer-13352507.ap-northeast-2.elb.amazonaws.com";
 const PRIVATE_KEY = generatePrivate().toString("hex");
 // const PRIVATE_KEY_2 = generatePrivate().toString("hex");
 
@@ -303,9 +304,6 @@ describe("TorusStorageLayer", function () {
     await storageLayer.setMetadataStream({ input: [message, message2], privKey: [privKeyBN, privKeyBN2] });
     const resp = await storageLayer.getMetadata({ privKey: privKeyBN });
     const resp2 = await storageLayer.getMetadata({ privKey: privKeyBN2 });
-
-    // console.log(resp, message);
-    // console.log(resp2, message2);
     deepStrictEqual(resp, message, "set and get message should be equal");
     deepStrictEqual(resp2, message2, "set and get message should be equal");
   });
