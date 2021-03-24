@@ -8,11 +8,9 @@
   "eslint.options": {
     "extends": [
       "plugin:@typescript-eslint/recommended",
-      "prettier/@typescript-eslint",
       "standard",
       "eslint:recommended",
       "plugin:prettier/recommended",
-      "prettier/babel",
       "plugin:import/errors",
       "plugin:import/warnings",
       "plugin:import/typescript",
@@ -20,7 +18,7 @@
       "airbnb-base",
       "prettier"
     ],
-    "plugins": ["prettier", "babel", "promise", "import", "simple-import-sort", "@typescript-eslint"],
+    "plugins": ["prettier", "@babel", "promise", "import", "simple-import-sort", "@typescript-eslint"],
     "parser": "@typescript-eslint/parser",
     "parserOptions": {
       "sourceType": "module",

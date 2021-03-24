@@ -903,8 +903,8 @@ class ThresholdKey implements ITKey {
         const shareStoreMapElement = shares[key];
         for (const shareElementKey in shareStoreMapElement) {
           if (Object.prototype.hasOwnProperty.call(shareStoreMapElement, shareElementKey)) {
-            let shareStore = shareStoreMapElement[shareElementKey];
-            shareStore = ShareStore.fromJSON(shareStore);
+            const shareStore = shareStoreMapElement[shareElementKey];
+            shareStoreMapElement[shareElementKey] = ShareStore.fromJSON(shareStore);
           }
         }
       }
