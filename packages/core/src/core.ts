@@ -73,7 +73,7 @@ class ThresholdKey implements ITKey {
   haveWriteMetadataLock: string;
 
   constructor(args?: TKeyArgs) {
-    const { enableLogging = false, modules = {}, serviceProvider, storageLayer } = args;
+    const { enableLogging = false, modules = {}, serviceProvider, storageLayer } = args || {};
     this.enableLogging = enableLogging;
     this.serviceProvider = serviceProvider;
     this.storageLayer = storageLayer;
