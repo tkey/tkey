@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "bootstrap": "lerna bootstrap",
-    "publish:lerna": "lerna publish",
+    "publish:lerna": "yarn run clean && yarn run bootstrap && lerna publish",
     "clean": "lerna clean --yes && lerna exec -- rimraf package-lock.json yarn.lock dist/ .rts2_cache_{cjs,esm}/ tkey-*.tgz",
     "build": "lerna run build",
     "dev": "lerna run dev",
