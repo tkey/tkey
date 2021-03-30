@@ -349,7 +349,7 @@ class ThresholdKey implements ITKey {
     if (existingShareIndexes.length === newShareIndexes.length) {
       throw CoreError.default("Share index does not exist in latest polynomial");
     } else if (newShareIndexes.length < pubPoly.getThreshold()) {
-      throw CoreError.default("Minimum 2 shares are required for tkey. Unable to delete share");
+      throw CoreError.default(`Minimum ${pubPoly.getThreshold()} shares are required for tkey. Unable to delete share`);
     }
     const results = await this.refreshShares(pubPoly.getThreshold(), [...newShareIndexes], previousPolyID);
     const newShareStores = results.shareStores;
