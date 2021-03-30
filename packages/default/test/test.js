@@ -110,6 +110,15 @@ describe("tkey", function () {
       fail("Unable to delete share index");
     }
   });
+  it("#should not be able to delete more than threshold number of shares", async function () {
+    await tb.initializeNewKey({ initializeModules: true });
+    const { newShareIndex: newShareIndex1 } = await tb.generateNewShare();
+    const { newShareIndex: newShareIndex2 } = await tb.generateNewShare();
+    await tb.deleteShare(newShareIndex1);
+    rejects(async () => {
+      await tb.deleteShare(newShareIndex2);
+    }, Error);
+  });
   it("#should not be able to add share post deletion", async function () {
     await tb.initializeNewKey({ initializeModules: true });
     const { newShareStores: newShareStores1, newShareIndex: newShareIndex1 } = await tb.generateNewShare();
