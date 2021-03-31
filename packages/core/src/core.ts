@@ -348,8 +348,8 @@ class ThresholdKey implements ITKey {
     // Update shares
     if (existingShareIndexes.length === newShareIndexes.length) {
       throw CoreError.default("Share index does not exist in latest polynomial");
-    } else if (existingShareIndexes.length < 2) {
-      throw CoreError.default("Minimum 2 shares are required for tkey. Unable to delete share");
+    } else if (newShareIndexes.length < pubPoly.getThreshold()) {
+      throw CoreError.default(`Minimum ${pubPoly.getThreshold()} shares are required for tkey. Unable to delete share`);
     }
     const results = await this.refreshShares(pubPoly.getThreshold(), [...newShareIndexes], previousPolyID);
     const newShareStores = results.shareStores;
@@ -377,6 +377,10 @@ class ThresholdKey implements ITKey {
   }
 
   async refreshShares(threshold: number, newShareIndexes: Array<string>, previousPolyID: PolynomialID): Promise<RefreshSharesResult> {
+    if (threshold > newShareIndexes.length) {
+      throw CoreError.default(`threshold should not be greater than share indexes. ${threshold} > ${newShareIndexes.length}`);
+    }
+
     await this.acquireWriteMetadataLock();
     const poly = generateRandomPolynomial(threshold - 1, this.privKey);
     const shares = poly.generateShares(newShareIndexes);
@@ -385,7 +389,7 @@ class ThresholdKey implements ITKey {
     const pointsArr = [];
     const sharesForExistingPoly = Object.keys(this.shares[previousPolyID]);
     if (sharesForExistingPoly.length < threshold) {
-      throw CoreError.unableToReconstruct("Not enough shares for polynomial reconstruction");
+      throw CoreError.unableToReconstruct("not enough shares for polynomial reconstruction");
     }
     for (let i = 0; i < threshold; i += 1) {
       pointsArr.push(new Point(new BN(sharesForExistingPoly[i], "hex"), this.shares[previousPolyID][sharesForExistingPoly[i]].share.share));
@@ -487,6 +491,7 @@ class ThresholdKey implements ITKey {
 
     // create a random poly and respective shares
     // 1 is defined as the serviceProvider share
+    // 0 is for tKey
     const shareIndexForDeviceStorage = generatePrivateExcludingIndexes([new BN(1), new BN(0)]);
 
     const shareIndexes = [new BN(1), shareIndexForDeviceStorage];
@@ -710,7 +715,7 @@ class ThresholdKey implements ITKey {
     const pointsArr = [];
     const sharesForExistingPoly = Object.keys(this.shares[pubPolyID]);
     if (sharesForExistingPoly.length < threshold) {
-      throw CoreError.unableToReconstruct("not enough shares to reconstruct poly");
+      throw CoreError.unableToReconstruct("not enough shares for polynomial reconstruction");
     }
     for (let i = 0; i < threshold; i += 1) {
       pointsArr.push(new Point(new BN(sharesForExistingPoly[i], "hex"), this.shares[pubPolyID][sharesForExistingPoly[i]].share.share));
