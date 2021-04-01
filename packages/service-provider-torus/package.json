@@ -1,9 +1,9 @@
 {
   "name": "@tkey/service-provider-torus",
-  "version": "3.9.1",
+  "version": "3.11.1",
   "description": "TKey Torus Service Provider Module",
   "author": "Torus Labs",
-  "homepage": "https://github.com/torusresearch/tkey#readme",
+  "homepage": "https://github.com/tkey/tkey#readme",
   "license": "MIT",
   "main": "dist/service-provider-torus.cjs.js",
   "unpkg": "dist/service-provider-torus.umd.min.js",
@@ -18,7 +18,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/torusresearch/tkey.git"
+    "url": "git+https://github.com/tkey/tkey.git"
   },
   "scripts": {
     "test": "cross-env MOCKED=true mocha --config ../../.mocharc.json ",
@@ -36,18 +36,18 @@
     "@babel/runtime": "7.x"
   },
   "dependencies": {
-    "@tkey/common-types": "^3.9.1",
-    "@tkey/service-provider-base": "^3.9.1",
-    "@toruslabs/torus-direct-web-sdk": "^3.5.4",
-    "bn.js": "^5.1.3",
-    "elliptic": "^6.5.3"
+    "@tkey/common-types": "^3.11.1",
+    "@tkey/service-provider-base": "^3.11.1",
+    "@toruslabs/torus-direct-web-sdk": "^4.8.0",
+    "bn.js": "^5.2.0",
+    "elliptic": "^6.5.4"
   },
   "devDependencies": {
     "@types/bn.js": "^5.1.0",
     "@types/elliptic": "^6.4.12"
   },
   "bugs": {
-    "url": "https://github.com/torusresearch/tkey/issues"
+    "url": "https://github.com/tkey/tkey/issues"
   },
   "lint-staged": {
     "!(*d).ts": [

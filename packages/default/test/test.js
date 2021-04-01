@@ -18,10 +18,7 @@ function initStorageLayer(mocked, extraParams) {
 
 const mocked = process.env.MOCKED || "false";
 const metadataURL = process.env.METADATA || "http://localhost:5051";
-// const metadataURL = "http://metadata-load-balancer-13352507.ap-northeast-2.elb.amazonaws.com";
 const PRIVATE_KEY = generatePrivate().toString("hex");
-// const PRIVATE_KEY_2 = generatePrivate().toString("hex");
-
 const defaultSP = new ServiceProviderBase({ postboxKey: PRIVATE_KEY });
 const defaultSL = initStorageLayer(mocked, { serviceProvider: defaultSP, hostUrl: metadataURL });
 
@@ -52,10 +49,7 @@ function compareReconstructedKeys(a, b, message) {
 describe("tkey", function () {
   let tb;
   beforeEach("Setup ThresholdKey", async function () {
-    const tempSP = new ServiceProviderBase({ postboxKey: PRIVATE_KEY });
-    const tempSL = initStorageLayer(mocked, { serviceProvider: tempSP, hostUrl: metadataURL });
-
-    tb = new ThresholdKey({ serviceProvider: tempSP, storageLayer: tempSL });
+    tb = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
   });
 
   it("#should be able to update metadata", async function () {
@@ -112,6 +106,15 @@ describe("tkey", function () {
     if (newKeys.find((el) => el === newShareIndex1.toString("hex"))) {
       fail("Unable to delete share index");
     }
+  });
+  it("#should not be able to delete more than threshold number of shares", async function () {
+    await tb.initializeNewKey({ initializeModules: true });
+    const { newShareIndex: newShareIndex1 } = await tb.generateNewShare();
+    const { newShareIndex: newShareIndex2 } = await tb.generateNewShare();
+    await tb.deleteShare(newShareIndex1);
+    rejects(async () => {
+      await tb.deleteShare(newShareIndex2);
+    }, Error);
   });
   it("#should not be able to add share post deletion", async function () {
     await tb.initializeNewKey({ initializeModules: true });

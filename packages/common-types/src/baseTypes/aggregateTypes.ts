@@ -121,7 +121,6 @@ export type KeyDetails = {
   threshold: number;
   totalShares: number;
   shareDescriptions: ShareDescriptionMap;
-  modules: ModuleMap;
 };
 
 export type TKeyArgs = {
@@ -212,9 +211,8 @@ export interface IPrivateKeyFormat {
 }
 
 export interface ITKeyApi {
-  storageLayer: IStorageLayer;
-
   getMetadata(): IMetadata;
+  getStorageLayer(): IStorageLayer;
   updateMetadata(): Promise<IMetadata>;
   initialize(params: { input?: ShareStore; importKey?: BN; neverInitializeNewKey?: boolean }): Promise<KeyDetails>;
   catchupToLatestShare(shareStore: ShareStore): Promise<CatchupToLatestShareResult>;

@@ -18,6 +18,7 @@ declare class ThresholdKey implements ITKey {
     haveWriteMetadataLock: string;
     constructor(args?: TKeyArgs);
     getApi(): ITKeyApi;
+    getStorageLayer(): IStorageLayer;
     getMetadata(): IMetadata;
     updateMetadata(): Promise<IMetadata>;
     initialize(params?: {

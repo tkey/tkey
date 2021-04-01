@@ -1,9 +1,8 @@
 /// <reference types="node" />
 import { BNString, EncryptedMessage, IServiceProvider, PubKeyType, ServiceProviderArgs, StringifiedType } from "@tkey/common-types";
 import BN from "bn.js";
-import { curve, ec as EC } from "elliptic";
+import { curve } from "elliptic";
 declare class ServiceProviderBase implements IServiceProvider {
-    ec: EC;
     enableLogging: boolean;
     postboxKey: BN;
     constructor({ enableLogging, postboxKey }: ServiceProviderArgs);
