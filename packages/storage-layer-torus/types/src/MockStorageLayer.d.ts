@@ -29,18 +29,13 @@ declare class MockStorageLayer implements IStorageLayer {
     }): Promise<{
         message: string;
     }>;
-    /**
-     * Set Metadata for keys
-     * @param input data to post
-     * @param privKey If not provided, it will use service provider's share for encryption
-     */
-    setMetadataBulk<T>(params: {
+    setMetadataStream<T>(params: {
         input: Array<T>;
         serviceProvider?: IServiceProvider;
         privKey?: Array<BN>;
     }): Promise<{
         message: string;
-    }[]>;
+    }>;
     acquireWriteLock(params: {
         serviceProvider?: IServiceProvider;
         privKey?: BN;

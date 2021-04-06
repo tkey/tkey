@@ -37,6 +37,11 @@ The following are steps of how to use the SDK in your application:
 
 ## Installation
 
+```
+yarn run bootstrap
+yarn run pack:lerna
+```
+
 ### Bundling
 
 Each sub package is distributed in 4 formats

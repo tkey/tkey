@@ -19,8 +19,6 @@ function initStorageLayer(mocked, extraParams) {
 const mocked = process.env.MOCKED || "false";
 const metadataURL = process.env.METADATA || "http://localhost:5051";
 const PRIVATE_KEY = generatePrivate().toString("hex");
-const PRIVATE_KEY_2 = generatePrivate().toString("hex");
-
 const defaultSP = new ServiceProviderBase({ postboxKey: PRIVATE_KEY });
 const defaultSL = initStorageLayer(mocked, { serviceProvider: defaultSP, hostUrl: metadataURL });
 
@@ -100,8 +98,7 @@ describe("tkey", function () {
     await tb.initializeNewKey({ initializeModules: true });
     const { newShareStores: newShareStores1, newShareIndex: newShareIndex1 } = await tb.generateNewShare();
     const { newShareStores } = await tb.deleteShare(newShareIndex1);
-
-    const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
+    const tb2 = new ThresholdKey({ serviceProvider: tb.serviceProvider, storageLayer: tb.storageLayer });
     await tb2.initialize();
     // tb2.inputShareStore(resp1.deviceShare);
     tb2.inputShareStore(newShareStores1[newShareIndex1.toString("hex")]);
@@ -287,17 +284,27 @@ describe("TorusStorageLayer", function () {
     deepStrictEqual(resp, message, "set and get message should be equal");
   });
   it("#should get or set with array of specified private keys correctly", async function () {
-    const privKey = PRIVATE_KEY;
+    const privKey = generatePrivate().toString("hex");
     const privKeyBN = new BN(privKey, 16);
     const tsp = new ServiceProviderBase({ postboxKey: privKey });
     const storageLayer = initStorageLayer(mocked, { hostUrl: metadataURL, serviceProvider: tsp });
     const message = { test: Math.random().toString(36).substring(7) };
 
-    const privKey2 = PRIVATE_KEY_2;
+    // const messages = [];
+    // for (let i = 0; i < 4; i += 1) {
+    //   messages.push({ test: Math.random().toString(36).substring(7) });
+    // }
+
+    // const privateKeys = [];
+    // for (let i = 0; i < 4; i += 1) {
+    //   privateKeys.push(generatePrivate().toString("hex"));
+    // }
+
+    const privKey2 = generatePrivate().toString("hex");
     const privKeyBN2 = new BN(privKey2, 16);
     const message2 = { test: Math.random().toString(36).substring(7) };
 
-    await storageLayer.setMetadataBulk({ input: [message, message2], privKey: [privKeyBN, privKeyBN2] });
+    await storageLayer.setMetadataStream({ input: [message, message2], privKey: [privKeyBN, privKeyBN2] });
     const resp = await storageLayer.getMetadata({ privKey: privKeyBN });
     const resp2 = await storageLayer.getMetadata({ privKey: privKeyBN2 });
     deepStrictEqual(resp, message, "set and get message should be equal");
@@ -312,7 +319,7 @@ describe("TorusStorageLayer", function () {
     }
     const tsp = new ServiceProviderBase({ postboxKey: privkeys[0].toString("hex") });
     const storageLayer = initStorageLayer(mocked, { hostUrl: metadataURL, serviceProvider: tsp });
-    await storageLayer.setMetadataBulk({ input: [...messages], privKey: [...privkeys] });
+    await storageLayer.setMetadataStream({ input: [...messages], privKey: [...privkeys] });
     const responses = await Promise.all(privkeys.map((el) => storageLayer.getMetadata({ privKey: el })));
     for (let i = 0; i < 10; i += 1) {
       deepStrictEqual(responses[i], messages[i], "set and get message should be equal");

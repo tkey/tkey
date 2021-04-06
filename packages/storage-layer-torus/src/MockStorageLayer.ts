@@ -58,12 +58,7 @@ class MockStorageLayer implements IStorageLayer {
     return { message: "success" };
   }
 
-  /**
-   * Set Metadata for keys
-   * @param input data to post
-   * @param privKey If not provided, it will use service provider's share for encryption
-   */
-  async setMetadataBulk<T>(params: { input: Array<T>; serviceProvider?: IServiceProvider; privKey?: Array<BN> }): Promise<{ message: string }[]> {
+  async setMetadataStream<T>(params: { input: Array<T>; serviceProvider?: IServiceProvider; privKey?: Array<BN> }): Promise<{ message: string }> {
     const { serviceProvider, privKey, input } = params;
     input.forEach((el, index) => {
       let usedKey: BN;
@@ -72,7 +67,7 @@ class MockStorageLayer implements IStorageLayer {
       this.dataMap[usedKey.toString("hex")] = stringify(el);
     });
 
-    return [{ message: "success" }];
+    return { message: "success" };
   }
 
   async acquireWriteLock(params: { serviceProvider?: IServiceProvider; privKey?: BN }): Promise<{ status: number; id?: string }> {

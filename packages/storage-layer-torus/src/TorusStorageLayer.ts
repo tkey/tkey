@@ -81,40 +81,40 @@ class TorusStorageLayer implements IStorageLayer {
     return post<{ message: string }>(`${this.hostUrl}/set`, metadataParams);
   }
 
-  /**
-   * Set Metadata for keys
-   * @param input data to post
-   * @param privKey If not provided, it will use service provider's share for encryption
-   */
-  async setMetadataBulk<T>(params: { input: Array<T>; serviceProvider?: IServiceProvider; privKey?: Array<BN> }): Promise<{ message: string }[]> {
+  async setMetadataStream<T>(params: { input: Array<T>; serviceProvider?: IServiceProvider; privKey?: Array<BN> }): Promise<{ message: string }> {
     const { serviceProvider, privKey, input } = params;
     const newInput = input;
-    const newPrivKey = privKey;
-    const encryptedDetailsArray = [];
-    while (newInput.length !== 0) {
-      const tempInput = newInput.splice(0, 4);
-      const tempPrivateKey = newPrivKey.splice(0, 4);
-      const promises = Promise.all(
-        tempInput.map(async (el, i) => {
-          const bufferMetadata = Buffer.from(stringify(el));
-          let encryptedDetails: EncryptedMessage;
-          if (tempPrivateKey[i]) {
-            encryptedDetails = await encrypt(getPubKeyECC(tempPrivateKey[i]), bufferMetadata);
-          } else {
-            encryptedDetails = await serviceProvider.encrypt(bufferMetadata);
-          }
-          const serializedEncryptedDetails = btoa(stringify(encryptedDetails));
-          const metadataParams = this.generateMetadataParams(serializedEncryptedDetails, serviceProvider, tempPrivateKey[i]);
-          return metadataParams;
-        })
-      );
-      // eslint-disable-next-line no-await-in-loop
-      const finalMetadataParams = await promises;
-      encryptedDetailsArray.push(
-        post<{ message: string }>(`${this.hostUrl}/bulk_set`, { shares: finalMetadataParams })
-      );
-    }
-    return Promise.all(encryptedDetailsArray);
+    const finalMetadataParams = await Promise.all(
+      newInput.map(async (el, i) => {
+        const bufferMetadata = Buffer.from(stringify(el));
+        let encryptedDetails: EncryptedMessage;
+        if (privKey[i]) {
+          encryptedDetails = await encrypt(getPubKeyECC(privKey[i]), bufferMetadata);
+        } else {
+          encryptedDetails = await serviceProvider.encrypt(bufferMetadata);
+        }
+        const serializedEncryptedDetails = btoa(stringify(encryptedDetails));
+        const metadataParams = this.generateMetadataParams(serializedEncryptedDetails, serviceProvider, privKey[i]);
+        return metadataParams;
+      })
+    );
+
+    const FD = new FormData();
+    finalMetadataParams.forEach((el, index) => {
+      FD.append(index.toString(), JSON.stringify(el));
+    });
+    const options: RequestInit = {
+      mode: "cors",
+      method: "POST",
+      headers: {
+        "Content-Type": undefined,
+      },
+    };
+
+    const customOptions = {
+      isUrlEncodedData: true,
+    };
+    return post<{ message: string }>(`${this.hostUrl}/bulk_set_stream`, FD, options, customOptions);
   }
 
   generateMetadataParams(message: unknown, serviceProvider?: IServiceProvider, privKey?: BN): TorusStorageLayerAPIParams {

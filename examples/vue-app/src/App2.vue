@@ -155,7 +155,7 @@ export default {
         await serviceProvider.init({ skipSw: false });
       }
 
-      const storageLayer = new TorusStorageLayer({ hostUrl: "https://metadata.tor.us", serviceProvider });
+      const storageLayer = new TorusStorageLayer({ hostUrl: "http://localhost:5051", serviceProvider });
       const webStorage = new WebStorageModule();
 
       this.tKey = new ThresholdKey({
