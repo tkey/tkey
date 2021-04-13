@@ -1,11 +1,12 @@
 import { ShareStore } from "@tkey/common-types";
 
 import WebStorageError from "./errors";
+import { getWindow } from "./utils";
 
 // Web Specific declarations
 const requestedBytes = 1024 * 1024 * 10; // 10MB
 
-const win = globalThis as any;
+const win = getWindow();
 win.requestFileSystem = win.requestFileSystem || win.webkitRequestFileSystem;
 
 declare global {

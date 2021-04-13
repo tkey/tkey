@@ -1,11 +1,14 @@
 import { ShareStore } from "@tkey/common-types";
 
 import WebStorageError from "./errors";
+import { getWindow } from "./utils";
+
+const win = getWindow();
 
 function storageAvailable(type: string): boolean {
   let storage: Storage;
   try {
-    storage = globalThis[type];
+    storage = win[type];
     const x = "__storage_test__";
     storage.setItem(x, x);
     storage.removeItem(x);
@@ -34,14 +37,14 @@ export const storeShareOnLocalStorage = async (share: ShareStore, key: string): 
   if (!storageAvailable("localStorage")) {
     throw WebStorageError.localStorageUnavailable();
   }
-  globalThis.localStorage.setItem(key, fileStr);
+  win.localStorage.setItem(key, fileStr);
 };
 
 export const getShareFromLocalStorage = async (key: string): Promise<ShareStore> => {
   if (!storageAvailable("localStorage")) {
     throw WebStorageError.localStorageUnavailable();
   }
-  const foundFile = globalThis.localStorage.getItem(key);
+  const foundFile = win.localStorage.getItem(key);
   if (!foundFile) throw WebStorageError.shareUnavailableInLocalStorage();
   return ShareStore.fromJSON(JSON.parse(foundFile));
 };
