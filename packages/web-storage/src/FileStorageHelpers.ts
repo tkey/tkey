@@ -4,7 +4,10 @@ import WebStorageError from "./errors";
 
 // Web Specific declarations
 const requestedBytes = 1024 * 1024 * 10; // 10MB
-window.requestFileSystem = window.requestFileSystem || window.webkitRequestFileSystem;
+
+const win = globalThis as any;
+win.requestFileSystem = win.requestFileSystem || win.webkitRequestFileSystem;
+
 declare global {
   interface Navigator {
     webkitPersistentStorage: {
@@ -29,7 +32,7 @@ async function requestQuota(): Promise<number> {
 }
 async function browserRequestFileSystem(grantedBytes: number): Promise<FileSystem> {
   return new Promise((resolve, reject) => {
-    window.requestFileSystem(window.PERSISTENT, grantedBytes, resolve, reject);
+    win.requestFileSystem(win.PERSISTENT, grantedBytes, resolve, reject);
   });
 }
 async function getFile(fs: FileSystem, path: string, create: boolean): Promise<FileEntry> {
@@ -44,7 +47,7 @@ async function readFile(fileEntry: FileEntry): Promise<File> {
 }
 
 export const getShareFromFileStorage = async (key: string): Promise<ShareStore> => {
-  if (window.requestFileSystem) {
+  if (win.requestFileSystem) {
     const fs = await browserRequestFileSystem(requestedBytes);
 
     const fileEntry = await getFile(fs, key, false);
@@ -62,7 +65,7 @@ export const storeShareOnFileStorage = async (share: ShareStore, key: string): P
   // if we're on chrome (thus window.requestFileSystem exists) we use it
   const fileName = `${key}.json`;
   const fileStr = JSON.stringify(share);
-  if (window.requestFileSystem) {
+  if (win.requestFileSystem) {
     const grantedBytes = await requestQuota();
     const fs = await browserRequestFileSystem(grantedBytes);
     const fileEntry = await getFile(fs, key, true);
