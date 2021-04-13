@@ -1,6 +1,6 @@
 {
   "name": "@tkey/service-provider-torus",
-  "version": "3.12.0",
+  "version": "3.12.1",
   "description": "TKey Torus Service Provider Module",
   "author": "Torus Labs",
   "homepage": "https://github.com/tkey/tkey#readme",
@@ -36,8 +36,8 @@
     "@babel/runtime": "7.x"
   },
   "dependencies": {
-    "@tkey/common-types": "^3.12.0",
-    "@tkey/service-provider-base": "^3.12.0",
+    "@tkey/common-types": "^3.12.1",
+    "@tkey/service-provider-base": "^3.12.1",
     "@toruslabs/torus-direct-web-sdk": "^4.8.0",
     "bn.js": "^5.2.0",
     "elliptic": "^6.5.4"
