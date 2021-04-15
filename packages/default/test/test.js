@@ -293,7 +293,6 @@ describe("TorusStorageLayer", function () {
     // const messages = [];
     // for (let i = 0; i < 4; i += 1) {
     //   messages.push({ test: Math.random().toString(36).substring(7) });
-
     // }
 
     // const privateKeys = [];
