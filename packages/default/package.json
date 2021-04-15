@@ -1,6 +1,6 @@
 {
   "name": "@tkey/default",
-  "version": "3.13.0",
+  "version": "3.13.1",
   "description": "TKey default library",
   "main": "dist/default.cjs.js",
   "unpkg": "dist/default.umd.min.js",
