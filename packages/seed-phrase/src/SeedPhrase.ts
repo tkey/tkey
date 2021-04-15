@@ -45,7 +45,7 @@ class SeedPhraseModule implements IModule {
     return this.tbSDK.setTKeyStoreItem(this.moduleName, finalItem, true);
   }
 
-  async CRITIAL_changeSeedPhrase(oldSeedPhrase: string, newSeedPhrase: string): Promise<void> {
+  async CRITICAL_changeSeedPhrase(oldSeedPhrase: string, newSeedPhrase: string): Promise<void> {
     const seedPhrases = await this.getSeedPhrases();
     const itemToChange = seedPhrases.find((x) => x.seedPhrase === oldSeedPhrase);
     itemToChange.seedPhrase = newSeedPhrase;
