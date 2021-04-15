@@ -306,6 +306,7 @@ describe("TorusStorageLayer", function () {
 
     await storageLayer.setMetadataStream({ input: [message, message2], privKey: [privKeyBN, privKeyBN2] });
     const resp = await storageLayer.getMetadata({ privKey: privKeyBN });
+
     const resp2 = await storageLayer.getMetadata({ privKey: privKeyBN2 });
     deepStrictEqual(resp, message, "set and get message should be equal");
     deepStrictEqual(resp2, message2, "set and get message should be equal");

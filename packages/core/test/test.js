@@ -44,6 +44,7 @@ describe("Metadata", function () {
     const shareIndexes = [new BN(1), new BN(2)];
     for (let i = 1; i <= 2; i += 1) {
       let ran = generatePrivate();
+
       while (ran < 2) {
         ran = generatePrivate();
       }
