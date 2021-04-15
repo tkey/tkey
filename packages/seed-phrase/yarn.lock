@@ -192,9 +192,9 @@
     "@types/node" "*"
 
 "@types/node@*":
-  version "14.14.37"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-14.14.37.tgz#a3dd8da4eb84a996c36e331df98d82abd76b516e"
-  integrity sha512-XYmBiy+ohOR4Lh5jE379fV2IU+6Jn4g5qASinhitfyO71b/sCo6MKsMLF5tc7Zf2CE8hViVQyYSobJNke8OvUw==
+  version "14.14.39"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-14.14.39.tgz#9ef394d4eb52953d2890e4839393c309aa25d2d1"
+  integrity sha512-Qipn7rfTxGEDqZiezH+wxqWYR8vcXq5LRpZrETD19Gs4o8LbklbmqotSUsMU+s5G3PJwMRDfNEYoxrcBwIxOuw==
 
 "@types/node@11.11.6":
   version "11.11.6"
@@ -202,9 +202,9 @@
   integrity sha512-Exw4yUWMBXM3X+8oqzJNRqZSwUAaS4+7NdvHqQuFi/d+synz++xmX3QIf+BFqneW8N31R8Ky+sikfZUXq07ggQ==
 
 "@types/node@^12.12.6":
-  version "12.20.7"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-12.20.7.tgz#1cb61fd0c85cb87e728c43107b5fd82b69bc9ef8"
-  integrity sha512-gWL8VUkg8VRaCAUgG9WmhefMqHmMblxe2rVpMF86nZY/+ZysU+BkAp+3cz03AixWDSSz0ks5WX59yAhv/cDwFA==
+  version "12.20.8"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-12.20.8.tgz#e8552c505de64739fc997e28920ff4539fc8f185"
+  integrity sha512-uxDkaUGwXNDHu5MHqs+FAsmOjNoNibDF1cu4668QG96mQldQfgV3M+UyntXWWrtXSh13jFxEdNUdoLWH46mLKQ==
 
 "@types/pbkdf2@^3.0.0":
   version "3.1.0"
@@ -1543,9 +1543,9 @@ web3-utils@1.3.5, web3-utils@^1.3.4:
     utf8 "3.0.0"
 
 websocket@^1.0.32:
-  version "1.0.33"
-  resolved "https://registry.yarnpkg.com/websocket/-/websocket-1.0.33.tgz#407f763fc58e74a3fa41ca3ae5d78d3f5e3b82a5"
-  integrity sha512-XwNqM2rN5eh3G2CUQE3OHZj+0xfdH42+OFK6LdC2yqiC0YU8e5UK0nYre220T0IyyN031V/XOvtHvXozvJYFWA==
+  version "1.0.34"
+  resolved "https://registry.yarnpkg.com/websocket/-/websocket-1.0.34.tgz#2bdc2602c08bf2c82253b730655c0ef7dcab3111"
+  integrity sha512-PRDso2sGwF6kM75QykIesBijKSVceR6jL2G8NGYyq2XrItNC2P5/qL5XeR056GhA+Ly7JMFvJb9I312mJfmqnQ==
   dependencies:
     bufferutil "^4.0.1"
     debug "^2.2.0"
