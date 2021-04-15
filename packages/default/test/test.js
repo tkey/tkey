@@ -585,7 +585,7 @@ describe("ShareSerializationModule", function () {
   });
 });
 describe("TkeyStore", function () {
-  it.only("#should get/set seed phrase", async function () {
+  it("#should get/set seed phrase", async function () {
     const metamaskSeedPhraseFormat = new MetamaskSeedPhraseFormat("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68");
     const tb = new ThresholdKey({
       serviceProvider: defaultSP,
@@ -640,6 +640,26 @@ describe("TkeyStore", function () {
     const derivedKeys = await tb.modules.seedPhrase.getAccounts();
     strict(seedPhraseFormat.validateSeedPhrase(seed.seedPhrase), "Seed Phrase must be valid");
     strict(derivedKeys.length >= 1, "Atleast one account must be generated");
+  });
+
+  it("#should be able to change seedphrase", async function () {
+    const seedPhraseFormat = new MetamaskSeedPhraseFormat("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68");
+    const tb = new ThresholdKey({
+      serviceProvider: defaultSP,
+      storageLayer: defaultSL,
+      modules: { seedPhrase: new SeedPhraseModule([seedPhraseFormat]) },
+    });
+    await tb.initializeNewKey({ initializeModules: true });
+    const oldSeedPhrase = "verb there excuse wink merge phrase alien senior surround fluid remind chef bar move become";
+
+    await tb.modules.seedPhrase.setSeedPhrase("HD Key Tree", oldSeedPhrase);
+    await tb.modules.seedPhrase.setSeedPhrase("HD Key Tree");
+
+    const newSeedPhrase = "trim later month olive fit shoulder entry laptop jeans affair belt drip jealous mirror fancy";
+    await tb.modules.seedPhrase.CRITIAL_changeSeedPhrase(oldSeedPhrase, newSeedPhrase);
+    const secondStoredSeedPhrases = await tb.modules.seedPhrase.getSeedPhrases();
+
+    strictEqual(secondStoredSeedPhrases[0].seedPhrase, newSeedPhrase);
   });
 
   it("#should be able to replace numberOfWallets seed phrase module", async function () {
