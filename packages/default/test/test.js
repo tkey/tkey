@@ -585,15 +585,18 @@ describe("ShareSerializationModule", function () {
   });
 });
 describe("TkeyStore", function () {
-  it("#should get/set seed phrase", async function () {
+  it.only("#should get/set seed phrase", async function () {
     const metamaskSeedPhraseFormat = new MetamaskSeedPhraseFormat("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68");
     const tb = new ThresholdKey({
       serviceProvider: defaultSP,
       storageLayer: defaultSL,
       modules: { seedPhrase: new SeedPhraseModule([metamaskSeedPhraseFormat]) },
     });
+    const seedPhraseToSet = "seed sock milk update focus rotate barely fade car face mechanic mercy";
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
-    await tb.modules.seedPhrase.setSeedPhrase("HD Key Tree", "seed sock milk update focus rotate barely fade car face mechanic mercy");
+    await tb.modules.seedPhrase.setSeedPhrase("HD Key Tree", seedPhraseToSet);
+    const [returnedSeed] = await tb.modules.seedPhrase.getSeedPhrases();
+    strictEqual(returnedSeed.seedPhrase, seedPhraseToSet);
 
     const metamaskSeedPhraseFormat2 = new MetamaskSeedPhraseFormat("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68");
     const tb2 = new ThresholdKey({
