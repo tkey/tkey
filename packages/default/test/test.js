@@ -656,7 +656,7 @@ describe("TkeyStore", function () {
     await tb.modules.seedPhrase.setSeedPhrase("HD Key Tree");
 
     const newSeedPhrase = "trim later month olive fit shoulder entry laptop jeans affair belt drip jealous mirror fancy";
-    await tb.modules.seedPhrase.CRITIAL_changeSeedPhrase(oldSeedPhrase, newSeedPhrase);
+    await tb.modules.seedPhrase.CRITICAL_changeSeedPhrase(oldSeedPhrase, newSeedPhrase);
     const secondStoredSeedPhrases = await tb.modules.seedPhrase.getSeedPhrases();
 
     strictEqual(secondStoredSeedPhrases[0].seedPhrase, newSeedPhrase);
