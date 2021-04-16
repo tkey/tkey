@@ -12,3 +12,5 @@ register({
   extensions: [".ts", ".js"],
   rootMode: "upward",
 });
+
+global.fetch = require("node-fetch");
