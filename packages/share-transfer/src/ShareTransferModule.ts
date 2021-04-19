@@ -56,7 +56,7 @@ class ShareTransferModule implements IModule {
       shareTransferStorePointer = { pointer: new BN(generatePrivate()) };
       metadata.setGeneralStoreDomain(this.moduleName, shareTransferStorePointer);
       // await this.tbSDK.syncShareMetadata(); // Requires threshold shares
-      // OPTIMIZATION TO NOT SYNC METADATA TWICE, WILL FAIL IF TKEY DOES NOT HAVE MODULE AS DEFAULT
+      // OPTIMIZATION TO NOT SYNC METADATA TWICE ON INIT, WILL FAIL IF TKEY DOES NOT HAVE MODULE AS DEFAULT
     } else {
       shareTransferStorePointer = new ShareTransferStorePointer(rawShareTransferStorePointer);
     }
