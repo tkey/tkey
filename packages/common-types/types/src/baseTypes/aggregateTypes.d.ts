@@ -116,6 +116,7 @@ export interface ShareRequestArgs {
     encShareInTransit: EncryptedMessage;
     availableShareIndexes: string[];
     userAgent: string;
+    userIp: string;
     timestamp: number;
 }
 export declare type TkeyStoreItemType = {

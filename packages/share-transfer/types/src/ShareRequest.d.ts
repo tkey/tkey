@@ -5,7 +5,8 @@ declare class ShareRequest {
     encShareInTransit: EncryptedMessage;
     availableShareIndexes: Array<string>;
     userAgent: string;
+    userIp: string;
     timestamp: number;
-    constructor({ encPubKey, encShareInTransit, availableShareIndexes, userAgent, timestamp }: ShareRequestArgs);
+    constructor({ encPubKey, encShareInTransit, availableShareIndexes, userAgent, userIp, timestamp }: ShareRequestArgs);
 }
 export default ShareRequest;
