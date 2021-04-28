@@ -165,6 +165,7 @@ export interface ShareRequestArgs {
   encShareInTransit: EncryptedMessage;
   availableShareIndexes: string[];
   userAgent: string;
+  userIp: string;
   timestamp: number;
 }
 
