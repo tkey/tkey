@@ -10,6 +10,7 @@ declare class SeedPhraseModule implements IModule {
     initialize(): Promise<void>;
     setSeedPhrase(seedPhraseType: string, seedPhrase?: string): Promise<void>;
     setSeedPhraseStoreItem(partialStore: ISeedPhraseStore): Promise<void>;
+    CRITICAL_changeSeedPhrase(oldSeedPhrase: string, newSeedPhrase: string): Promise<void>;
     getSeedPhrases(): Promise<ISeedPhraseStore[]>;
     getSeedPhrasesWithAccounts(): Promise<ISeedPhraseStoreWithKeys[]>;
     getAccounts(): Promise<BN[]>;

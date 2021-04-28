@@ -208,3 +208,4 @@ await tkey.modules.securityQuestions.generateNewShareWithSecurityQuestions("myan
 // Resulting threshold - 2/3.
 await tkey.modules.securityQuestions.generateNewShareWithSecurityQuestions("mypassword", "what is your password?");
 ```
+

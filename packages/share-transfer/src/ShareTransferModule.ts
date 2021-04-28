@@ -16,6 +16,7 @@ import BN from "bn.js";
 import ShareTransferError from "./errors";
 import ShareRequest from "./ShareRequest";
 import ShareTransferStorePointer from "./ShareTransferStorePointer";
+import { getClientIp } from "./utils";
 
 // @flow
 export type ShareTransferStore = {
@@ -68,13 +69,14 @@ class ShareTransferModule implements IModule {
   ): Promise<string> {
     if (this.currentEncKey) throw ShareTransferError.requestExists(`${this.currentEncKey.toString("hex")}`);
     this.currentEncKey = new BN(generatePrivate());
-    const newShareTransferStore = await this.getShareTransferStore();
+    const [newShareTransferStore, userIp] = await Promise.all([this.getShareTransferStore(), getClientIp()]);
     const encPubKeyX = getPubKeyPoint(this.currentEncKey).x.toString("hex");
     newShareTransferStore[encPubKeyX] = new ShareRequest({
       encPubKey: getPubKeyECC(this.currentEncKey),
       encShareInTransit: undefined,
       availableShareIndexes,
       userAgent,
+      userIp,
       timestamp: Date.now(),
     });
     await this.setShareTransferStore(newShareTransferStore);
