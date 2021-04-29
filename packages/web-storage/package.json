@@ -44,7 +44,7 @@
     "@tkey/core": "^3.14.1",
     "@tkey/service-provider-base": "^3.14.1",
     "@tkey/storage-layer-torus": "^3.14.1",
-    "@types/filesystem": "^0.0.29"
+    "@types/filesystem": "^0.0.30"
   },
   "bugs": {
     "url": "https://github.com/tkey/tkey/issues"
