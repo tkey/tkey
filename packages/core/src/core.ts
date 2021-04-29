@@ -505,10 +505,16 @@ class ThresholdKey implements ITKey {
     metadata.addFromPolynomialAndShares(poly, shares);
     const serviceProviderShare = shares[shareIndexes[0].toString("hex")];
     const shareStore = new ShareStore(serviceProviderShare, poly.getPolynomialID());
+    this.metadata = metadata;
+
+    // initialize modules
+    if (initializeModules) {
+      await this.initializeModules();
+    }
 
     const metadataToPush = [];
     const sharesToPush = shareIndexes.map((shareIndex) => {
-      metadataToPush.push(metadata);
+      metadataToPush.push(this.metadata);
       return shares[shareIndex.toString("hex")].share;
     });
 
@@ -525,11 +531,6 @@ class ThresholdKey implements ITKey {
       const shareIndex = shareIndexes[index];
       // also add into our share store
       this.inputShareStore(new ShareStore(shares[shareIndex.toString("hex")], poly.getPolynomialID()));
-    }
-    this.metadata = metadata;
-    // initialize modules
-    if (initializeModules) {
-      await this.initializeModules();
     }
 
     if (this.storeDeviceShare) {
