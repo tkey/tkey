@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 
 const path = require("path");
+const formData = require("form-data");
 require("jsdom-global")("<!doctype html><html><body></body></html>", {
   url: "https://example.com",
 });
@@ -14,3 +15,5 @@ register({
 });
 
 global.fetch = require("node-fetch");
+
+global.FormData = formData;
