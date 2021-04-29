@@ -221,7 +221,7 @@
   dependencies:
     deepmerge "^4.2.2"
 
-"@toruslabs/torus-direct-web-sdk@^4.8.0":
+"@toruslabs/torus-direct-web-sdk@^4.12.0":
   version "4.12.0"
   resolved "https://registry.yarnpkg.com/@toruslabs/torus-direct-web-sdk/-/torus-direct-web-sdk-4.12.0.tgz#be88e06c8485ca1b19d8d6113729a9561ff93df3"
   integrity sha512-8//nNVkJQB9UmprZOI9y569FmUThdRM8gm5SOcnGm5nkGdE3k81z9w4g+4FF39FkalCduKwm/xudVu+pFheVKQ==

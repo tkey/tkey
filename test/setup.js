@@ -1,10 +1,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 
 const path = require("path");
-const fetch = require("node-fetch");
-const formData = require('form-data');
-const atob = require("atob");
-const btoa = require("btoa");
+const formData = require("form-data");
 require("jsdom-global")("<!doctype html><html><body></body></html>", {
   url: "https://example.com",
 });
@@ -17,7 +14,6 @@ register({
   rootMode: "upward",
 });
 
-global.FormData = formData
-global.fetch = fetch;
-global.atob = atob;
-global.btoa = btoa;
+global.fetch = require("node-fetch");
+
+global.FormData = formData;
