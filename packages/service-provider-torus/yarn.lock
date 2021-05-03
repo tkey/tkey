@@ -3,9 +3,9 @@
 
 
 "@babel/runtime@^7.6.2", "@babel/runtime@^7.7.2":
-  version "7.13.17"
-  resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.13.17.tgz#8966d1fc9593bf848602f0662d6b4d0069e3a7ec"
-  integrity sha512-NCdgJEelPTSh+FEFylhnP1ylq848l1z9t9N0j1Lfbcw0+KXGjsTvUmkxy+voLLXB5SOKMbLLx4jxYliGrYQseA==
+  version "7.14.0"
+  resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.14.0.tgz#46794bc20b612c5f75e62dd071e24dfd95f1cbe6"
+  integrity sha512-JELkvo/DlpNdJ7dlyw/eY7E0suy5i5GQH+Vlxaq1nsNJ+H7f4Vtv3jMeCEgRhZZQFXTjldYfQgv2qmM6M1v5wA==
   dependencies:
     regenerator-runtime "^0.13.4"
 
@@ -222,9 +222,9 @@
     deepmerge "^4.2.2"
 
 "@toruslabs/torus-direct-web-sdk@^4.12.0":
-  version "4.12.0"
-  resolved "https://registry.yarnpkg.com/@toruslabs/torus-direct-web-sdk/-/torus-direct-web-sdk-4.12.0.tgz#be88e06c8485ca1b19d8d6113729a9561ff93df3"
-  integrity sha512-8//nNVkJQB9UmprZOI9y569FmUThdRM8gm5SOcnGm5nkGdE3k81z9w4g+4FF39FkalCduKwm/xudVu+pFheVKQ==
+  version "4.13.1"
+  resolved "https://registry.yarnpkg.com/@toruslabs/torus-direct-web-sdk/-/torus-direct-web-sdk-4.13.1.tgz#e9f81c26eb737e85e5c049a857c4f24c1e248eeb"
+  integrity sha512-DdzfLCHxVSTE5vZYnnnkglPEWR4vQYsw3KHxOSjEMOmVJkoxUz3thBhGSY4mM6zu5DBxJsrA3+N7RhMs1abedg==
   dependencies:
     "@chaitanyapotti/random-id" "^1.0.3"
     "@chaitanyapotti/register-service-worker" "^1.7.3"
@@ -235,7 +235,7 @@
     deepmerge "^4.2.2"
     jwt-decode "^3.1.2"
     loglevel "^1.7.1"
-    web3-utils "^1.3.4"
+    web3-utils "^1.3.5"
 
 "@toruslabs/torus.js@^2.3.0":
   version "2.3.0"
@@ -1314,7 +1314,7 @@ web3-providers-ws@1.3.5:
     web3-core-helpers "1.3.5"
     websocket "^1.0.32"
 
-web3-utils@1.3.5, web3-utils@^1.3.3, web3-utils@^1.3.4:
+web3-utils@1.3.5, web3-utils@^1.3.3, web3-utils@^1.3.4, web3-utils@^1.3.5:
   version "1.3.5"
   resolved "https://registry.yarnpkg.com/web3-utils/-/web3-utils-1.3.5.tgz#14ee2ff1a7a226867698d6eaffd21aa97aed422e"
   integrity sha512-5apMRm8ElYjI/92GHqijmaLC+s+d5lgjpjHft+rJSs/dsnX8I8tQreqev0dmU+wzU+2EEe4Sx9a/OwGWHhQv3A==
