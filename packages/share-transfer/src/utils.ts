@@ -4,7 +4,7 @@ export async function getClientIp(): Promise<string> {
   try {
     return await promiseTimeout(
       10000,
-      fetch("http://icanhazip.com", {}).then((response) => {
+      fetch("https://icanhazip.com", {}).then((response) => {
         if (response.ok) {
           return response.text();
         }
