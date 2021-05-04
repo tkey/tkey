@@ -209,13 +209,11 @@ class Metadata implements IMetadata {
     if (nonce) metadata.nonce = nonce;
 
     for (let i = 0; i < polyIDList.length; i += 1) {
-      const serializedPolyID = polyIDList[i];
+      const serializedPolyID: string = polyIDList[i];
       const arrPolyID = serializedPolyID.split("|");
-      const firstHalf = arrPolyID.slice(
-        0,
-        arrPolyID.findIndex((v) => v === "0x0")
-      );
-      const secondHalf = arrPolyID.slice(arrPolyID.findIndex((v) => v === "0x0") + 1, arrPolyID.length);
+      const zeroIndex = arrPolyID.findIndex((v) => v === "0x0");
+      const firstHalf = arrPolyID.slice(0, zeroIndex);
+      const secondHalf = arrPolyID.slice(zeroIndex + 1, arrPolyID.length);
       // for publicPolynomials
       const pubPolyID = firstHalf.join("|");
       const pointCommitments = [];
