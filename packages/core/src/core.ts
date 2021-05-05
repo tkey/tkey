@@ -227,7 +227,7 @@ class ThresholdKey implements ITKey {
     let sharesLeft = requiredThreshold;
     // we don't just check the latest poly but
     //  we check if the shares on previous polynomials in our stores have the share indexes we require
-    const fullShareList = Object.keys(this.metadata.publicShares[pubPolyID]);
+    const fullShareList = this.metadata.getShareIndexesForPolynomial(pubPolyID);
     const shareIndexesRequired = {};
     for (let i = 0; i < fullShareList.length; i += 1) {
       shareIndexesRequired[fullShareList[i]] = true;
@@ -595,7 +595,7 @@ class ThresholdKey implements ITKey {
     }
 
     const latestPolyID = this.metadata.getLatestPublicPolynomial().getPolynomialID();
-    if (!this.metadata.publicShares[latestPolyID][shareIndexParsed.toString("hex")]) {
+    if (!this.metadata.getShareIndexesForPolynomial(latestPolyID).includes(shareIndexParsed.toString("hex"))) {
       throw new CoreError(1002, "no such share index created");
     }
     const shareFromStore = this.shares[latestPolyID][shareIndexParsed.toString("hex")];
@@ -639,7 +639,7 @@ class ThresholdKey implements ITKey {
       pubKey: this.metadata.pubKey,
       requiredShares,
       threshold: poly.getThreshold(),
-      totalShares: Object.keys(this.metadata.publicShares[previousPolyID]).length,
+      totalShares: this.metadata.getShareIndexesForPolynomial(previousPolyID).length,
       shareDescriptions,
     };
   }
@@ -896,7 +896,7 @@ class ThresholdKey implements ITKey {
     }
     const pubPoly = this.metadata.getLatestPublicPolynomial();
     const pubPolyID = pubPoly.getPolynomialID();
-    const fullShareIndexesList = Object.keys(this.metadata.publicShares[pubPolyID]);
+    const fullShareIndexesList = this.metadata.getShareIndexesForPolynomial(pubPolyID);
     if (!fullShareIndexesList.includes(shareStore.share.shareIndex.toString("hex"))) {
       throw CoreError.default("Latest poly doesn't include this share");
     }
