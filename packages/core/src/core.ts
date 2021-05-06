@@ -477,6 +477,10 @@ class ThresholdKey implements ITKey {
     initializeModules?: boolean;
     importedKey?: BN;
   } = {}): Promise<InitializeNewKeyResult> {
+    // get metadata lock on service provider share
+    const lockData = await this.storageLayer.acquireWriteLock({ serviceProvider: this.serviceProvider });
+    if (lockData.status !== 1) throw CoreError.acquireLockFailed(`lock cannot be acquired from storage layer status code: ${lockData.status}`);
+
     if (!importedKey) {
       const tmpPriv = generatePrivate();
       this.setKey(new BN(tmpPriv));
@@ -536,6 +540,9 @@ class ThresholdKey implements ITKey {
     if (this.storeDeviceShare) {
       await this.storeDeviceShare(new ShareStore(shares[shareIndexes[1].toString("hex")], poly.getPolynomialID()));
     }
+
+    // release service provider lock
+    await this.storageLayer.releaseWriteLock({ serviceProvider: this.serviceProvider, id: lockData.id });
 
     const result = {
       privKey: this.privKey,
