@@ -625,7 +625,7 @@ class ThresholdKey implements ITKey {
     const poly = this.metadata.getLatestPublicPolynomial();
     const previousPolyID = poly.getPolynomialID();
     const requiredShares = poly.getThreshold() - Object.keys(this.shares[previousPolyID]).length;
-
+    debugger;
     let shareDescriptions = this.metadata.getShareDescription();
     if (shareDescriptions) {
       const existingShareIndexes = this.metadata.getShareIndexesForPolynomial(previousPolyID);
@@ -745,8 +745,8 @@ class ThresholdKey implements ITKey {
 
   async syncMultipleShareMetadata(shares: Array<BN>, adjustScopedStore?: (ss: unknown) => unknown): Promise<void> {
     await this.acquireWriteMetadataLock();
-    const newMetadataPromise = shares.map(async (share) => {
-      const newMetadata = this.metadata.clone();
+    const newMetadata = this.metadata.clone();
+    const newMetadataPromises = shares.map(async (share) => {
       let specificShareMetadata: Metadata;
       try {
         specificShareMetadata = await this.getAuthMetadata({ privKey: share });
@@ -760,11 +760,14 @@ class ThresholdKey implements ITKey {
       } else {
         scopedStoreToBeSet = specificShareMetadata.scopedStore;
       }
-      newMetadata.scopedStore = scopedStoreToBeSet;
-      return newMetadata;
+      const tempMetadata = { ...newMetadata } as Metadata;
+      tempMetadata.scopedStore = scopedStoreToBeSet;
+      console.log(scopedStoreToBeSet);
+      return tempMetadata;
     });
-    const newMetadata = await Promise.all(newMetadataPromise);
-    await this.setAuthMetadataBulk({ input: newMetadata, privKey: shares });
+    const responses = await Promise.all(newMetadataPromises);
+    console.log(responses);
+    await this.setAuthMetadataBulk({ input: responses, privKey: shares });
     await this.releaseWriteMetadataLock();
   }
 

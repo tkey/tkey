@@ -71,6 +71,21 @@ describe("tkey", function () {
     await tb2.generateNewShare();
   });
 
+  it("#should not be able to initializeKey twice", async function () {
+    const data = await Promise.allSettled([tb.initializeNewKey({ initializeModules: true }), tb.initializeNewKey({ initializeModules: true })]);
+    if (data[0].status !== "fulfilled" || data[1].status !== "rejected") {
+      fail("One should filfill and another should fail");
+    }
+    const filfilledPromise = data[0].value;
+    const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
+    await tb2.initialize();
+    tb2.inputShareStore(filfilledPromise.deviceShare);
+    const reconstructedKey = await tb2.reconstructKey();
+    if (filfilledPromise.privKey.cmp(reconstructedKey.privKey) !== 0) {
+      fail("key should be able to be reconstructed");
+    }
+  });
+
   it("#should be able to reconstruct key when initializing a key", async function () {
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
     const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
@@ -337,17 +352,21 @@ describe("SecurityQuestionsModule", function () {
       modules: { securityQuestions: new SecurityQuestionsModule() },
     });
   });
-  it("#should be able to reconstruct key and initialize a key with security questions", async function () {
+  it.only("#should be able to reconstruct key and initialize a key with security questions", async function () {
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
     await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
+    console.log("passwordset");
+
     const tb2 = new ThresholdKey({
       serviceProvider: defaultSP,
       storageLayer: defaultSL,
       modules: { securityQuestions: new SecurityQuestionsModule() },
     });
     await tb2.initialize();
+    console.log("tb2 initalize done");
 
     await tb2.modules.securityQuestions.inputShareFromSecurityQuestions("blublu");
+    console.log("input share from sq");
     const reconstructedKey = await tb2.reconstructKey();
     // compareBNArray(resp1.privKey, reconstructedKey, "key should be able to be reconstructed");
     if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
