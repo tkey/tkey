@@ -60,11 +60,13 @@ class MockStorageLayer implements IStorageLayer {
 
   async setMetadataStream<T>(params: { input: Array<T>; serviceProvider?: IServiceProvider; privKey?: Array<BN> }): Promise<{ message: string }> {
     const { serviceProvider, privKey, input } = params;
+    // console.log(privKey);
     input.forEach((el, index) => {
       let usedKey: BN;
       if (!privKey || !privKey[index]) usedKey = serviceProvider.retrievePubKeyPoint().getX();
       else usedKey = getPubKeyPoint(privKey[index]).x;
       this.dataMap[usedKey.toString("hex")] = stringify(el);
+      console.log(this.dataMap[usedKey.toString("hex")]);
     });
 
     return { message: "success" };

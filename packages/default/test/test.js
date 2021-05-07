@@ -362,6 +362,7 @@ describe("SecurityQuestionsModule", function () {
       storageLayer: defaultSL,
       modules: { securityQuestions: new SecurityQuestionsModule() },
     });
+
     await tb2.initialize();
     console.log("tb2 initalize done");
 

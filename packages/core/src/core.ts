@@ -197,6 +197,7 @@ class ThresholdKey implements ITKey {
     let shareMetadata: Metadata;
     try {
       shareMetadata = await this.getAuthMetadata({ privKey: shareStore.share.share });
+      debugger;
     } catch (err) {
       throw CoreError.metadataGetFailed(`${prettyPrintError(err)}`);
     }
@@ -623,9 +624,9 @@ class ThresholdKey implements ITKey {
 
   getKeyDetails(): KeyDetails {
     const poly = this.metadata.getLatestPublicPolynomial();
+    debugger;
     const previousPolyID = poly.getPolynomialID();
     const requiredShares = poly.getThreshold() - Object.keys(this.shares[previousPolyID]).length;
-    debugger;
     let shareDescriptions = this.metadata.getShareDescription();
     if (shareDescriptions) {
       const existingShareIndexes = this.metadata.getShareIndexesForPolynomial(previousPolyID);
@@ -679,11 +680,13 @@ class ThresholdKey implements ITKey {
     for (let i = 0; i < input.length; i += 1) {
       authMetadatas.push(new AuthMetadata(input[i], this.privKey));
     }
+    console.log(authMetadatas, privKey);
     return this.storageLayer.setMetadataStream({ input: authMetadatas, serviceProvider, privKey });
   }
 
   async getAuthMetadata(params: { serviceProvider?: IServiceProvider; privKey?: BN }): Promise<Metadata> {
     const raw = await this.storageLayer.getMetadata(params);
+    debugger;
     const authMetadata = AuthMetadata.fromJSON(raw);
     return authMetadata.metadata;
   }
@@ -760,16 +763,45 @@ class ThresholdKey implements ITKey {
       } else {
         scopedStoreToBeSet = specificShareMetadata.scopedStore;
       }
+
       const tempMetadata = { ...newMetadata } as Metadata;
       tempMetadata.scopedStore = scopedStoreToBeSet;
-      console.log(scopedStoreToBeSet);
+
       return tempMetadata;
     });
     const responses = await Promise.all(newMetadataPromises);
-    console.log(responses);
+    // console.log(JSON.stringify(responses));
     await this.setAuthMetadataBulk({ input: responses, privKey: shares });
     await this.releaseWriteMetadataLock();
   }
+
+  // async syncMultipleShareMetadata(shares: Array<BN>, adjustScopedStore?: (ss: unknown) => unknown): Promise<void> {
+  //   await this.acquireWriteMetadataLock();
+  //   const newMetadataPromise = shares.map(async (share) => {
+  //     const newMetadata = this.metadata.clone();
+  //     console.log(newMetadata);
+  //     let specificShareMetadata: Metadata;
+  //     try {
+  //       specificShareMetadata = await this.getAuthMetadata({ privKey: share });
+  //     } catch (err) {
+  //       throw CoreError.metadataGetFailed(`${prettyPrintError(err)}`);
+  //     }
+
+  //     let scopedStoreToBeSet;
+  //     if (adjustScopedStore) {
+  //       scopedStoreToBeSet = adjustScopedStore(specificShareMetadata.scopedStore);
+  //     } else {
+  //       scopedStoreToBeSet = specificShareMetadata.scopedStore;
+  //     }
+  //     // console.log(scopedStoreToBeSet);
+  //     newMetadata.scopedStore = scopedStoreToBeSet;
+  //     return newMetadata;
+  //   });
+  //   const newMetadata = await Promise.all(newMetadataPromise);
+  //   console.log(JSON.stringify(newMetadata));
+  //   await this.setAuthMetadataBulk({ input: newMetadata, privKey: shares });
+  //   await this.releaseWriteMetadataLock();
+  // }
 
   addRefreshMiddleware(
     moduleName: string,
