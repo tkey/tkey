@@ -14,7 +14,16 @@ import {
   ShareStoreMap,
   ShareStorePolyIDShareIndexMap,
 } from "../base";
-import { BNString, EncryptedMessage, ISerializable, IServiceProvider, IStorageLayer, PolynomialID, ShareDescriptionMap } from "./commonTypes";
+import {
+  BNString,
+  EncryptedMessage,
+  ISerializable,
+  IServiceProvider,
+  IStorageLayer,
+  PolyIDAndShares,
+  PolynomialID,
+  ShareDescriptionMap,
+} from "./commonTypes";
 
 export interface IModule {
   moduleName: string;
@@ -51,7 +60,7 @@ export interface IMetadata extends ISerializable {
 
   publicShares: PublicSharePolyIDShareIndexMap;
 
-  polyIDList: PolynomialID[];
+  polyIDList: PolyIDAndShares[];
 
   generalStore: {
     [moduleName: string]: unknown;
@@ -69,7 +78,6 @@ export interface IMetadata extends ISerializable {
 
   getShareIndexesForPolynomial(polyID: PolynomialID): string[];
   getLatestPublicPolynomial(): PublicPolynomial;
-  addPublicPolynomial(publicPolynomial: PublicPolynomial): void;
   addPublicShare(polynomialID: PolynomialID, publicShare: PublicShare): void;
   setGeneralStoreDomain(key: string, obj: unknown): void;
   getGeneralStoreDomain(key: string): unknown;

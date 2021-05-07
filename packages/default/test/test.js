@@ -577,6 +577,7 @@ describe("ShareSerializationModule", function () {
       storageLayer: defaultSL,
     });
     await tb2.initialize();
+    debugger
     await tb2.inputShare(exportedSeedShare.toString("hex"), "mnemonic");
     const reconstructedKey = await tb2.reconstructKey();
 

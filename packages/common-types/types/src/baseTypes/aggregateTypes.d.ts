@@ -2,7 +2,7 @@
 import { DirectWebSDKArgs } from "@toruslabs/torus-direct-web-sdk";
 import BN from "bn.js";
 import { Point, Polynomial, PublicPolynomial, PublicPolynomialMap, PublicShare, PublicSharePolyIDShareIndexMap, Share, ShareMap, ShareStore, ShareStoreMap, ShareStorePolyIDShareIndexMap } from "../base";
-import { BNString, EncryptedMessage, ISerializable, IServiceProvider, IStorageLayer, PolynomialID, ShareDescriptionMap } from "./commonTypes";
+import { BNString, EncryptedMessage, ISerializable, IServiceProvider, IStorageLayer, PolyIDAndShares, PolynomialID, ShareDescriptionMap } from "./commonTypes";
 export interface IModule {
     moduleName: string;
     setModuleReferences(api: ITKeyApi): void;
@@ -25,7 +25,7 @@ export interface IMetadata extends ISerializable {
     pubKey: Point;
     publicPolynomials: PublicPolynomialMap;
     publicShares: PublicSharePolyIDShareIndexMap;
-    polyIDList: PolynomialID[];
+    polyIDList: PolyIDAndShares[];
     generalStore: {
         [moduleName: string]: unknown;
     };
@@ -38,7 +38,6 @@ export interface IMetadata extends ISerializable {
     nonce: number;
     getShareIndexesForPolynomial(polyID: PolynomialID): string[];
     getLatestPublicPolynomial(): PublicPolynomial;
-    addPublicPolynomial(publicPolynomial: PublicPolynomial): void;
     addPublicShare(polynomialID: PolynomialID, publicShare: PublicShare): void;
     setGeneralStoreDomain(key: string, obj: unknown): void;
     getGeneralStoreDomain(key: string): unknown;

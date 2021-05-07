@@ -7,6 +7,7 @@ import {
   Point,
   Polynomial,
   PolynomialID,
+  PolyIDAndShares,
   PublicPolynomial,
   PublicPolynomialMap,
   PublicShare,
@@ -31,7 +32,8 @@ class Metadata implements IMetadata {
 
   publicShares: PublicSharePolyIDShareIndexMap;
 
-  polyIDList: PolynomialID[];
+  // Tuple of PolyID and array of ShareIndexes
+  polyIDList: PolyIDAndShares[];
 
   generalStore: {
     [moduleName: string]: unknown;
@@ -59,18 +61,19 @@ class Metadata implements IMetadata {
   }
 
   getShareIndexesForPolynomial(polyID: PolynomialID): Array<string> {
-    return Object.keys(this.publicShares[polyID]);
+    const matchingPolyIDs = this.polyIDList.filter(tuple => tuple[0] === polyID)
+    if (matchingPolyIDs.length < 1) {
+      throw CoreError.default("there is more no matching polyID")
+    } else  if (matchingPolyIDs.length > 1) {
+      throw CoreError.default("there is more than one matching polyID")
+    }
+    return matchingPolyIDs[0][1];
   }
 
   getLatestPublicPolynomial(): PublicPolynomial {
-    return this.publicPolynomials[this.polyIDList[this.polyIDList.length - 1]];
+    return this.publicPolynomials[this.polyIDList[this.polyIDList.length - 1][0]];
   }
 
-  addPublicPolynomial(publicPolynomial: PublicPolynomial): void {
-    const polyID = publicPolynomial.getPolynomialID();
-    this.publicPolynomials[polyID] = publicPolynomial;
-    this.polyIDList.push(polyID);
-  }
 
   addPublicShare(polynomialID: PolynomialID, publicShare: PublicShare): void {
     if (!(polynomialID in this.publicShares)) {
@@ -78,6 +81,10 @@ class Metadata implements IMetadata {
     }
     this.publicShares[polynomialID][publicShare.shareIndex.toString("hex")] = publicShare;
   }
+
+  // getPublicShare(polynomialID: PolynomialID, shareIndex: BN): PublicShare {
+
+  // }
 
   setGeneralStoreDomain(key: string, obj: unknown): void {
     this.generalStore[key] = obj;
@@ -95,20 +102,28 @@ class Metadata implements IMetadata {
     return this.tkeyStore[key];
   }
 
+  // appends shares and public polynomial to metadata.
+  // should represent a generation of share or edit of threshold
   addFromPolynomialAndShares(polynomial: Polynomial, shares: Share[] | ShareMap): void {
     const publicPolynomial = polynomial.getPublicPolynomial();
-    this.addPublicPolynomial(publicPolynomial);
+    const polyID = publicPolynomial.getPolynomialID();
+    this.publicPolynomials[polyID] = publicPolynomial;
+ 
+    const shareIndexArr = [];
     if (Array.isArray(shares)) {
       for (let i = 0; i < shares.length; i += 1) {
         this.addPublicShare(publicPolynomial.getPolynomialID(), shares[i].getPublicShare());
+        shareIndexArr.push(shares[i].shareIndex.toString("hex"))
       }
     } else {
       for (const k in shares) {
         if (Object.prototype.hasOwnProperty.call(shares, k)) {
           this.addPublicShare(publicPolynomial.getPolynomialID(), shares[k].getPublicShare());
+          shareIndexArr.push(shares[k].shareIndex.toString("hex"))
         }
       }
     }
+    this.polyIDList.push([polyID, shareIndexArr])
   }
 
   setScopedStore(domain: string, data: unknown): void {
@@ -154,18 +169,34 @@ class Metadata implements IMetadata {
   shareToShareStore(share: BN): ShareStore {
     const pubkey = getPubKeyPoint(share);
     let returnShare: ShareStore;
-    Object.keys(this.publicShares).forEach((el) => {
+
+    for (let i = this.polyIDList.length -1; i >= 0; i -= 1) {
+      let el = this.polyIDList[i][0];
       // eslint-disable-next-line consistent-return
-      Object.keys(this.publicShares[el]).forEach((pl) => {
-        const pubShare = this.publicShares[el][pl];
+      this.polyIDList[i][1].forEach((shareIndex) => {
+        // find pubshare in cache if its there
+        let pubShare: PublicShare;
+        if (this.publicShares[el]) {
+          if (this.publicShares[el][shareIndex]) {
+            pubShare = this.publicShares[el][shareIndex]
+          }
+        }
+
+        // if not reconstruct
+        if (!pubShare) {
+          pubShare = new PublicShare(shareIndex, polyCommitmentEval(this.publicPolynomials[el].polynomialCommitments, new BN(shareIndex, "hex")))
+        }
+        
         if (pubShare.shareCommitment.x.eq(pubkey.x) && pubShare.shareCommitment.y.eq(pubkey.y)) {
           const tempShare = new Share(pubShare.shareIndex, share);
-          returnShare = new ShareStore(tempShare, el);
+          return new ShareStore(tempShare, el);
         }
       });
-    });
-    if (returnShare) return returnShare;
-    throw CoreError.default("Share doesn't exist");
+    }
+    if (!returnShare) {
+      throw CoreError.default("Share doesn't exist");
+    }
+    return returnShare
   }
 
   clone(): Metadata {
@@ -176,8 +207,8 @@ class Metadata implements IMetadata {
     // squash data to serialized polyID according to spec
     const serializedPolyIDList = [];
     for (let i = 0; i < this.polyIDList.length; i += 1) {
-      const polyID = this.polyIDList[i];
-      const shareIndexes = Object.keys(this.publicShares[polyID]);
+      const polyID = this.polyIDList[i][0];
+      const shareIndexes = this.polyIDList[i][1];
       const sortedShareIndexes = shareIndexes.sort((a: string, b: string) => new BN(a, "hex").cmp(new BN(b, "hex")));
       const serializedPolyID = polyID
         .split(`|`)
@@ -201,7 +232,7 @@ class Metadata implements IMetadata {
     const { pubKey, polyIDList, generalStore, tkeyStore, scopedStore, nonce } = value;
     const point = Point.fromCompressedPub(pubKey);
     const metadata = new Metadata(point);
-    const unserializedPolyIDList = [];
+    const unserializedPolyIDList: PolyIDAndShares[] = [];
 
     if (generalStore) metadata.generalStore = generalStore;
     if (tkeyStore) metadata.tkeyStore = tkeyStore;
@@ -223,14 +254,14 @@ class Metadata implements IMetadata {
       const publicPolynomial = new PublicPolynomial(pointCommitments);
       metadata.publicPolynomials[pubPolyID] = publicPolynomial;
 
-      // for publicShares
-      secondHalf.forEach((shareIndex) => {
-        const newPubShare = new PublicShare(shareIndex, polyCommitmentEval(publicPolynomial.polynomialCommitments, new BN(shareIndex, "hex")));
-        metadata.addPublicShare(pubPolyID, newPubShare);
-      });
+      // // for publicShares
+      // secondHalf.forEach((shareIndex) => {
+      //   const newPubShare = new PublicShare(shareIndex, polyCommitmentEval(publicPolynomial.polynomialCommitments, new BN(shareIndex, "hex")));
+      //   metadata.addPublicShare(pubPolyID, newPubShare);
+      // });
 
       // for polyIDList
-      unserializedPolyIDList.push(pubPolyID);
+      unserializedPolyIDList.push([pubPolyID, secondHalf]);
     }
 
     metadata.polyIDList = unserializedPolyIDList;

@@ -234,7 +234,7 @@ class ThresholdKey implements ITKey {
     }
     const sharesToInput = [];
     for (let z = this.metadata.polyIDList.length - 1; z >= 0 && sharesLeft > 0; z -= 1) {
-      const sharesForPoly = this.shares[this.metadata.polyIDList[z]];
+      const sharesForPoly = this.shares[this.metadata.polyIDList[z][0]];
       if (sharesForPoly) {
         const shareIndexesForPoly = Object.keys(sharesForPoly);
         for (let k = 0; k < shareIndexesForPoly.length && sharesLeft > 0; k += 1) {
@@ -575,7 +575,8 @@ class ThresholdKey implements ITKey {
     }
     const latestShareRes = await this.catchupToLatestShare(ss);
     // if not in poly id list, metadata is probably outdated
-    if (!this.metadata.polyIDList.includes(latestShareRes.latestShare.polynomialID)) {
+    //! this.metadata.polyIDList.includes(latestShareRes.latestShare.polynomialID)
+    if (!(this.metadata.polyIDList.filter((tuple) => tuple[0] === latestShareRes.latestShare.polynomialID).length > 1)) {
       this.metadata = latestShareRes.shareMetadata;
     }
     if (!(latestShareRes.latestShare.polynomialID in this.shares)) {

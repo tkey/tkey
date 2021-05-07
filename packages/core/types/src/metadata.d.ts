@@ -1,10 +1,10 @@
-import { IMetadata, Point, Polynomial, PolynomialID, PublicPolynomial, PublicPolynomialMap, PublicShare, PublicSharePolyIDShareIndexMap, Share, ShareDescriptionMap, ShareMap, ShareStore, StringifiedType } from "@tkey/common-types";
+import { IMetadata, Point, Polynomial, PolynomialID, PolyIDAndShares, PublicPolynomial, PublicPolynomialMap, PublicShare, PublicSharePolyIDShareIndexMap, Share, ShareDescriptionMap, ShareMap, ShareStore, StringifiedType } from "@tkey/common-types";
 import BN from "bn.js";
 declare class Metadata implements IMetadata {
     pubKey: Point;
     publicPolynomials: PublicPolynomialMap;
     publicShares: PublicSharePolyIDShareIndexMap;
-    polyIDList: PolynomialID[];
+    polyIDList: PolyIDAndShares[];
     generalStore: {
         [moduleName: string]: unknown;
     };
@@ -18,7 +18,6 @@ declare class Metadata implements IMetadata {
     constructor(input: Point);
     getShareIndexesForPolynomial(polyID: PolynomialID): Array<string>;
     getLatestPublicPolynomial(): PublicPolynomial;
-    addPublicPolynomial(publicPolynomial: PublicPolynomial): void;
     addPublicShare(polynomialID: PolynomialID, publicShare: PublicShare): void;
     setGeneralStoreDomain(key: string, obj: unknown): void;
     getGeneralStoreDomain(key: string): unknown;
