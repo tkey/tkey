@@ -5,9 +5,9 @@ import {
   getPubKeyPoint,
   IMetadata,
   Point,
+  PolyIDAndShares,
   Polynomial,
   PolynomialID,
-  PolyIDAndShares,
   PublicPolynomial,
   PublicPolynomialMap,
   PublicShare,
@@ -61,11 +61,11 @@ class Metadata implements IMetadata {
   }
 
   getShareIndexesForPolynomial(polyID: PolynomialID): Array<string> {
-    const matchingPolyIDs = this.polyIDList.filter(tuple => tuple[0] === polyID)
+    const matchingPolyIDs = this.polyIDList.filter((tuple) => tuple[0] === polyID);
     if (matchingPolyIDs.length < 1) {
-      throw CoreError.default("there is more no matching polyID")
-    } else  if (matchingPolyIDs.length > 1) {
-      throw CoreError.default("there is more than one matching polyID")
+      throw CoreError.default("there is more no matching polyID");
+    } else if (matchingPolyIDs.length > 1) {
+      throw CoreError.default("there is more than one matching polyID");
     }
     return matchingPolyIDs[0][1];
   }
@@ -73,7 +73,6 @@ class Metadata implements IMetadata {
   getLatestPublicPolynomial(): PublicPolynomial {
     return this.publicPolynomials[this.polyIDList[this.polyIDList.length - 1][0]];
   }
-
 
   addPublicShare(polynomialID: PolynomialID, publicShare: PublicShare): void {
     if (!(polynomialID in this.publicShares)) {
@@ -108,22 +107,22 @@ class Metadata implements IMetadata {
     const publicPolynomial = polynomial.getPublicPolynomial();
     const polyID = publicPolynomial.getPolynomialID();
     this.publicPolynomials[polyID] = publicPolynomial;
- 
+
     const shareIndexArr = [];
     if (Array.isArray(shares)) {
       for (let i = 0; i < shares.length; i += 1) {
         this.addPublicShare(publicPolynomial.getPolynomialID(), shares[i].getPublicShare());
-        shareIndexArr.push(shares[i].shareIndex.toString("hex"))
+        shareIndexArr.push(shares[i].shareIndex.toString("hex"));
       }
     } else {
       for (const k in shares) {
         if (Object.prototype.hasOwnProperty.call(shares, k)) {
           this.addPublicShare(publicPolynomial.getPolynomialID(), shares[k].getPublicShare());
-          shareIndexArr.push(shares[k].shareIndex.toString("hex"))
+          shareIndexArr.push(shares[k].shareIndex.toString("hex"));
         }
       }
     }
-    this.polyIDList.push([polyID, shareIndexArr])
+    this.polyIDList.push([polyID, shareIndexArr]);
   }
 
   setScopedStore(domain: string, data: unknown): void {
@@ -170,33 +169,33 @@ class Metadata implements IMetadata {
     const pubkey = getPubKeyPoint(share);
     let returnShare: ShareStore;
 
-    for (let i = this.polyIDList.length -1; i >= 0; i -= 1) {
-      let el = this.polyIDList[i][0];
+    for (let i = this.polyIDList.length - 1; i >= 0; i -= 1) {
+      const el = this.polyIDList[i][0];
       // eslint-disable-next-line consistent-return
-      this.polyIDList[i][1].forEach((shareIndex) => {
+      for (let t = 0; t < this.polyIDList[i][1].length; t += 1) {
+        let shareIndex = this.polyIDList[i][1][t];
         // find pubshare in cache if its there
         let pubShare: PublicShare;
         if (this.publicShares[el]) {
           if (this.publicShares[el][shareIndex]) {
-            pubShare = this.publicShares[el][shareIndex]
+            pubShare = this.publicShares[el][shareIndex];
           }
         }
 
         // if not reconstruct
         if (!pubShare) {
-          pubShare = new PublicShare(shareIndex, polyCommitmentEval(this.publicPolynomials[el].polynomialCommitments, new BN(shareIndex, "hex")))
+          pubShare = new PublicShare(shareIndex, polyCommitmentEval(this.publicPolynomials[el].polynomialCommitments, new BN(shareIndex, "hex")));
         }
-        
         if (pubShare.shareCommitment.x.eq(pubkey.x) && pubShare.shareCommitment.y.eq(pubkey.y)) {
           const tempShare = new Share(pubShare.shareIndex, share);
           return new ShareStore(tempShare, el);
         }
-      });
+      }
     }
     if (!returnShare) {
       throw CoreError.default("Share doesn't exist");
     }
-    return returnShare
+    return returnShare;
   }
 
   clone(): Metadata {
