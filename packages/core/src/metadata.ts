@@ -173,7 +173,7 @@ class Metadata implements IMetadata {
       const el = this.polyIDList[i][0];
       // eslint-disable-next-line consistent-return
       for (let t = 0; t < this.polyIDList[i][1].length; t += 1) {
-        let shareIndex = this.polyIDList[i][1][t];
+        const shareIndex = this.polyIDList[i][1][t];
         // find pubshare in cache if its there
         let pubShare: PublicShare;
         if (this.publicShares[el]) {
