@@ -7,7 +7,7 @@
   "jsdelivr": "dist/default.umd.min.js",
   "types": "types/index.d.ts",
   "scripts": {
-    "test": "cross-env MOCKED=true mocha --config ../../.mocharc.json ",
+    "test": "cross-env MOCKED=true mocha --config ../../.mocharc.json",
     "test-development": "cross-env MOCKED=false METADATA=http://localhost:5051 mocha --config ../../.mocharc.json",
     "test-production": "cross-env MOCKED=false METADATA=https://metadata.tor.us mocha --config ../../.mocharc.json ",
     "test-debugger": "cross-env MOCKED=true mocha --config ../../.mocharc.json --inspect-brk",
