@@ -222,7 +222,7 @@ export interface IPrivateKeyFormat {
 export interface ITKeyApi {
   getMetadata(): IMetadata;
   getStorageLayer(): IStorageLayer;
-  updateMetadata(): Promise<IMetadata>;
+  updateMetadata(polyID: string): Promise<IMetadata>;
   initialize(params: { input?: ShareStore; importKey?: BN; neverInitializeNewKey?: boolean }): Promise<KeyDetails>;
   catchupToLatestShare(shareStore: ShareStore): Promise<CatchupToLatestShareResult>;
   syncShareMetadata(adjustScopedStore?: (ss: unknown) => unknown): Promise<void>;

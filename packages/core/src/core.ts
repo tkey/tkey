@@ -39,7 +39,6 @@ import {
 import { generatePrivate } from "@toruslabs/eccrypto";
 import BN from "bn.js";
 import stringify from "json-stable-stringify";
-import { debug } from "node:console";
 
 import AuthMetadata from "./authMetadata";
 import CoreError from "./errors";
@@ -133,8 +132,8 @@ class ThresholdKey implements ITKey {
     throw CoreError.metadataUndefined();
   }
 
-  async updateMetadata(): Promise<IMetadata> {
-    const shareIndexesExistInSDK = Object.keys(this.shares[this.metadata.getLatestPublicPolynomial().getPolynomialID()]);
+  async updateMetadata(polyID: string): Promise<IMetadata> {
+    const shareIndexesExistInSDK = Object.keys(this.shares[polyID]);
     const randomShareStore = this.outputShareStore(shareIndexesExistInSDK[Math.floor(Math.random() * (shareIndexesExistInSDK.length - 1))]);
     const latestShareDetails = await this.catchupToLatestShare(randomShareStore);
     this.metadata = latestShareDetails.shareMetadata;
@@ -385,6 +384,9 @@ class ThresholdKey implements ITKey {
     }
 
     // await this.acquireWriteMetadataLock();
+    // update metadata nonce
+    this.metadata.nonce += 1;
+
     const poly = generateRandomPolynomial(threshold - 1, this.privKey);
     const shares = poly.generateShares(newShareIndexes);
     const existingShareIndexes = this.metadata.getShareIndexesForPolynomial(previousPolyID);
@@ -559,14 +561,44 @@ class ThresholdKey implements ITKey {
     this.metadataToSet[1] = [...this.metadataToSet[1], ...input];
   }
 
-  async syncMetadataToSet(): Promise<{ message: string }> {
+  async syncMetadataToSet(acquireLock = true): Promise<void> {
     // get lock
-    return this.storageLayer.setMetadataStream({
+    if (acquireLock) await this.acquireWriteMetadataLock();
+    await this.storageLayer.setMetadataStream({
       input: this.metadataToSet[1],
       privKey: this.metadataToSet[0],
       serviceProvider: this.serviceProvider,
     });
+    this.metadataToSet = [[], []];
     // release lock
+    if (acquireLock) await this.releaseWriteMetadataLock();
+  }
+
+  // Reset metadata to previous state.
+  async resetMetadataToSet(params?: { input?: ShareStore }): Promise<void> {
+    this.metadataToSet = [[], []];
+    this.privKey = undefined;
+
+    // reinit this.metadata
+    await this.initialize({ neverInitializeNewKey: true, input: params && params.input });
+
+    // const latestPolyID = this.metadata.getLatestPublicPolynomial().getPolynomialID();
+    // Delete unnecessary polyIDs and shareStores
+    const allPolyIDList = this.metadata.polyIDList;
+    let lastValidPolyID;
+
+    Object.keys(this.shares).forEach((x) => {
+      if (allPolyIDList.find((id) => id[0] === x)) {
+        lastValidPolyID = x;
+      } else {
+        delete this.shares[x];
+      }
+    });
+
+    // catchup to latest shareStore for all latest available shares.
+    // TODO: fix edge cases where shares are deleted in the newer polynomials
+    const shareStoresForLastValidPolyID = Object.keys(this.shares[lastValidPolyID]).map((x) => this.inputShareStoreSafe(this.outputShareStore(x)));
+    await Promise.all(shareStoresForLastValidPolyID);
   }
 
   inputShareStore(shareStore: ShareStore): void {
@@ -722,21 +754,33 @@ class ThresholdKey implements ITKey {
       throw CoreError.privateKeyUnavailable();
     }
 
-    // we check the metadata of a random share on the latest polynomial we have
-    const shareIndexesExistInSDK = Object.keys(this.shares[this.metadata.getLatestPublicPolynomial().getPolynomialID()]);
-    const randomShare = this.outputShareStore(shareIndexesExistInSDK[Math.floor(Math.random() * (shareIndexesExistInSDK.length - 1))]).share.share;
-    const latestMetadata = await this.getAuthMetadata({ privKey: randomShare });
+    // The polynomial might not be synced. So we can't use randomShare from this.shares to check latest metadata nonce.
+    // There could be multiple metadata nonces in metadataToSet. ex. [1, 2, 3]
+    // We can fetch the latest nonce directly from service provider and compare with this.metadata.nonce.
+    const rawServiceProviderShare = await this.storageLayer.getMetadata<{ message?: string }>({ serviceProvider: this.serviceProvider });
+    // console.log(rawServiceProviderShare);
+    if (rawServiceProviderShare.message === KEY_NOT_FOUND) throw CoreError.default("key has not yet been generated");
+    const spShareStore = ShareStore.fromJSON(rawServiceProviderShare);
+    const latestShareDetails = await this.catchupToLatestShare(spShareStore);
+    const latestMetadataForSP = latestShareDetails.shareMetadata;
 
-    if (latestMetadata.nonce > this.metadata.nonce) {
+    // we check the metadata of a random share on the latest polynomial we have
+    // console.log(this.metadata.getLatestPublicPolynomial().getPolynomialID(), this.shares);
+    // const shareIndexesExistInSDK = Object.keys(this.shares[this.metadata.getLatestPublicPolynomial().getPolynomialID()]);
+    // const randomShare = this.outputShareStore(shareIndexesExistInSDK[Math.floor(Math.random() * (shareIndexesExistInSDK.length - 1))]).share.share;
+    // const randomShare = this.outputShareStore(new BN("1")).share.share;
+    // const latestMetadata = await this.getAuthMetadata({ privKey: randomShare });
+
+    if (latestMetadataForSP.nonce >= this.metadata.nonce) {
       throw CoreError.acquireLockFailed(`unable to acquire write access for metadata due to local nonce (${this.metadata.nonce})
-           being lower than last written metadata nonce (${latestMetadata.nonce}). perhaps update metadata SDK (create new tKey and init)`);
+           being lower than last written metadata nonce (${latestMetadataForSP.nonce}). perhaps update metadata SDK (create new tKey and init)`);
     }
 
     const res = await this.storageLayer.acquireWriteLock({ privKey: this.privKey });
     if (res.status !== 1) throw CoreError.acquireLockFailed(`lock cannot be acquired from storage layer status code: ${res.status}`);
 
     // increment metadata nonce for write session
-    this.metadata.nonce += 1;
+    // this.metadata.nonce += 1;
     this.haveWriteMetadataLock = res.id;
     return this.metadata.nonce;
   }
@@ -773,6 +817,8 @@ class ThresholdKey implements ITKey {
 
   async syncMultipleShareMetadata(shares: Array<BN>, adjustScopedStore?: (ss: unknown) => unknown): Promise<void> {
     // await this.acquireWriteMetadataLock();
+    this.metadata.nonce += 1;
+
     const newMetadataPromise = shares.map(async (share) => {
       const newMetadata = this.metadata.clone();
       let specificShareMetadata: Metadata;
