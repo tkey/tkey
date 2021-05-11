@@ -47,7 +47,6 @@ class SecurityQuestionsModule implements IModule {
     const metadata = this.tbSDK.getMetadata();
     const rawSqStore = metadata.getGeneralStoreDomain(this.moduleName);
     if (rawSqStore) throw SecurityQuestionsError.unableToReplace();
-
     const newSharesDetails = await this.tbSDK.generateNewShare();
     const newShareStore = newSharesDetails.newShareStores[newSharesDetails.newShareIndex.toString("hex")];
     const userInputHash = answerToUserInputHashBN(answerString);

@@ -39,6 +39,7 @@ import {
 import { generatePrivate } from "@toruslabs/eccrypto";
 import BN from "bn.js";
 import stringify from "json-stable-stringify";
+import { debug } from "node:console";
 
 import AuthMetadata from "./authMetadata";
 import CoreError from "./errors";
@@ -62,6 +63,8 @@ class ThresholdKey implements ITKey {
 
   metadata: Metadata;
 
+  metadataToSet: any[];
+
   refreshMiddleware: RefreshMiddlewareMap;
 
   reconstructKeyMiddleware: ReconstructKeyMiddlewareMap;
@@ -84,7 +87,7 @@ class ThresholdKey implements ITKey {
     this.reconstructKeyMiddleware = {};
     this.shareSerializationMiddleware = undefined;
     this.storeDeviceShare = undefined;
-
+    this.metadataToSet = [[], []];
     this.setModuleReferences(); // Providing ITKeyApi access to modules
     this.haveWriteMetadataLock = "";
   }
@@ -381,7 +384,7 @@ class ThresholdKey implements ITKey {
       throw CoreError.default(`threshold should not be greater than share indexes. ${threshold} > ${newShareIndexes.length}`);
     }
 
-    await this.acquireWriteMetadataLock();
+    // await this.acquireWriteMetadataLock();
     const poly = generateRandomPolynomial(threshold - 1, this.privKey);
     const shares = poly.generateShares(newShareIndexes);
     const existingShareIndexes = this.metadata.getShareIndexesForPolynomial(previousPolyID);
@@ -453,18 +456,19 @@ class ThresholdKey implements ITKey {
     const AuthMetadatas = this.generateAuthMetadata({ input: [...metadataToPush, ...newShareMetadataToPush] });
 
     // Combine Authmetadata and service provider ShareStore
-    await this.storageLayer.setMetadataStream({
-      input: [...AuthMetadatas, newShareStores["1"]],
-      privKey: [...sharesToPush, ...newShareStoreSharesToPush, undefined],
-      serviceProvider: this.serviceProvider,
-    });
+    // await this.storageLayer.setMetadataStream({
+    //   input: [...AuthMetadatas, newShareStores["1"]],
+    //   privKey: [...sharesToPush, ...newShareStoreSharesToPush, undefined],
+    //   serviceProvider: this.serviceProvider,
+    // });
+    this.setMetadataToSet({ input: [...AuthMetadatas, newShareStores["1"]], privKey: [...sharesToPush, ...newShareStoreSharesToPush, undefined] });
 
-    // set metadata for all new shares
+    // update this.shares with these new shares
     for (let index = 0; index < newShareIndexes.length; index += 1) {
       const shareIndex = newShareIndexes[index];
       this.inputShareStore(newShareStores[shareIndex]);
     }
-    await this.releaseWriteMetadataLock();
+    // await this.releaseWriteMetadataLock();
     return { shareStores: newShareStores };
   }
 
@@ -520,11 +524,12 @@ class ThresholdKey implements ITKey {
 
     const authMetadatas = this.generateAuthMetadata({ input: metadataToPush });
     // because this is the first time we're setting metadata there is no need to acquire a lock
-    await this.storageLayer.setMetadataStream({
-      input: [...authMetadatas, shareStore],
-      privKey: [...sharesToPush, undefined],
-      serviceProvider: this.serviceProvider,
-    });
+    // await this.storageLayer.setMetadataStream({
+    //   input: [...authMetadatas, shareStore],
+    //   privKey: [...sharesToPush, undefined],
+    //   serviceProvider: this.serviceProvider,
+    // });
+    this.setMetadataToSet({ input: [...authMetadatas, shareStore], privKey: [...sharesToPush, undefined] });
 
     // store metadata on metadata respective to shares
     for (let index = 0; index < shareIndexes.length; index += 1) {
@@ -546,6 +551,22 @@ class ThresholdKey implements ITKey {
       result.userShare = new ShareStore(shares[shareIndexes[2].toString("hex")], poly.getPolynomialID());
     }
     return result;
+  }
+
+  setMetadataToSet<T>(params: { input: Array<T>; serviceProvider?: IServiceProvider; privKey?: Array<BN> }): void {
+    const { privKey, input } = params;
+    this.metadataToSet[0] = [...this.metadataToSet[0], ...privKey];
+    this.metadataToSet[1] = [...this.metadataToSet[1], ...input];
+  }
+
+  async syncMetadataToSet(): Promise<{ message: string }> {
+    // get lock
+    return this.storageLayer.setMetadataStream({
+      input: this.metadataToSet[1],
+      privKey: this.metadataToSet[0],
+      serviceProvider: this.serviceProvider,
+    });
+    // release lock
   }
 
   inputShareStore(shareStore: ShareStore): void {
@@ -668,24 +689,30 @@ class ThresholdKey implements ITKey {
     return this.storageLayer.setMetadata({ input: authMetadata, serviceProvider, privKey });
   }
 
-  async setAuthMetadataBulk(params: {
-    input: Metadata[];
-    serviceProvider?: IServiceProvider;
-    privKey?: BN[];
-  }): Promise<{
-    message: string;
-  }> {
+  async setAuthMetadataBulk(params: { input: Metadata[]; serviceProvider?: IServiceProvider; privKey?: BN[] }): Promise<void> {
     const { input, serviceProvider, privKey } = params;
     const authMetadatas = [];
     for (let i = 0; i < input.length; i += 1) {
       authMetadatas.push(new AuthMetadata(input[i], this.privKey));
     }
-    return this.storageLayer.setMetadataStream({ input: authMetadatas, serviceProvider, privKey });
+    this.setMetadataToSet({ input: authMetadatas, serviceProvider, privKey });
+    // return this.storageLayer.setMetadataStream({ input: authMetadatas, serviceProvider, privKey });
   }
 
   async getAuthMetadata(params: { serviceProvider?: IServiceProvider; privKey?: BN }): Promise<Metadata> {
-    const raw = await this.storageLayer.getMetadata(params);
-    const authMetadata = AuthMetadata.fromJSON(raw);
+    let authMetadata: AuthMetadata;
+    let raw = await this.storageLayer.getMetadata(params);
+    try {
+      authMetadata = AuthMetadata.fromJSON(raw);
+    } catch (error) {
+      // maybe share isn't synced yet. get last index.
+      let index;
+      this.metadataToSet[0].forEach((x, el) => {
+        if (x && x.cmp(params.privKey) === 0) index = el;
+      });
+      raw = this.metadataToSet[1][index];
+      authMetadata = raw as AuthMetadata;
+    }
     return authMetadata.metadata;
   }
 
@@ -745,7 +772,7 @@ class ThresholdKey implements ITKey {
   }
 
   async syncMultipleShareMetadata(shares: Array<BN>, adjustScopedStore?: (ss: unknown) => unknown): Promise<void> {
-    await this.acquireWriteMetadataLock();
+    // await this.acquireWriteMetadataLock();
     const newMetadataPromise = shares.map(async (share) => {
       const newMetadata = this.metadata.clone();
       let specificShareMetadata: Metadata;
@@ -766,7 +793,7 @@ class ThresholdKey implements ITKey {
     });
     const newMetadata = await Promise.all(newMetadataPromise);
     await this.setAuthMetadataBulk({ input: newMetadata, privKey: shares });
-    await this.releaseWriteMetadataLock();
+    // await this.releaseWriteMetadataLock();
   }
 
   addRefreshMiddleware(

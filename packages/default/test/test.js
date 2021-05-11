@@ -54,6 +54,7 @@ describe("tkey", function () {
 
   it("#should be able to update metadata", async function () {
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
+    await tb.syncMetadataToSet();
 
     const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize();
@@ -62,6 +63,8 @@ describe("tkey", function () {
 
     // try creating new shares
     await tb.generateNewShare();
+    await tb.syncMetadataToSet();
+
     rejects(async () => {
       await tb2.generateNewShare();
     }, Error);
@@ -73,8 +76,12 @@ describe("tkey", function () {
 
   it("#should be able to reconstruct key when initializing a key", async function () {
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
+    await tb.syncMetadataToSet();
+    // generatePassword -. generatenewshrare, add share desc,
+    // add seedphrase
+
     const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
-    await tb2.initialize();
+    await tb2.initialize({ neverInitializeNewKey: true });
     tb2.inputShareStore(resp1.deviceShare);
     const reconstructedKey = await tb2.reconstructKey();
     if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
@@ -85,6 +92,8 @@ describe("tkey", function () {
     let determinedShare = new BN(keccak256("user answer blublu").slice(2), "hex");
     determinedShare = determinedShare.umod(ecCurve.curve.n);
     const resp1 = await tb.initializeNewKey({ determinedShare, initializeModules: true });
+    await tb.syncMetadataToSet();
+
     const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize();
     tb2.inputShareStore(resp1.userShare);
@@ -98,6 +107,9 @@ describe("tkey", function () {
     await tb.initializeNewKey({ initializeModules: true });
     const { newShareStores: newShareStores1, newShareIndex: newShareIndex1 } = await tb.generateNewShare();
     const { newShareStores } = await tb.deleteShare(newShareIndex1);
+
+    await tb.syncMetadataToSet();
+
     const tb2 = new ThresholdKey({ serviceProvider: tb.serviceProvider, storageLayer: tb.storageLayer });
     await tb2.initialize();
     // tb2.inputShareStore(resp1.deviceShare);
@@ -112,6 +124,9 @@ describe("tkey", function () {
     const { newShareIndex: newShareIndex1 } = await tb.generateNewShare();
     const { newShareIndex: newShareIndex2 } = await tb.generateNewShare();
     await tb.deleteShare(newShareIndex1);
+
+    await tb.syncMetadataToSet();
+
     rejects(async () => {
       await tb.deleteShare(newShareIndex2);
     }, Error);
@@ -120,6 +135,7 @@ describe("tkey", function () {
     await tb.initializeNewKey({ initializeModules: true });
     const { newShareStores: newShareStores1, newShareIndex: newShareIndex1 } = await tb.generateNewShare();
     await tb.deleteShare(newShareIndex1);
+    await tb.syncMetadataToSet();
 
     const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize();
@@ -129,6 +145,8 @@ describe("tkey", function () {
   });
   it("#should be able to reshare a key and retrieve from service provider", async function () {
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
+    await tb.syncMetadataToSet();
+
     const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize();
     tb2.inputShareStore(resp1.deviceShare);
@@ -137,6 +155,8 @@ describe("tkey", function () {
       fail("key should be able to be reconstructed");
     }
     const resp2 = await tb2.generateNewShare();
+    await tb2.syncMetadataToSet();
+
     const tb3 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb3.initialize();
     tb3.inputShareStore(resp2.newShareStores[resp2.newShareIndex.toString("hex")]);
@@ -149,6 +169,8 @@ describe("tkey", function () {
     let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
     userInput = userInput.umod(ecCurve.curve.n);
     const resp1 = await tb.initializeNewKey({ userInput, initializeModules: true });
+    await tb.syncMetadataToSet();
+
     const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize({ input: resp1.userShare });
     tb2.inputShareStore(resp1.deviceShare);
@@ -328,7 +350,7 @@ describe("TorusStorageLayer", function () {
   });
 });
 
-describe("SecurityQuestionsModule", function () {
+describe.only("SecurityQuestionsModule", function () {
   let tb;
   beforeEach("initialize security questions module", async function () {
     tb = new ThresholdKey({
@@ -340,6 +362,8 @@ describe("SecurityQuestionsModule", function () {
   it("#should be able to reconstruct key and initialize a key with security questions", async function () {
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
     await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
+    await tb.syncMetadataToSet();
+
     const tb2 = new ThresholdKey({
       serviceProvider: defaultSP,
       storageLayer: defaultSL,
@@ -363,6 +387,8 @@ describe("SecurityQuestionsModule", function () {
       modules: { securityQuestions: new SecurityQuestionsModule() },
     });
     await tb.generateNewShare();
+    await tb.syncMetadataToSet();
+
     await tb2.initialize();
 
     await tb2.modules.securityQuestions.inputShareFromSecurityQuestions("blublu");
@@ -376,6 +402,7 @@ describe("SecurityQuestionsModule", function () {
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
     await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
     await tb.modules.securityQuestions.changeSecurityQuestionAndAnswer("dodo", "who is your cat?");
+    await tb.syncMetadataToSet();
 
     const tb2 = new ThresholdKey({
       serviceProvider: defaultSP,
@@ -395,6 +422,7 @@ describe("SecurityQuestionsModule", function () {
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
     await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
     await tb.modules.securityQuestions.changeSecurityQuestionAndAnswer("dodo", "who is your cat?");
+    await tb.syncMetadataToSet();
 
     const tb2 = new ThresholdKey({
       serviceProvider: defaultSP,
@@ -431,6 +459,7 @@ describe("SecurityQuestionsModule", function () {
       fail("answers should be the same");
     }
     await tb.modules.securityQuestions.changeSecurityQuestionAndAnswer(ans2, qn);
+    await tb.syncMetadataToSet();
 
     const tb2 = new ThresholdKey({
       serviceProvider: defaultSP,
@@ -577,7 +606,6 @@ describe("ShareSerializationModule", function () {
       storageLayer: defaultSL,
     });
     await tb2.initialize();
-    debugger
     await tb2.inputShare(exportedSeedShare.toString("hex"), "mnemonic");
     const reconstructedKey = await tb2.reconstructKey();
 
