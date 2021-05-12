@@ -60,6 +60,8 @@ class ThresholdKey implements ITKey {
 
   privKey: BN;
 
+  lastFetchedCloudMetadata: Metadata;
+
   metadata: Metadata;
 
   manualSync: boolean;
@@ -97,7 +99,6 @@ class ThresholdKey implements ITKey {
   getApi(): ITKeyApi {
     return {
       getMetadata: this.getMetadata.bind(this),
-      updateMetadata: this.updateMetadata.bind(this),
       getStorageLayer: this.getStorageLayer.bind(this),
       initialize: this.initialize.bind(this),
       catchupToLatestShare: this.catchupToLatestShare.bind(this),
@@ -133,16 +134,6 @@ class ThresholdKey implements ITKey {
     }
 
     throw CoreError.metadataUndefined();
-  }
-
-  async updateMetadata(polyID: string): Promise<IMetadata> {
-    const shareIndexesExistInSDK = Object.keys(this.shares[polyID]);
-    const randomShareStore = this.outputShareStore(shareIndexesExistInSDK[Math.floor(Math.random() * (shareIndexesExistInSDK.length - 1))]);
-    const latestShareDetails = await this.catchupToLatestShare(randomShareStore);
-    this.metadata = latestShareDetails.shareMetadata;
-
-    await this.reconstructKey();
-    return latestShareDetails.shareMetadata;
   }
 
   async initialize(params?: { input?: ShareStore; importKey?: BN; neverInitializeNewKey?: boolean }): Promise<KeyDetails> {
@@ -591,7 +582,7 @@ class ThresholdKey implements ITKey {
   }
 
   // Reset metadata to previous state.
-  async resetMetadataToSet(params?: { input?: ShareStore }): Promise<void> {
+  async updateMetadata(params?: { input?: ShareStore }): Promise<void> {
     this.metadataToSet = [[], []];
     this.privKey = undefined;
 
