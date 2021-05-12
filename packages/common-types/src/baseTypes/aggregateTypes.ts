@@ -137,6 +137,7 @@ export type TKeyArgs = {
   serviceProvider?: IServiceProvider;
   storageLayer?: IStorageLayer;
   directParams?: DirectWebSDKArgs;
+  manualSync?: boolean;
 };
 
 export interface SecurityQuestionStoreArgs {
@@ -264,6 +265,10 @@ export interface ITKey extends ITKeyApi, ISerializable {
   shares: ShareStorePolyIDShareIndexMap;
 
   privKey: BN;
+
+  metadataToSet: any[];
+
+  manualSync: boolean;
 
   refreshMiddleware: RefreshMiddlewareMap;
 

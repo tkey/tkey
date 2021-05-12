@@ -46,7 +46,7 @@ function compareReconstructedKeys(a, b, message) {
   }
 }
 
-describe.only("tkey", function () {
+describe("tkey", function () {
   let tb;
   beforeEach("Setup ThresholdKey", async function () {
     tb = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
@@ -64,8 +64,6 @@ describe.only("tkey", function () {
 
     // try creating new shares
     await tb.generateNewShare();
-    await tb.syncMetadataToSet();
-    // nonce 1
 
     await rejects(async () => {
       await tb2.generateNewShare();
@@ -152,7 +150,7 @@ describe.only("tkey", function () {
     await tb.syncMetadataToSet(false);
 
     const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
-    await tb2.initialize();
+    await tb2.initialize({ neverInitializeNewKey: true });
     tb2.inputShareStore(resp1.deviceShare);
     const reconstructedKey = await tb2.reconstructKey();
     if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
@@ -373,12 +371,16 @@ describe("SecurityQuestionsModule", function () {
       serviceProvider: defaultSP,
       storageLayer: defaultSL,
       modules: { securityQuestions: new SecurityQuestionsModule() },
+      manualSync: true,
     });
   });
   it("#should be able to reconstruct key and initialize a key with security questions", async function () {
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
     await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
-    await tb.syncMetadataToSet();
+    if (tb.metadataToSet[0].length === 0) {
+      fail("metadata sync did not finish in one call");
+    }
+    await tb.syncMetadataToSet(false);
 
     const tb2 = new ThresholdKey({
       serviceProvider: defaultSP,
@@ -403,7 +405,7 @@ describe("SecurityQuestionsModule", function () {
       modules: { securityQuestions: new SecurityQuestionsModule() },
     });
     await tb.generateNewShare();
-    await tb.syncMetadataToSet();
+    await tb.syncMetadataToSet(false);
 
     await tb2.initialize();
 
@@ -418,7 +420,7 @@ describe("SecurityQuestionsModule", function () {
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
     await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
     await tb.modules.securityQuestions.changeSecurityQuestionAndAnswer("dodo", "who is your cat?");
-    await tb.syncMetadataToSet();
+    await tb.syncMetadataToSet(false);
 
     const tb2 = new ThresholdKey({
       serviceProvider: defaultSP,
@@ -438,7 +440,7 @@ describe("SecurityQuestionsModule", function () {
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
     await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
     await tb.modules.securityQuestions.changeSecurityQuestionAndAnswer("dodo", "who is your cat?");
-    await tb.syncMetadataToSet();
+    await tb.syncMetadataToSet(false);
 
     const tb2 = new ThresholdKey({
       serviceProvider: defaultSP,
@@ -475,7 +477,7 @@ describe("SecurityQuestionsModule", function () {
       fail("answers should be the same");
     }
     await tb.modules.securityQuestions.changeSecurityQuestionAndAnswer(ans2, qn);
-    await tb.syncMetadataToSet();
+    await tb.syncMetadataToSet(false);
 
     const tb2 = new ThresholdKey({
       serviceProvider: defaultSP,

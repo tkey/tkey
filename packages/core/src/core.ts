@@ -62,6 +62,8 @@ class ThresholdKey implements ITKey {
 
   metadata: Metadata;
 
+  manualSync: boolean;
+
   metadataToSet: any[];
 
   refreshMiddleware: RefreshMiddlewareMap;
@@ -75,13 +77,14 @@ class ThresholdKey implements ITKey {
   haveWriteMetadataLock: string;
 
   constructor(args?: TKeyArgs) {
-    const { enableLogging = false, modules = {}, serviceProvider, storageLayer } = args || {};
+    const { enableLogging = false, modules = {}, serviceProvider, storageLayer, manualSync = false } = args || {};
     this.enableLogging = enableLogging;
     this.serviceProvider = serviceProvider;
     this.storageLayer = storageLayer;
     this.modules = modules;
     this.shares = {};
     this.privKey = undefined;
+    this.manualSync = manualSync;
     this.refreshMiddleware = {};
     this.reconstructKeyMiddleware = {};
     this.shareSerializationMiddleware = undefined;
@@ -463,7 +466,10 @@ class ThresholdKey implements ITKey {
     //   privKey: [...sharesToPush, ...newShareStoreSharesToPush, undefined],
     //   serviceProvider: this.serviceProvider,
     // });
-    this.setMetadataToSet({ input: [...AuthMetadatas, newShareStores["1"]], privKey: [...sharesToPush, ...newShareStoreSharesToPush, undefined] });
+    await this.setMetadataToSet({
+      input: [...AuthMetadatas, newShareStores["1"]],
+      privKey: [...sharesToPush, ...newShareStoreSharesToPush, undefined],
+    });
 
     // update this.shares with these new shares
     for (let index = 0; index < newShareIndexes.length; index += 1) {
@@ -531,7 +537,9 @@ class ThresholdKey implements ITKey {
     //   privKey: [...sharesToPush, undefined],
     //   serviceProvider: this.serviceProvider,
     // });
-    this.setMetadataToSet({ input: [...authMetadatas, shareStore], privKey: [...sharesToPush, undefined] });
+
+    // acquireLock: false. Force push
+    await this.setMetadataToSet({ input: [...authMetadatas, shareStore], privKey: [...sharesToPush, undefined], acquireLock: false });
 
     // store metadata on metadata respective to shares
     for (let index = 0; index < shareIndexes.length; index += 1) {
@@ -555,13 +563,21 @@ class ThresholdKey implements ITKey {
     return result;
   }
 
-  setMetadataToSet<T>(params: { input: Array<T>; serviceProvider?: IServiceProvider; privKey?: Array<BN> }): void {
+  async setMetadataToSet<T>(params: {
+    input: Array<T>;
+    serviceProvider?: IServiceProvider;
+    privKey?: Array<BN>;
+    acquireLock?: boolean;
+  }): Promise<void> {
     const { privKey, input } = params;
     this.metadataToSet[0] = [...this.metadataToSet[0], ...privKey];
     this.metadataToSet[1] = [...this.metadataToSet[1], ...input];
+    if (!this.manualSync) await this.syncMetadataToSet(params.acquireLock);
   }
 
   async syncMetadataToSet(acquireLock = true): Promise<void> {
+    if (!(Array.isArray(this.metadataToSet[0]) && this.metadataToSet[0].length > 0)) return;
+
     // get lock
     if (acquireLock) await this.acquireWriteMetadataLock();
     await this.storageLayer.setMetadataStream({
@@ -727,7 +743,7 @@ class ThresholdKey implements ITKey {
     for (let i = 0; i < input.length; i += 1) {
       authMetadatas.push(new AuthMetadata(input[i], this.privKey));
     }
-    this.setMetadataToSet({ input: authMetadatas, serviceProvider, privKey });
+    await await this.setMetadataToSet({ input: authMetadatas, serviceProvider, privKey });
     // return this.storageLayer.setMetadataStream({ input: authMetadatas, serviceProvider, privKey });
   }
 
@@ -755,11 +771,11 @@ class ThresholdKey implements ITKey {
     }
 
     // The polynomial might not be synced. So we can't use randomShare from this.shares to check latest metadata nonce.
-    // There could be multiple metadata nonces in metadataToSet. ex. [1, 2, 3]
+    // There could be multiple metadata nonces in metadataToSet. ex. [1, 2, 3].
     // We can fetch the latest nonce directly from service provider and compare with this.metadata.nonce.
+    // Lock will fail if nonce has been updated by another tb instance.
     const rawServiceProviderShare = await this.storageLayer.getMetadata<{ message?: string }>({ serviceProvider: this.serviceProvider });
-    // console.log(rawServiceProviderShare);
-    if (rawServiceProviderShare.message === KEY_NOT_FOUND) throw CoreError.default("key has not yet been generated");
+    if (rawServiceProviderShare.message === KEY_NOT_FOUND) throw CoreError.acquireLockFailed("key has not yet been generated");
     const spShareStore = ShareStore.fromJSON(rawServiceProviderShare);
     const latestShareDetails = await this.catchupToLatestShare(spShareStore);
     const latestMetadataForSP = latestShareDetails.shareMetadata;
