@@ -54,7 +54,7 @@ describe("tkey", function () {
 
   it("#should be able to update metadata", async function () {
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
-    await tb.syncMetadataToSet(false);
+    await tb.syncMetadataToSet();
     // nonce 0
 
     const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
@@ -78,7 +78,7 @@ describe("tkey", function () {
 
   it("#should be able to reconstruct key when initializing a key", async function () {
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
-    await tb.syncMetadataToSet(false);
+    await tb.syncMetadataToSet();
     // generatePassword -. generatenewshrare, add share desc,
     // add seedphrase
 
@@ -94,7 +94,7 @@ describe("tkey", function () {
     let determinedShare = new BN(keccak256("user answer blublu").slice(2), "hex");
     determinedShare = determinedShare.umod(ecCurve.curve.n);
     const resp1 = await tb.initializeNewKey({ determinedShare, initializeModules: true });
-    await tb.syncMetadataToSet(false);
+    await tb.syncMetadataToSet();
 
     const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize();
@@ -110,7 +110,7 @@ describe("tkey", function () {
     const { newShareStores: newShareStores1, newShareIndex: newShareIndex1 } = await tb.generateNewShare();
     const { newShareStores } = await tb.deleteShare(newShareIndex1);
 
-    await tb.syncMetadataToSet(false);
+    await tb.syncMetadataToSet();
 
     const tb2 = new ThresholdKey({ serviceProvider: tb.serviceProvider, storageLayer: tb.storageLayer });
     await tb2.initialize();
@@ -127,7 +127,7 @@ describe("tkey", function () {
     const { newShareIndex: newShareIndex2 } = await tb.generateNewShare();
     await tb.deleteShare(newShareIndex1);
 
-    await tb.syncMetadataToSet(false);
+    await tb.syncMetadataToSet();
 
     rejects(async () => {
       await tb.deleteShare(newShareIndex2);
@@ -137,7 +137,7 @@ describe("tkey", function () {
     await tb.initializeNewKey({ initializeModules: true });
     const { newShareStores: newShareStores1, newShareIndex: newShareIndex1 } = await tb.generateNewShare();
     await tb.deleteShare(newShareIndex1);
-    await tb.syncMetadataToSet(false);
+    await tb.syncMetadataToSet();
 
     const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize();
@@ -147,7 +147,7 @@ describe("tkey", function () {
   });
   it("#should be able to reshare a key and retrieve from service provider", async function () {
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
-    await tb.syncMetadataToSet(false);
+    await tb.syncMetadataToSet();
 
     const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize({ neverInitializeNewKey: true });
@@ -171,7 +171,7 @@ describe("tkey", function () {
     let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
     userInput = userInput.umod(ecCurve.curve.n);
     const resp1 = await tb.initializeNewKey({ userInput, initializeModules: true });
-    await tb.syncMetadataToSet(false);
+    await tb.syncMetadataToSet();
 
     const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize({ input: resp1.userShare });
@@ -187,7 +187,7 @@ describe("tkey", function () {
     userInput = userInput.umod(ecCurve.curve.n);
     const resp1 = await tb.initializeNewKey({ userInput, initializeModules: true });
     const newShares = await tb.generateNewShare();
-    await tb.syncMetadataToSet(false);
+    await tb.syncMetadataToSet();
 
     const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize({ input: resp1.userShare });
@@ -203,7 +203,7 @@ describe("tkey", function () {
     userInput = userInput.umod(ecCurve.curve.n);
     const resp1 = await tb.initializeNewKey({ userInput, initializeModules: true });
     const newShares = await tb.generateNewShare();
-    await tb.syncMetadataToSet(false);
+    await tb.syncMetadataToSet();
 
     const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize({ input: resp1.userShare });
@@ -221,7 +221,7 @@ describe("tkey", function () {
   });
   it("#should be able to reshare a key and retrieve from service provider serialization", async function () {
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
-    await tb.syncMetadataToSet(false);
+    await tb.syncMetadataToSet();
 
     const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize();
@@ -251,7 +251,7 @@ describe("tkey", function () {
   it("#should be able to import and reconstruct an imported key", async function () {
     const importedKey = new BN(generatePrivate());
     const resp1 = await tb.initializeNewKey({ importedKey, initializeModules: true });
-    await tb.syncMetadataToSet(false);
+    await tb.syncMetadataToSet();
 
     const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize();
@@ -264,7 +264,7 @@ describe("tkey", function () {
   });
   it("#should be able to reconstruct key, even with old metadata", async function () {
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
-    await tb.syncMetadataToSet(false);
+    await tb.syncMetadataToSet();
 
     const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
     await tb2.initialize(); // initialize sdk with old metadata
@@ -380,7 +380,7 @@ describe("SecurityQuestionsModule", function () {
     if (tb.metadataToSet[0].length === 0) {
       fail("metadata sync did not finish in one call");
     }
-    await tb.syncMetadataToSet(false);
+    await tb.syncMetadataToSet();
 
     const tb2 = new ThresholdKey({
       serviceProvider: defaultSP,
@@ -405,7 +405,7 @@ describe("SecurityQuestionsModule", function () {
       modules: { securityQuestions: new SecurityQuestionsModule() },
     });
     await tb.generateNewShare();
-    await tb.syncMetadataToSet(false);
+    await tb.syncMetadataToSet();
 
     await tb2.initialize();
 
@@ -420,7 +420,7 @@ describe("SecurityQuestionsModule", function () {
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
     await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
     await tb.modules.securityQuestions.changeSecurityQuestionAndAnswer("dodo", "who is your cat?");
-    await tb.syncMetadataToSet(false);
+    await tb.syncMetadataToSet();
 
     const tb2 = new ThresholdKey({
       serviceProvider: defaultSP,
@@ -440,7 +440,7 @@ describe("SecurityQuestionsModule", function () {
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
     await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
     await tb.modules.securityQuestions.changeSecurityQuestionAndAnswer("dodo", "who is your cat?");
-    await tb.syncMetadataToSet(false);
+    await tb.syncMetadataToSet();
 
     const tb2 = new ThresholdKey({
       serviceProvider: defaultSP,
@@ -477,7 +477,7 @@ describe("SecurityQuestionsModule", function () {
       fail("answers should be the same");
     }
     await tb.modules.securityQuestions.changeSecurityQuestionAndAnswer(ans2, qn);
-    await tb.syncMetadataToSet(false);
+    await tb.syncMetadataToSet();
 
     const tb2 = new ThresholdKey({
       serviceProvider: defaultSP,
@@ -898,7 +898,7 @@ describe("Lock", function () {
   it("#locks should fail when tkey/nonce is updated in non-manualSync mode", async function () {
     const tb = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL, manualSync: true });
     const resp1 = await tb.initializeNewKey({ initializeModules: true });
-    await tb.syncMetadataToSet(false);
+    await tb.syncMetadataToSet();
 
     const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL, manualSync: true });
     await tb2.initialize();

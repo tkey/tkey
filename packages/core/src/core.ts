@@ -531,7 +531,7 @@ class ThresholdKey implements ITKey {
     // });
 
     // acquireLock: false. Force push
-    await this.addMetadataToSet({ input: [...authMetadatas, shareStore], privKey: [...sharesToPush, undefined], acquireLock: false });
+    await this.addMetadataToSet({ input: [...authMetadatas, shareStore], privKey: [...sharesToPush, undefined] });
 
     // store metadata on metadata respective to shares
     for (let index = 0; index < shareIndexes.length; index += 1) {
@@ -564,14 +564,18 @@ class ThresholdKey implements ITKey {
     const { privKey, input } = params;
     this.metadataToSet[0] = [...this.metadataToSet[0], ...privKey];
     this.metadataToSet[1] = [...this.metadataToSet[1], ...input];
-    if (!this.manualSync) await this.syncMetadataToSet(params.acquireLock);
+    if (!this.manualSync) await this.syncMetadataToSet();
   }
 
-  async syncMetadataToSet(acquireLock = true): Promise<void> {
+  async syncMetadataToSet(): Promise<void> {
     if (!(Array.isArray(this.metadataToSet[0]) && this.metadataToSet[0].length > 0)) return;
 
     // get lock
-    if (acquireLock) await this.acquireWriteMetadataLock();
+    let acquiredLock = false;
+    if (this.lastFetchedCloudMetadata) {
+      await this.acquireWriteMetadataLock();
+      acquiredLock = true;
+    }
     await this.storageLayer.setMetadataStream({
       input: this.metadataToSet[1],
       privKey: this.metadataToSet[0],
@@ -580,7 +584,7 @@ class ThresholdKey implements ITKey {
     this.metadataToSet = [[], []];
     this.lastFetchedCloudMetadata = this.metadata.clone();
     // release lock
-    if (acquireLock) await this.releaseWriteMetadataLock();
+    if (acquiredLock) await this.releaseWriteMetadataLock();
   }
 
   // returns a new instance of metadata with updated state : TODO edit
