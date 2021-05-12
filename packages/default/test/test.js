@@ -126,7 +126,6 @@ describe("tkey", function () {
     const { newShareIndex: newShareIndex1 } = await tb.generateNewShare();
     const { newShareIndex: newShareIndex2 } = await tb.generateNewShare();
     await tb.deleteShare(newShareIndex1);
-
     await tb.syncMetadataToSet();
 
     rejects(async () => {

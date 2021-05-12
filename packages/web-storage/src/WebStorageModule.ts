@@ -97,7 +97,7 @@ class WebStorageModule implements IModule {
     let latestShareStore = shareStore;
     const metadata = this.tbSDK.getMetadata();
     if (metadata.getLatestPublicPolynomial().getPolynomialID() !== shareStore.polynomialID) {
-      latestShareStore = (await this.tbSDK.catchupToLatestShare(shareStore)).latestShare;
+      latestShareStore = (await this.tbSDK.catchupToLatestShare({ shareStore, includeLocalMetadataTransitions: true })).latestShare;
       const tkeypubx = metadata.pubKey.x.toString("hex");
       await storeShareOnLocalStorage(latestShareStore, tkeypubx);
     }

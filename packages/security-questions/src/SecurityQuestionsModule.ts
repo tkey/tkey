@@ -94,7 +94,7 @@ class SecurityQuestionsModule implements IModule {
       throw SecurityQuestionsError.incorrectAnswer();
     }
 
-    const latestShareDetails = await this.tbSDK.catchupToLatestShare(shareStore);
+    const latestShareDetails = await this.tbSDK.catchupToLatestShare({ shareStore, includeLocalMetadataTransitions: true });
     // TODO: update share nonce on all metadata. would be cleaner in long term?
     // if (shareStore.polynomialID !== latestShareDetails.latestShare.polynomialID) this.storeDeviceShare(latestShareDetails.latestShare);
     this.tbSDK.inputShareStore(latestShareDetails.latestShare);

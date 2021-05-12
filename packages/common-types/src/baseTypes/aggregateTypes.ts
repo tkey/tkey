@@ -224,7 +224,11 @@ export interface ITKeyApi {
   getMetadata(): IMetadata;
   getStorageLayer(): IStorageLayer;
   initialize(params: { input?: ShareStore; importKey?: BN; neverInitializeNewKey?: boolean }): Promise<KeyDetails>;
-  catchupToLatestShare(shareStore: ShareStore): Promise<CatchupToLatestShareResult>;
+  catchupToLatestShare(params: {
+    shareStore: ShareStore;
+    polyID?: string;
+    includeLocalMetadataTransitions?: boolean;
+  }): Promise<CatchupToLatestShareResult>;
   syncShareMetadata(adjustScopedStore?: (ss: unknown) => unknown): Promise<void>;
   inputShareStoreSafe(shareStore: ShareStore): Promise<void>;
   setDeviceStorage(storeDeviceStorage: (deviceShareStore: ShareStore) => Promise<void>): void;
