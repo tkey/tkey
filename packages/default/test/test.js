@@ -71,7 +71,7 @@ describe("tkey", function () {
     }, Error);
 
     // try creating again
-    await tb2.resetMetadataToSet();
+    await tb2.updateMetadata();
     await tb2.reconstructKey();
     await tb2.generateNewShare();
   });
@@ -849,7 +849,6 @@ describe("Lock", function () {
     let outsideErr;
     try {
       await tb.generateNewShare();
-      debugger;
       await tb.syncMetadataToSet();
     } catch (err) {
       outsideErr = err;
@@ -894,5 +893,27 @@ describe("Lock", function () {
     if (count !== 1) {
       fail(count);
     }
+  });
+
+  it("#locks should fail when tkey/nonce is updated in non-manualSync mode", async function () {
+    const tb = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL, manualSync: true });
+    const resp1 = await tb.initializeNewKey({ initializeModules: true });
+    await tb.syncMetadataToSet(false);
+
+    const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL, manualSync: true });
+    await tb2.initialize();
+    tb2.inputShareStore(resp1.deviceShare);
+    const reconstructedKey = await tb2.reconstructKey();
+    if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
+      fail("key should be able to be reconstructed");
+    }
+    await tb2.generateNewShare();
+    await tb2.syncMetadataToSet();
+
+    await rejects(async () => {
+      await tb.generateNewShare();
+      await tb.generateNewShare();
+      await tb.syncMetadataToSet();
+    }, Error);
   });
 });

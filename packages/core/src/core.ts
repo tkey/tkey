@@ -166,6 +166,7 @@ class ThresholdKey implements ITKey {
     // we fetch metadata for the account from the share
     const latestShareDetails = await this.catchupToLatestShare(shareStore);
     this.metadata = latestShareDetails.shareMetadata;
+    this.lastFetchedCloudMetadata = latestShareDetails.shareMetadata.clone();
     this.inputShareStore(latestShareDetails.latestShare);
     // now that we have metadata we set the requirements for reconstruction
 
@@ -457,7 +458,7 @@ class ThresholdKey implements ITKey {
     //   privKey: [...sharesToPush, ...newShareStoreSharesToPush, undefined],
     //   serviceProvider: this.serviceProvider,
     // });
-    await this.setMetadataToSet({
+    await this.addMetadataToSet({
       input: [...AuthMetadatas, newShareStores["1"]],
       privKey: [...sharesToPush, ...newShareStoreSharesToPush, undefined],
     });
@@ -530,7 +531,7 @@ class ThresholdKey implements ITKey {
     // });
 
     // acquireLock: false. Force push
-    await this.setMetadataToSet({ input: [...authMetadatas, shareStore], privKey: [...sharesToPush, undefined], acquireLock: false });
+    await this.addMetadataToSet({ input: [...authMetadatas, shareStore], privKey: [...sharesToPush, undefined], acquireLock: false });
 
     // store metadata on metadata respective to shares
     for (let index = 0; index < shareIndexes.length; index += 1) {
@@ -554,7 +555,7 @@ class ThresholdKey implements ITKey {
     return result;
   }
 
-  async setMetadataToSet<T>(params: {
+  async addMetadataToSet<T>(params: {
     input: Array<T>;
     serviceProvider?: IServiceProvider;
     privKey?: Array<BN>;
@@ -577,11 +578,12 @@ class ThresholdKey implements ITKey {
       serviceProvider: this.serviceProvider,
     });
     this.metadataToSet = [[], []];
+    this.lastFetchedCloudMetadata = this.metadata.clone();
     // release lock
     if (acquireLock) await this.releaseWriteMetadataLock();
   }
 
-  // Reset metadata to previous state.
+  // returns a new instance of metadata with updated state : TODO edit
   async updateMetadata(params?: { input?: ShareStore }): Promise<void> {
     this.metadataToSet = [[], []];
     this.privKey = undefined;
@@ -645,7 +647,7 @@ class ThresholdKey implements ITKey {
     this.shares[latestShareRes.latestShare.polynomialID][latestShareRes.latestShare.share.shareIndex.toString("hex")] = latestShareRes.latestShare;
   }
 
-  outputShareStore(shareIndex: BNString): ShareStore {
+  outputShareStore(shareIndex: BNString, polyID?: string): ShareStore {
     let shareIndexParsed: BN;
     if (typeof shareIndex === "number") {
       shareIndexParsed = new BN(shareIndex);
@@ -654,17 +656,21 @@ class ThresholdKey implements ITKey {
     } else if (typeof shareIndex === "string") {
       shareIndexParsed = new BN(shareIndex, "hex");
     }
-
-    const latestPolyID = this.metadata.getLatestPublicPolynomial().getPolynomialID();
-    if (!this.metadata.getShareIndexesForPolynomial(latestPolyID).includes(shareIndexParsed.toString("hex"))) {
+    let polyIDToSearch: string;
+    if (polyID) {
+      polyIDToSearch = polyID;
+    } else {
+      polyIDToSearch = this.metadata.getLatestPublicPolynomial().getPolynomialID();
+    }
+    if (!this.metadata.getShareIndexesForPolynomial(polyIDToSearch).includes(shareIndexParsed.toString("hex"))) {
       throw new CoreError(1002, "no such share index created");
     }
-    const shareFromStore = this.shares[latestPolyID][shareIndexParsed.toString("hex")];
+    const shareFromStore = this.shares[polyIDToSearch][shareIndexParsed.toString("hex")];
     if (shareFromStore) return shareFromStore;
     const poly = this.reconstructLatestPoly();
     const shareMap = poly.generateShares([shareIndexParsed]);
 
-    return new ShareStore(shareMap[shareIndexParsed.toString("hex")], latestPolyID);
+    return new ShareStore(shareMap[shareIndexParsed.toString("hex")], polyIDToSearch);
   }
 
   setKey(privKey: BN): void {
@@ -734,7 +740,7 @@ class ThresholdKey implements ITKey {
     for (let i = 0; i < input.length; i += 1) {
       authMetadatas.push(new AuthMetadata(input[i], this.privKey));
     }
-    await await this.setMetadataToSet({ input: authMetadatas, serviceProvider, privKey });
+    await await this.addMetadataToSet({ input: authMetadatas, serviceProvider, privKey });
     // return this.storageLayer.setMetadataStream({ input: authMetadatas, serviceProvider, privKey });
   }
 
@@ -761,26 +767,30 @@ class ThresholdKey implements ITKey {
       throw CoreError.privateKeyUnavailable();
     }
 
-    // The polynomial might not be synced. So we can't use randomShare from this.shares to check latest metadata nonce.
-    // There could be multiple metadata nonces in metadataToSet. ex. [1, 2, 3].
-    // We can fetch the latest nonce directly from service provider and compare with this.metadata.nonce.
-    // Lock will fail if nonce has been updated by another tb instance.
-    const rawServiceProviderShare = await this.storageLayer.getMetadata<{ message?: string }>({ serviceProvider: this.serviceProvider });
-    if (rawServiceProviderShare.message === KEY_NOT_FOUND) throw CoreError.acquireLockFailed("key has not yet been generated");
-    const spShareStore = ShareStore.fromJSON(rawServiceProviderShare);
-    const latestShareDetails = await this.catchupToLatestShare(spShareStore);
-    const latestMetadataForSP = latestShareDetails.shareMetadata;
+    // we check the metadata of a random share we have on the latest polynomial we know that reflects the cloud
+    // below we cater for if we have an existing share or need to create the share in the SDK
+    let randomShareStore: ShareStore;
+    const latestPolyIDOnCloud = this.lastFetchedCloudMetadata.getLatestPublicPolynomial().getPolynomialID();
+    const shareIndexesExistInSDK = Object.keys(this.shares[latestPolyIDOnCloud]);
+    const randomIndex = shareIndexesExistInSDK[Math.floor(Math.random() * (shareIndexesExistInSDK.length - 1))];
+    if (shareIndexesExistInSDK.length >= 1) {
+      randomShareStore = this.shares[latestPolyIDOnCloud][randomIndex];
+    } else {
+      randomShareStore = this.outputShareStore(randomIndex, latestPolyIDOnCloud);
+    }
+    const latestRes = await this.catchupToLatestShare(randomShareStore);
+    const latestMetadata = latestRes.shareMetadata;
 
-    // we check the metadata of a random share on the latest polynomial we have
-    // console.log(this.metadata.getLatestPublicPolynomial().getPolynomialID(), this.shares);
-    // const shareIndexesExistInSDK = Object.keys(this.shares[this.metadata.getLatestPublicPolynomial().getPolynomialID()]);
-    // const randomShare = this.outputShareStore(shareIndexesExistInSDK[Math.floor(Math.random() * (shareIndexesExistInSDK.length - 1))]).share.share;
-    // const randomShare = this.outputShareStore(new BN("1")).share.share;
-    // const latestMetadata = await this.getAuthMetadata({ privKey: randomShare });
-
-    if (latestMetadataForSP.nonce >= this.metadata.nonce) {
-      throw CoreError.acquireLockFailed(`unable to acquire write access for metadata due to local nonce (${this.metadata.nonce})
-           being lower than last written metadata nonce (${latestMetadataForSP.nonce}). perhaps update metadata SDK (create new tKey and init)`);
+    // read errors for what each means
+    if (latestMetadata.nonce > this.lastFetchedCloudMetadata.nonce) {
+      throw CoreError.acquireLockFailed(`unable to acquire write access for metadata due to 
+      lastFetchedCloudMetadata (${this.lastFetchedCloudMetadata.nonce})
+           being lower than last written metadata nonce (${latestMetadata.nonce}). perhaps update metadata SDK (create new tKey and init)`);
+    } else if (latestMetadata.nonce < this.lastFetchedCloudMetadata.nonce) {
+      throw CoreError.acquireLockFailed(`unable to acquire write access for metadata due to 
+      lastFetchedCloudMetadata (${this.lastFetchedCloudMetadata.nonce})
+      being higher than last written metadata nonce (${latestMetadata.nonce}). this should never happen as it 
+      should only ever be updated by getting metadata)`);
     }
 
     const res = await this.storageLayer.acquireWriteLock({ privKey: this.privKey });

@@ -241,7 +241,7 @@ export interface ITKeyApi {
     deserialize: (serializedShare: unknown, type: string) => Promise<BN>
   ): void;
   generateNewShare(): Promise<GenerateNewShareResult>;
-  outputShareStore(shareIndex: BNString): ShareStore;
+  outputShareStore(shareIndex: BNString, polyID?: string): ShareStore;
   inputShare(share: unknown, type?: string): Promise<void>;
   outputShare(shareIndex: BNString, type?: string): Promise<unknown>;
   encrypt(data: Buffer): Promise<EncryptedMessage>;
