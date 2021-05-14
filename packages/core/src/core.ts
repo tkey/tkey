@@ -78,7 +78,10 @@ class ThresholdKey implements ITKey {
 
   haveWriteMetadataLock: string;
 
+  args: TKeyArgs;
+
   constructor(args?: TKeyArgs) {
+    this.args = args;
     const { enableLogging = false, modules = {}, serviceProvider, storageLayer, manualSync = false } = args || {};
     this.enableLogging = enableLogging;
     this.serviceProvider = serviceProvider;
@@ -597,12 +600,13 @@ class ThresholdKey implements ITKey {
   }
 
   // returns a new instance of metadata with updated state : TODO edit
-  async updateMetadata(params?: { input?: ShareStore }): Promise<void> {
+  async updateMetadata(params?: { input?: ShareStore }): Promise<ThresholdKey> {
     this.metadataToSet = [[], []];
     this.privKey = undefined;
 
     // reinit this.metadata
-    await this.initialize({ neverInitializeNewKey: true, input: params && params.input });
+    const tb = new ThresholdKey(this.args);
+    await tb.initialize({ neverInitializeNewKey: true, input: params && params.input });
 
     // const latestPolyID = this.metadata.getLatestPublicPolynomial().getPolynomialID();
     // Delete unnecessary polyIDs and shareStores
@@ -619,8 +623,12 @@ class ThresholdKey implements ITKey {
 
     // catchup to latest shareStore for all latest available shares.
     // TODO: fix edge cases where shares are deleted in the newer polynomials
-    const shareStoresForLastValidPolyID = Object.keys(this.shares[lastValidPolyID]).map((x) => this.inputShareStoreSafe(this.outputShareStore(x)));
+    // TODO: maybe assign this.shares directly rather than output and inputsharestore.
+    const shareStoresForLastValidPolyID = Object.keys(this.shares[lastValidPolyID]).map((x) =>
+      tb.inputShareStoreSafe(this.outputShareStore(x, lastValidPolyID))
+    );
     await Promise.all(shareStoresForLastValidPolyID);
+    return tb;
   }
 
   inputShareStore(shareStore: ShareStore): void {

@@ -1,3 +1,5 @@
+/* eslint-disable no-await-in-loop */
+/* eslint-disable max-len */
 import { ecCurve } from "@tkey/common-types";
 import PrivateKeyModule, { SECP256k1Format } from "@tkey/private-keys";
 import SecurityQuestionsModule from "@tkey/security-questions";
@@ -71,9 +73,9 @@ describe("tkey", function () {
     }, Error);
 
     // try creating again
-    await tb2.updateMetadata();
-    await tb2.reconstructKey();
-    await tb2.generateNewShare();
+    const newtb = await tb2.updateMetadata();
+    await newtb.reconstructKey();
+    await newtb.generateNewShare();
   });
 
   it("#should be able to reconstruct key when initializing a key", async function () {

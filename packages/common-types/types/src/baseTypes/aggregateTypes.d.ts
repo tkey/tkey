@@ -89,6 +89,7 @@ export declare type TKeyArgs = {
     serviceProvider?: IServiceProvider;
     storageLayer?: IStorageLayer;
     directParams?: DirectWebSDKArgs;
+    manualSync?: boolean;
 };
 export interface SecurityQuestionStoreArgs {
     nonce: BNString;
@@ -154,13 +155,16 @@ export interface IPrivateKeyFormat {
 export interface ITKeyApi {
     getMetadata(): IMetadata;
     getStorageLayer(): IStorageLayer;
-    updateMetadata(): Promise<IMetadata>;
     initialize(params: {
         input?: ShareStore;
         importKey?: BN;
         neverInitializeNewKey?: boolean;
     }): Promise<KeyDetails>;
-    catchupToLatestShare(shareStore: ShareStore): Promise<CatchupToLatestShareResult>;
+    catchupToLatestShare(params: {
+        shareStore: ShareStore;
+        polyID?: string;
+        includeLocalMetadataTransitions?: boolean;
+    }): Promise<CatchupToLatestShareResult>;
     syncShareMetadata(adjustScopedStore?: (ss: unknown) => unknown): Promise<void>;
     inputShareStoreSafe(shareStore: ShareStore): Promise<void>;
     setDeviceStorage(storeDeviceStorage: (deviceShareStore: ShareStore) => Promise<void>): void;
@@ -171,7 +175,7 @@ export interface ITKeyApi {
     addReconstructKeyMiddleware(moduleName: string, middleware: () => Promise<Array<BN>>): void;
     addShareSerializationMiddleware(serialize: (share: BN, type: string) => Promise<unknown>, deserialize: (serializedShare: unknown, type: string) => Promise<BN>): void;
     generateNewShare(): Promise<GenerateNewShareResult>;
-    outputShareStore(shareIndex: BNString): ShareStore;
+    outputShareStore(shareIndex: BNString, polyID?: string): ShareStore;
     inputShare(share: unknown, type?: string): Promise<void>;
     outputShare(shareIndex: BNString, type?: string): Promise<unknown>;
     encrypt(data: Buffer): Promise<EncryptedMessage>;
@@ -187,6 +191,8 @@ export interface ITKey extends ITKeyApi, ISerializable {
     serviceProvider: IServiceProvider;
     shares: ShareStorePolyIDShareIndexMap;
     privKey: BN;
+    metadataToSet: any[];
+    manualSync: boolean;
     refreshMiddleware: RefreshMiddlewareMap;
     reconstructKeyMiddleware: ReconstructKeyMiddlewareMap;
     shareSerializationMiddleware: ShareSerializationMiddleware;
