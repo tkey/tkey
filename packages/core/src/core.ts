@@ -857,7 +857,7 @@ class ThresholdKey implements ITKey {
       const newMetadata = this.metadata.clone();
       let specificShareMetadata: Metadata;
       try {
-        specificShareMetadata = await this.getAuthMetadata({ privKey: share });
+        specificShareMetadata = await this.getAuthMetadata({ privKey: share, includeLocalMetadataTransitions: true });
       } catch (err) {
         throw CoreError.metadataGetFailed(`${prettyPrintError(err)}`);
       }
