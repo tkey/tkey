@@ -761,7 +761,7 @@ class ThresholdKey implements ITKey {
     for (let i = 0; i < input.length; i += 1) {
       authMetadatas.push(new AuthMetadata(input[i], this.privKey));
     }
-    await await this.addMetadataToSet({ input: authMetadatas, serviceProvider, privKey });
+    await this.addMetadataToSet({ input: authMetadatas, serviceProvider, privKey });
     // return this.storageLayer.setMetadataStream({ input: authMetadatas, serviceProvider, privKey });
   }
 
@@ -769,20 +769,18 @@ class ThresholdKey implements ITKey {
     let authMetadata: AuthMetadata;
     // if we have transitions on local metadata, we want to look through that first.
     if (params.includeLocalMetadataTransitions) {
-      let index;
+      let index = null;
       this.metadataToSet[0].forEach((x, el) => {
         if (x && x.cmp(params.privKey) === 0) index = el;
       });
-      if (index) {
-        authMetadata = this.metadataToSet[1][index] as AuthMetadata;
-      } else {
-        const raw = await this.storageLayer.getMetadata(params);
-        authMetadata = AuthMetadata.fromJSON(raw);
+      if (index !== null) {
+        authMetadata = this.metadataToSet[1][index];
+        return authMetadata.metadata as Metadata;
       }
-    } else {
-      const raw = await this.storageLayer.getMetadata(params);
-      authMetadata = AuthMetadata.fromJSON(raw);
     }
+
+    const raw = await this.storageLayer.getMetadata(params);
+    authMetadata = AuthMetadata.fromJSON(raw);
     return authMetadata.metadata;
   }
 
@@ -936,7 +934,7 @@ class ThresholdKey implements ITKey {
     return decrypt(toPrivKeyECC(this.privKey), encryptedMessage);
   }
 
-  async setTKeyStoreItem(moduleName: string, data: TkeyStoreItemType, updateMetadata?: boolean): Promise<void> {
+  async setTKeyStoreItem(moduleName: string, data: TkeyStoreItemType): Promise<void> {
     const rawTkeyStoreItems: EncryptedMessage[] = (this.metadata.getTkeyStoreDomain(moduleName) as EncryptedMessage[]) || [];
     const decryptedItems = await Promise.all(
       rawTkeyStoreItems.map(async (x) => {
@@ -954,7 +952,7 @@ class ThresholdKey implements ITKey {
 
     // update metadataStore
     this.metadata.setTkeyStoreDomain(moduleName, rawTkeyStoreItems);
-    if (updateMetadata) await this.syncShareMetadata();
+    await this.syncShareMetadata();
   }
 
   async deleteTKeyStoreItem(moduleName: string, id: string): Promise<void> {

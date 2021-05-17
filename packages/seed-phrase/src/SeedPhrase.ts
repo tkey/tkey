@@ -34,7 +34,7 @@ class SeedPhraseModule implements IModule {
       throw SeedPhraseError.invalid(`${seedPhraseType}`);
     }
     const seedPhraseStore = await format.createSeedPhraseStore(seedPhrase);
-    return this.tbSDK.setTKeyStoreItem(this.moduleName, seedPhraseStore, true);
+    return this.tbSDK.setTKeyStoreItem(this.moduleName, seedPhraseStore);
   }
 
   async setSeedPhraseStoreItem(partialStore: ISeedPhraseStore): Promise<void> {
@@ -42,14 +42,14 @@ class SeedPhraseModule implements IModule {
     const originalItem: ISeedPhraseStore = { id: seedPhraseItem.id, type: seedPhraseItem.type, seedPhrase: seedPhraseItem.seedPhrase };
     // Disallow editing critical fields
     const finalItem = { ...partialStore, ...originalItem };
-    return this.tbSDK.setTKeyStoreItem(this.moduleName, finalItem, true);
+    return this.tbSDK.setTKeyStoreItem(this.moduleName, finalItem);
   }
 
   async CRITICAL_changeSeedPhrase(oldSeedPhrase: string, newSeedPhrase: string): Promise<void> {
     const seedPhrases = await this.getSeedPhrases();
     const itemToChange = seedPhrases.find((x) => x.seedPhrase === oldSeedPhrase);
     itemToChange.seedPhrase = newSeedPhrase;
-    return this.tbSDK.setTKeyStoreItem(this.moduleName, itemToChange, true);
+    return this.tbSDK.setTKeyStoreItem(this.moduleName, itemToChange);
   }
 
   async getSeedPhrases(): Promise<ISeedPhraseStore[]> {

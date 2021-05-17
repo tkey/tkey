@@ -34,7 +34,7 @@ class PrivateKeyModule implements IModule {
       throw PrivateKeysError.invalidPrivateKey(`${privateKey}`);
     }
     const privateKeyStore = format.createPrivateKeyStore(privateKey);
-    return this.tbSDK.setTKeyStoreItem(this.moduleName, privateKeyStore, true);
+    return this.tbSDK.setTKeyStoreItem(this.moduleName, privateKeyStore);
   }
 
   async getPrivateKeys(): Promise<IPrivateKeyStore[]> {
