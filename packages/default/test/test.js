@@ -261,7 +261,7 @@ manualSyncModes.forEach((mode) => {
   });
 
   describe("tkey reconstruction", function () {
-    it("#should be able to detect a new user and reconstruct key on initialize", async function () {
+    it(`#should be able to detect a new user and reconstruct key on initialize, manualSync=${mode}`, async function () {
       const privKey = new BN(generatePrivate());
       const uniqueSP = new ServiceProviderBase({ postboxKey: privKey.toString("hex") });
       const uniqueSL = initStorageLayer(mocked, { serviceProvider: uniqueSP, hostUrl: metadataURL });
@@ -276,7 +276,7 @@ manualSyncModes.forEach((mode) => {
   });
 
   describe("TorusStorageLayer", function () {
-    it("#should get or set correctly", async function () {
+    it(`#should get or set correctly, manualSync=${mode}`, async function () {
       const privKey = PRIVATE_KEY;
       const tsp = new ServiceProviderBase({ postboxKey: privKey });
       const storageLayer = initStorageLayer(mocked, { hostUrl: metadataURL, serviceProvider: tsp });
@@ -285,7 +285,7 @@ manualSyncModes.forEach((mode) => {
       const resp = await storageLayer.getMetadata({ privKey: tsp.postboxKey });
       deepStrictEqual(resp, message, "set and get message should be equal");
     });
-    it("#should get or set with specified private key correctly", async function () {
+    it(`#should get or set with specified private key correctly, manualSync=${mode}`, async function () {
       const privKey = PRIVATE_KEY;
       const privKeyBN = new BN(privKey, 16);
       const tsp = new ServiceProviderBase({ postboxKey: privKey });
@@ -295,7 +295,7 @@ manualSyncModes.forEach((mode) => {
       const resp = await storageLayer.getMetadata({ privKey: privKeyBN });
       deepStrictEqual(resp, message, "set and get message should be equal");
     });
-    it("#should get or set with array of specified private keys correctly", async function () {
+    it(`#should get or set with array of specified private keys correctly, manualSync=${mode}`, async function () {
       const privKey = generatePrivate().toString("hex");
       const privKeyBN = new BN(privKey, 16);
       const tsp = new ServiceProviderBase({ postboxKey: privKey });
@@ -323,7 +323,7 @@ manualSyncModes.forEach((mode) => {
       deepStrictEqual(resp, message, "set and get message should be equal");
       deepStrictEqual(resp2, message2, "set and get message should be equal");
     });
-    it("#should be able to get/set bulk correctly", async function () {
+    it(`#should be able to get/set bulk correctly, manualSync=${mode}`, async function () {
       const privkeys = [];
       const messages = [];
       for (let i = 0; i < 10; i += 1) {
