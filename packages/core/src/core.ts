@@ -19,6 +19,7 @@ import {
   KeyDetails,
   LocalMetadataTransitions,
   LocalTransitionData,
+  LocalTransitionShares,
   ModuleMap,
   Point,
   Polynomial,
@@ -1026,13 +1027,14 @@ class ThresholdKey implements ITKey {
       privKey: this.privKey ? this.privKey.toString("hex") : undefined,
       metadata: this.metadata,
       localMetadataTransitions: this.localMetadataTransitions,
+      manualSync: this.manualSync,
     };
   }
 
   static async fromJSON(value: StringifiedType, args: TKeyArgs): Promise<ThresholdKey> {
-    const { enableLogging, privKey, metadata, shares, localMetadataTransitions } = value;
+    const { enableLogging, privKey, metadata, shares, localMetadataTransitions, manualSync } = value;
     const { storageLayer, serviceProvider, modules } = args;
-    const tb = new ThresholdKey({ enableLogging, storageLayer, serviceProvider, modules });
+    const tb = new ThresholdKey({ enableLogging, storageLayer, serviceProvider, modules, manualSync });
     if (privKey) tb.privKey = new BN(privKey, "hex");
     if (metadata) tb.metadata = Metadata.fromJSON(metadata);
 
@@ -1048,8 +1050,33 @@ class ThresholdKey implements ITKey {
       }
     }
     tb.shares = shares;
-    tb.localMetadataTransitions = localMetadataTransitions;
-    await tb.initialize();
+
+    // switch to deserialize local metadata transition based on Object.keys() of authMetadata and ShareStore's
+    const AuthMetdataKeys = Object.keys(JSON.parse(stringify(new AuthMetadata(new Metadata(new Point("0", "0")), new BN("0", "hex")))));
+    const ShareStoreKeys = Object.keys(JSON.parse(stringify(new ShareStore(new Share("0", "0"), ""))));
+    const localTransitionShares: LocalTransitionShares = [];
+    const localTransitionData: LocalTransitionData = [];
+
+    localMetadataTransitions[0].forEach((x, index) => {
+      if (x) {
+        localTransitionShares.push(new BN(x, "hex"));
+      } else {
+        localTransitionShares.push(undefined);
+      }
+
+      const keys = Object.keys(localMetadataTransitions[1][index]);
+      if (keys.length === AuthMetdataKeys.length && keys.every((val) => AuthMetdataKeys.includes(val))) {
+        localTransitionData.push(AuthMetadata.fromJSON(localMetadataTransitions[1][index]));
+      } else if (keys.length === ShareStoreKeys.length && keys.every((val) => ShareStoreKeys.includes(val))) {
+        localTransitionData.push(ShareStore.fromJSON(localMetadataTransitions[1][index]));
+      } else {
+        throw CoreError.default("fromJSON failed. Could not deserialise localMetadataTransitions");
+      }
+    });
+
+    tb.localMetadataTransitions = [localTransitionShares, localTransitionData];
+
+    await tb.initialize({ neverInitializeNewKey: true });
     return tb;
   }
 }

@@ -227,9 +227,9 @@ export interface IAuthMetadata {
 
 export type IAuthMetadatas = IAuthMetadata[];
 export type ShareStores = ShareStore[];
-export type LocalTransitionShare = BN[];
+export type LocalTransitionShares = BN[];
 export type LocalTransitionData = [...IAuthMetadatas, ...ShareStores];
-export type LocalMetadataTransitions = [LocalTransitionShare, LocalTransitionData];
+export type LocalMetadataTransitions = [LocalTransitionShares, LocalTransitionData];
 
 export interface ITKeyApi {
   getMetadata(): IMetadata;
