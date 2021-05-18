@@ -220,6 +220,17 @@ export interface IPrivateKeyFormat {
   createPrivateKeyStore(privateKey: BN): SECP256k1NStore;
 }
 
+export interface IAuthMetadata {
+  metadata: IMetadata;
+  privKey: BN;
+}
+
+export type IAuthMetadatas = IAuthMetadata[];
+export type ShareStores = ShareStore[];
+export type LocalTransitionShare = BN[];
+export type LocalTransitionData = [...IAuthMetadatas, ...ShareStores];
+export type LocalMetadataTransitions = [LocalTransitionShare, LocalTransitionData];
+
 export interface ITKeyApi {
   getMetadata(): IMetadata;
   getStorageLayer(): IStorageLayer;
@@ -269,7 +280,7 @@ export interface ITKey extends ITKeyApi, ISerializable {
 
   privKey: BN;
 
-  metadataToSet: any[];
+  localMetadataTransitions: LocalMetadataTransitions;
 
   manualSync: boolean;
 

@@ -17,6 +17,8 @@ import {
   ITKeyApi,
   KEY_NOT_FOUND,
   KeyDetails,
+  LocalMetadataTransitions,
+  LocalTransitionData,
   ModuleMap,
   Point,
   Polynomial,
@@ -66,7 +68,7 @@ class ThresholdKey implements ITKey {
 
   manualSync: boolean;
 
-  metadataToSet: any[];
+  localMetadataTransitions: LocalMetadataTransitions;
 
   refreshMiddleware: RefreshMiddlewareMap;
 
@@ -94,7 +96,7 @@ class ThresholdKey implements ITKey {
     this.reconstructKeyMiddleware = {};
     this.shareSerializationMiddleware = undefined;
     this.storeDeviceShare = undefined;
-    this.metadataToSet = [[], []];
+    this.localMetadataTransitions = [[], []];
     this.setModuleReferences(); // Providing ITKeyApi access to modules
     this.haveWriteMetadataLock = "";
   }
@@ -470,7 +472,7 @@ class ThresholdKey implements ITKey {
     //   privKey: [...sharesToPush, ...newShareStoreSharesToPush, undefined],
     //   serviceProvider: this.serviceProvider,
     // });
-    await this.addMetadataToSet({
+    await this.addLocalMetadataTransitions({
       input: [...AuthMetadatas, newShareStores["1"]],
       privKey: [...sharesToPush, ...newShareStoreSharesToPush, undefined],
     });
@@ -543,7 +545,8 @@ class ThresholdKey implements ITKey {
     // });
 
     // acquireLock: false. Force push
-    await this.addMetadataToSet({ input: [...authMetadatas, shareStore], privKey: [...sharesToPush, undefined] });
+    const jointMetadata: LocalTransitionData = [...authMetadatas, shareStore];
+    await this.addLocalMetadataTransitions({ input: jointMetadata, privKey: [...sharesToPush, undefined] });
 
     // store metadata on metadata respective to shares
     for (let index = 0; index < shareIndexes.length; index += 1) {
@@ -567,20 +570,20 @@ class ThresholdKey implements ITKey {
     return result;
   }
 
-  async addMetadataToSet<T>(params: {
-    input: Array<T>;
+  async addLocalMetadataTransitions(params: {
+    input: LocalTransitionData;
     serviceProvider?: IServiceProvider;
     privKey?: Array<BN>;
     acquireLock?: boolean;
   }): Promise<void> {
     const { privKey, input } = params;
-    this.metadataToSet[0] = [...this.metadataToSet[0], ...privKey];
-    this.metadataToSet[1] = [...this.metadataToSet[1], ...input];
-    if (!this.manualSync) await this.syncMetadataToSet();
+    this.localMetadataTransitions[0] = [...this.localMetadataTransitions[0], ...privKey];
+    this.localMetadataTransitions[1] = [...this.localMetadataTransitions[1], ...input];
+    if (!this.manualSync) await this.syncLocalMetadataTransitions();
   }
 
-  async syncMetadataToSet(): Promise<void> {
-    if (!(Array.isArray(this.metadataToSet[0]) && this.metadataToSet[0].length > 0)) return;
+  async syncLocalMetadataTransitions(): Promise<void> {
+    if (!(Array.isArray(this.localMetadataTransitions[0]) && this.localMetadataTransitions[0].length > 0)) return;
 
     // get lock
     let acquiredLock = false;
@@ -589,11 +592,11 @@ class ThresholdKey implements ITKey {
       acquiredLock = true;
     }
     await this.storageLayer.setMetadataStream({
-      input: this.metadataToSet[1],
-      privKey: this.metadataToSet[0],
+      input: this.localMetadataTransitions[1],
+      privKey: this.localMetadataTransitions[0],
       serviceProvider: this.serviceProvider,
     });
-    this.metadataToSet = [[], []];
+    this.localMetadataTransitions = [[], []];
     this.lastFetchedCloudMetadata = this.metadata.clone();
     // release lock
     if (acquiredLock) await this.releaseWriteMetadataLock();
@@ -601,7 +604,7 @@ class ThresholdKey implements ITKey {
 
   // returns a new instance of metadata with updated state : TODO edit
   async updateMetadata(params?: { input?: ShareStore }): Promise<ThresholdKey> {
-    this.metadataToSet = [[], []];
+    this.localMetadataTransitions = [[], []];
     this.privKey = undefined;
 
     // reinit this.metadata
@@ -757,12 +760,11 @@ class ThresholdKey implements ITKey {
 
   async setAuthMetadataBulk(params: { input: Metadata[]; serviceProvider?: IServiceProvider; privKey?: BN[] }): Promise<void> {
     const { input, serviceProvider, privKey } = params;
-    const authMetadatas = [];
+    const authMetadatas = [] as AuthMetadata[];
     for (let i = 0; i < input.length; i += 1) {
       authMetadatas.push(new AuthMetadata(input[i], this.privKey));
     }
-    await this.addMetadataToSet({ input: authMetadatas, serviceProvider, privKey });
-    // return this.storageLayer.setMetadataStream({ input: authMetadatas, serviceProvider, privKey });
+    await this.addLocalMetadataTransitions({ input: authMetadatas, serviceProvider, privKey });
   }
 
   async getAuthMetadata(params: { serviceProvider?: IServiceProvider; privKey?: BN; includeLocalMetadataTransitions?: boolean }): Promise<Metadata> {
@@ -770,11 +772,11 @@ class ThresholdKey implements ITKey {
     // if we have transitions on local metadata, we want to look through that first.
     if (params.includeLocalMetadataTransitions) {
       let index = null;
-      this.metadataToSet[0].forEach((x, el) => {
+      this.localMetadataTransitions[0].forEach((x, el) => {
         if (x && x.cmp(params.privKey) === 0) index = el;
       });
       if (index !== null) {
-        authMetadata = this.metadataToSet[1][index];
+        authMetadata = this.localMetadataTransitions[1][index] as AuthMetadata;
         return authMetadata.metadata as Metadata;
       }
     }
@@ -784,6 +786,7 @@ class ThresholdKey implements ITKey {
     return authMetadata.metadata;
   }
 
+  // Lock functions
   async acquireWriteMetadataLock(): Promise<number> {
     if (this.haveWriteMetadataLock) return this.metadata.nonce;
     if (!this.privKey) {

@@ -1,4 +1,4 @@
-import { ecCurve, StringifiedType, stripHexPrefix, toPrivKeyEC } from "@tkey/common-types";
+import { ecCurve, IAuthMetadata, StringifiedType, stripHexPrefix, toPrivKeyEC } from "@tkey/common-types";
 import BN from "bn.js";
 import stringify from "json-stable-stringify";
 import { keccak256 } from "web3-utils";
@@ -6,7 +6,7 @@ import { keccak256 } from "web3-utils";
 import CoreError from "./errors";
 import Metadata from "./metadata";
 
-class AuthMetadata {
+class AuthMetadata implements IAuthMetadata {
   metadata: Metadata;
 
   privKey: BN;

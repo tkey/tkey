@@ -1,5 +1,5 @@
 /// <reference types="node" />
-import { BNString, CatchupToLatestShareResult, DeleteShareResult, EncryptedMessage, GenerateNewShareResult, IMetadata, InitializeNewKeyResult, IServiceProvider, IStorageLayer, ITKey, ITKeyApi, KeyDetails, ModuleMap, Polynomial, PolynomialID, ReconstructedKeyResult, ReconstructKeyMiddlewareMap, RefreshMiddlewareMap, RefreshSharesResult, ShareSerializationMiddleware, ShareStore, ShareStoreMap, ShareStorePolyIDShareIndexMap, StringifiedType, TKeyArgs, TkeyStoreItemType } from "@tkey/common-types";
+import { BNString, CatchupToLatestShareResult, DeleteShareResult, EncryptedMessage, GenerateNewShareResult, IMetadata, InitializeNewKeyResult, IServiceProvider, IStorageLayer, ITKey, ITKeyApi, KeyDetails, LocalMetadataTransitions, LocalTransitionData, ModuleMap, Polynomial, PolynomialID, ReconstructedKeyResult, ReconstructKeyMiddlewareMap, RefreshMiddlewareMap, RefreshSharesResult, ShareSerializationMiddleware, ShareStore, ShareStoreMap, ShareStorePolyIDShareIndexMap, StringifiedType, TKeyArgs, TkeyStoreItemType } from "@tkey/common-types";
 import BN from "bn.js";
 import AuthMetadata from "./authMetadata";
 import Metadata from "./metadata";
@@ -13,7 +13,7 @@ declare class ThresholdKey implements ITKey {
     lastFetchedCloudMetadata: Metadata;
     metadata: Metadata;
     manualSync: boolean;
-    metadataToSet: any[];
+    localMetadataTransitions: LocalMetadataTransitions;
     refreshMiddleware: RefreshMiddlewareMap;
     reconstructKeyMiddleware: ReconstructKeyMiddlewareMap;
     shareSerializationMiddleware: ShareSerializationMiddleware;
@@ -51,13 +51,13 @@ declare class ThresholdKey implements ITKey {
         initializeModules?: boolean;
         importedKey?: BN;
     }): Promise<InitializeNewKeyResult>;
-    addMetadataToSet<T>(params: {
-        input: Array<T>;
+    addLocalMetadataTransitions(params: {
+        input: LocalTransitionData;
         serviceProvider?: IServiceProvider;
         privKey?: Array<BN>;
         acquireLock?: boolean;
     }): Promise<void>;
-    syncMetadataToSet(): Promise<void>;
+    syncLocalMetadataTransitions(): Promise<void>;
     updateMetadata(params?: {
         input?: ShareStore;
     }): Promise<ThresholdKey>;
@@ -100,7 +100,7 @@ declare class ThresholdKey implements ITKey {
     deleteShareDescription(shareIndex: string, description: string, updateMetadata?: boolean): Promise<void>;
     encrypt(data: Buffer): Promise<EncryptedMessage>;
     decrypt(encryptedMessage: EncryptedMessage): Promise<Buffer>;
-    setTKeyStoreItem(moduleName: string, data: TkeyStoreItemType, updateMetadata?: boolean): Promise<void>;
+    setTKeyStoreItem(moduleName: string, data: TkeyStoreItemType): Promise<void>;
     deleteTKeyStoreItem(moduleName: string, id: string): Promise<void>;
     getTKeyStore(moduleName: string): Promise<TkeyStoreItemType[]>;
     getTKeyStoreItem(moduleName: string, id: string): Promise<TkeyStoreItemType>;

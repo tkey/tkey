@@ -57,7 +57,7 @@ manualSyncModes.forEach((mode) => {
 
     it(`#should be able to reconstruct key when initializing a key, manualSync=${mode}`, async function () {
       const resp1 = await tb.initializeNewKey({ initializeModules: true });
-      await tb.syncMetadataToSet();
+      await tb.syncLocalMetadataTransitions();
 
       const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
       await tb2.initialize({ neverInitializeNewKey: true });
@@ -71,7 +71,7 @@ manualSyncModes.forEach((mode) => {
       let determinedShare = new BN(keccak256("user answer blublu").slice(2), "hex");
       determinedShare = determinedShare.umod(ecCurve.curve.n);
       const resp1 = await tb.initializeNewKey({ determinedShare, initializeModules: true });
-      await tb.syncMetadataToSet();
+      await tb.syncLocalMetadataTransitions();
 
       const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
       await tb2.initialize();
@@ -87,7 +87,7 @@ manualSyncModes.forEach((mode) => {
       const { newShareStores: newShareStores1, newShareIndex: newShareIndex1 } = await tb.generateNewShare();
       const { newShareStores } = await tb.deleteShare(newShareIndex1);
 
-      await tb.syncMetadataToSet();
+      await tb.syncLocalMetadataTransitions();
 
       const tb2 = new ThresholdKey({ serviceProvider: tb.serviceProvider, storageLayer: tb.storageLayer });
       await tb2.initialize();
@@ -103,7 +103,7 @@ manualSyncModes.forEach((mode) => {
       const { newShareIndex: newShareIndex1 } = await tb.generateNewShare();
       const { newShareIndex: newShareIndex2 } = await tb.generateNewShare();
       await tb.deleteShare(newShareIndex1);
-      await tb.syncMetadataToSet();
+      await tb.syncLocalMetadataTransitions();
 
       rejects(async () => {
         await tb.deleteShare(newShareIndex2);
@@ -113,7 +113,7 @@ manualSyncModes.forEach((mode) => {
       await tb.initializeNewKey({ initializeModules: true });
       const { newShareStores: newShareStores1, newShareIndex: newShareIndex1 } = await tb.generateNewShare();
       await tb.deleteShare(newShareIndex1);
-      await tb.syncMetadataToSet();
+      await tb.syncLocalMetadataTransitions();
 
       const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
       await tb2.initialize();
@@ -123,7 +123,7 @@ manualSyncModes.forEach((mode) => {
     });
     it(`#should be able to reshare a key and retrieve from service provider, manualSync=${mode}`, async function () {
       const resp1 = await tb.initializeNewKey({ initializeModules: true });
-      await tb.syncMetadataToSet();
+      await tb.syncLocalMetadataTransitions();
 
       const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
       await tb2.initialize({ neverInitializeNewKey: true });
@@ -133,7 +133,7 @@ manualSyncModes.forEach((mode) => {
         fail("key should be able to be reconstructed");
       }
       const resp2 = await tb2.generateNewShare();
-      await tb2.syncMetadataToSet();
+      await tb2.syncLocalMetadataTransitions();
 
       const tb3 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
       await tb3.initialize();
@@ -147,7 +147,7 @@ manualSyncModes.forEach((mode) => {
       let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
       userInput = userInput.umod(ecCurve.curve.n);
       const resp1 = await tb.initializeNewKey({ userInput, initializeModules: true });
-      await tb.syncMetadataToSet();
+      await tb.syncLocalMetadataTransitions();
 
       const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
       await tb2.initialize({ input: resp1.userShare });
@@ -163,7 +163,7 @@ manualSyncModes.forEach((mode) => {
       userInput = userInput.umod(ecCurve.curve.n);
       const resp1 = await tb.initializeNewKey({ userInput, initializeModules: true });
       const newShares = await tb.generateNewShare();
-      await tb.syncMetadataToSet();
+      await tb.syncLocalMetadataTransitions();
 
       const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
       await tb2.initialize({ input: resp1.userShare });
@@ -179,7 +179,7 @@ manualSyncModes.forEach((mode) => {
       userInput = userInput.umod(ecCurve.curve.n);
       const resp1 = await tb.initializeNewKey({ userInput, initializeModules: true });
       const newShares = await tb.generateNewShare();
-      await tb.syncMetadataToSet();
+      await tb.syncLocalMetadataTransitions();
 
       const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
       await tb2.initialize({ input: resp1.userShare });
@@ -197,7 +197,7 @@ manualSyncModes.forEach((mode) => {
     });
     it(`#should be able to reshare a key and retrieve from service provider serialization, manualSync=${mode}`, async function () {
       const resp1 = await tb.initializeNewKey({ initializeModules: true });
-      await tb.syncMetadataToSet();
+      await tb.syncLocalMetadataTransitions();
 
       const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
       await tb2.initialize();
@@ -208,7 +208,7 @@ manualSyncModes.forEach((mode) => {
         fail("key should be able to be reconstructed");
       }
       const resp2 = await tb2.generateNewShare();
-      await tb2.syncMetadataToSet();
+      await tb2.syncLocalMetadataTransitions();
 
       const tb3 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
       await tb3.initialize();
@@ -227,7 +227,7 @@ manualSyncModes.forEach((mode) => {
     it(`#should be able to import and reconstruct an imported key, manualSync=${mode}`, async function () {
       const importedKey = new BN(generatePrivate());
       const resp1 = await tb.initializeNewKey({ importedKey, initializeModules: true });
-      await tb.syncMetadataToSet();
+      await tb.syncLocalMetadataTransitions();
 
       const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
       await tb2.initialize();
@@ -240,7 +240,7 @@ manualSyncModes.forEach((mode) => {
     });
     it(`#should be able to reconstruct key, even with old metadata, manualSync=${mode}`, async function () {
       const resp1 = await tb.initializeNewKey({ initializeModules: true });
-      await tb.syncMetadataToSet();
+      await tb.syncLocalMetadataTransitions();
 
       const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL });
       await tb2.initialize(); // initialize sdk with old metadata
@@ -353,7 +353,7 @@ manualSyncModes.forEach((mode) => {
     it(`#should be able to reconstruct key and initialize a key with security questions, metadataSync=${mode}`, async function () {
       const resp1 = await tb.initializeNewKey({ initializeModules: true });
       await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
-      await tb.syncMetadataToSet();
+      await tb.syncLocalMetadataTransitions();
 
       const tb2 = new ThresholdKey({
         serviceProvider: defaultSP,
@@ -378,7 +378,7 @@ manualSyncModes.forEach((mode) => {
         modules: { securityQuestions: new SecurityQuestionsModule() },
       });
       await tb.generateNewShare();
-      await tb.syncMetadataToSet();
+      await tb.syncLocalMetadataTransitions();
 
       await tb2.initialize();
 
@@ -393,7 +393,7 @@ manualSyncModes.forEach((mode) => {
       const resp1 = await tb.initializeNewKey({ initializeModules: true });
       await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
       await tb.modules.securityQuestions.changeSecurityQuestionAndAnswer("dodo", "who is your cat?");
-      await tb.syncMetadataToSet();
+      await tb.syncLocalMetadataTransitions();
 
       const tb2 = new ThresholdKey({
         serviceProvider: defaultSP,
@@ -413,7 +413,7 @@ manualSyncModes.forEach((mode) => {
       const resp1 = await tb.initializeNewKey({ initializeModules: true });
       await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
       await tb.modules.securityQuestions.changeSecurityQuestionAndAnswer("dodo", "who is your cat?");
-      await tb.syncMetadataToSet();
+      await tb.syncLocalMetadataTransitions();
 
       const tb2 = new ThresholdKey({
         serviceProvider: defaultSP,
@@ -450,7 +450,7 @@ manualSyncModes.forEach((mode) => {
         fail("answers should be the same");
       }
       await tb.modules.securityQuestions.changeSecurityQuestionAndAnswer(ans2, qn);
-      await tb.syncMetadataToSet();
+      await tb.syncLocalMetadataTransitions();
 
       const tb2 = new ThresholdKey({
         serviceProvider: defaultSP,
@@ -482,7 +482,7 @@ manualSyncModes.forEach((mode) => {
         modules: { shareTransfer: new ShareTransferModule() },
       });
       const resp1 = await tb.initializeNewKey({ initializeModules: true });
-      await tb.syncMetadataToSet();
+      await tb.syncLocalMetadataTransitions();
 
       const tb2 = new ThresholdKey({
         serviceProvider: defaultSP,
@@ -502,7 +502,7 @@ manualSyncModes.forEach((mode) => {
       const result = await tb.generateNewShare();
 
       await tb.modules.shareTransfer.approveRequest(pubkey, result.newShareStores[result.newShareIndex.toString("hex")]);
-      await tb.syncMetadataToSet();
+      await tb.syncLocalMetadataTransitions();
 
       await tb2.modules.shareTransfer.startRequestStatusCheck(pubkey);
       // eslint-disable-next-line promise/param-names
@@ -523,7 +523,7 @@ manualSyncModes.forEach((mode) => {
         modules: { shareTransfer: new ShareTransferModule() },
       });
       const resp1 = await tb.initializeNewKey({ initializeModules: true });
-      await tb.syncMetadataToSet();
+      await tb.syncLocalMetadataTransitions();
 
       const tb2 = new ThresholdKey({
         serviceProvider: defaultSP,
@@ -560,7 +560,7 @@ manualSyncModes.forEach((mode) => {
         modules: { shareTransfer: new ShareTransferModule() },
       });
       await tb.initializeNewKey({ initializeModules: true });
-      await tb.syncMetadataToSet();
+      await tb.syncLocalMetadataTransitions();
 
       const tb2 = new ThresholdKey({
         serviceProvider: defaultSP,
@@ -587,7 +587,7 @@ manualSyncModes.forEach((mode) => {
         modules: { shareTransfer: new ShareTransferModule() },
       });
       await tb.initializeNewKey({ initializeModules: true });
-      await tb.syncMetadataToSet();
+      await tb.syncLocalMetadataTransitions();
 
       await tb.modules.shareTransfer.resetShareTransferStore();
       const newRequests = await tb.modules.shareTransfer.getShareTransferStore();
@@ -606,7 +606,7 @@ manualSyncModes.forEach((mode) => {
       });
       const resp1 = await tb.initializeNewKey({ initializeModules: true });
       const exportedSeedShare = await tb.outputShare(resp1.deviceShare.share.shareIndex, "mnemonic");
-      await tb.syncMetadataToSet();
+      await tb.syncLocalMetadataTransitions();
 
       const tb2 = new ThresholdKey({
         serviceProvider: defaultSP,
@@ -643,7 +643,7 @@ manualSyncModes.forEach((mode) => {
       const seedPhraseToSet = "seed sock milk update focus rotate barely fade car face mechanic mercy";
       const resp1 = await tb.initializeNewKey({ initializeModules: true });
       await tb.modules.seedPhrase.setSeedPhrase("HD Key Tree", seedPhraseToSet);
-      await tb.syncMetadataToSet();
+      await tb.syncLocalMetadataTransitions();
       const [returnedSeed] = await tb.modules.seedPhrase.getSeedPhrases();
       strictEqual(returnedSeed.seedPhrase, seedPhraseToSet);
 
@@ -668,7 +668,7 @@ manualSyncModes.forEach((mode) => {
       const seedPhraseToSet = "seed sock milk update focus rotate barely fade car face mechanic mercy";
       await tb.initializeNewKey({ initializeModules: true });
       await tb.modules.seedPhrase.setSeedPhrase("HD Key Tree", seedPhraseToSet);
-      await tb.syncMetadataToSet();
+      await tb.syncLocalMetadataTransitions();
 
       const actualPrivateKeys = [new BN("70dc3117300011918e26b02176945cc15c3d548cf49fd8418d97f93af699e46", "hex")];
       const derivedKeys = await tb.modules.seedPhrase.getAccounts();
@@ -678,7 +678,7 @@ manualSyncModes.forEach((mode) => {
     it(`#should be able to generate seed phrase if not given, manualSync=${mode}`, async function () {
       await tb.initializeNewKey({ initializeModules: true });
       await tb.modules.seedPhrase.setSeedPhrase("HD Key Tree");
-      await tb.syncMetadataToSet();
+      await tb.syncLocalMetadataTransitions();
 
       const [seed] = await tb.modules.seedPhrase.getSeedPhrases();
       const derivedKeys = await tb.modules.seedPhrase.getAccounts();
@@ -691,11 +691,11 @@ manualSyncModes.forEach((mode) => {
       await tb.initializeNewKey({ initializeModules: true });
       await tb.modules.seedPhrase.setSeedPhrase("HD Key Tree", oldSeedPhrase);
       // await tb.modules.seedPhrase.setSeedPhrase("HD Key Tree");
-      await tb.syncMetadataToSet();
+      await tb.syncLocalMetadataTransitions();
 
       const newSeedPhrase = "trim later month olive fit shoulder entry laptop jeans affair belt drip jealous mirror fancy";
       await tb.modules.seedPhrase.CRITICAL_changeSeedPhrase(oldSeedPhrase, newSeedPhrase);
-      await tb.syncMetadataToSet();
+      await tb.syncLocalMetadataTransitions();
 
       const secondStoredSeedPhrases = await tb.modules.seedPhrase.getSeedPhrases();
 
@@ -713,7 +713,7 @@ manualSyncModes.forEach((mode) => {
         seedPhrase: seedPhraseStores[1].seedPhrase,
         numberOfWallets: 2,
       });
-      await tb.syncMetadataToSet();
+      await tb.syncLocalMetadataTransitions();
 
       // console.log(storedSeedPhrase);
       const secondStoredSeedPhrases = await tb.modules.seedPhrase.getSeedPhrases();
@@ -730,7 +730,7 @@ manualSyncModes.forEach((mode) => {
       ];
       await tb.modules.privateKeyModule.setPrivateKey("secp256k1n", actualPrivateKeys[0]);
       await tb.modules.privateKeyModule.setPrivateKey("secp256k1n", actualPrivateKeys[1]);
-      await tb.syncMetadataToSet();
+      await tb.syncLocalMetadataTransitions();
 
       const getAccounts = await tb.modules.privateKeyModule.getAccounts();
       deepStrictEqual(
@@ -744,7 +744,7 @@ manualSyncModes.forEach((mode) => {
 
       await tb.modules.privateKeyModule.setPrivateKey("secp256k1n");
       await tb.modules.privateKeyModule.setPrivateKey("secp256k1n");
-      await tb.syncMetadataToSet();
+      await tb.syncLocalMetadataTransitions();
 
       const accounts = await tb.modules.privateKeyModule.getAccounts();
       strictEqual(accounts.length, 2);
@@ -762,7 +762,7 @@ manualSyncModes.forEach((mode) => {
       ];
       await tb.modules.privateKeyModule.setPrivateKey("secp256k1n", actualPrivateKeys[0]);
       await tb.modules.privateKeyModule.setPrivateKey("secp256k1n", actualPrivateKeys[1]);
-      await tb.syncMetadataToSet();
+      await tb.syncLocalMetadataTransitions();
 
       const metamaskSeedPhraseFormat2 = new MetamaskSeedPhraseFormat("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68");
       const tb2 = new ThresholdKey({
@@ -806,7 +806,7 @@ manualSyncModes.forEach((mode) => {
     it(`#locks should fail when tkey/nonce is updated, manualSync=${mode}`, async function () {
       const tb = new ThresholdKey({ serviceProvider: defaultSP, manualSync: mode, storageLayer: defaultSL });
       const resp1 = await tb.initializeNewKey({ initializeModules: true });
-      await tb.syncMetadataToSet();
+      await tb.syncLocalMetadataTransitions();
 
       const tb2 = new ThresholdKey({ serviceProvider: defaultSP, manualSync: mode, storageLayer: defaultSL });
       await tb2.initialize();
@@ -816,12 +816,12 @@ manualSyncModes.forEach((mode) => {
         fail("key should be able to be reconstructed");
       }
       await tb2.generateNewShare();
-      await tb2.syncMetadataToSet();
+      await tb2.syncLocalMetadataTransitions();
 
       let outsideErr;
       try {
         await tb.generateNewShare();
-        await tb.syncMetadataToSet();
+        await tb.syncLocalMetadataTransitions();
       } catch (err) {
         outsideErr = err;
       }
@@ -833,7 +833,7 @@ manualSyncModes.forEach((mode) => {
     it(`#locks should not allow for writes of the same nonce, manualSync=${mode}`, async function () {
       const tb = new ThresholdKey({ serviceProvider: defaultSP, manualSync: mode, storageLayer: defaultSL });
       const resp1 = await tb.initializeNewKey({ initializeModules: true });
-      await tb.syncMetadataToSet();
+      await tb.syncLocalMetadataTransitions();
 
       const tb2 = new ThresholdKey({ serviceProvider: defaultSP, manualSync: mode, storageLayer: defaultSL });
       await tb2.initialize();
@@ -861,7 +861,7 @@ manualSyncModes.forEach((mode) => {
       // sync shares
       const promises2 = [];
       for (let i = 0; i < alltbs.length; i += 1) {
-        promises2.push(alltbs[i].syncMetadataToSet());
+        promises2.push(alltbs[i].syncLocalMetadataTransitions());
       }
       const res = await Promise.allSettled(promises2);
 
@@ -877,7 +877,7 @@ manualSyncModes.forEach((mode) => {
     it(`#locks should fail when tkey/nonce is updated in non-manualSync mode, manualSync=${mode}`, async function () {
       const tb = new ThresholdKey({ serviceProvider: defaultSP, manualSync: mode, storageLayer: defaultSL });
       const resp1 = await tb.initializeNewKey({ initializeModules: true });
-      await tb.syncMetadataToSet();
+      await tb.syncLocalMetadataTransitions();
 
       const tb2 = new ThresholdKey({ serviceProvider: defaultSP, manualSync: mode, storageLayer: defaultSL });
       await tb2.initialize();
@@ -887,12 +887,12 @@ manualSyncModes.forEach((mode) => {
         fail("key should be able to be reconstructed");
       }
       await tb2.generateNewShare();
-      await tb2.syncMetadataToSet();
+      await tb2.syncLocalMetadataTransitions();
 
       await rejects(async () => {
         await tb.generateNewShare();
         await tb.generateNewShare();
-        await tb.syncMetadataToSet();
+        await tb.syncLocalMetadataTransitions();
       }, Error);
     });
   });
