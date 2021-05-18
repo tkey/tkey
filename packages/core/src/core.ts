@@ -5,6 +5,7 @@ import {
   DeleteShareResult,
   encrypt,
   EncryptedMessage,
+  FromJSONConstructor,
   GenerateNewShareResult,
   generatePrivateExcludingIndexes,
   getPubKeyECC,
@@ -160,8 +161,18 @@ class ThresholdKey implements ITKey {
     } else if (!input) {
       // default to use service provider
       // first we see if a share has been kept for us
-      const rawServiceProviderShare = await this.storageLayer.getMetadata<{ message?: string }>({ serviceProvider: this.serviceProvider });
-      if (rawServiceProviderShare.message === KEY_NOT_FOUND) {
+      const rawServiceProviderShare = await this.getGenericMetadataWithTransitionStates({
+        serviceProvider: this.serviceProvider,
+        includeLocalMetadataTransitions: true,
+        localMetadataTransitions: previousLocalMetadataTransitions,
+        fromJSONConstructor: {
+          fromJSON(val: StringifiedType) {
+            return val;
+          },
+        },
+      });
+      const noKeyFound: { message?: string } = rawServiceProviderShare as { message?: string };
+      if (noKeyFound.message === KEY_NOT_FOUND) {
         if (neverInitializeNewKey) {
           throw CoreError.default("key has not yet been generated");
         }
@@ -570,12 +581,6 @@ class ThresholdKey implements ITKey {
 
     const authMetadatas = this.generateAuthMetadata({ input: metadataToPush });
     // because this is the first time we're setting metadata there is no need to acquire a lock
-    // await this.storageLayer.setMetadataStream({
-    //   input: [...authMetadatas, shareStore],
-    //   privKey: [...sharesToPush, undefined],
-    //   serviceProvider: this.serviceProvider,
-    // });
-
     // acquireLock: false. Force push
     await this.addLocalMetadataTransitions({ input: [...authMetadatas, shareStore], privKey: [...sharesToPush, undefined] });
 
@@ -799,22 +804,39 @@ class ThresholdKey implements ITKey {
   }
 
   async getAuthMetadata(params: { serviceProvider?: IServiceProvider; privKey?: BN; includeLocalMetadataTransitions?: boolean }): Promise<Metadata> {
-    let authMetadata: AuthMetadata;
-    // if we have transitions on local metadata, we want to look through that first.
+    const raw = await this.getGenericMetadataWithTransitionStates({ ...params, fromJSONConstructor: AuthMetadata });
+    const authMetadata = raw as AuthMetadata;
+    return authMetadata.metadata;
+  }
+
+  // fetches the latest metadata potentially searching in local transition states first
+  async getGenericMetadataWithTransitionStates(params: {
+    fromJSONConstructor: FromJSONConstructor;
+    serviceProvider?: IServiceProvider;
+    privKey?: BN;
+    includeLocalMetadataTransitions?: boolean;
+    localMetadataTransitions?: LocalMetadataTransitions;
+  }): Promise<unknown> {
+    if (!(params.serviceProvider || params.privKey)) {
+      throw CoreError.default("require either serviceProvider or priv key in getGenericMetadataWithTransitionStates");
+    }
     if (params.includeLocalMetadataTransitions) {
+      const transitions: LocalMetadataTransitions = params.localMetadataTransitions ? params.localMetadataTransitions : this.localMetadataTransitions;
       let index = null;
-      this.localMetadataTransitions[0].forEach((x, el) => {
-        if (x && x.cmp(params.privKey) === 0) index = el;
-      });
+      for (let i = transitions[0].length - 1; i >= 0; i -= 1) {
+        const x = transitions[0][i];
+        if (params.privKey) {
+          if (x && x.cmp(params.privKey) === 0) index = i;
+        } else if (params.serviceProvider) {
+          if (!x) index = i;
+        }
+      }
       if (index !== null) {
-        authMetadata = this.localMetadataTransitions[1][index] as AuthMetadata;
-        return authMetadata.metadata as Metadata;
+        return transitions[1][index];
       }
     }
-
     const raw = await this.storageLayer.getMetadata(params);
-    authMetadata = AuthMetadata.fromJSON(raw);
-    return authMetadata.metadata;
+    return params.fromJSONConstructor.fromJSON(raw);
   }
 
   // Lock functions

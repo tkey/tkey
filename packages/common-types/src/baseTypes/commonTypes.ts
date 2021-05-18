@@ -86,3 +86,7 @@ export type MockStorageLayerArgs = {
 export type ShareDescriptionMap = {
   [shareIndexStr: string]: string[];
 };
+
+export type FromJSONConstructor = {
+  fromJSON(value: StringifiedType): any;
+};

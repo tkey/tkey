@@ -204,7 +204,10 @@ manualSyncModes.forEach((mode) => {
       debugger
 
       const stringified = JSON.stringify(tb);
-      const tb3 = await ThresholdKey.fromJSON(JSON.parse(stringified), { serviceProvider: defaultSP, storageLayer: defaultSL, manualSync: mode });
+      const tb3 = await ThresholdKey.fromJSON(JSON.parse(stringified), { serviceProvider: defaultSP, storageLayer: defaultSL });
+      if (tb3.manualSync !== mode) {
+        fail(`manualSync should be ${mode}`);
+      }
       const finalKey = await tb3.reconstructKey();
       const shareToVerify = tb3.outputShareStore(shareIndex);
       strictEqual(shareStores[shareIndex.toString("hex")].share.share.toString("hex"), shareToVerify.share.share.toString("hex"));
