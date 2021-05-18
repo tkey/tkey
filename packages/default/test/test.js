@@ -186,8 +186,7 @@ manualSyncModes.forEach((mode) => {
       await tb2.initialize({ input: resp1.userShare });
       tb2.inputShareStore(newShares.newShareStores[resp1.deviceShare.share.shareIndex.toString("hex")]);
       const reconstructedKey = await tb2.reconstructKey();
-      // this will test fromJSON in manualSync:true
-      const { newShareStores: shareStores, newShareIndex: shareIndex } = await tb2.generateNewShare();
+      await tb2.syncLocalMetadataTransitions();
       if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
         fail("key should be able to be reconstructed");
       }
@@ -195,11 +194,57 @@ manualSyncModes.forEach((mode) => {
       const stringified = JSON.stringify(tb2);
       const tb3 = await ThresholdKey.fromJSON(JSON.parse(stringified), { serviceProvider: defaultSP, storageLayer: defaultSL });
       const finalKey = await tb3.reconstructKey();
+      strictEqual(finalKey.toString("hex"), reconstructedKey.toString("hex"), "Incorrect serialization");
+    });
+    it(`#should serialize and deserialize correctly keeping localTransitions consistant before syncing NewKeyAssign manualSync=${mode}`, async function () {
+      let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
+      userInput = userInput.umod(ecCurve.curve.n);
+      const resp1 = await tb.initializeNewKey({ userInput, initializeModules: true });
+      const { newShareStores: shareStores, newShareIndex: shareIndex } = await tb.generateNewShare();
+
+      const stringified = JSON.stringify(tb);
+      const tb3 = await ThresholdKey.fromJSON(JSON.parse(stringified), { serviceProvider: defaultSP, storageLayer: defaultSL });
+      const finalKey = await tb3.reconstructKey();
       const shareToVerify = tb3.outputShareStore(shareIndex);
       strictEqual(shareStores[shareIndex.toString("hex")].share.share.toString("hex"), shareToVerify.share.share.toString("hex"));
-
       await tb3.syncLocalMetadataTransitions();
-      strictEqual(finalKey.toString("hex"), reconstructedKey.toString("hex"), "Incorrect serialization");
+      strictEqual(finalKey.privKey.toString("hex"), resp1.privKey.toString("hex"), "Incorrect serialization");
+
+      const tb4 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL, manualSync: mode });
+      await tb4.initialize({ input: resp1.userShare });
+      tb4.inputShareStore(shareStores[shareIndex.toString("hex")]);
+      const reconstructedKey2 = await tb4.reconstructKey();
+      if (resp1.privKey.cmp(reconstructedKey2.privKey) !== 0) {
+        fail("key should be able to be reconstructed");
+      }
+    });
+
+    it(`#should serialize and deserialize correctly keeping localTransitions consistant afterNewKeyAssign manualSync=${mode}`, async function () {
+      let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
+      userInput = userInput.umod(ecCurve.curve.n);
+      const resp1 = await tb.initializeNewKey({ userInput, initializeModules: true });
+      const newShares = await tb.generateNewShare();
+      await tb.syncLocalMetadataTransitions();
+
+      const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL, manualSync: mode });
+      await tb2.initialize({ input: resp1.userShare });
+      tb2.inputShareStore(newShares.newShareStores[resp1.deviceShare.share.shareIndex.toString("hex")]);
+      const reconstructedKey = await tb2.reconstructKey();
+      // this will test fromJSON in manualSync:true
+      const { newShareStores: shareStores, newShareIndex: shareIndex } = await tb2.generateNewShare();
+      if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
+        fail("key should be able to be reconstructed");
+      }
+      debugger
+
+      const stringified = JSON.stringify(tb2);
+      const tb3 = await ThresholdKey.fromJSON(JSON.parse(stringified), { serviceProvider: defaultSP, storageLayer: defaultSL });
+      const finalKey = await tb3.reconstructKey();
+      const shareToVerify = tb3.outputShareStore(shareIndex);
+      strictEqual(shareStores[shareIndex.toString("hex")].share.share.toString("hex"), shareToVerify.share.share.toString("hex"));
+      debugger
+      await tb3.syncLocalMetadataTransitions();
+      strictEqual(finalKey.privKey.toString("hex"), reconstructedKey.privKey.toString("hex"), "Incorrect serialization");
 
       const tb4 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL, manualSync: mode });
       await tb4.initialize({ input: resp1.userShare });

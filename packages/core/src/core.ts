@@ -142,9 +142,16 @@ class ThresholdKey implements ITKey {
     throw CoreError.metadataUndefined();
   }
 
-  async initialize(params?: { input?: ShareStore; importKey?: BN; neverInitializeNewKey?: boolean }): Promise<KeyDetails> {
+  async initialize(params?: {
+    input?: ShareStore;
+    importKey?: BN;
+    neverInitializeNewKey?: boolean;
+    transitionMetadata?: Metadata;
+    previouslyFetchedCloudMetadata?: Metadata;
+    previousLocalMetadataTransitions?: LocalMetadataTransitions;
+  }): Promise<KeyDetails> {
     const p = params || {};
-    const { input, importKey, neverInitializeNewKey } = p;
+    const { input, importKey, neverInitializeNewKey, transitionMetadata, previouslyFetchedCloudMetadata, previousLocalMetadataTransitions } = p;
     let shareStore: ShareStore;
     if (input instanceof ShareStore) {
       shareStore = input;
@@ -154,7 +161,6 @@ class ThresholdKey implements ITKey {
       // default to use service provider
       // first we see if a share has been kept for us
       const rawServiceProviderShare = await this.storageLayer.getMetadata<{ message?: string }>({ serviceProvider: this.serviceProvider });
-
       if (rawServiceProviderShare.message === KEY_NOT_FOUND) {
         if (neverInitializeNewKey) {
           throw CoreError.default("key has not yet been generated");
@@ -169,15 +175,40 @@ class ThresholdKey implements ITKey {
       throw CoreError.default("Input is not supported");
     }
 
-    // we fetch metadata for the account from the share
-    const latestShareDetails = await this.catchupToLatestShare({ shareStore, includeLocalMetadataTransitions: true });
-    this.metadata = latestShareDetails.shareMetadata;
-    this.lastFetchedCloudMetadata = latestShareDetails.shareMetadata.clone();
+    // We determine the latest metadata on the SDK and if there has been
+    // needed transtions to include
+    let currentMetadata: Metadata;
+    let latestCloudMetadata: Metadata;
+
+    // we fetch the latest metadata for the account from the share
+    const latestShareDetails = await this.catchupToLatestShare({ shareStore });
+    // if we've been provided with previouslyFetchedCloudMetadata we are reinitializing
+    // so lets check if the cloud metadata has been updated or not from previously
+    if (previouslyFetchedCloudMetadata) {
+      if (previouslyFetchedCloudMetadata.nonce < latestShareDetails.shareMetadata.nonce) {
+        throw CoreError.default("previouslyFetchedCloudMetadata provided in initalization is outdated");
+      } else if (previouslyFetchedCloudMetadata.nonce > latestShareDetails.shareMetadata.nonce) {
+        throw CoreError.default("previouslyFetchedCloudMetadata.nonce should never be higher than the latestShareDetails, please contact support");
+      }
+      latestCloudMetadata = previouslyFetchedCloudMetadata;
+    } else {
+      latestCloudMetadata = latestShareDetails.shareMetadata.clone();
+    }
+    // If we've been provided with transition metadata we use that as the current metadata instead
+    // as we want to maintain state before and after serialization.
+    // (Given that the checks for cloud metadata pass)
+    if (transitionMetadata && previousLocalMetadataTransitions) {
+      currentMetadata = transitionMetadata;
+      this.localMetadataTransitions = previousLocalMetadataTransitions;
+    } else {
+      currentMetadata = latestShareDetails.shareMetadata;
+    }
+
+    this.lastFetchedCloudMetadata = latestCloudMetadata;
+    this.metadata = currentMetadata;
     this.inputShareStore(latestShareDetails.latestShare);
-    // now that we have metadata we set the requirements for reconstruction
 
     // initialize modules
-    // this.setModuleReferences();
     await this.initializeModules();
 
     return this.getKeyDetails();
@@ -1026,17 +1057,17 @@ class ThresholdKey implements ITKey {
       enableLogging: this.enableLogging,
       privKey: this.privKey ? this.privKey.toString("hex") : undefined,
       metadata: this.metadata,
+      lastFetchedCloudMetadata: this.lastFetchedCloudMetadata,
       localMetadataTransitions: this.localMetadataTransitions,
       manualSync: this.manualSync,
     };
   }
 
   static async fromJSON(value: StringifiedType, args: TKeyArgs): Promise<ThresholdKey> {
-    const { enableLogging, privKey, metadata, shares, localMetadataTransitions, manualSync } = value;
+    const { enableLogging, privKey, metadata, shares, localMetadataTransitions, manualSync, lastFetchedCloudMetadata } = value;
     const { storageLayer, serviceProvider, modules } = args;
     const tb = new ThresholdKey({ enableLogging, storageLayer, serviceProvider, modules, manualSync });
     if (privKey) tb.privKey = new BN(privKey, "hex");
-    if (metadata) tb.metadata = Metadata.fromJSON(metadata);
 
     for (const key in shares) {
       if (Object.prototype.hasOwnProperty.call(shares, key)) {
@@ -1066,17 +1097,29 @@ class ThresholdKey implements ITKey {
 
       const keys = Object.keys(localMetadataTransitions[1][index]);
       if (keys.length === AuthMetdataKeys.length && keys.every((val) => AuthMetdataKeys.includes(val))) {
-        localTransitionData.push(AuthMetadata.fromJSON(localMetadataTransitions[1][index]));
+        const tempAuth = AuthMetadata.fromJSON(localMetadataTransitions[1][index]);
+        tempAuth.privKey = privKey;
+        localTransitionData.push(tempAuth);
       } else if (keys.length === ShareStoreKeys.length && keys.every((val) => ShareStoreKeys.includes(val))) {
         localTransitionData.push(ShareStore.fromJSON(localMetadataTransitions[1][index]));
       } else {
         throw CoreError.default("fromJSON failed. Could not deserialise localMetadataTransitions");
       }
     });
-
-    tb.localMetadataTransitions = [localTransitionShares, localTransitionData];
-
-    await tb.initialize({ neverInitializeNewKey: true });
+    if (metadata || lastFetchedCloudMetadata) {
+      let tempMetadata;
+      let tempCloud;
+      if (metadata) tempMetadata = Metadata.fromJSON(metadata);
+      if (lastFetchedCloudMetadata) tempCloud = Metadata.fromJSON(lastFetchedCloudMetadata);
+      await tb.initialize({
+        neverInitializeNewKey: true,
+        transitionMetadata: tempMetadata,
+        previouslyFetchedCloudMetadata: tempCloud,
+        previousLocalMetadataTransitions: [localTransitionShares, localTransitionData],
+      });
+    } else {
+      await tb.initialize({ neverInitializeNewKey: true });
+    }
     return tb;
   }
 }
