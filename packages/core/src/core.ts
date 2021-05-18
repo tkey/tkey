@@ -545,8 +545,7 @@ class ThresholdKey implements ITKey {
     // });
 
     // acquireLock: false. Force push
-    const jointMetadata: LocalTransitionData = [...authMetadatas, shareStore];
-    await this.addLocalMetadataTransitions({ input: jointMetadata, privKey: [...sharesToPush, undefined] });
+    await this.addLocalMetadataTransitions({ input: [...authMetadatas, shareStore], privKey: [...sharesToPush, undefined] });
 
     // store metadata on metadata respective to shares
     for (let index = 0; index < shareIndexes.length; index += 1) {
