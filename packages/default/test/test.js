@@ -185,6 +185,7 @@ manualSyncModes.forEach((mode) => {
       await tb2.initialize({ input: resp1.userShare });
       tb2.inputShareStore(newShares.newShareStores[resp1.deviceShare.share.shareIndex.toString("hex")]);
       const reconstructedKey = await tb2.reconstructKey();
+      await tb2.generateNewShare(); // this will test fromJSON in manualSync:true
       // compareBNArray(resp1.privKey, reconstructedKey, "key should be able to be reconstructed");
       if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
         fail("key should be able to be reconstructed");

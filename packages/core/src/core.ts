@@ -1025,11 +1025,12 @@ class ThresholdKey implements ITKey {
       enableLogging: this.enableLogging,
       privKey: this.privKey ? this.privKey.toString("hex") : undefined,
       metadata: this.metadata,
+      localMetadataTransitions: this.localMetadataTransitions,
     };
   }
 
   static async fromJSON(value: StringifiedType, args: TKeyArgs): Promise<ThresholdKey> {
-    const { enableLogging, privKey, metadata, shares } = value;
+    const { enableLogging, privKey, metadata, shares, localMetadataTransitions } = value;
     const { storageLayer, serviceProvider, modules } = args;
     const tb = new ThresholdKey({ enableLogging, storageLayer, serviceProvider, modules });
     if (privKey) tb.privKey = new BN(privKey, "hex");
@@ -1047,6 +1048,7 @@ class ThresholdKey implements ITKey {
       }
     }
     tb.shares = shares;
+    tb.localMetadataTransitions = localMetadataTransitions;
     await tb.initialize();
     return tb;
   }
