@@ -12,5 +12,7 @@
     "service-provider-torus/src/**",
     "service-provider-base/src/**",
     "security-questions/src/**"
-  ]
+  ],
+  "reporter": ["html", "text", "text-summary"],
+  "report-dir": "./coverage"
 }
