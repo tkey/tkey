@@ -22,6 +22,7 @@
   },
   "scripts": {
     "test": "cross-env MOCKED=true mocha --config ../../.mocharc.json ",
+    "coverage": "nyc yarn test",
     "test-development": "cross-env MOCKED=false METADATA=http://localhost:5051 mocha --config ../../.mocharc.json ",
     "test-production": "cross-env MOCKED=false METADATA=https://metadata.tor.us mocha --config ../../.mocharc.json ",
     "test-debugger": "mocha --config ../../.mocharc.json --inspect-brk",
@@ -38,7 +39,8 @@
   "dependencies": {
     "@tkey/common-types": "^3.14.2",
     "@types/bn.js": "^5.1.0",
-    "bn.js": "^5.2.0"
+    "bn.js": "^5.2.0",
+    "nyc": "^15.1.0"
   },
   "devDependencies": {
     "@tkey/core": "^3.14.2",

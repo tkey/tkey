@@ -8,6 +8,7 @@
     "build": "lerna run build",
     "dev": "lerna run dev",
     "test": "lerna run test --parallel",
+    "coverage": "lerna run coverage --parallel",
     "test-development": "lerna run test-development --parallel",
     "test-production": "lerna run test-production --parallel",
     "test-debugger": "lerna run test-debugger --parallel",
@@ -70,5 +71,8 @@
     "hooks": {
       "pre-commit": "lerna run pre-commit --concurrency 1 --since HEAD"
     }
+  },
+  "dependencies": {
+    "nyc": "^15.1.0"
   }
 }
