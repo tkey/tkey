@@ -46,7 +46,7 @@ declare class ThresholdKey implements ITKey {
     deleteShare(shareIndex: BNString): Promise<DeleteShareResult>;
     generateNewShare(): Promise<GenerateNewShareResult>;
     refreshShares(threshold: number, newShareIndexes: Array<string>, previousPolyID: PolynomialID): Promise<RefreshSharesResult>;
-    initializeNewKey({ determinedShare, initializeModules, importedKey, }?: {
+    _initializeNewKey({ determinedShare, initializeModules, importedKey, }?: {
         determinedShare?: BN;
         initializeModules?: boolean;
         importedKey?: BN;

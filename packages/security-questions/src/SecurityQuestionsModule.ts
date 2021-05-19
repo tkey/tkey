@@ -37,7 +37,7 @@ class SecurityQuestionsModule implements IModule {
 
   setModuleReferences(tbSDK: ITKeyApi): void {
     this.tbSDK = tbSDK;
-    this.tbSDK.addRefreshMiddleware(this.moduleName, SecurityQuestionsModule.refreshSecurityQuestionsMiddleware);
+    this.tbSDK._addRefreshMiddleware(this.moduleName, SecurityQuestionsModule.refreshSecurityQuestionsMiddleware);
   }
 
   // eslint-disable-next-line
@@ -68,7 +68,7 @@ class SecurityQuestionsModule implements IModule {
     );
     // set on tkey store
     await this.saveAnswerOnTkeyStore(answerString);
-    await this.tbSDK.syncShareMetadata();
+    await this.tbSDK._syncShareMetadata();
     return newSharesDetails;
   }
 
@@ -121,7 +121,7 @@ class SecurityQuestionsModule implements IModule {
     });
     metadata.setGeneralStoreDomain(this.moduleName, newSqStore);
     await this.saveAnswerOnTkeyStore(newAnswerString);
-    await this.tbSDK.syncShareMetadata();
+    await this.tbSDK._syncShareMetadata();
   }
 
   static refreshSecurityQuestionsMiddleware(generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap): unknown {
@@ -149,7 +149,7 @@ class SecurityQuestionsModule implements IModule {
       answer: answerString,
       id: TKEYSTORE_ID,
     };
-    await this.tbSDK.setTKeyStoreItem(this.moduleName, answerStore, false);
+    await this.tbSDK._setTKeyStoreItem(this.moduleName, answerStore, false);
   }
 
   async getAnswer(): Promise<string> {

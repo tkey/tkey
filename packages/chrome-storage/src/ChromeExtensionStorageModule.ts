@@ -14,7 +14,7 @@ export default class ChromeExtensionStorageModule implements IModule {
 
   setModuleReferences(tbSDK: ITKeyApi): void {
     this.tbSDK = tbSDK;
-    this.tbSDK.setDeviceStorage(this.storeDeviceShare.bind(this));
+    this.tbSDK._setDeviceStorage(this.storeDeviceShare.bind(this));
   }
 
   // eslint-disable-next-line

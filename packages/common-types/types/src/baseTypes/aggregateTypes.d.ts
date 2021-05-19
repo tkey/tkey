@@ -213,7 +213,7 @@ export interface ITKey extends ITKeyApi, ISerializable {
     reconstructKey(): Promise<ReconstructedKeyResult>;
     reconstructLatestPoly(): Polynomial;
     refreshShares(threshold: number, newShareIndexes: Array<string>, previousPolyID: PolynomialID): Promise<RefreshSharesResult>;
-    initializeNewKey(params: {
+    _initializeNewKey(params: {
         userInput?: BN;
         initializeModules?: boolean;
     }): Promise<InitializeNewKeyResult>;
