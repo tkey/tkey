@@ -1,6 +1,6 @@
 /* eslint-disable no-await-in-loop */
 /* eslint-disable max-len */
-import { ecCurve } from "@tkey/common-types";
+import { ecCurve, getPubKeyPoint } from "@tkey/common-types";
 import PrivateKeyModule, { SECP256k1Format } from "@tkey/private-keys";
 import SecurityQuestionsModule from "@tkey/security-questions";
 import SeedPhraseModule, { MetamaskSeedPhraseFormat } from "@tkey/seed-phrase";
@@ -196,12 +196,11 @@ manualSyncModes.forEach((mode) => {
       const finalKey = await tb3.reconstructKey();
       strictEqual(finalKey.toString("hex"), reconstructedKey.toString("hex"), "Incorrect serialization");
     });
-    it.only(`#should serialize and deserialize correctly keeping localTransitions consistant before syncing NewKeyAssign manualSync=${mode}`, async function () {
+    it(`#should serialize and deserialize correctly keeping localTransitions consistant before syncing NewKeyAssign manualSync=${mode}`, async function () {
       let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
       userInput = userInput.umod(ecCurve.curve.n);
       const resp1 = await tb.initializeNewKey({ userInput, initializeModules: true });
       const { newShareStores: shareStores, newShareIndex: shareIndex } = await tb.generateNewShare();
-      debugger
 
       const stringified = JSON.stringify(tb);
       const tb3 = await ThresholdKey.fromJSON(JSON.parse(stringified), { serviceProvider: defaultSP, storageLayer: defaultSL });
@@ -214,8 +213,6 @@ manualSyncModes.forEach((mode) => {
       await tb3.syncLocalMetadataTransitions();
       strictEqual(finalKey.privKey.toString("hex"), resp1.privKey.toString("hex"), "Incorrect serialization");
 
-      debugger
-
       const tb4 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL, manualSync: mode });
       await tb4.initialize({ input: resp1.userShare });
       tb4.inputShareStore(shareStores[shareIndex.toString("hex")]);
@@ -225,7 +222,7 @@ manualSyncModes.forEach((mode) => {
       }
     });
 
-    it(`#should serialize and deserialize correctly keeping localTransitions consistant afterNewKeyAssign manualSync=${mode}`, async function () {
+    it.only(`#should serialize and deserialize correctly keeping localTransitions consistant afterNewKeyAssign manualSync=${mode}`, async function () {
       let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
       userInput = userInput.umod(ecCurve.curve.n);
       const resp1 = await tb.initializeNewKey({ userInput, initializeModules: true });
@@ -241,9 +238,12 @@ manualSyncModes.forEach((mode) => {
       if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
         fail("key should be able to be reconstructed");
       }
-
+      
       const stringified = JSON.stringify(tb2);
-      const tb3 = await ThresholdKey.fromJSON(JSON.parse(stringified), { serviceProvider: defaultSP, storageLayer: defaultSL, manualSync: mode });
+      const sharez = tb2.shares[tb2.lastFetchedCloudMetadata.getLatestPublicPolynomial().getPolynomialID()];
+      const tempMetadata = await defaultSL.getMetadata({privKey: sharez["1"]})
+      debugger
+      const tb3 = await ThresholdKey.fromJSON(JSON.parse(stringified), { serviceProvider: defaultSP, storageLayer: defaultSL });
       const finalKey = await tb3.reconstructKey();
       const shareToVerify = tb3.outputShareStore(shareIndex);
       strictEqual(shareStores[shareIndex.toString("hex")].share.share.toString("hex"), shareToVerify.share.share.toString("hex"));

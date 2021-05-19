@@ -151,8 +151,10 @@ class ThresholdKey implements ITKey {
     previouslyFetchedCloudMetadata?: Metadata;
     previousLocalMetadataTransitions?: LocalMetadataTransitions;
   }): Promise<KeyDetails> {
+    // setup initial params/states
     const p = params || {};
     const { input, importKey, neverInitializeNewKey, transitionMetadata, previouslyFetchedCloudMetadata, previousLocalMetadataTransitions } = p;
+    const reinitializing = transitionMetadata && previousLocalMetadataTransitions; // are we reinitlizing the SDK?
     let shareStore: ShareStore;
     if (input instanceof ShareStore) {
       shareStore = input;
@@ -190,9 +192,19 @@ class ThresholdKey implements ITKey {
     // needed transtions to include
     let currentMetadata: Metadata;
     let latestCloudMetadata: Metadata;
-
     // we fetch the latest metadata for the account from the share
-    const latestShareDetails = await this.catchupToLatestShare({ shareStore });
+    let latestShareDetails: CatchupToLatestShareResult;
+    try {
+      latestShareDetails = await this.catchupToLatestShare({ shareStore });
+    } catch (err) {
+      // check if error is not the undefined error
+      // if so we dont throw immedietly incase there is valid transition metadata
+
+      const noMetadataExistsForShare = err.code === 1102;
+      if (!noMetadataExistsForShare || !reinitializing) {
+        throw err;
+      }
+    }
     // if we've been provided with previouslyFetchedCloudMetadata we are reinitializing
     // so lets check if the cloud metadata has been updated or not from previously
     if (previouslyFetchedCloudMetadata) {
@@ -203,12 +215,12 @@ class ThresholdKey implements ITKey {
       }
       latestCloudMetadata = previouslyFetchedCloudMetadata;
     } else {
-      latestCloudMetadata = latestShareDetails.shareMetadata.clone();
+      latestCloudMetadata = latestShareDetails ? latestShareDetails.shareMetadata.clone() : undefined;
     }
     // If we've been provided with transition metadata we use that as the current metadata instead
     // as we want to maintain state before and after serialization.
     // (Given that the checks for cloud metadata pass)
-    if (transitionMetadata && previousLocalMetadataTransitions) {
+    if (reinitializing) {
       currentMetadata = transitionMetadata;
       this.localMetadataTransitions = previousLocalMetadataTransitions;
     } else {
@@ -217,7 +229,8 @@ class ThresholdKey implements ITKey {
 
     this.lastFetchedCloudMetadata = latestCloudMetadata;
     this.metadata = currentMetadata;
-    this.inputShareStore(latestShareDetails.latestShare);
+    const latestShare = latestShareDetails ? latestShareDetails.latestShare : shareStore;
+    this.inputShareStore(latestShare);
 
     // initialize modules
     await this.initializeModules();
