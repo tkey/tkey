@@ -155,6 +155,9 @@ class ThresholdKey implements ITKey {
     const p = params || {};
     const { input, importKey, neverInitializeNewKey, transitionMetadata, previouslyFetchedCloudMetadata, previousLocalMetadataTransitions } = p;
     const reinitializing = transitionMetadata && previousLocalMetadataTransitions; // are we reinitlizing the SDK?
+    // in the case we're reinitializing whilst newKeyAssign has not been synced
+    const reinitilizingWithNewKeyAssign = reinitializing && previouslyFetchedCloudMetadata === undefined;
+
     let shareStore: ShareStore;
     if (input instanceof ShareStore) {
       shareStore = input;
@@ -163,10 +166,12 @@ class ThresholdKey implements ITKey {
     } else if (!input) {
       // default to use service provider
       // first we see if a share has been kept for us
+      const spIncludeLocalMetadataTransitions = reinitilizingWithNewKeyAssign;
+      const spLocalMetadataTransitions = reinitilizingWithNewKeyAssign ? previousLocalMetadataTransitions : undefined;
       const rawServiceProviderShare = await this.getGenericMetadataWithTransitionStates({
         serviceProvider: this.serviceProvider,
-        includeLocalMetadataTransitions: true,
-        localMetadataTransitions: previousLocalMetadataTransitions,
+        includeLocalMetadataTransitions: spIncludeLocalMetadataTransitions,
+        localMetadataTransitions: spLocalMetadataTransitions,
         fromJSONConstructor: {
           fromJSON(val: StringifiedType) {
             return val;
@@ -205,9 +210,9 @@ class ThresholdKey implements ITKey {
         throw err;
       }
     }
-    // if we've been provided with previouslyFetchedCloudMetadata we are reinitializing
-    // so lets check if the cloud metadata has been updated or not from previously
-    if (previouslyFetchedCloudMetadata) {
+
+    // lets check if the cloud metadata has been updated or not from previously if we are reinitializing
+    if (reinitializing && !reinitilizingWithNewKeyAssign) {
       if (previouslyFetchedCloudMetadata.nonce < latestShareDetails.shareMetadata.nonce) {
         throw CoreError.default("previouslyFetchedCloudMetadata provided in initalization is outdated");
       } else if (previouslyFetchedCloudMetadata.nonce > latestShareDetails.shareMetadata.nonce) {

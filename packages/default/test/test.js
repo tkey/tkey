@@ -222,7 +222,7 @@ manualSyncModes.forEach((mode) => {
       }
     });
 
-    it.only(`#should serialize and deserialize correctly keeping localTransitions consistant afterNewKeyAssign manualSync=${mode}`, async function () {
+    it(`#should serialize and deserialize correctly keeping localTransitions consistant afterNewKeyAssign manualSync=${mode}`, async function () {
       let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
       userInput = userInput.umod(ecCurve.curve.n);
       const resp1 = await tb.initializeNewKey({ userInput, initializeModules: true });
@@ -242,7 +242,6 @@ manualSyncModes.forEach((mode) => {
       const stringified = JSON.stringify(tb2);
       const sharez = tb2.shares[tb2.lastFetchedCloudMetadata.getLatestPublicPolynomial().getPolynomialID()];
       const tempMetadata = await defaultSL.getMetadata({privKey: sharez["1"]})
-      debugger
       const tb3 = await ThresholdKey.fromJSON(JSON.parse(stringified), { serviceProvider: defaultSP, storageLayer: defaultSL });
       const finalKey = await tb3.reconstructKey();
       const shareToVerify = tb3.outputShareStore(shareIndex);
