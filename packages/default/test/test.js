@@ -24,6 +24,9 @@ const PRIVATE_KEY = generatePrivate().toString("hex");
 const defaultSP = new ServiceProviderBase({ postboxKey: PRIVATE_KEY });
 const defaultSL = initStorageLayer(mocked, { serviceProvider: defaultSP, hostUrl: metadataURL });
 
+function getTempKey() {
+  return generatePrivate().toString("hex");
+}
 function compareBNArray(a, b, message) {
   if (a.length !== b.length) throw new Error(message);
   return a.map((el) => {
@@ -55,6 +58,15 @@ manualSyncModes.forEach((mode) => {
     beforeEach("Setup ThresholdKey", async function () {
       tb = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL, manualSync: mode });
     });
+    it("#shoudl be able to initializeNewKey using initialize", async function () {
+      const sp = defaultSP;
+      sp.postboxKey = new BN(getTempKey(), "hex");
+      const sl = initStorageLayer(mocked, { serviceProvider: sp, hostUrl: metadataURL });
+      const tb2 = new ThresholdKey({ serviceProvider: sp, storageLayer: sl, manualSync: mode });
+      await tb2.initialize();
+      await tb2.reconstructKey();
+      await tb2.syncLocalMetadataTransitions();
+    });
 
     it(`#should be able to reconstruct key when initializing a key, manualSync=${mode}`, async function () {
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
@@ -68,7 +80,7 @@ manualSyncModes.forEach((mode) => {
         fail("key should be able to be reconstructed");
       }
     });
-    it(`#should be able to reconstruct key when initializing a  with user input, manualSync=${mode}`, async function () {
+    it(`#should be able to reconstruct key when initializing with user input, manualSync=${mode}`, async function () {
       let determinedShare = new BN(keccak256("user answer blublu").slice(2), "hex");
       determinedShare = determinedShare.umod(ecCurve.curve.n);
       const resp1 = await tb._initializeNewKey({ determinedShare, initializeModules: true });
@@ -159,7 +171,7 @@ manualSyncModes.forEach((mode) => {
         fail("key should be able to be reconstructed");
       }
     });
-    it(`#should be able to reconstruct key after refresh and initializing with a share , manualSync=${mode}`, async function () {
+    it(`#should be able to reconstruct key after refresh and initializing with a share, manualSync=${mode}`, async function () {
       let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
       userInput = userInput.umod(ecCurve.curve.n);
       const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
@@ -196,7 +208,7 @@ manualSyncModes.forEach((mode) => {
       const finalKey = await tb3.reconstructKey();
       strictEqual(finalKey.toString("hex"), reconstructedKey.toString("hex"), "Incorrect serialization");
     });
-    it(`#should serialize and deserialize correctly keeping localTransitions consistant before syncing NewKeyAssign manualSync=${mode}`, async function () {
+    it(`#should serialize and deserialize correctly keeping localTransitions consistent before syncing NewKeyAssign, manualSync=${mode}`, async function () {
       let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
       userInput = userInput.umod(ecCurve.curve.n);
       const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
@@ -221,8 +233,7 @@ manualSyncModes.forEach((mode) => {
         fail("key should be able to be reconstructed");
       }
     });
-
-    it(`#should serialize and deserialize correctly keeping localTransitions consistant afterNewKeyAssign manualSync=${mode}`, async function () {
+    it(`#should serialize and deserialize correctly keeping localTransitions consistant afterNewKeyAssign, manualSync=${mode}`, async function () {
       let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
       userInput = userInput.umod(ecCurve.curve.n);
       const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
@@ -258,7 +269,6 @@ manualSyncModes.forEach((mode) => {
         fail("key should be able to be reconstructed");
       }
     });
-
     it(`#should be able to reshare a key and retrieve from service provider serialization, manualSync=${mode}`, async function () {
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
       await tb.syncLocalMetadataTransitions();
@@ -321,6 +331,31 @@ manualSyncModes.forEach((mode) => {
       rejects(async () => {
         await tb2.initialize({ neverInitializeNewKey: true });
       }, Error);
+    });
+    it(`#should be able to update metadata, manualSync=${mode}`, async function () {
+      const resp1 = await tb._initializeNewKey({ initializeModules: true });
+      await tb.syncLocalMetadataTransitions();
+      // nonce 0
+
+      const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL, manualSync: mode });
+      await tb2.initialize();
+      tb2.inputShareStore(resp1.deviceShare);
+      await tb2.reconstructKey();
+
+      // try creating new shares
+      await tb.generateNewShare();
+      await tb.syncLocalMetadataTransitions();
+
+      await rejects(async () => {
+        await tb2.generateNewShare();
+        await tb2.syncLocalMetadataTransitions();
+      }, Error);
+
+      // try creating again
+      const newtb = await tb2.updateMetadata();
+      await newtb.reconstructKey();
+      await newtb.generateNewShare();
+      await newtb.syncLocalMetadataTransitions();
     });
   });
 

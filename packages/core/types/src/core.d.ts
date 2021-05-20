@@ -1,5 +1,5 @@
 /// <reference types="node" />
-import { BNString, CatchupToLatestShareResult, DeleteShareResult, EncryptedMessage, GenerateNewShareResult, IMetadata, InitializeNewKeyResult, IServiceProvider, IStorageLayer, ITKey, ITKeyApi, KeyDetails, LocalMetadataTransitions, LocalTransitionData, ModuleMap, Polynomial, PolynomialID, ReconstructedKeyResult, ReconstructKeyMiddlewareMap, RefreshMiddlewareMap, RefreshSharesResult, ShareSerializationMiddleware, ShareStore, ShareStoreMap, ShareStorePolyIDShareIndexMap, StringifiedType, TKeyArgs, TkeyStoreItemType } from "@tkey/common-types";
+import { BNString, CatchupToLatestShareResult, DeleteShareResult, EncryptedMessage, FromJSONConstructor, GenerateNewShareResult, IMetadata, InitializeNewKeyResult, IServiceProvider, IStorageLayer, ITKey, ITKeyApi, KeyDetails, LocalMetadataTransitions, LocalTransitionData, ModuleMap, Polynomial, PolynomialID, ReconstructedKeyResult, ReconstructKeyMiddlewareMap, RefreshMiddlewareMap, RefreshSharesResult, ShareSerializationMiddleware, ShareStore, ShareStoreMap, ShareStorePolyIDShareIndexMap, StringifiedType, TKeyArgs, TkeyStoreItemType } from "@tkey/common-types";
 import BN from "bn.js";
 import AuthMetadata from "./authMetadata";
 import Metadata from "./metadata";
@@ -13,10 +13,10 @@ declare class ThresholdKey implements ITKey {
     lastFetchedCloudMetadata: Metadata;
     metadata: Metadata;
     manualSync: boolean;
-    localMetadataTransitions: LocalMetadataTransitions;
-    refreshMiddleware: RefreshMiddlewareMap;
-    reconstructKeyMiddleware: ReconstructKeyMiddlewareMap;
-    shareSerializationMiddleware: ShareSerializationMiddleware;
+    _localMetadataTransitions: LocalMetadataTransitions;
+    _refreshMiddleware: RefreshMiddlewareMap;
+    _reconstructKeyMiddleware: ReconstructKeyMiddlewareMap;
+    _shareSerializationMiddleware: ShareSerializationMiddleware;
     storeDeviceShare: (deviceShareStore: ShareStore) => Promise<void>;
     haveWriteMetadataLock: string;
     args: TKeyArgs;
@@ -28,6 +28,9 @@ declare class ThresholdKey implements ITKey {
         input?: ShareStore;
         importKey?: BN;
         neverInitializeNewKey?: boolean;
+        transitionMetadata?: Metadata;
+        previouslyFetchedCloudMetadata?: Metadata;
+        previousLocalMetadataTransitions?: LocalMetadataTransitions;
     }): Promise<KeyDetails>;
     private setModuleReferences;
     private initializeModules;
@@ -41,11 +44,11 @@ declare class ThresholdKey implements ITKey {
         polyID?: PolynomialID;
         includeLocalMetadataTransitions?: boolean;
     }): Promise<CatchupToLatestShareResult>;
-    reconstructKey(reconstructKeyMiddleware?: boolean): Promise<ReconstructedKeyResult>;
+    reconstructKey(_reconstructKeyMiddleware?: boolean): Promise<ReconstructedKeyResult>;
     reconstructLatestPoly(): Polynomial;
     deleteShare(shareIndex: BNString): Promise<DeleteShareResult>;
     generateNewShare(): Promise<GenerateNewShareResult>;
-    refreshShares(threshold: number, newShareIndexes: Array<string>, previousPolyID: PolynomialID): Promise<RefreshSharesResult>;
+    _refreshShares(threshold: number, newShareIndexes: Array<string>, previousPolyID: PolynomialID): Promise<RefreshSharesResult>;
     _initializeNewKey({ determinedShare, initializeModules, importedKey, }?: {
         determinedShare?: BN;
         initializeModules?: boolean;
@@ -64,7 +67,7 @@ declare class ThresholdKey implements ITKey {
     inputShareStore(shareStore: ShareStore): void;
     inputShareStoreSafe(shareStore: ShareStore): Promise<void>;
     outputShareStore(shareIndex: BNString, polyID?: string): ShareStore;
-    setKey(privKey: BN): void;
+    _setKey(privKey: BN): void;
     getKey(): BN[];
     getCurrentShareIndexes(): string[];
     getKeyDetails(): KeyDetails;
@@ -88,20 +91,27 @@ declare class ThresholdKey implements ITKey {
         privKey?: BN;
         includeLocalMetadataTransitions?: boolean;
     }): Promise<Metadata>;
+    getGenericMetadataWithTransitionStates(params: {
+        fromJSONConstructor: FromJSONConstructor;
+        serviceProvider?: IServiceProvider;
+        privKey?: BN;
+        includeLocalMetadataTransitions?: boolean;
+        _localMetadataTransitions?: LocalMetadataTransitions;
+    }): Promise<unknown>;
     acquireWriteMetadataLock(): Promise<number>;
     releaseWriteMetadataLock(): Promise<void>;
-    syncShareMetadata(adjustScopedStore?: (ss: unknown) => unknown): Promise<void>;
+    _syncShareMetadata(adjustScopedStore?: (ss: unknown) => unknown): Promise<void>;
     syncMultipleShareMetadata(shares: Array<BN>, adjustScopedStore?: (ss: unknown) => unknown): Promise<void>;
-    addRefreshMiddleware(moduleName: string, middleware: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap) => unknown): void;
-    addReconstructKeyMiddleware(moduleName: string, middleware: () => Promise<Array<BN>>): void;
-    addShareSerializationMiddleware(serialize: (share: BN, type: string) => Promise<unknown>, deserialize: (serializedShare: unknown, type: string) => Promise<BN>): void;
-    setDeviceStorage(storeDeviceStorage: (deviceShareStore: ShareStore) => Promise<void>): void;
+    _addRefreshMiddleware(moduleName: string, middleware: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap) => unknown): void;
+    _addReconstructKeyMiddleware(moduleName: string, middleware: () => Promise<Array<BN>>): void;
+    _addShareSerializationMiddleware(serialize: (share: BN, type: string) => Promise<unknown>, deserialize: (serializedShare: unknown, type: string) => Promise<BN>): void;
+    _setDeviceStorage(storeDeviceStorage: (deviceShareStore: ShareStore) => Promise<void>): void;
     addShareDescription(shareIndex: string, description: string, updateMetadata?: boolean): Promise<void>;
     deleteShareDescription(shareIndex: string, description: string, updateMetadata?: boolean): Promise<void>;
     encrypt(data: Buffer): Promise<EncryptedMessage>;
     decrypt(encryptedMessage: EncryptedMessage): Promise<Buffer>;
-    setTKeyStoreItem(moduleName: string, data: TkeyStoreItemType): Promise<void>;
-    deleteTKeyStoreItem(moduleName: string, id: string): Promise<void>;
+    _setTKeyStoreItem(moduleName: string, data: TkeyStoreItemType): Promise<void>;
+    _deleteTKeyStoreItem(moduleName: string, id: string): Promise<void>;
     getTKeyStore(moduleName: string): Promise<TkeyStoreItemType[]>;
     getTKeyStoreItem(moduleName: string, id: string): Promise<TkeyStoreItemType>;
     outputShare(shareIndex: BNString, type?: string): Promise<unknown>;

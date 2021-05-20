@@ -181,7 +181,7 @@ class ThresholdKey implements ITKey {
       const noKeyFound: { message?: string } = rawServiceProviderShare as { message?: string };
       if (noKeyFound.message === KEY_NOT_FOUND) {
         if (neverInitializeNewKey) {
-          throw CoreError.default("key has not yet been generated");
+          throw CoreError.default("key has not been generated yet");
         }
         // no metadata set, assumes new user
         await this._initializeNewKey({ initializeModules: true, importedKey: importKey });
@@ -204,7 +204,6 @@ class ThresholdKey implements ITKey {
     } catch (err) {
       // check if error is not the undefined error
       // if so we dont throw immedietly incase there is valid transition metadata
-
       const noMetadataExistsForShare = err.code === 1102;
       if (!noMetadataExistsForShare || !reinitializing) {
         throw err;
@@ -453,7 +452,6 @@ class ThresholdKey implements ITKey {
       throw CoreError.default(`threshold should not be greater than share indexes. ${threshold} > ${newShareIndexes.length}`);
     }
 
-    // await this.acquireWriteMetadataLock();
     // update metadata nonce
     this.metadata.nonce += 1;
 
@@ -660,9 +658,8 @@ class ThresholdKey implements ITKey {
     const tb = new ThresholdKey(this.args);
     await tb.initialize({ neverInitializeNewKey: true, input: params && params.input });
 
-    // const latestPolyID = this.metadata.getLatestPublicPolynomial().getPolynomialID();
     // Delete unnecessary polyIDs and shareStores
-    const allPolyIDList = this.metadata.polyIDList;
+    const allPolyIDList = tb.metadata.polyIDList;
     let lastValidPolyID;
 
     Object.keys(this.shares).forEach((x) => {
@@ -748,10 +745,6 @@ class ThresholdKey implements ITKey {
 
   _setKey(privKey: BN): void {
     this.privKey = privKey;
-  }
-
-  getKey(): BN[] {
-    return [this.privKey];
   }
 
   getCurrentShareIndexes(): string[] {

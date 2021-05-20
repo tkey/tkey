@@ -44,6 +44,9 @@ class CoreError extends TkeyError {
     // lock
     1401: "Unable to acquire lock",
     1402: "Unable to release lock",
+    // auth metadata
+    1501: "privkey unavailable",
+    1502: "metadata pubkey unavailable",
   };
 
   public constructor(code: number, message: string) {
@@ -113,6 +116,15 @@ class CoreError extends TkeyError {
 
   public static releaseLockFailed(extraMessage = ""): ITkeyError {
     return CoreError.fromCode(1402, extraMessage);
+  }
+
+  // Authmetadata
+  public static privKeyUnavailable(extraMessage = ""): ITkeyError {
+    return CoreError.fromCode(1501, extraMessage);
+  }
+
+  public static metadataPubKeyUnavailable(extraMessage = ""): ITkeyError {
+    return CoreError.fromCode(1502, extraMessage);
   }
 }
 export default CoreError;

@@ -158,9 +158,9 @@ export interface IAuthMetadata {
 }
 export declare type IAuthMetadatas = IAuthMetadata[];
 export declare type ShareStores = ShareStore[];
-export declare type LocalTransitionShare = BN[];
+export declare type LocalTransitionShares = BN[];
 export declare type LocalTransitionData = [...IAuthMetadatas, ...ShareStores];
-export declare type LocalMetadataTransitions = [LocalTransitionShare, LocalTransitionData];
+export declare type LocalMetadataTransitions = [LocalTransitionShares, LocalTransitionData];
 export interface ITKeyApi {
     getMetadata(): IMetadata;
     getStorageLayer(): IStorageLayer;
@@ -174,25 +174,25 @@ export interface ITKeyApi {
         polyID?: string;
         includeLocalMetadataTransitions?: boolean;
     }): Promise<CatchupToLatestShareResult>;
-    syncShareMetadata(adjustScopedStore?: (ss: unknown) => unknown): Promise<void>;
+    _syncShareMetadata(adjustScopedStore?: (ss: unknown) => unknown): Promise<void>;
     inputShareStoreSafe(shareStore: ShareStore): Promise<void>;
-    setDeviceStorage(storeDeviceStorage: (deviceShareStore: ShareStore) => Promise<void>): void;
+    _setDeviceStorage(storeDeviceStorage: (deviceShareStore: ShareStore) => Promise<void>): void;
     addShareDescription(shareIndex: string, description: string, updateMetadata?: boolean): Promise<void>;
-    inputShareStore(shareStore: ShareStore): void;
-    deleteShare(shareIndex: BNString): Promise<DeleteShareResult>;
-    addRefreshMiddleware(moduleName: string, middleware: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap) => unknown): void;
-    addReconstructKeyMiddleware(moduleName: string, middleware: () => Promise<Array<BN>>): void;
-    addShareSerializationMiddleware(serialize: (share: BN, type: string) => Promise<unknown>, deserialize: (serializedShare: unknown, type: string) => Promise<BN>): void;
+    _addRefreshMiddleware(moduleName: string, middleware: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap) => unknown): void;
+    _addReconstructKeyMiddleware(moduleName: string, middleware: () => Promise<Array<BN>>): void;
+    _addShareSerializationMiddleware(serialize: (share: BN, type: string) => Promise<unknown>, deserialize: (serializedShare: unknown, type: string) => Promise<BN>): void;
     generateNewShare(): Promise<GenerateNewShareResult>;
     outputShareStore(shareIndex: BNString, polyID?: string): ShareStore;
     inputShare(share: unknown, type?: string): Promise<void>;
     outputShare(shareIndex: BNString, type?: string): Promise<unknown>;
+    inputShareStore(shareStore: ShareStore): void;
+    deleteShare(shareIndex: BNString): Promise<DeleteShareResult>;
     encrypt(data: Buffer): Promise<EncryptedMessage>;
     decrypt(encryptedMesage: EncryptedMessage): Promise<Buffer>;
     getTKeyStoreItem(moduleName: string, id: string): Promise<TkeyStoreItemType>;
     getTKeyStore(moduleName: string): Promise<TkeyStoreItemType[]>;
-    deleteTKeyStoreItem(moduleName: string, id: string): Promise<void>;
-    setTKeyStoreItem(moduleName: string, data: TkeyStoreItemType, updateMetadata?: boolean): Promise<void>;
+    _deleteTKeyStoreItem(moduleName: string, id: string): Promise<void>;
+    _setTKeyStoreItem(moduleName: string, data: TkeyStoreItemType, updateMetadata?: boolean): Promise<void>;
 }
 export interface ITKey extends ITKeyApi, ISerializable {
     modules: ModuleMap;
@@ -200,11 +200,11 @@ export interface ITKey extends ITKeyApi, ISerializable {
     serviceProvider: IServiceProvider;
     shares: ShareStorePolyIDShareIndexMap;
     privKey: BN;
-    localMetadataTransitions: LocalMetadataTransitions;
+    _localMetadataTransitions: LocalMetadataTransitions;
     manualSync: boolean;
-    refreshMiddleware: RefreshMiddlewareMap;
-    reconstructKeyMiddleware: ReconstructKeyMiddlewareMap;
-    shareSerializationMiddleware: ShareSerializationMiddleware;
+    _refreshMiddleware: RefreshMiddlewareMap;
+    _reconstructKeyMiddleware: ReconstructKeyMiddlewareMap;
+    _shareSerializationMiddleware: ShareSerializationMiddleware;
     initialize(params: {
         input?: ShareStore;
         importKey?: BN;
@@ -212,11 +212,11 @@ export interface ITKey extends ITKeyApi, ISerializable {
     }): Promise<KeyDetails>;
     reconstructKey(): Promise<ReconstructedKeyResult>;
     reconstructLatestPoly(): Polynomial;
-    refreshShares(threshold: number, newShareIndexes: Array<string>, previousPolyID: PolynomialID): Promise<RefreshSharesResult>;
+    _refreshShares(threshold: number, newShareIndexes: Array<string>, previousPolyID: PolynomialID): Promise<RefreshSharesResult>;
     _initializeNewKey(params: {
         userInput?: BN;
         initializeModules?: boolean;
     }): Promise<InitializeNewKeyResult>;
-    setKey(privKey: BN): void;
+    _setKey(privKey: BN): void;
     getKeyDetails(): KeyDetails;
 }
