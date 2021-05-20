@@ -171,6 +171,22 @@ manualSyncModes.forEach((mode) => {
         fail("key should be able to be reconstructed");
       }
     });
+    it(`#should be able to output unavailable share store, manualSync=${mode}`, async function () {
+      const resp1 = await tb._initializeNewKey({ initializeModules: true });
+      const { newShareStores, newShareIndex } = await tb.generateNewShare();
+      await tb.syncLocalMetadataTransitions();
+
+      const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL, manualSync: mode });
+      await tb2.initialize({ neverInitializeNewKey: true });
+      tb2.inputShareStore(resp1.deviceShare);
+      const reconstructedKey = await tb2.reconstructKey();
+      const shareStore = await tb2.outputShareStore(newShareIndex);
+      strictEqual(newShareStores[newShareIndex.toString("hex")].share.share.toString("hex"), shareStore.share.share.toString("hex"));
+
+      if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
+        fail("key should be able to be reconstructed");
+      }
+    });
     it(`#should be able to reconstruct key after refresh and initializing with a share, manualSync=${mode}`, async function () {
       let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
       userInput = userInput.umod(ecCurve.curve.n);
@@ -451,9 +467,14 @@ manualSyncModes.forEach((mode) => {
     });
     it(`#should be able to reconstruct key and initialize a key with security questions, metadataSync=${mode}`, async function () {
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
+      await rejects(async function () {
+        await tb.modules.securityQuestions.inputShareFromSecurityQuestions("blublu");
+      }, Error);
+
       await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
       await tb.syncLocalMetadataTransitions();
-
+      const question = tb.modules.securityQuestions.getSecurityQuestions();
+      strictEqual(question, "who is your cat?");
       const tb2 = new ThresholdKey({
         serviceProvider: defaultSP,
         storageLayer: defaultSL,
@@ -461,6 +482,10 @@ manualSyncModes.forEach((mode) => {
       });
       await tb2.initialize();
 
+      // wrong password
+      await rejects(async function () {
+        await tb.modules.securityQuestions.inputShareFromSecurityQuestions("blublu-wrong");
+      }, Error);
       await tb2.modules.securityQuestions.inputShareFromSecurityQuestions("blublu");
       const reconstructedKey = await tb2.reconstructKey();
       // compareBNArray(resp1.privKey, reconstructedKey, "key should be able to be reconstructed");
@@ -490,6 +515,12 @@ manualSyncModes.forEach((mode) => {
     });
     it(`#should be able to change password, metadataSync=${mode}`, async function () {
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
+
+      // should throw
+      await rejects(async function () {
+        await tb.modules.securityQuestions.changeSecurityQuestionAndAnswer("dodo", "who is your cat?");
+      }, Error);
+
       await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
       await tb.modules.securityQuestions.changeSecurityQuestionAndAnswer("dodo", "who is your cat?");
       await tb.syncLocalMetadataTransitions();
@@ -704,6 +735,12 @@ manualSyncModes.forEach((mode) => {
         storageLayer: defaultSL,
       });
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
+
+      // should throw
+      await rejects(async function () {
+        await tb.outputShare(resp1.deviceShare.share.shareIndex, "mnemonic-49");
+      });
+
       const exportedSeedShare = await tb.outputShare(resp1.deviceShare.share.shareIndex, "mnemonic");
       await tb.syncLocalMetadataTransitions();
 
@@ -713,6 +750,12 @@ manualSyncModes.forEach((mode) => {
         storageLayer: defaultSL,
       });
       await tb2.initialize();
+
+      // should throw
+      await rejects(async function () {
+        await tb2.inputShare(exportedSeedShare.toString("hex"), "mnemonic-49");
+      });
+
       await tb2.inputShare(exportedSeedShare.toString("hex"), "mnemonic");
       const reconstructedKey = await tb2.reconstructKey();
 
@@ -737,7 +780,35 @@ manualSyncModes.forEach((mode) => {
         modules: { seedPhrase: new SeedPhraseModule([metamaskSeedPhraseFormat]), privateKeyModule: new PrivateKeyModule([privateKeyFormat]) },
       });
     });
+    it(`#should not to able to initalize without seedphrase formats, manualSync=${mode}`, async function () {
+      const seedPhraseToSet = "seed sock milk update focus rotate barely fade car face mechanic mercy";
+      const tb2 = new ThresholdKey({
+        serviceProvider: defaultSP,
+        manualSync: mode,
+        storageLayer: defaultSL,
+        modules: { seedPhrase: new SeedPhraseModule([]), privateKeyModule: new PrivateKeyModule([]) },
+      });
+      await tb2._initializeNewKey({ initializeModules: true });
+      // should throw
+      await rejects(async () => {
+        await tb2.modules.seedPhrase.setSeedPhrase("HD Key Tree", seedPhraseToSet);
+      }, Error);
 
+      await rejects(async () => {
+        await tb2.modules.seedPhrase.setSeedPhrase("HD Key Tree", `${seedPhraseToSet}123`);
+      }, Error);
+
+      // should throw
+      await rejects(async () => {
+        const actualPrivateKeys = [new BN("4bd0041b7654a9b16a7268a5de7982f2422b15635c4fd170c140dc4897624390", "hex")];
+        await tb2.modules.privateKeyModule.setPrivateKey("secp256k1n", actualPrivateKeys[0].toString("hex"));
+      }, Error);
+
+      await rejects(async () => {
+        const actualPrivateKeys = [new BN("4bd0041a9b16a7268a5de7982f2422b15635c4fd170c140dc48976wqerwer0", "hex")];
+        await tb2.modules.privateKeyModule.setPrivateKey("secp256k1n", actualPrivateKeys[0].toString("hex"));
+      }, Error);
+    });
     it(`#should get/set seed phrase, manualSync=${mode}`, async function () {
       const seedPhraseToSet = "seed sock milk update focus rotate barely fade car face mechanic mercy";
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
@@ -756,6 +827,8 @@ manualSyncModes.forEach((mode) => {
       await tb2.initialize();
       tb2.inputShareStore(resp1.deviceShare);
       const reconstuctedKey = await tb2.reconstructKey();
+      await tb.modules.seedPhrase.getSeedPhrasesWithAccounts();
+
       // console.log(reconstuctedKey);
       compareReconstructedKeys(reconstuctedKey, {
         privKey: resp1.privKey,
@@ -830,6 +903,7 @@ manualSyncModes.forEach((mode) => {
       await tb.modules.privateKeyModule.setPrivateKey("secp256k1n", actualPrivateKeys[0]);
       await tb.modules.privateKeyModule.setPrivateKey("secp256k1n", actualPrivateKeys[1]);
       await tb.syncLocalMetadataTransitions();
+      await tb.modules.privateKeyModule.getAccounts();
 
       const getAccounts = await tb.modules.privateKeyModule.getAccounts();
       deepStrictEqual(
