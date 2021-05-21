@@ -37,7 +37,7 @@ class SecurityQuestionsModule implements IModule {
 
   setModuleReferences(tbSDK: ITKeyApi): void {
     this.tbSDK = tbSDK;
-    this.tbSDK.addRefreshMiddleware(this.moduleName, SecurityQuestionsModule.refreshSecurityQuestionsMiddleware);
+    this.tbSDK._addRefreshMiddleware(this.moduleName, SecurityQuestionsModule.refreshSecurityQuestionsMiddleware);
   }
 
   // eslint-disable-next-line
@@ -47,7 +47,6 @@ class SecurityQuestionsModule implements IModule {
     const metadata = this.tbSDK.getMetadata();
     const rawSqStore = metadata.getGeneralStoreDomain(this.moduleName);
     if (rawSqStore) throw SecurityQuestionsError.unableToReplace();
-
     const newSharesDetails = await this.tbSDK.generateNewShare();
     const newShareStore = newSharesDetails.newShareStores[newSharesDetails.newShareIndex.toString("hex")];
     const userInputHash = answerToUserInputHashBN(answerString);
@@ -69,7 +68,7 @@ class SecurityQuestionsModule implements IModule {
     );
     // set on tkey store
     await this.saveAnswerOnTkeyStore(answerString);
-    await this.tbSDK.syncShareMetadata();
+    await this.tbSDK._syncShareMetadata();
     return newSharesDetails;
   }
 
@@ -95,7 +94,7 @@ class SecurityQuestionsModule implements IModule {
       throw SecurityQuestionsError.incorrectAnswer();
     }
 
-    const latestShareDetails = await this.tbSDK.catchupToLatestShare(shareStore);
+    const latestShareDetails = await this.tbSDK.catchupToLatestShare({ shareStore, includeLocalMetadataTransitions: true });
     // TODO: update share nonce on all metadata. would be cleaner in long term?
     // if (shareStore.polynomialID !== latestShareDetails.latestShare.polynomialID) this.storeDeviceShare(latestShareDetails.latestShare);
     this.tbSDK.inputShareStore(latestShareDetails.latestShare);
@@ -122,7 +121,7 @@ class SecurityQuestionsModule implements IModule {
     });
     metadata.setGeneralStoreDomain(this.moduleName, newSqStore);
     await this.saveAnswerOnTkeyStore(newAnswerString);
-    await this.tbSDK.syncShareMetadata();
+    await this.tbSDK._syncShareMetadata();
   }
 
   static refreshSecurityQuestionsMiddleware(generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap): unknown {
@@ -150,7 +149,7 @@ class SecurityQuestionsModule implements IModule {
       answer: answerString,
       id: TKEYSTORE_ID,
     };
-    await this.tbSDK.setTKeyStoreItem(this.moduleName, answerStore, false);
+    await this.tbSDK._setTKeyStoreItem(this.moduleName, answerStore, false);
   }
 
   async getAnswer(): Promise<string> {

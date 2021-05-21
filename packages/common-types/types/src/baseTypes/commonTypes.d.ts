@@ -4,10 +4,7 @@ import BN from "bn.js";
 import { curve } from "elliptic";
 export declare type PubKeyType = "ecc";
 export declare type PolynomialID = string;
-export declare type PolyIDAndShares = [
-    PolynomialID,
-    string[]
-];
+export declare type PolyIDAndShares = [PolynomialID, string[]];
 export declare type BNString = string | BN;
 export interface EncryptedMessage {
     ciphertext: string;
@@ -93,4 +90,7 @@ export declare type MockStorageLayerArgs = {
 };
 export declare type ShareDescriptionMap = {
     [shareIndexStr: string]: string[];
+};
+export declare type FromJSONConstructor = {
+    fromJSON(value: StringifiedType): any;
 };

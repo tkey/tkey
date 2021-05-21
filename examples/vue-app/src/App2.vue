@@ -17,7 +17,7 @@
     <div :style="{ marginTop: '16px' }">
       <h4>Login and resets</h4>
       <button v-if="!isMocked" @click="login">Login and initialize with Torus</button>
-      <button @click="initializeNewKey">Initialize new key</button>
+      <button @click="_initializeNewKey">Initialize new key</button>
       <button @click="reconstructKey">Reconstuct key</button>
       <button @click="getKeyDetails">Get key details</button>
       <button @click="getSDKObject">Get SDK object</button>
@@ -218,8 +218,8 @@ export default {
 
       await this.reconstructKey();
     },
-    async initializeNewKey() {
-      this.console(await this.tKey.initializeNewKey({ initializeModules: true }));
+    async _initializeNewKey() {
+      this.console(await this.tKey._initializeNewKey({ initializeModules: true }));
     },
     async reconstructKey() {
       this.console(await this.tKey.reconstructKey());

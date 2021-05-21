@@ -203,7 +203,7 @@ class ShareTransferModule implements IModule {
     const metadata = this.tbSDK.getMetadata();
     const shareTransferStorePointer = { pointer: new BN(generatePrivate()) };
     metadata.setGeneralStoreDomain(this.moduleName, shareTransferStorePointer);
-    await this.tbSDK.syncShareMetadata();
+    await this.tbSDK._syncShareMetadata();
   }
 }
 

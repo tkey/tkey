@@ -165,7 +165,7 @@ Post share transfer your tKey on either device maybe of lower nonce. (can be det
 You can fix that by using
 
 ```js
-await tKey.updateMetadata()
+let updatedTkey = await tkey.updateMetadata;
 ```
 
 - Export a Share

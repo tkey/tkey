@@ -19,7 +19,7 @@ class PrivateKeyModule implements IModule {
 
   setModuleReferences(tbSDK: ITKeyApi): void {
     this.tbSDK = tbSDK;
-    this.tbSDK.addReconstructKeyMiddleware(this.moduleName, this.getAccounts.bind(this));
+    this.tbSDK._addReconstructKeyMiddleware(this.moduleName, this.getAccounts.bind(this));
   }
 
   // eslint-disable-next-line
@@ -34,7 +34,7 @@ class PrivateKeyModule implements IModule {
       throw PrivateKeysError.invalidPrivateKey(`${privateKey}`);
     }
     const privateKeyStore = format.createPrivateKeyStore(privateKey);
-    return this.tbSDK.setTKeyStoreItem(this.moduleName, privateKeyStore, true);
+    return this.tbSDK._setTKeyStoreItem(this.moduleName, privateKeyStore);
   }
 
   async getPrivateKeys(): Promise<IPrivateKeyStore[]> {

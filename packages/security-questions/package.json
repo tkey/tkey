@@ -22,7 +22,8 @@
   },
   "scripts": {
     "test": "cross-env MOCKED=true mocha --config ../../.mocharc.json ",
-    "test-development": "cross-env MOCKED=false METADATA=http://localhost:5051 mocha --config ../../.mocharc.json ",
+    "coverage": "nyc yarn test",
+"coverage-production": "nyc yarn test-production",    "test-development": "cross-env MOCKED=false METADATA=http://localhost:5051 mocha --config ../../.mocharc.json ",
     "test-production": "cross-env MOCKED=false METADATA=https://metadata.tor.us mocha --config ../../.mocharc.json ",
     "test-debugger": "mocha --config ../../.mocharc.json --inspect-brk",
     "dev": "rimraf dist/ && cross-env NODE_ENV=development parallel-webpack --no-stats",
@@ -41,6 +42,7 @@
   "dependencies": {
     "@tkey/common-types": "^3.14.2",
     "bn.js": "^5.2.0",
+    "nyc": "^15.1.0",
     "web3-utils": "^1.3.5"
   },
   "devDependencies": {

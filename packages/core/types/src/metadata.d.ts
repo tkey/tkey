@@ -1,4 +1,4 @@
-import { IMetadata, Point, Polynomial, PolynomialID, PolyIDAndShares, PublicPolynomial, PublicPolynomialMap, PublicShare, PublicSharePolyIDShareIndexMap, Share, ShareDescriptionMap, ShareMap, ShareStore, StringifiedType } from "@tkey/common-types";
+import { IMetadata, Point, PolyIDAndShares, Polynomial, PolynomialID, PublicPolynomial, PublicPolynomialMap, PublicShare, PublicSharePolyIDShareIndexMap, Share, ShareDescriptionMap, ShareMap, ShareStore, StringifiedType } from "@tkey/common-types";
 import BN from "bn.js";
 declare class Metadata implements IMetadata {
     pubKey: Point;

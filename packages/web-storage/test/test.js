@@ -29,7 +29,7 @@ describe("web storage", function () {
   });
 
   it("#should be able to input share from web storage", async function () {
-    await tb.initializeNewKey({ initializeModules: true });
+    await tb._initializeNewKey({ initializeModules: true });
     const reconstructedKey = await tb.reconstructKey();
     await tb2.initialize();
     await tb2.modules[WEB_STORAGE_MODULE_NAME].inputShareFromWebStorage();
@@ -38,7 +38,7 @@ describe("web storage", function () {
   });
 
   it("#should be able to input share from web storage after reconstruction", async function () {
-    await tb.initializeNewKey({ initializeModules: true });
+    await tb._initializeNewKey({ initializeModules: true });
     const reconstructedKey = await tb.reconstructKey();
     await tb.generateNewShare();
     await tb.reconstructKey();
@@ -51,7 +51,7 @@ describe("web storage", function () {
   });
 
   it("#should be able to input share from web storage after external share deletion", async function () {
-    await tb.initializeNewKey({ initializeModules: true });
+    await tb._initializeNewKey({ initializeModules: true });
     const reconstructedKey = await tb.reconstructKey();
     const newShare = await tb.generateNewShare();
     await tb.deleteShare(newShare.newShareIndex.toString("hex"));
@@ -64,7 +64,7 @@ describe("web storage", function () {
   });
 
   it("#should not be able to input share from web storage after deletion", async function () {
-    const resp1 = await tb.initializeNewKey({ initializeModules: true });
+    const resp1 = await tb._initializeNewKey({ initializeModules: true });
     await tb.reconstructKey();
     // console.log("%O", tb.shares);
     await tb.generateNewShare();
@@ -79,7 +79,7 @@ describe("web storage", function () {
   });
 
   it("#should be able to input external share from web storage after deletion", async function () {
-    const resp1 = await tb.initializeNewKey({ initializeModules: true });
+    const resp1 = await tb._initializeNewKey({ initializeModules: true });
     const reconstructedKey = await tb.reconstructKey();
     // console.log("%O", tb.shares);
     const newShare = await tb.generateNewShare();

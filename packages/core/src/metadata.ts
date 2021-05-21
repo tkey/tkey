@@ -253,12 +253,6 @@ class Metadata implements IMetadata {
       const publicPolynomial = new PublicPolynomial(pointCommitments);
       metadata.publicPolynomials[pubPolyID] = publicPolynomial;
 
-      // // for publicShares
-      // secondHalf.forEach((shareIndex) => {
-      //   const newPubShare = new PublicShare(shareIndex, polyCommitmentEval(publicPolynomial.polynomialCommitments, new BN(shareIndex, "hex")));
-      //   metadata.addPublicShare(pubPolyID, newPubShare);
-      // });
-
       // for polyIDList
       unserializedPolyIDList.push([pubPolyID, secondHalf]);
     }

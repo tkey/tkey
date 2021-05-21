@@ -14,7 +14,7 @@ export default class ChromeExtensionStorageModule implements IModule {
 
   setModuleReferences(tbSDK: ITKeyApi): void {
     this.tbSDK = tbSDK;
-    this.tbSDK.setDeviceStorage(this.storeDeviceShare.bind(this));
+    this.tbSDK._setDeviceStorage(this.storeDeviceShare.bind(this));
   }
 
   // eslint-disable-next-line
@@ -46,7 +46,7 @@ export default class ChromeExtensionStorageModule implements IModule {
 
   async inputShareFromChromeExtensionStorage(): Promise<void> {
     const castedShareStore = await this.getStoreFromChromeExtensionStorage();
-    const latestShareDetails = await this.tbSDK.catchupToLatestShare(castedShareStore);
+    const latestShareDetails = await this.tbSDK.catchupToLatestShare({ shareStore: castedShareStore, includeLocalMetadataTransitions: true });
     this.tbSDK.inputShareStore(latestShareDetails.latestShare);
   }
 }
