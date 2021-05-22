@@ -1029,22 +1029,12 @@ manualSyncModes.forEach((mode) => {
       for (let i = 0; i < alltbs.length; i += 1) {
         promises.push(alltbs[i].generateNewShare().then((_) => alltbs[i].syncLocalMetadataTransitions()));
       }
-      const data2 = await Promise.allSettled(promises);
-      // console.log(data2);
-
-      // sync shares
-      // const promises2 = [];
-      // for (let i = 0; i < alltbs.length; i += 1) {
-      //   console.log(alltbs[i]._localMetadataTransitions);
-      //   promises2.push(alltbs[i].syncLocalMetadataTransitions());
-      // }
       const res = await Promise.allSettled(promises);
 
       let count = 0;
       for (let i = 0; i < res.length; i += 1) {
         if (res[i].status === "fulfilled") count += 1;
       }
-      console.log(res);
       if (count !== 1) {
         fail("fulfilled count != 1");
       }
