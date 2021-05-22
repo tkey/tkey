@@ -1003,7 +1003,7 @@ manualSyncModes.forEach((mode) => {
       }
     });
 
-    it(`#locks should not allow for writes of the same nonce, manualSync=${mode}`, async function () {
+    it.only(`#locks should not allow for writes of the same nonce, manualSync=${mode}`, async function () {
       const tb = new ThresholdKey({ serviceProvider: defaultSP, manualSync: mode, storageLayer: defaultSL });
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
       await tb.syncLocalMetadataTransitions();
@@ -1029,7 +1029,8 @@ manualSyncModes.forEach((mode) => {
       for (let i = 0; i < alltbs.length; i += 1) {
         promises.push(alltbs[i].generateNewShare());
       }
-      await Promise.allSettled(promises);
+      const data2 = await Promise.allSettled(promises);
+      // console.log(data2);
 
       // sync shares
       const promises2 = [];
@@ -1042,6 +1043,7 @@ manualSyncModes.forEach((mode) => {
       for (let i = 0; i < res.length; i += 1) {
         if (res[i].status === "fulfilled") count += 1;
       }
+      console.log(res);
       if (count !== 1) {
         fail("fulfilled count != 1");
       }
