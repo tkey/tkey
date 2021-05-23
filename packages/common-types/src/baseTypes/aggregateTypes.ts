@@ -14,7 +14,16 @@ import {
   ShareStoreMap,
   ShareStorePolyIDShareIndexMap,
 } from "../base";
-import { BNString, EncryptedMessage, ISerializable, IServiceProvider, IStorageLayer, PolynomialID, ShareDescriptionMap } from "./commonTypes";
+import {
+  BNString,
+  EncryptedMessage,
+  ISerializable,
+  IServiceProvider,
+  IStorageLayer,
+  PolyIDAndShares,
+  PolynomialID,
+  ShareDescriptionMap,
+} from "./commonTypes";
 
 export interface IModule {
   moduleName: string;
@@ -51,7 +60,7 @@ export interface IMetadata extends ISerializable {
 
   publicShares: PublicSharePolyIDShareIndexMap;
 
-  polyIDList: PolynomialID[];
+  polyIDList: PolyIDAndShares[];
 
   generalStore: {
     [moduleName: string]: unknown;
@@ -69,7 +78,6 @@ export interface IMetadata extends ISerializable {
 
   getShareIndexesForPolynomial(polyID: PolynomialID): string[];
   getLatestPublicPolynomial(): PublicPolynomial;
-  addPublicPolynomial(publicPolynomial: PublicPolynomial): void;
   addPublicShare(polynomialID: PolynomialID, publicShare: PublicShare): void;
   setGeneralStoreDomain(key: string, obj: unknown): void;
   getGeneralStoreDomain(key: string): unknown;
@@ -129,6 +137,7 @@ export type TKeyArgs = {
   serviceProvider?: IServiceProvider;
   storageLayer?: IStorageLayer;
   directParams?: DirectWebSDKArgs;
+  manualSync?: boolean;
 };
 
 export interface SecurityQuestionStoreArgs {
@@ -211,38 +220,52 @@ export interface IPrivateKeyFormat {
   createPrivateKeyStore(privateKey: BN): SECP256k1NStore;
 }
 
+export interface IAuthMetadata {
+  metadata: IMetadata;
+  privKey: BN;
+}
+
+export type IAuthMetadatas = IAuthMetadata[];
+export type ShareStores = ShareStore[];
+export type LocalTransitionShares = BN[];
+export type LocalTransitionData = [...IAuthMetadatas, ...ShareStores];
+export type LocalMetadataTransitions = [LocalTransitionShares, LocalTransitionData];
+
 export interface ITKeyApi {
   getMetadata(): IMetadata;
   getStorageLayer(): IStorageLayer;
-  updateMetadata(): Promise<IMetadata>;
   initialize(params: { input?: ShareStore; importKey?: BN; neverInitializeNewKey?: boolean }): Promise<KeyDetails>;
-  catchupToLatestShare(shareStore: ShareStore): Promise<CatchupToLatestShareResult>;
-  syncShareMetadata(adjustScopedStore?: (ss: unknown) => unknown): Promise<void>;
+  catchupToLatestShare(params: {
+    shareStore: ShareStore;
+    polyID?: string;
+    includeLocalMetadataTransitions?: boolean;
+  }): Promise<CatchupToLatestShareResult>;
+  _syncShareMetadata(adjustScopedStore?: (ss: unknown) => unknown): Promise<void>;
   inputShareStoreSafe(shareStore: ShareStore): Promise<void>;
-  setDeviceStorage(storeDeviceStorage: (deviceShareStore: ShareStore) => Promise<void>): void;
+  _setDeviceStorage(storeDeviceStorage: (deviceShareStore: ShareStore) => Promise<void>): void;
   addShareDescription(shareIndex: string, description: string, updateMetadata?: boolean): Promise<void>;
-  inputShareStore(shareStore: ShareStore): void;
-  deleteShare(shareIndex: BNString): Promise<DeleteShareResult>;
-  addRefreshMiddleware(
+  _addRefreshMiddleware(
     moduleName: string,
     middleware: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap) => unknown
   ): void;
-  addReconstructKeyMiddleware(moduleName: string, middleware: () => Promise<Array<BN>>): void;
-  addShareSerializationMiddleware(
+  _addReconstructKeyMiddleware(moduleName: string, middleware: () => Promise<Array<BN>>): void;
+  _addShareSerializationMiddleware(
     serialize: (share: BN, type: string) => Promise<unknown>,
     deserialize: (serializedShare: unknown, type: string) => Promise<BN>
   ): void;
   generateNewShare(): Promise<GenerateNewShareResult>;
-  outputShareStore(shareIndex: BNString): ShareStore;
+  outputShareStore(shareIndex: BNString, polyID?: string): ShareStore;
   inputShare(share: unknown, type?: string): Promise<void>;
   outputShare(shareIndex: BNString, type?: string): Promise<unknown>;
+  inputShareStore(shareStore: ShareStore): void;
+  deleteShare(shareIndex: BNString): Promise<DeleteShareResult>;
   encrypt(data: Buffer): Promise<EncryptedMessage>;
   decrypt(encryptedMesage: EncryptedMessage): Promise<Buffer>;
 
   getTKeyStoreItem(moduleName: string, id: string): Promise<TkeyStoreItemType>;
   getTKeyStore(moduleName: string): Promise<TkeyStoreItemType[]>;
-  deleteTKeyStoreItem(moduleName: string, id: string): Promise<void>;
-  setTKeyStoreItem(moduleName: string, data: TkeyStoreItemType, updateMetadata?: boolean): Promise<void>;
+  _deleteTKeyStoreItem(moduleName: string, id: string): Promise<void>;
+  _setTKeyStoreItem(moduleName: string, data: TkeyStoreItemType, updateMetadata?: boolean): Promise<void>;
 }
 
 // eslint-disable-next-line no-use-before-define
@@ -257,11 +280,15 @@ export interface ITKey extends ITKeyApi, ISerializable {
 
   privKey: BN;
 
-  refreshMiddleware: RefreshMiddlewareMap;
+  _localMetadataTransitions: LocalMetadataTransitions;
 
-  reconstructKeyMiddleware: ReconstructKeyMiddlewareMap;
+  manualSync: boolean;
 
-  shareSerializationMiddleware: ShareSerializationMiddleware;
+  _refreshMiddleware: RefreshMiddlewareMap;
+
+  _reconstructKeyMiddleware: ReconstructKeyMiddlewareMap;
+
+  _shareSerializationMiddleware: ShareSerializationMiddleware;
 
   initialize(params: { input?: ShareStore; importKey?: BN; neverInitializeNewKey?: boolean }): Promise<KeyDetails>;
 
@@ -269,11 +296,11 @@ export interface ITKey extends ITKeyApi, ISerializable {
 
   reconstructLatestPoly(): Polynomial;
 
-  refreshShares(threshold: number, newShareIndexes: Array<string>, previousPolyID: PolynomialID): Promise<RefreshSharesResult>;
+  _refreshShares(threshold: number, newShareIndexes: Array<string>, previousPolyID: PolynomialID): Promise<RefreshSharesResult>;
 
-  initializeNewKey(params: { userInput?: BN; initializeModules?: boolean }): Promise<InitializeNewKeyResult>;
+  _initializeNewKey(params: { userInput?: BN; initializeModules?: boolean }): Promise<InitializeNewKeyResult>;
 
-  setKey(privKey: BN): void;
+  _setKey(privKey: BN): void;
 
   getKeyDetails(): KeyDetails;
 }

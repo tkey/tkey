@@ -18,7 +18,7 @@ class ShareSerializationModule implements IModule {
 
   setModuleReferences(tbSDK: ITKeyApi): void {
     this.tbSDK = tbSDK;
-    this.tbSDK.addShareSerializationMiddleware(this.serialize.bind(this), this.deserialize.bind(this));
+    this.tbSDK._addShareSerializationMiddleware(this.serialize.bind(this), this.deserialize.bind(this));
   }
 
   // eslint-disable-next-line

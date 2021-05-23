@@ -7,6 +7,8 @@ export type PubKeyType = "ecc";
 // @flow
 export type PolynomialID = string;
 
+export type PolyIDAndShares = [PolynomialID, string[]];
+
 export type BNString = string | BN;
 
 export interface EncryptedMessage {
@@ -83,4 +85,8 @@ export type MockStorageLayerArgs = {
 
 export type ShareDescriptionMap = {
   [shareIndexStr: string]: string[];
+};
+
+export type FromJSONConstructor = {
+  fromJSON(value: StringifiedType): any;
 };

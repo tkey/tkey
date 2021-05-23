@@ -19,7 +19,7 @@
     <div :style="{ marginTop: '20px' }">
       <h4>Login and resets</h4>
       <button @click="triggerLogin">Login with Torus and initialize tkey</button>
-      <button @click="initializeNewKey">Create new tkey</button>
+      <button @click="_initializeNewKey">Create new tkey</button>
       <button @click="reconstructKey">Reconstuct tkey</button>
       <button @click="getKeyDetails">Get tkey details</button>
       <button @click="getSDKObject">Get tkey object</button>
@@ -210,7 +210,7 @@ export default {
         console.log(this.tbsdk);
 
         const key = await this.tbsdk.reconstructKey();
-        // await this.tbsdk.initializeNewKey(undefined, true)
+        // await this.tbsdk._initializeNewKey(undefined, true)
         console.log(key.privKey.toString("hex"));
         this.console(key);
 
@@ -351,11 +351,11 @@ export default {
         console.error(error, "caught");
       }
     },
-    async initializeNewKey() {
+    async _initializeNewKey() {
       try {
         await this.initTkey();
         if (!this.mocked) await this.triggerLogin();
-        const res = await this.tbsdk.initializeNewKey({ initializeModules: true });
+        const res = await this.tbsdk._initializeNewKey({ initializeModules: true });
         this.console(res);
         console.log("new tkey", res);
       } catch (error) {
