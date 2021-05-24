@@ -203,6 +203,7 @@ const reconstructedKey = await tkey.reconstructKey();
 // Resulting threshold - 2/3.
 // reconstructed key remains same.
 await tkey.modules.securityQuestions.generateNewShareWithSecurityQuestions("myanswer", "myquestion?");
+await tkey.syncLocalMetadataTransitions()
 
 // Creating a password share.
 // Resulting threshold - 2/3.
