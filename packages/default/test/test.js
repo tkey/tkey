@@ -809,13 +809,16 @@ manualSyncModes.forEach((mode) => {
         await tb2.modules.privateKeyModule.setPrivateKey("secp256k1n", actualPrivateKeys[0].toString("hex"));
       }, Error);
     });
-    it(`#should get/set seed phrase, manualSync=${mode}`, async function () {
+    it(`#should get/set multiple seed phrase, manualSync=${mode}`, async function () {
       const seedPhraseToSet = "seed sock milk update focus rotate barely fade car face mechanic mercy";
+      const seedPhraseToSet2 = "object brass success calm lizard science syrup planet exercise parade honey impulse";
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
       await tb.modules.seedPhrase.setSeedPhrase("HD Key Tree", seedPhraseToSet);
+      await tb.modules.seedPhrase.setSeedPhrase("HD Key Tree", seedPhraseToSet2);
       await tb.syncLocalMetadataTransitions();
-      const [returnedSeed] = await tb.modules.seedPhrase.getSeedPhrases();
-      strictEqual(returnedSeed.seedPhrase, seedPhraseToSet);
+      const returnedSeed = await tb.modules.seedPhrase.getSeedPhrases();
+      strictEqual(returnedSeed[0].seedPhrase, seedPhraseToSet);
+      strictEqual(returnedSeed[1].seedPhrase, seedPhraseToSet2);
 
       const metamaskSeedPhraseFormat2 = new MetamaskSeedPhraseFormat("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68");
       const tb2 = new ThresholdKey({
@@ -829,11 +832,17 @@ manualSyncModes.forEach((mode) => {
       const reconstuctedKey = await tb2.reconstructKey();
       await tb.modules.seedPhrase.getSeedPhrasesWithAccounts();
 
-      // console.log(reconstuctedKey);
       compareReconstructedKeys(reconstuctedKey, {
         privKey: resp1.privKey,
-        seedPhraseModule: [new BN("70dc3117300011918e26b02176945cc15c3d548cf49fd8418d97f93af699e46", "hex")],
-        allKeys: [resp1.privKey, new BN("70dc3117300011918e26b02176945cc15c3d548cf49fd8418d97f93af699e46", "hex")],
+        seedPhraseModule: [
+          new BN("70dc3117300011918e26b02176945cc15c3d548cf49fd8418d97f93af699e46", "hex"),
+          new BN("bfdb025a1d404212c3f9ace6c5fb4185087281dcb9c1e89087d1a3a423f80d22", "hex"),
+        ],
+        allKeys: [
+          resp1.privKey,
+          new BN("70dc3117300011918e26b02176945cc15c3d548cf49fd8418d97f93af699e46", "hex"),
+          new BN("bfdb025a1d404212c3f9ace6c5fb4185087281dcb9c1e89087d1a3a423f80d22", "hex"),
+        ],
       });
     });
     it(`#should be able to derive keys, manualSync=${mode}`, async function () {
@@ -1003,7 +1012,7 @@ manualSyncModes.forEach((mode) => {
       }
     });
 
-    it.only(`#locks should not allow for writes of the same nonce, manualSync=${mode}`, async function () {
+    it(`#locks should not allow for writes of the same nonce, manualSync=${mode}`, async function () {
       const tb = new ThresholdKey({ serviceProvider: defaultSP, manualSync: mode, storageLayer: defaultSL });
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
       await tb.syncLocalMetadataTransitions();
