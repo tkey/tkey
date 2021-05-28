@@ -43,12 +43,11 @@
   "dependencies": {
     "@tkey/common-types": "^4.0.0",
     "bn.js": "^5.2.0",
-    "nyc": "^15.1.0",
     "web3-utils": "^1.3.5"
   },
   "devDependencies": {
     "@types/bn.js": "^5.1.0"
-  },
+},
   "lint-staged": {
     "!(*d).ts": [
       "yarn run lint --",

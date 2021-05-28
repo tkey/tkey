@@ -39,11 +39,10 @@
   },
   "devDependencies": {
     "@types/bn.js": "^5.1.0"
-  },
+},
   "dependencies": {
     "@tkey/common-types": "^4.0.0",
     "bn.js": "^5.2.0",
-    "nyc": "^15.1.0",
     "randombytes": "^2.1.0"
   },
   "bugs": {

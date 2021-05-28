@@ -42,13 +42,12 @@
     "@toruslabs/http-helpers": "^1.3.7",
     "bn.js": "^5.2.0",
     "json-stable-stringify": "^1.0.1",
-    "nyc": "^15.1.0",
     "web3-utils": "^1.3.5"
   },
   "devDependencies": {
     "@types/bn.js": "^5.1.0",
     "@types/json-stable-stringify": "^1.0.32"
-  },
+},
   "bugs": {
     "url": "https://github.com/tkey/tkey/issues"
   },
