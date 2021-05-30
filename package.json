@@ -56,6 +56,7 @@
     "lint-staged": "^10.5.4",
     "mocha": "^8.3.2",
     "node-fetch": "^2.6.1",
+    "nyc": "^15.1.0",
     "parallel-webpack": "^2.6.0",
     "prettier": "^2.2.1",
     "rimraf": "^3.0.2",
@@ -73,7 +74,5 @@
       "pre-commit": "lerna run pre-commit --concurrency 1 --since HEAD"
     }
   },
-  "dependencies": {
-    "nyc": "^15.1.0"
-  }
+  "dependencies": {}
 }

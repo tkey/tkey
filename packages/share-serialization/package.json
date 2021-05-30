@@ -41,9 +41,8 @@
     "@tkey/common-types": "^4.0.0",
     "@types/create-hash": "1.2.2",
     "bn.js": "^5.2.0",
-    "create-hash": "^1.2.0",
-    "nyc": "^15.1.0"
-  },
+    "create-hash": "^1.2.0"
+},
   "bugs": {
     "url": "https://github.com/tkey/tkey/issues"
   },
@@ -53,5 +52,8 @@
       "prettier --write 'src/**/*.ts' 'index.ts'"
     ]
   },
-  "gitHead": "9d4db2955bbfd2876fddf1e31ebf357ef577eb56"
+  "gitHead": "9d4db2955bbfd2876fddf1e31ebf357ef577eb56",
+  "devDependencies": {
+
+  }
 }

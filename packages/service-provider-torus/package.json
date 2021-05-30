@@ -42,13 +42,12 @@
     "@tkey/service-provider-base": "^4.0.0",
     "@toruslabs/torus-direct-web-sdk": "^4.12.0",
     "bn.js": "^5.2.0",
-    "elliptic": "^6.5.4",
-    "nyc": "^15.1.0"
-  },
+    "elliptic": "^6.5.4"
+},
   "devDependencies": {
     "@types/bn.js": "^5.1.0",
     "@types/elliptic": "^6.4.12"
-  },
+},
   "bugs": {
     "url": "https://github.com/tkey/tkey/issues"
   },

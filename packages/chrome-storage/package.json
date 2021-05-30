@@ -42,12 +42,11 @@
   },
   "dependencies": {
     "@tkey/common-types": "^4.0.0",
-    "nyc": "^15.1.0",
     "webextension-polyfill-ts": "^0.25.0"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.135"
-  },
+},
   "lint-staged": {
     "!(*d).ts": [
       "yarn run lint --",

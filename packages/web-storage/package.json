@@ -40,15 +40,14 @@
   "dependencies": {
     "@tkey/common-types": "^4.0.0",
     "@types/bn.js": "^5.1.0",
-    "bn.js": "^5.2.0",
-    "nyc": "^15.1.0"
-  },
+    "bn.js": "^5.2.0"
+},
   "devDependencies": {
     "@tkey/core": "^4.0.0",
     "@tkey/service-provider-base": "^4.0.0",
     "@tkey/storage-layer-torus": "^4.0.0",
     "@types/filesystem": "^0.0.30"
-  },
+},
   "bugs": {
     "url": "https://github.com/tkey/tkey/issues"
   },
