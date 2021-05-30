@@ -25,7 +25,7 @@ declare class ThresholdKey implements ITKey {
     getStorageLayer(): IStorageLayer;
     getMetadata(): IMetadata;
     initialize(params?: {
-        input?: ShareStore;
+        withShare?: ShareStore;
         importKey?: BN;
         neverInitializeNewKey?: boolean;
         transitionMetadata?: Metadata;
@@ -62,7 +62,7 @@ declare class ThresholdKey implements ITKey {
     }): Promise<void>;
     syncLocalMetadataTransitions(): Promise<void>;
     updateMetadata(params?: {
-        input?: ShareStore;
+        withShare?: ShareStore;
     }): Promise<ThresholdKey>;
     inputShareStore(shareStore: ShareStore): void;
     inputShareStoreSafe(shareStore: ShareStore): Promise<void>;
