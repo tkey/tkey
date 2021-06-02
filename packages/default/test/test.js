@@ -58,7 +58,7 @@ manualSyncModes.forEach((mode) => {
     beforeEach("Setup ThresholdKey", async function () {
       tb = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL, manualSync: mode });
     });
-    it("#shoudl be able to initializeNewKey using initialize", async function () {
+    it("#should be able to initializeNewKey using initialize", async function () {
       const sp = defaultSP;
       sp.postboxKey = new BN(getTempKey(), "hex");
       const sl = initStorageLayer(mocked, { serviceProvider: sp, hostUrl: metadataURL });
@@ -99,7 +99,6 @@ manualSyncModes.forEach((mode) => {
       await tb._initializeNewKey({ initializeModules: true });
       const { newShareStores: newShareStores1, newShareIndex: newShareIndex1 } = await tb.generateNewShare();
       const { newShareStores } = await tb.deleteShare(newShareIndex1);
-
       await tb.syncLocalMetadataTransitions();
 
       const tb2 = new ThresholdKey({ serviceProvider: tb.serviceProvider, storageLayer: tb.storageLayer });
@@ -122,6 +121,16 @@ manualSyncModes.forEach((mode) => {
         await tb.deleteShare(newShareIndex2);
       }, Error);
     });
+    it(`#should not be able to initialize with deleted share, manualSync=${mode}`, async function () {
+      await tb._initializeNewKey({ initializeModules: true });
+      const { newShareStores: newShareStores1, newShareIndex: newShareIndex1 } = await tb.generateNewShare();
+      await tb.deleteShare(newShareIndex1);
+      await tb.syncLocalMetadataTransitions();
+      const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL, manualSync: mode });
+      await rejects(async function () {
+        await tb2.initialize({ withShare: newShareStores1[newShareIndex1.toString("hex")] });
+      });
+    });
     it(`#should not be able to add share post deletion, manualSync=${mode}`, async function () {
       await tb._initializeNewKey({ initializeModules: true });
       const { newShareStores: newShareStores1, newShareIndex: newShareIndex1 } = await tb.generateNewShare();
@@ -130,7 +139,7 @@ manualSyncModes.forEach((mode) => {
 
       const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL, manualSync: mode });
       await tb2.initialize();
-      rejects(async () => {
+      await rejects(async () => {
         await tb2.inputShare(newShareStores1[newShareIndex1.toString("hex")].share.share);
       }, Error);
     });

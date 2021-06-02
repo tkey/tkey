@@ -10,6 +10,7 @@ import {
   generatePrivateExcludingIndexes,
   getPubKeyECC,
   getPubKeyPoint,
+  IMessageMetadata,
   IMetadata,
   InitializeNewKeyResult,
   IServiceProvider,
@@ -31,6 +32,7 @@ import {
   RefreshMiddlewareMap,
   RefreshSharesResult,
   Share,
+  SHARE_DELETED,
   ShareSerializationMiddleware,
   ShareStore,
   ShareStoreMap,
@@ -101,34 +103,6 @@ class ThresholdKey implements ITKey {
     this._localMetadataTransitions = [[], []];
     this.setModuleReferences(); // Providing ITKeyApi access to modules
     this.haveWriteMetadataLock = "";
-  }
-
-  getApi(): ITKeyApi {
-    return {
-      getMetadata: this.getMetadata.bind(this),
-      getStorageLayer: this.getStorageLayer.bind(this),
-      initialize: this.initialize.bind(this),
-      catchupToLatestShare: this.catchupToLatestShare.bind(this),
-      _syncShareMetadata: this._syncShareMetadata.bind(this),
-      _addRefreshMiddleware: this._addRefreshMiddleware.bind(this),
-      _addReconstructKeyMiddleware: this._addReconstructKeyMiddleware.bind(this),
-      _addShareSerializationMiddleware: this._addShareSerializationMiddleware.bind(this),
-      addShareDescription: this.addShareDescription.bind(this),
-      generateNewShare: this.generateNewShare.bind(this),
-      inputShareStore: this.inputShareStore.bind(this),
-      inputShareStoreSafe: this.inputShareStoreSafe.bind(this),
-      outputShareStore: this.outputShareStore.bind(this),
-      inputShare: this.inputShare.bind(this),
-      outputShare: this.outputShare.bind(this),
-      _setDeviceStorage: this._setDeviceStorage.bind(this),
-      encrypt: this.encrypt.bind(this),
-      decrypt: this.decrypt.bind(this),
-      getTKeyStore: this.getTKeyStore.bind(this),
-      getTKeyStoreItem: this.getTKeyStoreItem.bind(this),
-      _setTKeyStoreItem: this._setTKeyStoreItem.bind(this),
-      _deleteTKeyStoreItem: this._deleteTKeyStoreItem.bind(this),
-      deleteShare: this.deleteShare.bind(this),
-    };
   }
 
   getStorageLayer(): IStorageLayer {
@@ -204,7 +178,7 @@ class ThresholdKey implements ITKey {
     } catch (err) {
       // check if error is not the undefined error
       // if so we dont throw immedietly incase there is valid transition metadata
-      const noMetadataExistsForShare = err.code === 1102;
+      const noMetadataExistsForShare = err.code === 1503;
       if (!noMetadataExistsForShare || !reinitializing) {
         throw err;
       }
@@ -263,7 +237,7 @@ class ThresholdKey implements ITKey {
     try {
       shareMetadata = await this.getAuthMetadata({ privKey: shareStore.share.share, includeLocalMetadataTransitions });
     } catch (err) {
-      throw CoreError.metadataGetFailed(`${prettyPrintError(err)}`);
+      throw CoreError.authMetadataGetUnavailable(`, ${prettyPrintError(err)}`);
     }
 
     try {
@@ -398,6 +372,7 @@ class ThresholdKey implements ITKey {
       throw CoreError.privateKeyUnavailable();
     }
     const shareIndexToDelete = new BN(shareIndex, "hex");
+    const shareToDelete = this.outputShareStore(shareIndexToDelete);
     if (shareIndexToDelete.cmp(new BN("1", "hex")) === 0) {
       throw new CoreError(1001, "Unable to delete service provider share");
     }
@@ -422,7 +397,7 @@ class ThresholdKey implements ITKey {
     }
     const results = await this._refreshShares(pubPoly.getThreshold(), [...newShareIndexes], previousPolyID);
     const newShareStores = results.shareStores;
-
+    await this.addLocalMetadataTransitions({ input: [{ message: SHARE_DELETED, dateAdded: Date.now() }], privKey: [shareToDelete.share.share] });
     return { newShareStores };
   }
 
@@ -839,6 +814,9 @@ class ThresholdKey implements ITKey {
       }
     }
     const raw = await this.storageLayer.getMetadata(params);
+    if ((raw as IMessageMetadata).message === SHARE_DELETED) {
+      throw CoreError.fromCode(1308);
+    }
     return params.fromJSONConstructor.fromJSON(raw);
   }
 
@@ -1144,6 +1122,34 @@ class ThresholdKey implements ITKey {
       await tb.initialize({ neverInitializeNewKey: true });
     }
     return tb;
+  }
+
+  getApi(): ITKeyApi {
+    return {
+      getMetadata: this.getMetadata.bind(this),
+      getStorageLayer: this.getStorageLayer.bind(this),
+      initialize: this.initialize.bind(this),
+      catchupToLatestShare: this.catchupToLatestShare.bind(this),
+      _syncShareMetadata: this._syncShareMetadata.bind(this),
+      _addRefreshMiddleware: this._addRefreshMiddleware.bind(this),
+      _addReconstructKeyMiddleware: this._addReconstructKeyMiddleware.bind(this),
+      _addShareSerializationMiddleware: this._addShareSerializationMiddleware.bind(this),
+      addShareDescription: this.addShareDescription.bind(this),
+      generateNewShare: this.generateNewShare.bind(this),
+      inputShareStore: this.inputShareStore.bind(this),
+      inputShareStoreSafe: this.inputShareStoreSafe.bind(this),
+      outputShareStore: this.outputShareStore.bind(this),
+      inputShare: this.inputShare.bind(this),
+      outputShare: this.outputShare.bind(this),
+      _setDeviceStorage: this._setDeviceStorage.bind(this),
+      encrypt: this.encrypt.bind(this),
+      decrypt: this.decrypt.bind(this),
+      getTKeyStore: this.getTKeyStore.bind(this),
+      getTKeyStoreItem: this.getTKeyStoreItem.bind(this),
+      _setTKeyStoreItem: this._setTKeyStoreItem.bind(this),
+      _deleteTKeyStoreItem: this._deleteTKeyStoreItem.bind(this),
+      deleteShare: this.deleteShare.bind(this),
+    };
   }
 }
 

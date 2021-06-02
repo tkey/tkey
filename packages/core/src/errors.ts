@@ -41,12 +41,15 @@ class CoreError extends TkeyError {
     1305: "Input is not supported",
     1306: "no encrypted share store for share exists",
     1307: "Share doesn't exist",
+    1308: "Share was deleted",
     // lock
     1401: "Unable to acquire lock",
     1402: "Unable to release lock",
     // auth metadata
     1501: "privkey unavailable",
     1502: "metadata pubkey unavailable",
+    1503: "getAuthMetadata errored",
+    1504: "setAuthMetadata errored",
   };
 
   public constructor(code: number, message: string) {
@@ -125,6 +128,14 @@ class CoreError extends TkeyError {
 
   public static metadataPubKeyUnavailable(extraMessage = ""): ITkeyError {
     return CoreError.fromCode(1502, extraMessage);
+  }
+
+  public static authMetadataGetUnavailable(extraMessage = ""): ITkeyError {
+    return CoreError.fromCode(1503, extraMessage);
+  }
+
+  public static authMetadataSetUnavailable(extraMessage = ""): ITkeyError {
+    return CoreError.fromCode(1504, extraMessage);
   }
 }
 export default CoreError;

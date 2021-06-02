@@ -33,7 +33,7 @@ class AuthMetadata implements IAuthMetadata {
     const { data, sig } = value;
 
     const m = Metadata.fromJSON(data);
-    if (!m.pubKey) throw CoreError.metadataPubKeyUnavailable();
+    if (!(m && m.pubKey)) throw CoreError.metadataPubKeyUnavailable();
 
     const pubK = ecCurve.keyFromPublic({ x: m.pubKey.x.toString("hex", 64), y: m.pubKey.y.toString("hex", 64) }, "hex");
     if (!pubK.verify(stripHexPrefix(keccak256(stringify(data))), sig)) {
