@@ -71,9 +71,9 @@ describe("web storage", function () {
     await tb.deleteShare(resp1.deviceShare.share.shareIndex.toString("hex"));
     // console.log("%O", tb.shares);
     await tb2.initialize();
-    await tb2.modules[WEB_STORAGE_MODULE_NAME].inputShareFromWebStorage();
     // console.log("%O", tb2.shares);
     rejects(async () => {
+      await tb2.modules[WEB_STORAGE_MODULE_NAME].inputShareFromWebStorage();
       await tb2.reconstructKey();
     });
   });
@@ -86,7 +86,12 @@ describe("web storage", function () {
     await tb.deleteShare(resp1.deviceShare.share.shareIndex.toString("hex"));
     // console.log("%O", tb.shares);
     await tb2.initialize();
-    await tb2.modules[WEB_STORAGE_MODULE_NAME].inputShareFromWebStorage();
+
+    rejects(async () => {
+      await tb2.modules[WEB_STORAGE_MODULE_NAME].inputShareFromWebStorage();
+      await tb2.reconstructKey();
+    });
+
     // console.log("%O", tb2.shares);
     await tb2.inputShareStore(newShare.newShareStores[newShare.newShareIndex.toString("hex")]);
     const secondKey = await tb2.reconstructKey();
