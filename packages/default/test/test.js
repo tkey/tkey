@@ -121,7 +121,7 @@ manualSyncModes.forEach((mode) => {
         await tb.deleteShare(newShareIndex2);
       }, Error);
     });
-    it(`#should not be able to initialize with deleted share, manualSync=${mode}`, async function () {
+    it(`#should not be able to initialize with a deleted share, manualSync=${mode}`, async function () {
       await tb._initializeNewKey({ initializeModules: true });
       const { newShareStores: newShareStores1, newShareIndex: newShareIndex1 } = await tb.generateNewShare();
       await tb.deleteShare(newShareIndex1);
