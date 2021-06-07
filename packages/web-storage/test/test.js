@@ -72,7 +72,7 @@ describe("web storage", function () {
     // console.log("%O", tb.shares);
     await tb2.initialize();
     // console.log("%O", tb2.shares);
-    rejects(async () => {
+    await rejects(async () => {
       await tb2.modules[WEB_STORAGE_MODULE_NAME].inputShareFromWebStorage();
       await tb2.reconstructKey();
     });
@@ -87,7 +87,7 @@ describe("web storage", function () {
     // console.log("%O", tb.shares);
     await tb2.initialize();
 
-    rejects(async () => {
+    await rejects(async () => {
       await tb2.modules[WEB_STORAGE_MODULE_NAME].inputShareFromWebStorage();
       await tb2.reconstructKey();
     });
