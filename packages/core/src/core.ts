@@ -489,6 +489,7 @@ class ThresholdKey implements ITKey {
         this.metadata.setGeneralStoreDomain(moduleName, adjustedGeneralStore);
       }
     }
+
     const newShareMetadataToPush = [];
     const newShareStoreSharesToPush = newShareIndexes.map((shareIndex) => {
       const me = this.metadata.clone();
