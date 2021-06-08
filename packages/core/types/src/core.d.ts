@@ -21,7 +21,6 @@ declare class ThresholdKey implements ITKey {
     haveWriteMetadataLock: string;
     args: TKeyArgs;
     constructor(args?: TKeyArgs);
-    getApi(): ITKeyApi;
     getStorageLayer(): IStorageLayer;
     getMetadata(): IMetadata;
     initialize(params?: {
@@ -117,5 +116,6 @@ declare class ThresholdKey implements ITKey {
     inputShare(share: unknown, type?: string): Promise<void>;
     toJSON(): StringifiedType;
     static fromJSON(value: StringifiedType, args: TKeyArgs): Promise<ThresholdKey>;
+    getApi(): ITKeyApi;
 }
 export default ThresholdKey;

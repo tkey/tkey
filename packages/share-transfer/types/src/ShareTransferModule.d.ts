@@ -1,6 +1,7 @@
-import { IModule, ITKeyApi, ITkeyError, ShareStore } from "@tkey/common-types";
+import { IModule, ITKeyApi, ITkeyError, ShareStore, ShareStoreMap } from "@tkey/common-types";
 import BN from "bn.js";
 import ShareRequest from "./ShareRequest";
+import ShareTransferStorePointer from "./ShareTransferStorePointer";
 export declare type ShareTransferStore = {
     [encPubKeyX: string]: ShareRequest;
 };
@@ -23,6 +24,7 @@ declare class ShareTransferModule implements IModule {
     getShareTransferStore(): Promise<ShareTransferStore>;
     setShareTransferStore(shareTransferStore: ShareTransferStore): Promise<void>;
     startRequestStatusCheck(encPubKeyX: string, deleteRequestAfterCompletion: boolean): Promise<ShareStore>;
+    static refreshShareTransferMiddleware(generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap): ShareTransferStorePointer;
     cancelRequestStatusCheck(): Promise<void>;
     deleteShareTransferStore(encPubKey: string): Promise<void>;
     resetShareTransferStore(): Promise<void>;

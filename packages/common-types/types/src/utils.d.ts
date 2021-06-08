@@ -12,6 +12,7 @@ export declare function generateAddressFromPublicKey(publicKey: Buffer): string;
 export declare function normalize(input: number | string): string;
 export declare function generatePrivateExcludingIndexes(shareIndexes: Array<BN>): BN;
 export declare const KEY_NOT_FOUND = "KEY_NOT_FOUND";
+export declare const SHARE_DELETED = "SHARE_DELETED";
 export declare function derivePubKeyXFromPolyID(polyID: string): string;
 export declare function stripHexPrefix(str: string): string;
 export declare function generateID(): string;

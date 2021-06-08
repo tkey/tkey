@@ -37,5 +37,7 @@ declare class CoreError extends TkeyError {
     static releaseLockFailed(extraMessage?: string): ITkeyError;
     static privKeyUnavailable(extraMessage?: string): ITkeyError;
     static metadataPubKeyUnavailable(extraMessage?: string): ITkeyError;
+    static authMetadataGetUnavailable(extraMessage?: string): ITkeyError;
+    static authMetadataSetUnavailable(extraMessage?: string): ITkeyError;
 }
 export default CoreError;
