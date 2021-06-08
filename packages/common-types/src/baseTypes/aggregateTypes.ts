@@ -225,10 +225,16 @@ export interface IAuthMetadata {
   privKey: BN;
 }
 
+export interface IMessageMetadata {
+  message: string;
+  dateAdded?: number;
+}
+
 export type IAuthMetadatas = IAuthMetadata[];
 export type ShareStores = ShareStore[];
+export type IMessageMetadatas = IMessageMetadata[];
 export type LocalTransitionShares = BN[];
-export type LocalTransitionData = [...IAuthMetadatas, ...ShareStores];
+export type LocalTransitionData = [...IAuthMetadatas, ...ShareStores, ...IMessageMetadatas];
 export type LocalMetadataTransitions = [LocalTransitionShares, LocalTransitionData];
 
 export interface ITKeyApi {

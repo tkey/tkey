@@ -8,7 +8,7 @@ import ServiceProviderBase from "@tkey/service-provider-base";
 import ShareTransferModule from "@tkey/share-transfer";
 import TorusStorageLayer, { MockStorageLayer } from "@tkey/storage-layer-torus";
 import { generatePrivate } from "@toruslabs/eccrypto";
-import { deepStrictEqual, fail, rejects, strict, strictEqual } from "assert";
+import { deepStrictEqual, fail, notStrictEqual, rejects, strict, strictEqual } from "assert";
 import BN from "bn.js";
 import { keccak256 } from "web3-utils";
 
@@ -58,7 +58,7 @@ manualSyncModes.forEach((mode) => {
     beforeEach("Setup ThresholdKey", async function () {
       tb = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL, manualSync: mode });
     });
-    it("#shoudl be able to initializeNewKey using initialize", async function () {
+    it("#should be able to initializeNewKey using initialize", async function () {
       const sp = defaultSP;
       sp.postboxKey = new BN(getTempKey(), "hex");
       const sl = initStorageLayer(mocked, { serviceProvider: sp, hostUrl: metadataURL });
@@ -99,7 +99,6 @@ manualSyncModes.forEach((mode) => {
       await tb._initializeNewKey({ initializeModules: true });
       const { newShareStores: newShareStores1, newShareIndex: newShareIndex1 } = await tb.generateNewShare();
       const { newShareStores } = await tb.deleteShare(newShareIndex1);
-
       await tb.syncLocalMetadataTransitions();
 
       const tb2 = new ThresholdKey({ serviceProvider: tb.serviceProvider, storageLayer: tb.storageLayer });
@@ -122,6 +121,16 @@ manualSyncModes.forEach((mode) => {
         await tb.deleteShare(newShareIndex2);
       }, Error);
     });
+    it(`#should not be able to initialize with a deleted share, manualSync=${mode}`, async function () {
+      await tb._initializeNewKey({ initializeModules: true });
+      const { newShareStores: newShareStores1, newShareIndex: newShareIndex1 } = await tb.generateNewShare();
+      await tb.deleteShare(newShareIndex1);
+      await tb.syncLocalMetadataTransitions();
+      const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL, manualSync: mode });
+      await rejects(async function () {
+        await tb2.initialize({ withShare: newShareStores1[newShareIndex1.toString("hex")] });
+      });
+    });
     it(`#should not be able to add share post deletion, manualSync=${mode}`, async function () {
       await tb._initializeNewKey({ initializeModules: true });
       const { newShareStores: newShareStores1, newShareIndex: newShareIndex1 } = await tb.generateNewShare();
@@ -130,7 +139,7 @@ manualSyncModes.forEach((mode) => {
 
       const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL, manualSync: mode });
       await tb2.initialize();
-      rejects(async () => {
+      await rejects(async () => {
         await tb2.inputShare(newShareStores1[newShareIndex1.toString("hex")].share.share);
       }, Error);
     });
@@ -625,26 +634,41 @@ manualSyncModes.forEach((mode) => {
       // usually should be called in callback, but mocha does not allow
       const pubkey = await tb2.modules.shareTransfer.requestNewShare();
 
-      // eslint-disable-next-line promise/param-names
-      // await new Promise((res) => {
-      //   setTimeout(res, 200);
-      // });
       const result = await tb.generateNewShare();
 
       await tb.modules.shareTransfer.approveRequest(pubkey, result.newShareStores[result.newShareIndex.toString("hex")]);
       await tb.syncLocalMetadataTransitions();
 
       await tb2.modules.shareTransfer.startRequestStatusCheck(pubkey);
-      // eslint-disable-next-line promise/param-names
-      // await new Promise((res) => {
-      //   setTimeout(res, 1001);
-      // });
 
       const reconstructedKey = await tb2.reconstructKey();
       if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
         fail("key should be able to be reconstructed");
       }
     });
+
+    it(`#should be able to change share transfer pointer after share deletion, manualSync=${mode}`, async function () {
+      const tb = new ThresholdKey({
+        serviceProvider: defaultSP,
+        manualSync: mode,
+        storageLayer: defaultSL,
+        modules: { shareTransfer: new ShareTransferModule() },
+      });
+      await tb._initializeNewKey({ initializeModules: true });
+      const firstShareTransferPointer = tb.metadata.generalStore.shareTransfer.pointer.toString("hex");
+      const { newShareIndex: newShareIndex1 } = await tb.generateNewShare();
+      const secondShareTransferPointer = tb.metadata.generalStore.shareTransfer.pointer.toString("hex");
+
+      strictEqual(firstShareTransferPointer, secondShareTransferPointer);
+
+      await tb.syncLocalMetadataTransitions();
+      await tb.deleteShare(newShareIndex1);
+      const thirdShareTransferPointer = tb.metadata.generalStore.shareTransfer.pointer.toString("hex");
+
+      notStrictEqual(secondShareTransferPointer, thirdShareTransferPointer);
+      await tb.syncLocalMetadataTransitions();
+    });
+
     it(`#should be able to transfer device share, manualSync=${mode}`, async function () {
       const tb = new ThresholdKey({
         serviceProvider: defaultSP,

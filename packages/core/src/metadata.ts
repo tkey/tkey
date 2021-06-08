@@ -193,7 +193,7 @@ class Metadata implements IMetadata {
       }
     }
     if (!returnShare) {
-      throw CoreError.default("Share doesn't exist");
+      throw CoreError.fromCode(1307);
     }
     return returnShare;
   }

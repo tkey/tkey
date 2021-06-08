@@ -86,6 +86,7 @@ export function generatePrivateExcludingIndexes(shareIndexes: Array<BN>): BN {
 }
 
 export const KEY_NOT_FOUND = "KEY_NOT_FOUND";
+export const SHARE_DELETED = "SHARE_DELETED";
 
 export function derivePubKeyXFromPolyID(polyID: string): string {
   return polyID.split("|")[0].slice(2);
