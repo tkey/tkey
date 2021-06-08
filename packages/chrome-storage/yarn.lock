@@ -23,9 +23,9 @@
   integrity sha512-BsPXH/irW0ht0Ji6iw/jJaK8Lj3FJemon2gvEqHKpCdDCeemHa+rI3WBGq5z7cDMZgoLjY40oninGxqk+8NzNQ==
 
 "@types/har-format@*":
-  version "1.2.5"
-  resolved "https://registry.yarnpkg.com/@types/har-format/-/har-format-1.2.5.tgz#4f6648814d0fdcb6a510e3364a9db439a753c4b1"
-  integrity sha512-IG8AE1m2pWtPqQ7wXhFhy6Q59bwwnLwO36v5Rit2FrbXCIp8Sk8E2PfUCreyrdo17STwFSKDAkitVuVYbpEHvQ==
+  version "1.2.6"
+  resolved "https://registry.yarnpkg.com/@types/har-format/-/har-format-1.2.6.tgz#471c83acdf6a2ea429620daee4c6dc1784a0e85f"
+  integrity sha512-TeZjp4COiAWPOeGx1tuFJETr/SBMx80lxqeqnCC36ZVn463f7ElCdA3X9RzDuo3BHjhN4apw41A5uoIw5FzgWA==
 
 webextension-polyfill-ts@^0.25.0:
   version "0.25.0"
