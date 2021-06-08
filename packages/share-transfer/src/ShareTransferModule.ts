@@ -7,6 +7,7 @@ import {
   ITKeyApi,
   ITkeyError,
   ShareStore,
+  ShareStoreMap,
   ShareTransferStorePointerArgs,
   toPrivKeyECC,
 } from "@tkey/common-types";
@@ -43,6 +44,7 @@ class ShareTransferModule implements IModule {
 
   setModuleReferences(tbSDK: ITKeyApi): void {
     this.tbSDK = tbSDK;
+    this.tbSDK._addRefreshMiddleware(this.moduleName, ShareTransferModule.refreshShareTransferMiddleware);
   }
 
   setRequestStatusCheckInterval(interval: number): void {
@@ -120,6 +122,8 @@ class ShareTransferModule implements IModule {
 
   async approveRequest(encPubKeyX: string, shareStore?: ShareStore): Promise<void> {
     const shareTransferStore = await this.getShareTransferStore();
+    if (!shareTransferStore[encPubKeyX]) throw ShareTransferError.missingEncryptionKey();
+
     let bufferedShare: Buffer;
     if (shareStore) {
       bufferedShare = Buffer.from(JSON.stringify(shareStore));
@@ -187,6 +191,23 @@ class ShareTransferModule implements IModule {
         }, this.requestStatusCheckInterval)
       );
     });
+  }
+
+  static refreshShareTransferMiddleware(
+    generalStore: unknown,
+    oldShareStores: ShareStoreMap,
+    newShareStores: ShareStoreMap
+  ): ShareTransferStorePointer {
+    const numberOfOldShares = Object.keys(oldShareStores).length;
+    const numberOfNewShares = Object.keys(newShareStores).length;
+
+    // This is needed to avoid MIM during share deletion.
+    if (numberOfNewShares <= numberOfOldShares) {
+      const shareTransferStorePointer: ShareTransferStorePointer = { pointer: new BN(generatePrivate()) };
+      return shareTransferStorePointer;
+    }
+
+    return generalStore as ShareTransferStorePointer;
   }
 
   async cancelRequestStatusCheck(): Promise<void> {
