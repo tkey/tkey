@@ -237,6 +237,11 @@ manualSyncModes.forEach((mode) => {
       let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
       userInput = userInput.umod(ecCurve.curve.n);
       const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
+
+      // generate and delete
+      const { newShareIndex: shareIndex1 } = await tb.generateNewShare();
+      await tb.deleteShare(shareIndex1);
+
       const { newShareStores: shareStores, newShareIndex: shareIndex } = await tb.generateNewShare();
 
       const stringified = JSON.stringify(tb);

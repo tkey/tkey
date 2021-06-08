@@ -63,7 +63,7 @@ class Metadata implements IMetadata {
   getShareIndexesForPolynomial(polyID: PolynomialID): Array<string> {
     const matchingPolyIDs = this.polyIDList.filter((tuple) => tuple[0] === polyID);
     if (matchingPolyIDs.length < 1) {
-      throw CoreError.default("there is more no matching polyID");
+      throw CoreError.default("there is no matching polyID");
     } else if (matchingPolyIDs.length > 1) {
       throw CoreError.default("there is more than one matching polyID");
     }
