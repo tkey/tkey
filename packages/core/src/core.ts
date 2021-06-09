@@ -1084,9 +1084,12 @@ class ThresholdKey implements ITKey {
     }
     tb.shares = shares;
 
-    // switch to deserialize local metadata transition based on Object.keys() of authMetadata and ShareStore's
+    // switch to deserialize local metadata transition based on Object.keys() of authMetadata, ShareStore's and, IMessageMetadata
     const AuthMetdataKeys = Object.keys(JSON.parse(stringify(new AuthMetadata(new Metadata(new Point("0", "0")), new BN("0", "hex")))));
     const ShareStoreKeys = Object.keys(JSON.parse(stringify(new ShareStore(new Share("0", "0"), ""))));
+    const sampleMessageMetadata: IMessageMetadata = { message: "Sample message", dateAdded: Date.now() };
+    const MessageMetadataKeys = Object.keys(sampleMessageMetadata);
+
     const localTransitionShares: LocalTransitionShares = [];
     const localTransitionData: LocalTransitionData = [];
 
@@ -1104,6 +1107,8 @@ class ThresholdKey implements ITKey {
         localTransitionData.push(tempAuth);
       } else if (keys.length === ShareStoreKeys.length && keys.every((val) => ShareStoreKeys.includes(val))) {
         localTransitionData.push(ShareStore.fromJSON(_localMetadataTransitions[1][index]));
+      } else if (keys.length === MessageMetadataKeys.length && keys.every((val) => MessageMetadataKeys.includes(val))) {
+        localTransitionData.push(_localMetadataTransitions[1][index] as IMessageMetadata);
       } else {
         throw CoreError.default("fromJSON failed. Could not deserialise _localMetadataTransitions");
       }
