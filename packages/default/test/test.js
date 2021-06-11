@@ -507,7 +507,7 @@ manualSyncModes.forEach((mode) => {
         fail("key should be able to be reconstructed");
       }
     });
-    it(`#should be able to reconstruct key and initialize a key with security questions after refresh, manualSync=${mode}`, async function () {
+    it(`#should be able to delete and add security questions, manualSync=${mode}`, async function () {
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
       await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
       await tb.generateNewShare();
@@ -534,7 +534,7 @@ manualSyncModes.forEach((mode) => {
         fail("key should be able to be reconstructed");
       }
     });
-    it(`#should be able to delete and add security questions, manualSync=${mode}`, async function () {
+    it(`#should be able to reconstruct key and initialize a key with security questions after refresh, manualSync=${mode}`, async function () {
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
       await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
       const tb2 = new ThresholdKey({
