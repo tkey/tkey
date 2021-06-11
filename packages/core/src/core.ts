@@ -486,7 +486,8 @@ class ThresholdKey implements ITKey {
           oldShareStores,
           newShareStores
         );
-        this.metadata.setGeneralStoreDomain(moduleName, adjustedGeneralStore);
+        if (!adjustedGeneralStore) this.metadata.deleteGeneralStoreDomain(moduleName);
+        else this.metadata.setGeneralStoreDomain(moduleName, adjustedGeneralStore);
       }
     }
 

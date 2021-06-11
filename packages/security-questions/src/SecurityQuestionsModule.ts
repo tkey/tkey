@@ -11,6 +11,7 @@ import {
   ShareStoreMap,
 } from "@tkey/common-types";
 import BN from "bn.js";
+import { debug } from "console";
 import { keccak256 } from "web3-utils";
 
 import SecurityQuestionsError from "./errors";
@@ -129,17 +130,21 @@ class SecurityQuestionsModule implements IModule {
       return generalStore;
     }
     const sqStore = new SecurityQuestionStore(generalStore as SecurityQuestionStoreArgs);
-    const sqAnswer = oldShareStores[sqStore.shareIndex.toString("hex")].share.share.sub(sqStore.nonce);
-    let newNonce = newShareStores[sqStore.shareIndex.toString("hex")].share.share.sub(sqAnswer);
-    newNonce = newNonce.umod(ecCurve.curve.n);
+    const sqIndex = sqStore.shareIndex.toString("hex");
+    if (oldShareStores[sqIndex] && newShareStores[sqIndex]) {
+      const sqAnswer = oldShareStores[sqIndex].share.share.sub(sqStore.nonce);
+      let newNonce = newShareStores[sqIndex].share.share.sub(sqAnswer);
+      newNonce = newNonce.umod(ecCurve.curve.n);
 
-    return new SecurityQuestionStore({
-      nonce: newNonce,
-      polynomialID: newShareStores[Object.keys(newShareStores)[0]].polynomialID,
-      sqPublicShare: newShareStores[sqStore.shareIndex.toString("hex")].share.getPublicShare(),
-      shareIndex: sqStore.shareIndex,
-      questions: sqStore.questions,
-    });
+      return new SecurityQuestionStore({
+        nonce: newNonce,
+        polynomialID: newShareStores[Object.keys(newShareStores)[0]].polynomialID,
+        sqPublicShare: newShareStores[sqIndex].share.getPublicShare(),
+        shareIndex: sqStore.shareIndex,
+        questions: sqStore.questions,
+      });
+    }
+    return undefined;
   }
 
   async saveAnswerOnTkeyStore(answerString: string): Promise<void> {

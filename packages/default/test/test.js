@@ -479,7 +479,7 @@ manualSyncModes.forEach((mode) => {
         manualSync: mode,
       });
     });
-    it(`#should be able to reconstruct key and initialize a key with security questions, metadataSync=${mode}`, async function () {
+    it(`#should be able to reconstruct key and initialize a key with security questions, manualSync=${mode}`, async function () {
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
       await rejects(async function () {
         await tb.modules.securityQuestions.inputShareFromSecurityQuestions("blublu");
@@ -507,7 +507,34 @@ manualSyncModes.forEach((mode) => {
         fail("key should be able to be reconstructed");
       }
     });
-    it(`#should be able to reconstruct key and initialize a key with security questions after refresh, metadataSync=${mode}`, async function () {
+    it(`#should be able to reconstruct key and initialize a key with security questions after refresh, manualSync=${mode}`, async function () {
+      const resp1 = await tb._initializeNewKey({ initializeModules: true });
+      await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
+      await tb.generateNewShare();
+      await tb.syncLocalMetadataTransitions();
+
+      // delete sq
+      const sqIndex = tb.metadata.generalStore.securityQuestions.shareIndex;
+      await tb.deleteShare(sqIndex);
+
+      // add sq again
+      await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blubluss", "who is your cat?");
+      await tb.syncLocalMetadataTransitions();
+
+      const tb2 = new ThresholdKey({
+        serviceProvider: defaultSP,
+        storageLayer: defaultSL,
+        modules: { securityQuestions: new SecurityQuestionsModule() },
+      });
+      await tb2.initialize();
+
+      await tb2.modules.securityQuestions.inputShareFromSecurityQuestions("blubluss");
+      const reconstructedKey = await tb2.reconstructKey();
+      if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
+        fail("key should be able to be reconstructed");
+      }
+    });
+    it(`#should be able to delete and add security questions, manualSync=${mode}`, async function () {
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
       await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
       const tb2 = new ThresholdKey({
@@ -527,7 +554,7 @@ manualSyncModes.forEach((mode) => {
         fail("key should be able to be reconstructed");
       }
     });
-    it(`#should be able to change password, metadataSync=${mode}`, async function () {
+    it(`#should be able to change password, manualSync=${mode}`, async function () {
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
 
       // should throw
@@ -553,7 +580,7 @@ manualSyncModes.forEach((mode) => {
         fail("key should be able to be reconstructed");
       }
     });
-    it(`#should be able to change password and serialize, metadataSync=${mode}`, async function () {
+    it(`#should be able to change password and serialize, manualSync=${mode}`, async function () {
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
       await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
       await tb.modules.securityQuestions.changeSecurityQuestionAndAnswer("dodo", "who is your cat?");
@@ -578,7 +605,7 @@ manualSyncModes.forEach((mode) => {
       const finalKeyPostSerialization = await tb4.reconstructKey();
       strictEqual(finalKeyPostSerialization.toString("hex"), reconstructedKey.toString("hex"), "Incorrect serialization");
     });
-    it(`#should be able to get answers, even when they change, metadataSync=${mode}`, async function () {
+    it(`#should be able to get answers, even when they change, manualSync=${mode}`, async function () {
       tb = new ThresholdKey({
         serviceProvider: defaultSP,
         storageLayer: defaultSL,
