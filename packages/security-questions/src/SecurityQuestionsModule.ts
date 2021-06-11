@@ -11,7 +11,6 @@ import {
   ShareStoreMap,
 } from "@tkey/common-types";
 import BN from "bn.js";
-import { debug } from "console";
 import { keccak256 } from "web3-utils";
 
 import SecurityQuestionsError from "./errors";
