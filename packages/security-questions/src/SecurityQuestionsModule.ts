@@ -130,6 +130,8 @@ class SecurityQuestionsModule implements IModule {
     }
     const sqStore = new SecurityQuestionStore(generalStore as SecurityQuestionStoreArgs);
     const sqIndex = sqStore.shareIndex.toString("hex");
+
+    // Assumption: If sqIndex doesn't exist, it must have been explicitly deleted. 
     if (oldShareStores[sqIndex] && newShareStores[sqIndex]) {
       const sqAnswer = oldShareStores[sqIndex].share.share.sub(sqStore.nonce);
       let newNonce = newShareStores[sqIndex].share.share.sub(sqAnswer);
