@@ -97,4 +97,42 @@ describe("web storage", function () {
     const secondKey = await tb2.reconstructKey();
     strictEqual(reconstructedKey.privKey.toString("hex"), secondKey.privKey.toString("hex"), "Must be equal");
   });
+  it("#should be able to add custom device share info", async function () {
+    const initialShareDeviceInfo = {
+      browser: "brave",
+    };
+    await tb._initializeNewKey({
+      initializeModules: true,
+      customDeviceInfo: initialShareDeviceInfo,
+    });
+    const reconstructedKey = await tb.reconstructKey();
+
+    const deviceShareDesc = await tb.metadata.getShareDescription();
+    deepStrictEqual(
+      JSON.parse(JSON.parse(deviceShareDesc[Object.keys(deviceShareDesc)[0]]).customDeviceInfo),
+      initialShareDeviceInfo,
+      "device info should be correct"
+    );
+    await tb2.initialize();
+    await tb2.modules[WEB_STORAGE_MODULE_NAME].inputShareFromWebStorage();
+    const secondKey = await tb2.reconstructKey();
+    const deviceShareDesc2 = await tb2.metadata.getShareDescription();
+    deepStrictEqual(secondKey, reconstructedKey, "Must be equal");
+    deepStrictEqual(
+      JSON.parse(JSON.parse(deviceShareDesc2[Object.keys(deviceShareDesc2)[0]]).customDeviceInfo),
+      initialShareDeviceInfo,
+      "device info should be correct"
+    );
+    const { newShareStores: newShareStores1, newShareIndex: newShareIndex1 } = await tb2.generateNewShare();
+    const newDeviceShareInfo = {
+      device_name: "my home's laptop",
+    };
+    await tb2.modules[WEB_STORAGE_MODULE_NAME].storeDeviceShare(newShareStores1[newShareIndex1.toString("hex")], newDeviceShareInfo);
+    const deviceShareDesc3 = await tb2.metadata.getShareDescription();
+    deepStrictEqual(
+      JSON.parse(JSON.parse(deviceShareDesc3[newShareIndex1.toString("hex")]).customDeviceInfo),
+      newDeviceShareInfo,
+      "new device share info should be correct"
+    );
+  });
 });

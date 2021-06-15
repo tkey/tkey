@@ -80,7 +80,7 @@ class ThresholdKey implements ITKey {
 
   _shareSerializationMiddleware: ShareSerializationMiddleware;
 
-  storeDeviceShare: (deviceShareStore: ShareStore) => Promise<void>;
+  storeDeviceShare: (deviceShareStore: ShareStore, customDeviceInfo?: StringifiedType) => Promise<void>;
 
   haveWriteMetadataLock: string;
 
@@ -124,10 +124,19 @@ class ThresholdKey implements ITKey {
     transitionMetadata?: Metadata;
     previouslyFetchedCloudMetadata?: Metadata;
     previousLocalMetadataTransitions?: LocalMetadataTransitions;
+    customDeviceInfo?: StringifiedType;
   }): Promise<KeyDetails> {
     // setup initial params/states
     const p = params || {};
-    const { withShare, importKey, neverInitializeNewKey, transitionMetadata, previouslyFetchedCloudMetadata, previousLocalMetadataTransitions } = p;
+    const {
+      withShare,
+      importKey,
+      neverInitializeNewKey,
+      transitionMetadata,
+      previouslyFetchedCloudMetadata,
+      previousLocalMetadataTransitions,
+      customDeviceInfo,
+    } = p;
     const reinitializing = transitionMetadata && previousLocalMetadataTransitions; // are we reinitlizing the SDK?
     // in the case we're reinitializing whilst newKeyAssign has not been synced
     const reinitilizingWithNewKeyAssign = reinitializing && previouslyFetchedCloudMetadata === undefined;
@@ -158,7 +167,7 @@ class ThresholdKey implements ITKey {
           throw CoreError.default("key has not been generated yet");
         }
         // no metadata set, assumes new user
-        await this._initializeNewKey({ initializeModules: true, importedKey: importKey });
+        await this._initializeNewKey({ initializeModules: true, importedKey: importKey, customDeviceInfo });
         return this.getKeyDetails();
       }
       // else we continue with catching up share and metadata
@@ -518,10 +527,12 @@ class ThresholdKey implements ITKey {
     determinedShare,
     initializeModules,
     importedKey,
+    customDeviceInfo,
   }: {
     determinedShare?: BN;
     initializeModules?: boolean;
     importedKey?: BN;
+    customDeviceInfo?: StringifiedType;
   } = {}): Promise<InitializeNewKeyResult> {
     if (!importedKey) {
       const tmpPriv = generatePrivate();
@@ -577,7 +588,7 @@ class ThresholdKey implements ITKey {
     }
 
     if (this.storeDeviceShare) {
-      await this.storeDeviceShare(new ShareStore(shares[shareIndexes[1].toString("hex")], poly.getPolynomialID()));
+      await this.storeDeviceShare(new ShareStore(shares[shareIndexes[1].toString("hex")], poly.getPolynomialID()), customDeviceInfo);
     }
 
     const result = {

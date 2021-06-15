@@ -1,4 +1,4 @@
-import { BNString, IModule, ITKeyApi, prettyPrintError, ShareStore } from "@tkey/common-types";
+import { BNString, IModule, ITKeyApi, prettyPrintError, ShareStore, StringifiedType } from "@tkey/common-types";
 import BN from "bn.js";
 
 import WebStorageError from "./errors";
@@ -49,13 +49,18 @@ class WebStorageModule implements IModule {
   // eslint-disable-next-line
   async initialize(): Promise<void> {}
 
-  async storeDeviceShare(deviceShareStore: ShareStore): Promise<void> {
+  async storeDeviceShare(deviceShareStore: ShareStore, customDeviceInfo: StringifiedType = {}): Promise<void> {
     const metadata = this.tbSDK.getMetadata();
     const tkeypubx = metadata.pubKey.x.toString("hex");
     await storeShareOnLocalStorage(deviceShareStore, tkeypubx);
     await this.tbSDK.addShareDescription(
       deviceShareStore.share.shareIndex.toString("hex"),
-      JSON.stringify({ module: this.moduleName, userAgent: navigator.userAgent, dateAdded: Date.now() }),
+      JSON.stringify({
+        module: this.moduleName,
+        userAgent: navigator.userAgent,
+        dateAdded: Date.now(),
+        customDeviceInfo: JSON.stringify(customDeviceInfo),
+      }),
       true
     );
   }

@@ -17,7 +17,7 @@ declare class ThresholdKey implements ITKey {
     _refreshMiddleware: RefreshMiddlewareMap;
     _reconstructKeyMiddleware: ReconstructKeyMiddlewareMap;
     _shareSerializationMiddleware: ShareSerializationMiddleware;
-    storeDeviceShare: (deviceShareStore: ShareStore) => Promise<void>;
+    storeDeviceShare: (deviceShareStore: ShareStore, customDeviceInfo?: StringifiedType) => Promise<void>;
     haveWriteMetadataLock: string;
     args: TKeyArgs;
     constructor(args?: TKeyArgs);
@@ -30,6 +30,7 @@ declare class ThresholdKey implements ITKey {
         transitionMetadata?: Metadata;
         previouslyFetchedCloudMetadata?: Metadata;
         previousLocalMetadataTransitions?: LocalMetadataTransitions;
+        customDeviceInfo?: StringifiedType;
     }): Promise<KeyDetails>;
     private setModuleReferences;
     private initializeModules;
@@ -48,10 +49,11 @@ declare class ThresholdKey implements ITKey {
     deleteShare(shareIndex: BNString): Promise<DeleteShareResult>;
     generateNewShare(): Promise<GenerateNewShareResult>;
     _refreshShares(threshold: number, newShareIndexes: Array<string>, previousPolyID: PolynomialID): Promise<RefreshSharesResult>;
-    _initializeNewKey({ determinedShare, initializeModules, importedKey, }?: {
+    _initializeNewKey({ determinedShare, initializeModules, importedKey, customDeviceInfo, }?: {
         determinedShare?: BN;
         initializeModules?: boolean;
         importedKey?: BN;
+        customDeviceInfo?: StringifiedType;
     }): Promise<InitializeNewKeyResult>;
     addLocalMetadataTransitions(params: {
         input: LocalTransitionData;
