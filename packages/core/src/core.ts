@@ -625,7 +625,6 @@ class ThresholdKey implements ITKey {
     this._localMetadataTransitions = [[], []];
     this.privKey = undefined;
 
-    // debugger;
     // reinit this.metadata
     const tb = new ThresholdKey({
       enableLogging: this.enableLogging,

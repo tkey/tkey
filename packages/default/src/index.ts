@@ -36,10 +36,6 @@ class ThresholdKey extends TKey {
       [SHARE_SERIALIZATION_MODULE_NAME]: new ShareSerializationModule(),
     };
 
-    // const oldStorageLayer: IStorageLayer = TorusStorageLayer.fromJSON(tempOldStorageLayer) || MockStorageLayer.fromJSON(tempOldStorageLayer);
-    // const oldServiceProvider: IServiceProvider =
-    //   TorusServiceProvider.fromJSON(tempOldServiceProvider) || ServiceProviderBase.fromJSON(tempOldServiceProvider);
-
     const finalServiceProvider: IServiceProvider =
       serviceProvider ||
       TorusServiceProvider.fromJSON(tempOldServiceProvider) ||
@@ -51,13 +47,6 @@ class ThresholdKey extends TKey {
       TorusStorageLayer.fromJSON(tempOldStorageLayer) ||
       MockStorageLayer.fromJSON(tempOldStorageLayer) ||
       new TorusStorageLayer({ serviceProvider: finalServiceProvider, hostUrl: "https://metadata.tor.us" });
-
-    // if (!finalServiceProvider) {
-    //   finalServiceProvider = new TorusServiceProvider({ directParams });
-    // }
-    // if (!finalStorageLayer) {
-    //   finalStorageLayer = new TorusStorageLayer({ serviceProvider: finalServiceProvider, hostUrl: "https://metadata.tor.us" });
-    // }
 
     return super.fromJSON(value, {
       ...(args || {}),
