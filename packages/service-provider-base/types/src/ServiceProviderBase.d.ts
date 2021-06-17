@@ -12,6 +12,6 @@ declare class ServiceProviderBase implements IServiceProvider {
     retrievePubKey(type: PubKeyType): Buffer;
     sign(msg: BNString): string;
     toJSON(): StringifiedType;
-    static fromJSON(value: StringifiedType): ServiceProviderBase;
+    static fromJSON(value: StringifiedType): IServiceProvider;
 }
 export default ServiceProviderBase;

@@ -129,7 +129,6 @@ class ThresholdKey implements ITKey {
     // in the case we're reinitializing whilst newKeyAssign has not been synced
     const reinitilizingWithNewKeyAssign = reinitializing && previouslyFetchedCloudMetadata === undefined;
 
-    debugger;
     let shareStore: ShareStore;
     if (withShare instanceof ShareStore) {
       shareStore = withShare;
@@ -626,7 +625,7 @@ class ThresholdKey implements ITKey {
     this._localMetadataTransitions = [[], []];
     this.privKey = undefined;
 
-    debugger;
+    // debugger;
     // reinit this.metadata
     const tb = new ThresholdKey({
       enableLogging: this.enableLogging,
@@ -639,7 +638,7 @@ class ThresholdKey implements ITKey {
     try {
       await tb.initialize({ neverInitializeNewKey: true, withShare: params && params.withShare });
     } catch (err) {
-      console.log(err);
+      // console.log(err);
       throw CoreError.default("Service provider probably not initialized");
     }
 
@@ -1079,17 +1078,7 @@ class ThresholdKey implements ITKey {
   }
 
   static async fromJSON(value: StringifiedType, args: TKeyArgs): Promise<ThresholdKey> {
-    const {
-      enableLogging,
-      privKey,
-      metadata,
-      shares,
-      _localMetadataTransitions,
-      manualSync,
-      lastFetchedCloudMetadata,
-      serviceProvider: OldServiceProvider,
-      storageLayer: OldStorageLayer,
-    } = value;
+    const { enableLogging, privKey, metadata, shares, _localMetadataTransitions, manualSync, lastFetchedCloudMetadata } = value;
     const { storageLayer, serviceProvider, modules } = args;
 
     // overwrite storage layer
