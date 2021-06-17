@@ -1,3 +1,4 @@
+/* eslint-disable no-shadow */
 /* eslint-disable no-await-in-loop */
 /* eslint-disable max-len */
 import { ecCurve } from "@tkey/common-types";
@@ -51,7 +52,7 @@ function compareReconstructedKeys(a, b, message) {
   }
 }
 
-const manualSyncModes = [true, false];
+const manualSyncModes = [true];
 manualSyncModes.forEach((mode) => {
   describe("tkey", function () {
     let tb;
@@ -386,6 +387,27 @@ manualSyncModes.forEach((mode) => {
       await newtb.reconstructKey();
       await newtb.generateNewShare();
       await newtb.syncLocalMetadataTransitions();
+    });
+    it.only(`#some test`, async function () {
+      const defaultSP = new ServiceProviderBase({});
+      const defaultSL = initStorageLayer(mocked, { serviceProvider: defaultSP, hostUrl: metadataURL });
+      const tb = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL, manualSync: mode });
+      tb.serviceProvider.postboxKey = new BN(generatePrivate());
+      await tb._initializeNewKey({ initializeModules: true });
+      await tb.syncLocalMetadataTransitions();
+
+      const stringified = JSON.stringify(tb);
+      const tb2 = await ThresholdKey.fromJSON(JSON.parse(stringified), { serviceProvider: new ServiceProviderBase({}), storageLayer: defaultSL });
+
+      await rejects(async function () {
+        await tb2.updateMetadata();
+      }, Error);
+      debugger;
+      return;
+
+      // this will use default service provider and storage layer
+      const tb4 = await ThresholdKey.fromJSON(JSON.parse(stringified), {});
+      await tb4.updateMetadata();
     });
   });
 

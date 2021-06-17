@@ -28,23 +28,23 @@ class ThresholdKey extends TKey {
   }
 
   static async fromJSON(value: StringifiedType, args?: TKeyArgs): Promise<ThresholdKey> {
+    const { storageLayer: oldStorageLayer, serviceProvider: oldServiceProvider } = value;
     const { storageLayer, serviceProvider, modules = {}, directParams } = args || {};
     const defaultModules = {
       [SHARE_TRANSFER_MODULE_NAME]: new ShareTransferModule(),
       [SHARE_SERIALIZATION_MODULE_NAME]: new ShareSerializationModule(),
     };
-    let finalServiceProvider: IServiceProvider;
-    let finalStorageLayer: IStorageLayer;
-    if (!serviceProvider) {
+
+    let finalServiceProvider: IServiceProvider = serviceProvider || oldServiceProvider;
+    let finalStorageLayer: IStorageLayer = storageLayer || oldStorageLayer;
+
+    if (!finalServiceProvider) {
       finalServiceProvider = new TorusServiceProvider({ directParams });
-    } else {
-      finalServiceProvider = serviceProvider;
     }
-    if (!storageLayer) {
+    if (!finalStorageLayer) {
       finalStorageLayer = new TorusStorageLayer({ serviceProvider: finalServiceProvider, hostUrl: "https://metadata.tor.us" });
-    } else {
-      finalStorageLayer = storageLayer;
     }
+
     return super.fromJSON(value, {
       ...(args || {}),
       modules: { ...defaultModules, ...modules },

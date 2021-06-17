@@ -84,10 +84,7 @@ class ThresholdKey implements ITKey {
 
   haveWriteMetadataLock: string;
 
-  args: TKeyArgs;
-
   constructor(args?: TKeyArgs) {
-    this.args = args;
     const { enableLogging = false, modules = {}, serviceProvider, storageLayer, manualSync = false } = args || {};
     this.enableLogging = enableLogging;
     this.serviceProvider = serviceProvider;
@@ -132,6 +129,7 @@ class ThresholdKey implements ITKey {
     // in the case we're reinitializing whilst newKeyAssign has not been synced
     const reinitilizingWithNewKeyAssign = reinitializing && previouslyFetchedCloudMetadata === undefined;
 
+    debugger;
     let shareStore: ShareStore;
     if (withShare instanceof ShareStore) {
       shareStore = withShare;
@@ -628,9 +626,22 @@ class ThresholdKey implements ITKey {
     this._localMetadataTransitions = [[], []];
     this.privKey = undefined;
 
+    debugger;
     // reinit this.metadata
-    const tb = new ThresholdKey(this.args);
-    await tb.initialize({ neverInitializeNewKey: true, withShare: params && params.withShare });
+    const tb = new ThresholdKey({
+      enableLogging: this.enableLogging,
+      modules: this.modules,
+      serviceProvider: this.serviceProvider,
+      storageLayer: this.storageLayer,
+      manualSync: this.manualSync,
+    });
+
+    try {
+      await tb.initialize({ neverInitializeNewKey: true, withShare: params && params.withShare });
+    } catch (err) {
+      console.log(err);
+      throw CoreError.default("Service provider probably not initialized");
+    }
 
     // Delete unnecessary polyIDs and shareStores
     const allPolyIDList = tb.metadata.polyIDList;
@@ -1062,13 +1073,33 @@ class ThresholdKey implements ITKey {
       lastFetchedCloudMetadata: this.lastFetchedCloudMetadata,
       _localMetadataTransitions: this._localMetadataTransitions,
       manualSync: this.manualSync,
+      serviceProvider: this.serviceProvider,
+      storageLayer: this.storageLayer,
     };
   }
 
   static async fromJSON(value: StringifiedType, args: TKeyArgs): Promise<ThresholdKey> {
-    const { enableLogging, privKey, metadata, shares, _localMetadataTransitions, manualSync, lastFetchedCloudMetadata } = value;
+    const {
+      enableLogging,
+      privKey,
+      metadata,
+      shares,
+      _localMetadataTransitions,
+      manualSync,
+      lastFetchedCloudMetadata,
+      serviceProvider: OldServiceProvider,
+      storageLayer: OldStorageLayer,
+    } = value;
     const { storageLayer, serviceProvider, modules } = args;
-    const tb = new ThresholdKey({ enableLogging, storageLayer, serviceProvider, modules, manualSync });
+
+    // overwrite storage layer
+    const tb = new ThresholdKey({
+      enableLogging,
+      storageLayer,
+      serviceProvider,
+      modules,
+      manualSync,
+    });
     if (privKey) tb.privKey = new BN(privKey, "hex");
 
     for (const key in shares) {
