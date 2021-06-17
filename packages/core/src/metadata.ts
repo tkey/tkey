@@ -93,6 +93,10 @@ class Metadata implements IMetadata {
     return this.generalStore[key];
   }
 
+  deleteGeneralStoreDomain(key: string): void {
+    delete this.generalStore[key];
+  }
+
   setTkeyStoreDomain(key: string, arr: unknown): void {
     this.tkeyStore[key] = arr;
   }

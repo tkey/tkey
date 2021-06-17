@@ -479,6 +479,7 @@ class ThresholdKey implements ITKey {
     const metadataToPush = Array(sharesToPush.length).fill(m);
 
     // run refreshShare middleware
+    // If a shareIndex is left out during refresh shares, we assume that it being explicitly deleted.
     for (const moduleName in this._refreshMiddleware) {
       if (Object.prototype.hasOwnProperty.call(this._refreshMiddleware, moduleName)) {
         const adjustedGeneralStore = this._refreshMiddleware[moduleName](
@@ -486,7 +487,8 @@ class ThresholdKey implements ITKey {
           oldShareStores,
           newShareStores
         );
-        this.metadata.setGeneralStoreDomain(moduleName, adjustedGeneralStore);
+        if (!adjustedGeneralStore) this.metadata.deleteGeneralStoreDomain(moduleName);
+        else this.metadata.setGeneralStoreDomain(moduleName, adjustedGeneralStore);
       }
     }
 
