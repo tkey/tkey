@@ -110,9 +110,9 @@
   integrity sha512-8bwJ2gxJGkZZnpQSq5uSiZSJjyVTWmlGft4oH8vxHdvO1Asy4TwVepAhPgxIQIMxXZFUNMych1YjIV4oQ4I7dA==
 
 "@ethersproject/networks@^5.3.0":
-  version "5.3.0"
-  resolved "https://registry.yarnpkg.com/@ethersproject/networks/-/networks-5.3.0.tgz#d8ad06eb107c69fb8651f4c81ddd0e88944fdfea"
-  integrity sha512-XGbD9MMgqrR7SYz8o6xVgdG+25v7YT5vQG8ZdlcLj2I7elOBM7VNeQrnxfSN7rWQNcqu2z80OM29gGbQz+4Low==
+  version "5.3.1"
+  resolved "https://registry.yarnpkg.com/@ethersproject/networks/-/networks-5.3.1.tgz#78fe08324cee289ce239acf8c746121934b2ef61"
+  integrity sha512-6uQKHkYChlsfeiZhQ8IHIqGE/sQsf25o9ZxAYpMxi15dLPzz3IxOEF5KiSD32aHwsjXVBKBSlo+teAXLlYJybw==
   dependencies:
     "@ethersproject/logger" "^5.3.0"
 
@@ -621,9 +621,9 @@ eth-lib@0.2.8:
     xhr-request-promise "^0.1.2"
 
 ethereum-bloom-filters@^1.0.6:
-  version "1.0.9"
-  resolved "https://registry.yarnpkg.com/ethereum-bloom-filters/-/ethereum-bloom-filters-1.0.9.tgz#4a59dead803af0c9e33834170bd7695df67061ec"
-  integrity sha512-GiK/RQkAkcVaEdxKVkPcG07PQ5vD7v2MFSHgZmBJSfMzNRHimntdBithsHAT89tAXnIpzVDWt8iaCD1DvkaxGg==
+  version "1.0.10"
+  resolved "https://registry.yarnpkg.com/ethereum-bloom-filters/-/ethereum-bloom-filters-1.0.10.tgz#3ca07f4aed698e75bd134584850260246a5fed8a"
+  integrity sha512-rxJ5OFN3RwjQxDcFP2Z5+Q9ho4eIdEmSc2ht0fCu8Se9nbXjZ7/031uXoUYJ87KHCOdVeiUuwSnoS7hmYAGVHA==
   dependencies:
     js-sha3 "^0.8.0"
 
