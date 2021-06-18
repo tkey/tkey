@@ -329,29 +329,43 @@ manualSyncModes.forEach((mode) => {
       const finalKeyPostSerialization = await tb4.reconstructKey();
       strictEqual(finalKeyPostSerialization.toString("hex"), finalKey.toString("hex"), "Incorrect serialization");
     });
-    it(`#should be able to serialize and deserialize with without service provider and storage layer, manualSync=${mode}`, async function () {
+    it(`#should be able to serialize and deserialize without service provider and storage layer, manualSync=${mode}`, async function () {
       const defaultSP2 = new ServiceProviderBase({});
       const defaultSL2 = initStorageLayer(mocked, { serviceProvider: defaultSP2, hostUrl: metadataURL });
       const tb = new ThresholdKey({ serviceProvider: defaultSP2, storageLayer: defaultSL2, manualSync: mode });
       tb.serviceProvider.postboxKey = new BN(generatePrivate());
       await tb._initializeNewKey({ initializeModules: true });
-      await tb.syncLocalMetadataTransitions();
-
       const stringified = JSON.stringify(tb);
 
       // initialize is expected to fail without any share
-      await rejects(async function () {
-        const newSP = new ServiceProviderBase({});
-        const tb2 = await ThresholdKey.fromJSON(JSON.parse(stringified), {
-          serviceProvider: newSP,
-          storageLayer: initStorageLayer(mocked, { serviceProvider: newSP, hostUrl: metadataURL }),
-        });
-        await tb2.updateMetadata();
-      }, Error);
-
-      // this will use default service provider and storage layer
+      if (!mode) {
+        await rejects(async function () {
+          const newSP = new ServiceProviderBase({});
+          await ThresholdKey.fromJSON(JSON.parse(stringified), {
+            serviceProvider: newSP,
+            storageLayer: initStorageLayer(mocked, { serviceProvider: newSP, hostUrl: metadataURL }),
+          });
+        }, Error);
+      }
+    });
+    it(`#should not be able to updateSDK with newKeyAssign in manualSync=true`, async function () {
+      const defaultSP2 = new ServiceProviderBase({});
+      const defaultSL2 = initStorageLayer(mocked, { serviceProvider: defaultSP2, hostUrl: metadataURL });
+      const tb = new ThresholdKey({ serviceProvider: defaultSP2, storageLayer: defaultSL2, manualSync: mode });
+      tb.serviceProvider.postboxKey = new BN(generatePrivate());
+      await tb._initializeNewKey({ initializeModules: true });
+      const stringified = JSON.stringify(tb);
       const tb4 = await ThresholdKey.fromJSON(JSON.parse(stringified), {});
-      await tb4.updateMetadata();
+      if (mode) {
+        // Can't updateSDK, please do key assign.
+        await rejects(async function () {
+          await tb4.updateSDK();
+        }, Error);
+      }
+      // create new key
+      await tb4.generateNewShare();
+      await tb4.syncLocalMetadataTransitions();
+      await tb4.updateSDK();
     });
     it(`#should be able to import and reconstruct an imported key, manualSync=${mode}`, async function () {
       const importedKey = new BN(generatePrivate());
@@ -407,7 +421,7 @@ manualSyncModes.forEach((mode) => {
       }, Error);
 
       // try creating again
-      const newtb = await tb2.updateMetadata();
+      const newtb = await tb2.updateSDK();
       await newtb.reconstructKey();
       await newtb.generateNewShare();
       await newtb.syncLocalMetadataTransitions();
@@ -525,6 +539,7 @@ manualSyncModes.forEach((mode) => {
       await rejects(async function () {
         await tb.modules.securityQuestions.inputShareFromSecurityQuestions("blublu-wrong");
       }, Error);
+
       await tb2.modules.securityQuestions.inputShareFromSecurityQuestions("blublu");
       const reconstructedKey = await tb2.reconstructKey();
       // compareBNArray(resp1.privKey, reconstructedKey, "key should be able to be reconstructed");

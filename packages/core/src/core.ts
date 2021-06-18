@@ -125,9 +125,9 @@ class ThresholdKey implements ITKey {
     // setup initial params/states
     const p = params || {};
     const { withShare, importKey, neverInitializeNewKey, transitionMetadata, previouslyFetchedCloudMetadata, previousLocalMetadataTransitions } = p;
-    const reinitializing = transitionMetadata && previousLocalMetadataTransitions; // are we reinitlizing the SDK?
+    const reinitializing = transitionMetadata && previousLocalMetadataTransitions; // are we reinitializing the SDK?
     // in the case we're reinitializing whilst newKeyAssign has not been synced
-    const reinitilizingWithNewKeyAssign = reinitializing && previouslyFetchedCloudMetadata === undefined;
+    const reinitializingWithNewKeyAssign = reinitializing && previouslyFetchedCloudMetadata === undefined;
 
     let shareStore: ShareStore;
     if (withShare instanceof ShareStore) {
@@ -137,8 +137,8 @@ class ThresholdKey implements ITKey {
     } else if (!withShare) {
       // default to use service provider
       // first we see if a share has been kept for us
-      const spIncludeLocalMetadataTransitions = reinitilizingWithNewKeyAssign;
-      const spLocalMetadataTransitions = reinitilizingWithNewKeyAssign ? previousLocalMetadataTransitions : undefined;
+      const spIncludeLocalMetadataTransitions = reinitializingWithNewKeyAssign;
+      const spLocalMetadataTransitions = reinitializingWithNewKeyAssign ? previousLocalMetadataTransitions : undefined;
       const rawServiceProviderShare = await this.getGenericMetadataWithTransitionStates({
         serviceProvider: this.serviceProvider,
         includeLocalMetadataTransitions: spIncludeLocalMetadataTransitions,
@@ -182,14 +182,17 @@ class ThresholdKey implements ITKey {
     }
 
     // lets check if the cloud metadata has been updated or not from previously if we are reinitializing
-    if (reinitializing && !reinitilizingWithNewKeyAssign) {
-      if (previouslyFetchedCloudMetadata.nonce > latestShareDetails.shareMetadata.nonce) {
-        throw CoreError.default("previouslyFetchedCloudMetadata.nonce should never be higher than the latestShareDetails, please contact support");
+    if (reinitializing && !reinitializingWithNewKeyAssign) {
+      if (previouslyFetchedCloudMetadata.nonce < latestShareDetails.shareMetadata.nonce) {
+        throw CoreError.fromCode(1104);
+      } else if (previouslyFetchedCloudMetadata.nonce > latestShareDetails.shareMetadata.nonce) {
+        throw CoreError.fromCode(1105);
       }
       latestCloudMetadata = previouslyFetchedCloudMetadata;
     } else {
       latestCloudMetadata = latestShareDetails ? latestShareDetails.shareMetadata.clone() : undefined;
     }
+
     // If we've been provided with transition metadata we use that as the current metadata instead
     // as we want to maintain state before and after serialization.
     // (Given that the checks for cloud metadata pass)
@@ -620,12 +623,8 @@ class ThresholdKey implements ITKey {
     if (acquiredLock) await this.releaseWriteMetadataLock();
   }
 
-  // returns a new instance of metadata with updated state : TODO edit
-  async updateMetadata(params?: { withShare?: ShareStore }): Promise<ThresholdKey> {
-    this._localMetadataTransitions = [[], []];
-    this.privKey = undefined;
-
-    // reinit this.metadata
+  // Returns a new instance of metadata with a clean state. All the previous state will be reset.
+  async updateSDK(params?: { withShare?: ShareStore }): Promise<ThresholdKey> {
     const tb = new ThresholdKey({
       enableLogging: this.enableLogging,
       modules: this.modules,
@@ -637,8 +636,7 @@ class ThresholdKey implements ITKey {
     try {
       await tb.initialize({ neverInitializeNewKey: true, withShare: params && params.withShare });
     } catch (err) {
-      // console.log(err);
-      throw CoreError.default("Service provider probably not initialized");
+      throw CoreError.fromCode(1103, `${err.message}`);
     }
 
     // Delete unnecessary polyIDs and shareStores
