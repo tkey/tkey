@@ -41,6 +41,7 @@ export interface IMetadata extends ISerializable {
     addPublicShare(polynomialID: PolynomialID, publicShare: PublicShare): void;
     setGeneralStoreDomain(key: string, obj: unknown): void;
     getGeneralStoreDomain(key: string): unknown;
+    deleteGeneralStoreDomain(key: string): unknown;
     setTkeyStoreDomain(key: string, arr: unknown): void;
     getTkeyStoreDomain(key: string): unknown;
     addFromPolynomialAndShares(polynomial: Polynomial, shares: Array<Share> | ShareMap): void;

@@ -6,6 +6,7 @@ declare class TorusServiceProvider extends ServiceProviderBase {
     directWeb: DirectWebSDK;
     singleLoginKey: BN;
     directParams: DirectWebSDKArgs;
+    serviceProviderName: string;
     constructor({ enableLogging, postboxKey, directParams }: TorusServiceProviderArgs);
     init(params: InitParams): Promise<void>;
     triggerLogin(params: SubVerifierDetails): Promise<TorusLoginResponse>;

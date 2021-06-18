@@ -19,7 +19,6 @@ declare class ThresholdKey implements ITKey {
     _shareSerializationMiddleware: ShareSerializationMiddleware;
     storeDeviceShare: (deviceShareStore: ShareStore) => Promise<void>;
     haveWriteMetadataLock: string;
-    args: TKeyArgs;
     constructor(args?: TKeyArgs);
     getStorageLayer(): IStorageLayer;
     getMetadata(): IMetadata;
@@ -60,7 +59,7 @@ declare class ThresholdKey implements ITKey {
         acquireLock?: boolean;
     }): Promise<void>;
     syncLocalMetadataTransitions(): Promise<void>;
-    updateMetadata(params?: {
+    updateSDK(params?: {
         withShare?: ShareStore;
     }): Promise<ThresholdKey>;
     inputShareStore(shareStore: ShareStore): void;

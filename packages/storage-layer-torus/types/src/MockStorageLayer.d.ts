@@ -4,6 +4,7 @@ declare class MockStorageLayer implements IStorageLayer {
     dataMap: {
         [key: string]: unknown;
     };
+    storageLayerName: string;
     lockMap: {
         [key: string]: string;
     };

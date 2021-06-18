@@ -31,6 +31,7 @@ export interface IPoint extends ISerializable {
 export interface IServiceProvider extends ISerializable {
     enableLogging: boolean;
     postboxKey: BN;
+    serviceProviderName: string;
     encrypt(msg: Buffer): Promise<EncryptedMessage>;
     decrypt(msg: EncryptedMessage): Promise<Buffer>;
     retrievePubKey(type: PubKeyType): Buffer;
@@ -45,6 +46,7 @@ export declare type TorusStorageLayerAPIParams = {
     namespace: string;
 };
 export interface IStorageLayer extends ISerializable {
+    storageLayerName: string;
     getMetadata<T>(params: {
         serviceProvider?: IServiceProvider;
         privKey?: BN;

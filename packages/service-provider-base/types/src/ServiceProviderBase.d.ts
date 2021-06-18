@@ -5,6 +5,7 @@ import { curve } from "elliptic";
 declare class ServiceProviderBase implements IServiceProvider {
     enableLogging: boolean;
     postboxKey: BN;
+    serviceProviderName: string;
     constructor({ enableLogging, postboxKey }: ServiceProviderArgs);
     encrypt(msg: Buffer): Promise<EncryptedMessage>;
     decrypt(msg: EncryptedMessage): Promise<Buffer>;

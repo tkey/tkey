@@ -3,6 +3,7 @@ import BN from "bn.js";
 declare class TorusStorageLayer implements IStorageLayer {
     enableLogging: boolean;
     hostUrl: string;
+    storageLayerName: string;
     serviceProvider: IServiceProvider;
     constructor({ enableLogging, hostUrl, serviceProvider }: TorusStorageLayerArgs);
     /**
