@@ -1080,7 +1080,6 @@ class ThresholdKey implements ITKey {
     const { enableLogging, privKey, metadata, shares, _localMetadataTransitions, manualSync, lastFetchedCloudMetadata } = value;
     const { storageLayer, serviceProvider, modules } = args;
 
-    // overwrite storage layer
     const tb = new ThresholdKey({
       enableLogging,
       storageLayer,
@@ -1132,6 +1131,7 @@ class ThresholdKey implements ITKey {
         throw CoreError.default("fromJSON failed. Could not deserialise _localMetadataTransitions");
       }
     });
+
     if (metadata || lastFetchedCloudMetadata) {
       let tempMetadata;
       let tempCloud;

@@ -329,10 +329,10 @@ manualSyncModes.forEach((mode) => {
       const finalKeyPostSerialization = await tb4.reconstructKey();
       strictEqual(finalKeyPostSerialization.toString("hex"), finalKey.toString("hex"), "Incorrect serialization");
     });
-    it(`#should be able to serialize and deserialize with without service provider and storage layer`, async function () {
-      const defaultSP = new ServiceProviderBase({});
-      const defaultSL = initStorageLayer(mocked, { serviceProvider: defaultSP, hostUrl: metadataURL });
-      const tb = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL, manualSync: mode });
+    it(`#should be able to serialize and deserialize with without service provider and storage layer, manualSync=${mode}`, async function () {
+      const defaultSP2 = new ServiceProviderBase({});
+      const defaultSL2 = initStorageLayer(mocked, { serviceProvider: defaultSP2, hostUrl: metadataURL });
+      const tb = new ThresholdKey({ serviceProvider: defaultSP2, storageLayer: defaultSL2, manualSync: mode });
       tb.serviceProvider.postboxKey = new BN(generatePrivate());
       await tb._initializeNewKey({ initializeModules: true });
       await tb.syncLocalMetadataTransitions();

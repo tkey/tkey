@@ -150,7 +150,6 @@ class TorusStorageLayer implements IStorageLayer {
     };
   }
 
-  // eslint-disable-next-line class-methods-use-this
   async acquireWriteLock(params: { serviceProvider?: IServiceProvider; privKey?: BN }): Promise<{ status: number; id?: string }> {
     const { serviceProvider, privKey } = params;
     const data = {
@@ -171,7 +170,6 @@ class TorusStorageLayer implements IStorageLayer {
     return post<{ status: number; id?: string }>(`${this.hostUrl}/acquireLock`, metadataParams);
   }
 
-  // eslint-disable-next-line class-methods-use-this
   async releaseWriteLock(params: { id: string; serviceProvider?: IServiceProvider; privKey?: BN }): Promise<{ status: number }> {
     const { serviceProvider, privKey, id } = params;
     const data = {
@@ -198,6 +196,7 @@ class TorusStorageLayer implements IStorageLayer {
       enableLogging: this.enableLogging,
       hostUrl: this.hostUrl,
       storageLayerName: this.storageLayerName,
+      serviceProvider: this.serviceProvider,
     };
   }
 

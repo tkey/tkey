@@ -44,7 +44,6 @@ class ThresholdKey extends TKey {
 
     const finalStorageLayer: IStorageLayer =
       storageLayer ||
-      TorusStorageLayer.fromJSON(tempOldStorageLayer) ||
       MockStorageLayer.fromJSON(tempOldStorageLayer) ||
       new TorusStorageLayer({ serviceProvider: finalServiceProvider, hostUrl: "https://metadata.tor.us" });
 
