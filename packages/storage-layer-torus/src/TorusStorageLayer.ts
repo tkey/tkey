@@ -30,12 +30,15 @@ class TorusStorageLayer implements IStorageLayer {
 
   hostUrl: string;
 
+  storageLayerName: string;
+
   serviceProvider: IServiceProvider;
 
   constructor({ enableLogging = false, hostUrl = "http://localhost:5051", serviceProvider }: TorusStorageLayerArgs) {
     this.enableLogging = enableLogging;
     this.hostUrl = hostUrl;
     this.serviceProvider = serviceProvider;
+    this.storageLayerName = "TorusStorageLayer";
   }
 
   /**
@@ -147,7 +150,6 @@ class TorusStorageLayer implements IStorageLayer {
     };
   }
 
-  // eslint-disable-next-line class-methods-use-this
   async acquireWriteLock(params: { serviceProvider?: IServiceProvider; privKey?: BN }): Promise<{ status: number; id?: string }> {
     const { serviceProvider, privKey } = params;
     const data = {
@@ -168,7 +170,6 @@ class TorusStorageLayer implements IStorageLayer {
     return post<{ status: number; id?: string }>(`${this.hostUrl}/acquireLock`, metadataParams);
   }
 
-  // eslint-disable-next-line class-methods-use-this
   async releaseWriteLock(params: { id: string; serviceProvider?: IServiceProvider; privKey?: BN }): Promise<{ status: number }> {
     const { serviceProvider, privKey, id } = params;
     const data = {
@@ -194,11 +195,14 @@ class TorusStorageLayer implements IStorageLayer {
     return {
       enableLogging: this.enableLogging,
       hostUrl: this.hostUrl,
+      storageLayerName: this.storageLayerName,
+      serviceProvider: this.serviceProvider,
     };
   }
 
   static fromJSON(value: StringifiedType): TorusStorageLayer {
-    const { enableLogging, hostUrl, serviceProvider } = value;
+    const { enableLogging, hostUrl, serviceProvider, storageLayerName } = value;
+    if (storageLayerName !== "TorusStorageLayer") return undefined;
     return new TorusStorageLayer({ enableLogging, hostUrl, serviceProvider });
   }
 }

@@ -20,9 +20,12 @@ class ServiceProviderBase implements IServiceProvider {
   // For easy serialization
   postboxKey: BN;
 
+  serviceProviderName: string;
+
   constructor({ enableLogging = false, postboxKey }: ServiceProviderArgs) {
     this.enableLogging = enableLogging;
     this.postboxKey = new BN(postboxKey, "hex");
+    this.serviceProviderName = "ServiceProviderBase";
   }
 
   async encrypt(msg: Buffer): Promise<EncryptedMessage> {
@@ -55,11 +58,14 @@ class ServiceProviderBase implements IServiceProvider {
     return {
       enableLogging: this.enableLogging,
       postboxKey: this.postboxKey.toString("hex"),
+      serviceProviderName: this.serviceProviderName,
     };
   }
 
-  static fromJSON(value: StringifiedType): ServiceProviderBase {
-    const { enableLogging, postboxKey } = value;
+  static fromJSON(value: StringifiedType): IServiceProvider {
+    const { enableLogging, postboxKey, serviceProviderName } = value;
+    if (serviceProviderName !== "ServiceProviderBase") return undefined;
+
     return new ServiceProviderBase({ enableLogging, postboxKey });
   }
 }

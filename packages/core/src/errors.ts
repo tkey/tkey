@@ -25,10 +25,13 @@ class CoreError extends TkeyError {
     // Misc
     1001: "Unable to delete service provider share",
     1002: "Wrong share index",
+    1003: "Unable to updateSDK",
     // metadata
     1101: "metadata not found, SDK likely not intialized",
     1102: "getMetadata errored",
     1103: "setMetadata errored",
+    1104: "previouslyFetchedCloudMetadata provided in initalization is outdated",
+    1105: "previouslyFetchedCloudMetadata.nonce should never be higher than the latestShareDetails, please contact support",
     // tkeystore
     1201: "Invalid tkeyStore",
     1202: "Encryption failed",
