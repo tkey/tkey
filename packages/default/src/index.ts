@@ -8,7 +8,7 @@ import TorusStorageLayer, { MockStorageLayer } from "@tkey/storage-layer-torus";
 
 class ThresholdKey extends TKey {
   constructor(args?: TKeyArgs) {
-    const { modules = {}, serviceProvider, storageLayer, directParams } = args || {};
+    const { modules = {}, serviceProvider, storageLayer, directParams, serverTimeOffset } = args || {};
     const defaultModules = {
       [SHARE_TRANSFER_MODULE_NAME]: new ShareTransferModule(),
       [SHARE_SERIALIZATION_MODULE_NAME]: new ShareSerializationModule(),
@@ -21,7 +21,7 @@ class ThresholdKey extends TKey {
       finalServiceProvider = serviceProvider;
     }
     if (!storageLayer) {
-      finalStorageLayer = new TorusStorageLayer({ serviceProvider: finalServiceProvider, hostUrl: "https://metadata.tor.us" });
+      finalStorageLayer = new TorusStorageLayer({ serviceProvider: finalServiceProvider, hostUrl: "https://metadata.tor.us", serverTimeOffset });
     } else {
       finalStorageLayer = storageLayer;
     }
@@ -30,7 +30,7 @@ class ThresholdKey extends TKey {
 
   static async fromJSON(value: StringifiedType, args?: TKeyArgs): Promise<ThresholdKey> {
     const { storageLayer: tempOldStorageLayer, serviceProvider: tempOldServiceProvider } = value;
-    const { storageLayer, serviceProvider, modules = {}, directParams } = args || {};
+    const { storageLayer, serviceProvider, modules = {}, directParams, serverTimeOffset = 0 } = args || {};
     const defaultModules = {
       [SHARE_TRANSFER_MODULE_NAME]: new ShareTransferModule(),
       [SHARE_SERIALIZATION_MODULE_NAME]: new ShareSerializationModule(),
@@ -45,7 +45,7 @@ class ThresholdKey extends TKey {
     const finalStorageLayer: IStorageLayer =
       storageLayer ||
       MockStorageLayer.fromJSON(tempOldStorageLayer) ||
-      new TorusStorageLayer({ serviceProvider: finalServiceProvider, hostUrl: "https://metadata.tor.us" });
+      new TorusStorageLayer({ serviceProvider: finalServiceProvider, hostUrl: "https://metadata.tor.us", serverTimeOffset });
 
     return super.fromJSON(value, {
       ...(args || {}),

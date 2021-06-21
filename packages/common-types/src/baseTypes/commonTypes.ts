@@ -78,6 +78,7 @@ export type TorusStorageLayerArgs = {
   enableLogging?: boolean;
   hostUrl?: string;
   serviceProvider?: IServiceProvider;
+  serverTimeOffset?: number;
 };
 
 export type MockStorageLayerArgs = {
