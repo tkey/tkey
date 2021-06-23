@@ -1,6 +1,6 @@
 {
   "name": "@tkey/core",
-  "version": "4.1.0",
+  "version": "4.1.1",
   "description": "TKey Core library",
   "main": "dist/core.cjs.js",
   "unpkg": "dist/core.umd.min.js",
@@ -29,7 +29,7 @@
     "types"
   ],
   "dependencies": {
-    "@tkey/common-types": "^4.1.0",
+    "@tkey/common-types": "^4.1.1",
     "@toruslabs/eccrypto": "^1.1.6",
     "@toruslabs/http-helpers": "^1.3.7",
     "bn.js": "^5.2.0",
