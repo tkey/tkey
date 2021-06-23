@@ -16,85 +16,102 @@ const PRIVATE_KEY = "f70fb5f5970b363879bc36f54d4fc0ad77863bfd059881159251f50f488
 const defaultSP = new ServiceProviderBase({ postboxKey: PRIVATE_KEY });
 const defaultSL = initStorageLayer(mocked, { serviceProvider: defaultSP, hostUrl: metadataURL });
 
-describe("web storage", function () {
-  let tb;
-  let tb2;
-  beforeEach("Setup ThresholdKey", async function () {
-    tb = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL, modules: { [WEB_STORAGE_MODULE_NAME]: new WebStorageModule() } });
-    tb2 = new ThresholdKey({
-      serviceProvider: defaultSP,
-      storageLayer: defaultSL,
-      modules: { [WEB_STORAGE_MODULE_NAME]: new WebStorageModule() },
+const manualSyncModes = [true, false];
+manualSyncModes.forEach((mode) => {
+  describe("web storage", function () {
+    let tb;
+    let tb2;
+    beforeEach("Setup ThresholdKey", async function () {
+      tb = new ThresholdKey({
+        serviceProvider: defaultSP,
+        storageLayer: defaultSL,
+        modules: { [WEB_STORAGE_MODULE_NAME]: new WebStorageModule() },
+        manualSync: mode,
+      });
+      tb2 = new ThresholdKey({
+        serviceProvider: defaultSP,
+        storageLayer: defaultSL,
+        modules: { [WEB_STORAGE_MODULE_NAME]: new WebStorageModule() },
+        manualSync: mode,
+      });
     });
-  });
 
-  it("#should be able to input share from web storage", async function () {
-    await tb._initializeNewKey({ initializeModules: true });
-    const reconstructedKey = await tb.reconstructKey();
-    await tb2.initialize();
-    await tb2.modules[WEB_STORAGE_MODULE_NAME].inputShareFromWebStorage();
-    const secondKey = await tb2.reconstructKey();
-    deepStrictEqual(secondKey, reconstructedKey, "Must be equal");
-  });
+    it("#should be able to input share from web storage", async function () {
+      await tb._initializeNewKey({ initializeModules: true });
+      await tb.syncLocalMetadataTransitions();
 
-  it("#should be able to input share from web storage after reconstruction", async function () {
-    await tb._initializeNewKey({ initializeModules: true });
-    const reconstructedKey = await tb.reconstructKey();
-    await tb.generateNewShare();
-    await tb.reconstructKey();
-    // console.log(reconstructedKey2.privKey);
-    await tb2.initialize();
-    await tb2.modules[WEB_STORAGE_MODULE_NAME].inputShareFromWebStorage();
-    const secondKey = await tb2.reconstructKey();
-    // console.log(reconstructedKey.privKey, secondKey.privKey);
-    strictEqual(reconstructedKey.privKey.toString("hex"), secondKey.privKey.toString("hex"), "Must be equal");
-  });
-
-  it("#should be able to input share from web storage after external share deletion", async function () {
-    await tb._initializeNewKey({ initializeModules: true });
-    const reconstructedKey = await tb.reconstructKey();
-    const newShare = await tb.generateNewShare();
-    await tb.deleteShare(newShare.newShareIndex.toString("hex"));
-    // console.log(reconstructedKey2.privKey
-    await tb2.initialize();
-    await tb2.modules[WEB_STORAGE_MODULE_NAME].inputShareFromWebStorage();
-    const secondKey = await tb2.reconstructKey();
-    // console.log(reconstructedKey.privKey, secondKey.privKey);
-    strictEqual(reconstructedKey.privKey.toString("hex"), secondKey.privKey.toString("hex"), "Must be equal");
-  });
-
-  it("#should not be able to input share from web storage after deletion", async function () {
-    const resp1 = await tb._initializeNewKey({ initializeModules: true });
-    await tb.reconstructKey();
-    // console.log("%O", tb.shares);
-    await tb.generateNewShare();
-    await tb.deleteShare(resp1.deviceShare.share.shareIndex.toString("hex"));
-    // console.log("%O", tb.shares);
-    await tb2.initialize();
-    // console.log("%O", tb2.shares);
-    await rejects(async () => {
+      const reconstructedKey = await tb.reconstructKey();
+      await tb2.initialize();
       await tb2.modules[WEB_STORAGE_MODULE_NAME].inputShareFromWebStorage();
-      await tb2.reconstructKey();
+      const secondKey = await tb2.reconstructKey();
+      deepStrictEqual(secondKey, reconstructedKey, "Must be equal");
     });
-  });
 
-  it("#should be able to input external share from web storage after deletion", async function () {
-    const resp1 = await tb._initializeNewKey({ initializeModules: true });
-    const reconstructedKey = await tb.reconstructKey();
-    // console.log("%O", tb.shares);
-    const newShare = await tb.generateNewShare();
-    await tb.deleteShare(resp1.deviceShare.share.shareIndex.toString("hex"));
-    // console.log("%O", tb.shares);
-    await tb2.initialize();
+    it("#should be able to input share from web storage after reconstruction", async function () {
+      await tb._initializeNewKey({ initializeModules: true });
+      const reconstructedKey = await tb.reconstructKey();
+      await tb.generateNewShare();
+      await tb.syncLocalMetadataTransitions();
 
-    await rejects(async () => {
+      await tb.reconstructKey();
+      // console.log(reconstructedKey2.privKey);
+      await tb2.initialize();
       await tb2.modules[WEB_STORAGE_MODULE_NAME].inputShareFromWebStorage();
-      await tb2.reconstructKey();
+      const secondKey = await tb2.reconstructKey();
+      // console.log(reconstructedKey.privKey, secondKey.privKey);
+      strictEqual(reconstructedKey.privKey.toString("hex"), secondKey.privKey.toString("hex"), "Must be equal");
     });
 
-    // console.log("%O", tb2.shares);
-    await tb2.inputShareStore(newShare.newShareStores[newShare.newShareIndex.toString("hex")]);
-    const secondKey = await tb2.reconstructKey();
-    strictEqual(reconstructedKey.privKey.toString("hex"), secondKey.privKey.toString("hex"), "Must be equal");
+    it("#should be able to input share from web storage after external share deletion", async function () {
+      await tb._initializeNewKey({ initializeModules: true });
+      const reconstructedKey = await tb.reconstructKey();
+      const newShare = await tb.generateNewShare();
+      await tb.deleteShare(newShare.newShareIndex.toString("hex"));
+      await tb.syncLocalMetadataTransitions();
+
+      await tb2.initialize();
+      await tb2.modules[WEB_STORAGE_MODULE_NAME].inputShareFromWebStorage();
+      const secondKey = await tb2.reconstructKey();
+      // console.log(reconstructedKey.privKey, secondKey.privKey);
+      strictEqual(reconstructedKey.privKey.toString("hex"), secondKey.privKey.toString("hex"), "Must be equal");
+    });
+
+    it("#should not be able to input share from web storage after deletion", async function () {
+      const resp1 = await tb._initializeNewKey({ initializeModules: true });
+      await tb.reconstructKey();
+      // console.log("%O", tb.shares);
+      await tb.generateNewShare();
+      await tb.deleteShare(resp1.deviceShare.share.shareIndex.toString("hex"));
+      await tb.syncLocalMetadataTransitions();
+
+      // console.log("%O", tb.shares);
+      await tb2.initialize();
+      // console.log("%O", tb2.shares);
+      await rejects(async () => {
+        await tb2.modules[WEB_STORAGE_MODULE_NAME].inputShareFromWebStorage();
+        await tb2.reconstructKey();
+      });
+    });
+
+    it("#should be able to input external share from web storage after deletion", async function () {
+      const resp1 = await tb._initializeNewKey({ initializeModules: true });
+      const reconstructedKey = await tb.reconstructKey();
+      // console.log("%O", tb.shares);
+      const newShare = await tb.generateNewShare();
+      await tb.deleteShare(resp1.deviceShare.share.shareIndex.toString("hex"));
+      await tb.syncLocalMetadataTransitions();
+
+      await tb2.initialize();
+
+      await rejects(async () => {
+        await tb2.modules[WEB_STORAGE_MODULE_NAME].inputShareFromWebStorage();
+        await tb2.reconstructKey();
+      });
+
+      // console.log("%O", tb2.shares);
+      await tb2.inputShareStore(newShare.newShareStores[newShare.newShareIndex.toString("hex")]);
+      const secondKey = await tb2.reconstructKey();
+      strictEqual(reconstructedKey.privKey.toString("hex"), secondKey.privKey.toString("hex"), "Must be equal");
+    });
   });
 });
