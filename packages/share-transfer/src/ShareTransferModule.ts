@@ -93,7 +93,7 @@ class ShareTransferModule implements IModule {
             if (latestShareTransferStore[encPubKeyX].encShareInTransit) {
               const shareStoreBuf = await decrypt(toPrivKeyECC(this.currentEncKey), latestShareTransferStore[encPubKeyX].encShareInTransit);
               const receivedShare = ShareStore.fromJSON(JSON.parse(shareStoreBuf.toString()));
-              await this.tbSDK.inputShareStoreSafe(receivedShare);
+              await this.tbSDK.inputShareStoreSafe(receivedShare, true);
               this._cleanUpCurrentRequest();
               callback(null, receivedShare);
             } else if (!latestShareTransferStore[encPubKeyX]) {
@@ -177,7 +177,7 @@ class ShareTransferModule implements IModule {
             } else if (latestShareTransferStore[encPubKeyX].encShareInTransit) {
               const shareStoreBuf = await decrypt(toPrivKeyECC(this.currentEncKey), latestShareTransferStore[encPubKeyX].encShareInTransit);
               const receivedShare = ShareStore.fromJSON(JSON.parse(shareStoreBuf.toString()));
-              await this.tbSDK.inputShareStoreSafe(receivedShare);
+              await this.tbSDK.inputShareStoreSafe(receivedShare, true);
               if (deleteRequestAfterCompletion) {
                 await this.deleteShareTransferStore(encPubKeyX);
               }

@@ -682,8 +682,8 @@ class ThresholdKey implements ITKey {
   }
 
   // inputs a share ensuring that the share is the latest share AND metadata is updated to its latest state
-  async inputShareStoreSafe(shareStore: ShareStore): Promise<void> {
-    let ss;
+  async inputShareStoreSafe(shareStore: ShareStore, autoUpdateMetadata = false): Promise<void> {
+    let ss: ShareStore;
     if (shareStore instanceof ShareStore) {
       ss = shareStore;
     } else if (typeof shareStore === "object") {
@@ -693,9 +693,14 @@ class ThresholdKey implements ITKey {
     }
     const latestShareRes = await this.catchupToLatestShare({ shareStore: ss, includeLocalMetadataTransitions: true });
     // if not in poly id list, metadata is probably outdated
-    // !this.metadata.polyIDList.includes(latestShareRes.latestShare.polynomialID)
+    // is !this.metadata.polyIDList.includes(latestShareRes.latestShare.polynomialID)
     if (!this.metadata.polyIDList.find((tuple) => tuple[0] === latestShareRes.latestShare.polynomialID)) {
-      this.metadata = latestShareRes.shareMetadata;
+      if (!autoUpdateMetadata)
+        throw CoreError.default(
+          `TKey SDK metadata seems to be outdated because shareIndex: ` +
+            `${latestShareRes.latestShare.share.shareIndex.toString("hex")} has a more recent metadata. Please call updateSDK first`
+        );
+      else this.metadata = latestShareRes.shareMetadata;
     }
     if (!(latestShareRes.latestShare.polynomialID in this.shares)) {
       this.shares[latestShareRes.latestShare.polynomialID] = {};
