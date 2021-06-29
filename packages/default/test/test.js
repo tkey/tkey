@@ -348,7 +348,7 @@ manualSyncModes.forEach((mode) => {
         }, Error);
       }
     });
-    it(`#should not be able to updateSDK with newKeyAssign in manualSync=true`, async function () {
+    it(`#should not be able to updateSDK with newKeyAssign in, manualSync=${mode}`, async function () {
       const defaultSP2 = new ServiceProviderBase({});
       const defaultSL2 = initStorageLayer(mocked, { serviceProvider: defaultSP2, hostUrl: metadataURL });
       const tb = new ThresholdKey({ serviceProvider: defaultSP2, storageLayer: defaultSL2, manualSync: mode });

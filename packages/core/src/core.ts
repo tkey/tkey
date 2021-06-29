@@ -125,7 +125,10 @@ class ThresholdKey implements ITKey {
     // setup initial params/states
     const p = params || {};
     const { withShare, importKey, neverInitializeNewKey, transitionMetadata, previouslyFetchedCloudMetadata, previousLocalMetadataTransitions } = p;
-    const reinitializing = transitionMetadata && previousLocalMetadataTransitions; // are we reinitializing the SDK?
+
+    const previousLocalMetadataTransitionsExists =
+      previousLocalMetadataTransitions && previousLocalMetadataTransitions[0].length > 0 && previousLocalMetadataTransitions[1].length > 0;
+    const reinitializing = transitionMetadata && previousLocalMetadataTransitionsExists; // are we reinitializing the SDK?
     // in the case we're reinitializing whilst newKeyAssign has not been synced
     const reinitializingWithNewKeyAssign = reinitializing && previouslyFetchedCloudMetadata === undefined;
 

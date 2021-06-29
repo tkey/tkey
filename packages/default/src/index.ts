@@ -42,9 +42,11 @@ class ThresholdKey extends TKey {
       ServiceProviderBase.fromJSON(tempOldServiceProvider) ||
       new TorusServiceProvider({ directParams });
 
+    tempOldStorageLayer.serviceProvider = finalServiceProvider;
     const finalStorageLayer: IStorageLayer =
       storageLayer ||
       MockStorageLayer.fromJSON(tempOldStorageLayer) ||
+      TorusStorageLayer.fromJSON(tempOldStorageLayer) ||
       new TorusStorageLayer({ serviceProvider: finalServiceProvider, hostUrl: "https://metadata.tor.us", serverTimeOffset });
 
     return super.fromJSON(value, {
