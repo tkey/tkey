@@ -139,6 +139,7 @@ export type TKeyArgs = {
   storageLayer?: IStorageLayer;
   directParams?: DirectWebSDKArgs;
   manualSync?: boolean;
+  serverTimeOffset?: number;
 };
 
 export interface SecurityQuestionStoreArgs {
