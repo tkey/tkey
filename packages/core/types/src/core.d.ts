@@ -63,7 +63,7 @@ declare class ThresholdKey implements ITKey {
         withShare?: ShareStore;
     }): Promise<ThresholdKey>;
     inputShareStore(shareStore: ShareStore): void;
-    inputShareStoreSafe(shareStore: ShareStore): Promise<void>;
+    inputShareStoreSafe(shareStore: ShareStore, autoUpdateMetadata?: boolean): Promise<void>;
     outputShareStore(shareIndex: BNString, polyID?: string): ShareStore;
     _setKey(privKey: BN): void;
     getCurrentShareIndexes(): string[];

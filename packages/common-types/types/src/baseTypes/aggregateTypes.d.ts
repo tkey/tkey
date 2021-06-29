@@ -182,7 +182,7 @@ export interface ITKeyApi {
         includeLocalMetadataTransitions?: boolean;
     }): Promise<CatchupToLatestShareResult>;
     _syncShareMetadata(adjustScopedStore?: (ss: unknown) => unknown): Promise<void>;
-    inputShareStoreSafe(shareStore: ShareStore): Promise<void>;
+    inputShareStoreSafe(shareStore: ShareStore, autoUpdateMetadata?: boolean): Promise<void>;
     _setDeviceStorage(storeDeviceStorage: (deviceShareStore: ShareStore) => Promise<void>): void;
     addShareDescription(shareIndex: string, description: string, updateMetadata?: boolean): Promise<void>;
     _addRefreshMiddleware(moduleName: string, middleware: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap) => unknown): void;
