@@ -693,8 +693,8 @@ class ThresholdKey implements ITKey {
     }
     const latestShareRes = await this.catchupToLatestShare({ shareStore: ss, includeLocalMetadataTransitions: true });
     // if not in poly id list, metadata is probably outdated
-    //! this.metadata.polyIDList.includes(latestShareRes.latestShare.polynomialID)
-    if (!(this.metadata.polyIDList.filter((tuple) => tuple[0] === latestShareRes.latestShare.polynomialID).length > 1)) {
+    // !this.metadata.polyIDList.includes(latestShareRes.latestShare.polynomialID)
+    if (!this.metadata.polyIDList.find((tuple) => tuple[0] === latestShareRes.latestShare.polynomialID)) {
       this.metadata = latestShareRes.shareMetadata;
     }
     if (!(latestShareRes.latestShare.polynomialID in this.shares)) {
