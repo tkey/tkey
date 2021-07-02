@@ -387,7 +387,7 @@ manualSyncModes.forEach((mode) => {
 
       const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL, manualSync: mode });
       await tb2.initialize(); // initialize sdk with old metadata
-      tb.generateNewShare(); // generate new share to update metadata
+      await tb.generateNewShare(); // generate new share to update metadata
       tb2.inputShareStore(resp1.deviceShare);
       const reconstructedKey = await tb2.reconstructKey(); // reconstruct key with old metadata should work to poly
       if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
