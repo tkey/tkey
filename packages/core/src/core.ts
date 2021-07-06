@@ -814,7 +814,7 @@ class ThresholdKey implements ITKey {
     includeLocalMetadataTransitions?: boolean;
     _localMetadataTransitions?: LocalMetadataTransitions;
   }): Promise<unknown> {
-    if (!(params.serviceProvider || params.privKey)) {
+    if (!((params.serviceProvider && params.serviceProvider.postboxKey.toString("hex") !== "0") || params.privKey)) {
       throw CoreError.default("require either serviceProvider or priv key in getGenericMetadataWithTransitionStates");
     }
     if (params.includeLocalMetadataTransitions) {
@@ -1141,8 +1141,20 @@ class ThresholdKey implements ITKey {
     });
 
     if (metadata || lastFetchedCloudMetadata) {
-      let tempMetadata;
-      let tempCloud;
+      let tempMetadata: Metadata;
+      let tempCloud: Metadata;
+      let shareToUseForSerialization: ShareStore;
+
+      // if service provider key is missing, we should initialize with one of the existing shares
+      // TODO: fix for deleted share
+      if (tb.serviceProvider.postboxKey.toString("hex") === "0") {
+        const latestPolyIDOnCloud = Metadata.fromJSON(lastFetchedCloudMetadata).getLatestPublicPolynomial().getPolynomialID();
+        const shareIndexesExistInSDK = Object.keys(shares[latestPolyIDOnCloud]);
+        const randomIndex = shareIndexesExistInSDK[Math.floor(Math.random() * (shareIndexesExistInSDK.length - 1))];
+        if (shareIndexesExistInSDK.length >= 1) {
+          shareToUseForSerialization = shares[latestPolyIDOnCloud][randomIndex];
+        }
+      }
       if (metadata) tempMetadata = Metadata.fromJSON(metadata);
       if (lastFetchedCloudMetadata) tempCloud = Metadata.fromJSON(lastFetchedCloudMetadata);
       await tb.initialize({
@@ -1150,6 +1162,7 @@ class ThresholdKey implements ITKey {
         transitionMetadata: tempMetadata,
         previouslyFetchedCloudMetadata: tempCloud,
         previousLocalMetadataTransitions: [localTransitionShares, localTransitionData],
+        withShare: shareToUseForSerialization,
       });
     } else {
       await tb.initialize({ neverInitializeNewKey: true });
