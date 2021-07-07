@@ -1,6 +1,6 @@
 {
   "name": "@tkey/chrome-storage",
-  "version": "4.2.0",
+  "version": "4.2.1",
   "description": "TKey Chrome Storage Module",
   "author": "Torus Labs",
   "homepage": "https://github.com/tkey/tkey#readme",
@@ -41,7 +41,7 @@
     "@babel/runtime": "7.x"
   },
   "dependencies": {
-    "@tkey/common-types": "^4.2.0",
+    "@tkey/common-types": "^4.2.1",
     "webextension-polyfill-ts": "^0.25.0"
   },
   "devDependencies": {
