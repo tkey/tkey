@@ -399,15 +399,16 @@ manualSyncModes.forEach((mode) => {
       strictEqual(finalKeyPostSerialization.toString("hex"), finalKey.toString("hex"), "Incorrect serialization");
     });
     it(`#should be able to serialize and deserialize without service provider and storage layer, manualSync=${mode}`, async function () {
-      const defaultSP2 = new ServiceProviderBase({});
+      const defaultSP2 = new ServiceProviderBase({ postboxKey: PRIVATE_KEY });
       const defaultSL2 = initStorageLayer(mocked, { serviceProvider: defaultSP2, hostUrl: metadataURL });
       const tb = new ThresholdKey({ serviceProvider: defaultSP2, storageLayer: defaultSL2, manualSync: mode });
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
       const { newShareStores: newShareStores1, newShareIndex: newShareIndex1 } = await tb.generateNewShare();
       await tb.syncLocalMetadataTransitions();
 
-      defaultSL2.serviceProvider = defaultSP2;
-      const tb2 = new ThresholdKey({ serviceProvider: defaultSP2, storageLayer: defaultSL2, manualSync: mode });
+      const defaultSP3 = new ServiceProviderBase({});
+      defaultSL2.serviceProvider = defaultSP3;
+      const tb2 = new ThresholdKey({ serviceProvider: defaultSP3, storageLayer: defaultSL2, manualSync: mode });
       await tb2.initialize({ withShare: resp1.deviceShare });
       tb2.inputShareStore(newShareStores1[newShareIndex1.toString("hex")]);
       await tb2.reconstructKey();
