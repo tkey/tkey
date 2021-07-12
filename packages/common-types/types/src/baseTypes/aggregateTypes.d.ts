@@ -41,6 +41,7 @@ export interface IMetadata extends ISerializable {
     addPublicShare(polynomialID: PolynomialID, publicShare: PublicShare): void;
     setGeneralStoreDomain(key: string, obj: unknown): void;
     getGeneralStoreDomain(key: string): unknown;
+    deleteGeneralStoreDomain(key: string): unknown;
     setTkeyStoreDomain(key: string, arr: unknown): void;
     getTkeyStoreDomain(key: string): unknown;
     addFromPolynomialAndShares(polynomial: Polynomial, shares: Array<Share> | ShareMap): void;
@@ -50,6 +51,7 @@ export interface IMetadata extends ISerializable {
     shareToShareStore(share: BN): ShareStore;
     addShareDescription(shareIndex: string, description: string): void;
     deleteShareDescription(shareIndex: string, description: string): void;
+    updateShareDescription(shareIndex: string, oldDescription: string, newDescription: string): void;
     clone(): IMetadata;
 }
 export declare type InitializeNewKeyResult = {
@@ -90,6 +92,7 @@ export declare type TKeyArgs = {
     storageLayer?: IStorageLayer;
     directParams?: DirectWebSDKArgs;
     manualSync?: boolean;
+    serverTimeOffset?: number;
 };
 export interface SecurityQuestionStoreArgs {
     nonce: BNString;
@@ -180,7 +183,7 @@ export interface ITKeyApi {
         includeLocalMetadataTransitions?: boolean;
     }): Promise<CatchupToLatestShareResult>;
     _syncShareMetadata(adjustScopedStore?: (ss: unknown) => unknown): Promise<void>;
-    inputShareStoreSafe(shareStore: ShareStore): Promise<void>;
+    inputShareStoreSafe(shareStore: ShareStore, autoUpdateMetadata?: boolean): Promise<void>;
     _setDeviceStorage(storeDeviceStorage: (deviceShareStore: ShareStore) => Promise<void>): void;
     addShareDescription(shareIndex: string, description: string, updateMetadata?: boolean): Promise<void>;
     _addRefreshMiddleware(moduleName: string, middleware: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap) => unknown): void;

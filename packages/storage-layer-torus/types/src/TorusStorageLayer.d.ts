@@ -3,8 +3,10 @@ import BN from "bn.js";
 declare class TorusStorageLayer implements IStorageLayer {
     enableLogging: boolean;
     hostUrl: string;
+    storageLayerName: string;
     serviceProvider: IServiceProvider;
-    constructor({ enableLogging, hostUrl, serviceProvider }: TorusStorageLayerArgs);
+    serverTimeOffset: number;
+    constructor({ enableLogging, hostUrl, serviceProvider, serverTimeOffset }: TorusStorageLayerArgs);
     /**
      *  Get metadata for a key
      * @param privKey If not provided, it will use service provider's share for decryption

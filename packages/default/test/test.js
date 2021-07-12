@@ -1,3 +1,4 @@
+/* eslint-disable no-shadow */
 /* eslint-disable no-await-in-loop */
 /* eslint-disable max-len */
 import { ecCurve } from "@tkey/common-types";
@@ -212,6 +213,75 @@ manualSyncModes.forEach((mode) => {
         fail("key should be able to be reconstructed");
       }
     });
+    it(`#should be able to import and reconstruct an imported key, manualSync=${mode}`, async function () {
+      const importedKey = new BN(generatePrivate());
+      const resp1 = await tb._initializeNewKey({ importedKey, initializeModules: true });
+      await tb.syncLocalMetadataTransitions();
+
+      const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL, manualSync: mode });
+      await tb2.initialize();
+      tb2.inputShareStore(resp1.deviceShare);
+      const reconstructedKey = await tb2.reconstructKey();
+      // compareBNArray([importedKey], reconstructedKey, "key should be able to be reconstructed");
+      if (importedKey.cmp(reconstructedKey.privKey) !== 0) {
+        fail("key should be able to be reconstructed");
+      }
+    });
+    it(`#should be able to reconstruct key, even with old metadata, manualSync=${mode}`, async function () {
+      const resp1 = await tb._initializeNewKey({ initializeModules: true });
+      await tb.syncLocalMetadataTransitions();
+
+      const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL, manualSync: mode });
+      await tb2.initialize(); // initialize sdk with old metadata
+
+      await tb.generateNewShare(); // generate new share to update metadata
+      await tb.syncLocalMetadataTransitions();
+
+      tb2.inputShareStore(resp1.deviceShare);
+      const reconstructedKey = await tb2.reconstructKey(); // reconstruct key with old metadata should work to poly
+      if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
+        fail("key should be able to be reconstructed");
+      }
+    });
+    it(`#should be able to not create a new key if initialize is called with neverInitializeNewKey, manualSync=${mode}`, async function () {
+      const newSP = new ServiceProviderBase({ postboxKey: new BN(generatePrivate()).toString("hex") });
+      const tb2 = new ThresholdKey({ serviceProvider: newSP, storageLayer: defaultSL });
+      rejects(async () => {
+        await tb2.initialize({ neverInitializeNewKey: true });
+      }, Error);
+    });
+    it(`#should be able to update metadata, manualSync=${mode}`, async function () {
+      const resp1 = await tb._initializeNewKey({ initializeModules: true });
+      await tb.syncLocalMetadataTransitions();
+      // nonce 0
+
+      const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL, manualSync: mode });
+      await tb2.initialize();
+      tb2.inputShareStore(resp1.deviceShare);
+      await tb2.reconstructKey();
+
+      // try creating new shares
+      await tb.generateNewShare();
+      await tb.syncLocalMetadataTransitions();
+
+      await rejects(async () => {
+        await tb2.generateNewShare();
+        await tb2.syncLocalMetadataTransitions();
+      }, Error);
+
+      // try creating again
+      const newtb = await tb2.updateSDK();
+      await newtb.reconstructKey();
+      await newtb.generateNewShare();
+      await newtb.syncLocalMetadataTransitions();
+    });
+  });
+
+  describe("tkey serialization/deserialization", function () {
+    let tb;
+    beforeEach("Setup ThresholdKey", async function () {
+      tb = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL, manualSync: mode });
+    });
     it(`#should serialize and deserialize correctly with user input, manualSync=${mode}`, async function () {
       let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
       userInput = userInput.umod(ecCurve.curve.n);
@@ -328,64 +398,43 @@ manualSyncModes.forEach((mode) => {
       const finalKeyPostSerialization = await tb4.reconstructKey();
       strictEqual(finalKeyPostSerialization.toString("hex"), finalKey.toString("hex"), "Incorrect serialization");
     });
-    it(`#should be able to import and reconstruct an imported key, manualSync=${mode}`, async function () {
-      const importedKey = new BN(generatePrivate());
-      const resp1 = await tb._initializeNewKey({ importedKey, initializeModules: true });
-      await tb.syncLocalMetadataTransitions();
-
-      const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL, manualSync: mode });
-      await tb2.initialize();
-      tb2.inputShareStore(resp1.deviceShare);
-      const reconstructedKey = await tb2.reconstructKey();
-      // compareBNArray([importedKey], reconstructedKey, "key should be able to be reconstructed");
-      if (importedKey.cmp(reconstructedKey.privKey) !== 0) {
-        fail("key should be able to be reconstructed");
-      }
-    });
-    it(`#should be able to reconstruct key, even with old metadata, manualSync=${mode}`, async function () {
+    it(`#should be able to serialize and deserialize without service provider and storage layer, manualSync=${mode}`, async function () {
+      const defaultSP2 = new ServiceProviderBase({ postboxKey: PRIVATE_KEY });
+      const defaultSL2 = initStorageLayer(mocked, { serviceProvider: defaultSP2, hostUrl: metadataURL });
+      const tb = new ThresholdKey({ serviceProvider: defaultSP2, storageLayer: defaultSL2, manualSync: mode });
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
+      const { newShareStores: newShareStores1, newShareIndex: newShareIndex1 } = await tb.generateNewShare();
       await tb.syncLocalMetadataTransitions();
 
-      const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL, manualSync: mode });
-      await tb2.initialize(); // initialize sdk with old metadata
-      tb.generateNewShare(); // generate new share to update metadata
-      tb2.inputShareStore(resp1.deviceShare);
-      const reconstructedKey = await tb2.reconstructKey(); // reconstruct key with old metadata should work to poly
-      if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
-        fail("key should be able to be reconstructed");
-      }
-    });
-    it(`#should be able to not create a new key if initialize is called with neverInitializeNewKey, manualSync=${mode}`, async function () {
-      const newSP = new ServiceProviderBase({ postboxKey: new BN(generatePrivate()).toString("hex") });
-      const tb2 = new ThresholdKey({ serviceProvider: newSP, storageLayer: defaultSL });
-      rejects(async () => {
-        await tb2.initialize({ neverInitializeNewKey: true });
-      }, Error);
-    });
-    it(`#should be able to update metadata, manualSync=${mode}`, async function () {
-      const resp1 = await tb._initializeNewKey({ initializeModules: true });
-      await tb.syncLocalMetadataTransitions();
-      // nonce 0
-
-      const tb2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL, manualSync: mode });
-      await tb2.initialize();
-      tb2.inputShareStore(resp1.deviceShare);
+      const defaultSP3 = new ServiceProviderBase({});
+      defaultSL2.serviceProvider = defaultSP3;
+      const tb2 = new ThresholdKey({ serviceProvider: defaultSP3, storageLayer: defaultSL2, manualSync: mode });
+      await tb2.initialize({ withShare: resp1.deviceShare });
+      tb2.inputShareStore(newShareStores1[newShareIndex1.toString("hex")]);
       await tb2.reconstructKey();
+      const stringified = JSON.stringify(tb2);
 
-      // try creating new shares
-      await tb.generateNewShare();
-      await tb.syncLocalMetadataTransitions();
-
-      await rejects(async () => {
-        await tb2.generateNewShare();
-        await tb2.syncLocalMetadataTransitions();
-      }, Error);
-
-      // try creating again
-      const newtb = await tb2.updateMetadata();
-      await newtb.reconstructKey();
-      await newtb.generateNewShare();
-      await newtb.syncLocalMetadataTransitions();
+      const tb3 = await ThresholdKey.fromJSON(JSON.parse(stringified));
+      await tb3.reconstructKey();
+    });
+    it(`#should not be able to updateSDK with newKeyAssign in, manualSync=${mode}`, async function () {
+      const defaultSP2 = new ServiceProviderBase({});
+      const defaultSL2 = initStorageLayer(mocked, { serviceProvider: defaultSP2, hostUrl: metadataURL });
+      const tb = new ThresholdKey({ serviceProvider: defaultSP2, storageLayer: defaultSL2, manualSync: mode });
+      tb.serviceProvider.postboxKey = new BN(generatePrivate());
+      await tb._initializeNewKey({ initializeModules: true });
+      const stringified = JSON.stringify(tb);
+      const tb4 = await ThresholdKey.fromJSON(JSON.parse(stringified), {});
+      if (mode) {
+        // Can't updateSDK, please do key assign.
+        await rejects(async function () {
+          await tb4.updateSDK();
+        }, Error);
+      }
+      // create new key
+      await tb4.generateNewShare();
+      await tb4.syncLocalMetadataTransitions();
+      await tb4.updateSDK();
     });
   });
 
@@ -479,7 +528,7 @@ manualSyncModes.forEach((mode) => {
         manualSync: mode,
       });
     });
-    it(`#should be able to reconstruct key and initialize a key with security questions, metadataSync=${mode}`, async function () {
+    it(`#should be able to reconstruct key and initialize a key with security questions, manualSync=${mode}`, async function () {
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
       await rejects(async function () {
         await tb.modules.securityQuestions.inputShareFromSecurityQuestions("blublu");
@@ -500,6 +549,7 @@ manualSyncModes.forEach((mode) => {
       await rejects(async function () {
         await tb.modules.securityQuestions.inputShareFromSecurityQuestions("blublu-wrong");
       }, Error);
+
       await tb2.modules.securityQuestions.inputShareFromSecurityQuestions("blublu");
       const reconstructedKey = await tb2.reconstructKey();
       // compareBNArray(resp1.privKey, reconstructedKey, "key should be able to be reconstructed");
@@ -507,7 +557,34 @@ manualSyncModes.forEach((mode) => {
         fail("key should be able to be reconstructed");
       }
     });
-    it(`#should be able to reconstruct key and initialize a key with security questions after refresh, metadataSync=${mode}`, async function () {
+    it(`#should be able to delete and add security questions, manualSync=${mode}`, async function () {
+      const resp1 = await tb._initializeNewKey({ initializeModules: true });
+      await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
+      await tb.generateNewShare();
+      await tb.syncLocalMetadataTransitions();
+
+      // delete sq
+      const sqIndex = tb.metadata.generalStore.securityQuestions.shareIndex;
+      await tb.deleteShare(sqIndex);
+
+      // add sq again
+      await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blubluss", "who is your cat?");
+      await tb.syncLocalMetadataTransitions();
+
+      const tb2 = new ThresholdKey({
+        serviceProvider: defaultSP,
+        storageLayer: defaultSL,
+        modules: { securityQuestions: new SecurityQuestionsModule() },
+      });
+      await tb2.initialize();
+
+      await tb2.modules.securityQuestions.inputShareFromSecurityQuestions("blubluss");
+      const reconstructedKey = await tb2.reconstructKey();
+      if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
+        fail("key should be able to be reconstructed");
+      }
+    });
+    it(`#should be able to reconstruct key and initialize a key with security questions after refresh, manualSync=${mode}`, async function () {
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
       await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
       const tb2 = new ThresholdKey({
@@ -527,7 +604,7 @@ manualSyncModes.forEach((mode) => {
         fail("key should be able to be reconstructed");
       }
     });
-    it(`#should be able to change password, metadataSync=${mode}`, async function () {
+    it(`#should be able to change password, manualSync=${mode}`, async function () {
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
 
       // should throw
@@ -553,7 +630,7 @@ manualSyncModes.forEach((mode) => {
         fail("key should be able to be reconstructed");
       }
     });
-    it(`#should be able to change password and serialize, metadataSync=${mode}`, async function () {
+    it(`#should be able to change password and serialize, manualSync=${mode}`, async function () {
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
       await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
       await tb.modules.securityQuestions.changeSecurityQuestionAndAnswer("dodo", "who is your cat?");
@@ -578,7 +655,7 @@ manualSyncModes.forEach((mode) => {
       const finalKeyPostSerialization = await tb4.reconstructKey();
       strictEqual(finalKeyPostSerialization.toString("hex"), reconstructedKey.toString("hex"), "Incorrect serialization");
     });
-    it(`#should be able to get answers, even when they change, metadataSync=${mode}`, async function () {
+    it(`#should be able to get answers, even when they change, manualSync=${mode}`, async function () {
       tb = new ThresholdKey({
         serviceProvider: defaultSP,
         storageLayer: defaultSL,

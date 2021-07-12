@@ -93,6 +93,10 @@ class Metadata implements IMetadata {
     return this.generalStore[key];
   }
 
+  deleteGeneralStoreDomain(key: string): void {
+    delete this.generalStore[key];
+  }
+
   setTkeyStoreDomain(key: string, arr: unknown): void {
     this.tkeyStore[key] = arr;
   }
@@ -162,6 +166,14 @@ class Metadata implements IMetadata {
     const index = currentSD[shareIndex].indexOf(description);
     if (index > -1) {
       currentSD[shareIndex].splice(index, 1);
+    }
+  }
+
+  updateShareDescription(shareIndex: string, oldDescription: string, newDescription: string): void {
+    const currentSD = this.getGeneralStoreDomain("shareDescriptions");
+    const index = currentSD[shareIndex].indexOf(oldDescription);
+    if (index > -1) {
+      currentSD[shareIndex][index] = newDescription;
     }
   }
 

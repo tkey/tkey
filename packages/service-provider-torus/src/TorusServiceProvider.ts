@@ -19,10 +19,13 @@ class TorusServiceProvider extends ServiceProviderBase {
 
   directParams: DirectWebSDKArgs;
 
+  serviceProviderName: string;
+
   constructor({ enableLogging = false, postboxKey, directParams }: TorusServiceProviderArgs) {
     super({ enableLogging, postboxKey });
     this.directParams = directParams;
     this.directWeb = new DirectWebSDK(directParams);
+    this.serviceProviderName = "TorusServiceProvider";
   }
 
   async init(params: InitParams): Promise<void> {
@@ -52,12 +55,15 @@ class TorusServiceProvider extends ServiceProviderBase {
   toJSON(): StringifiedType {
     return {
       ...super.toJSON(),
+      serviceProviderName: this.serviceProviderName,
       directParams: this.directParams,
     };
   }
 
   static fromJSON(value: StringifiedType): TorusServiceProvider {
-    const { enableLogging, postboxKey, directParams } = value;
+    const { enableLogging, postboxKey, directParams, serviceProviderName } = value;
+    if (serviceProviderName !== "TorusServiceProvider") return undefined;
+
     return new TorusServiceProvider({
       enableLogging,
       postboxKey,

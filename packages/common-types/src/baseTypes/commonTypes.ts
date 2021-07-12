@@ -44,6 +44,8 @@ export interface IServiceProvider extends ISerializable {
 
   postboxKey: BN;
 
+  serviceProviderName: string;
+
   encrypt(msg: Buffer): Promise<EncryptedMessage>;
   decrypt(msg: EncryptedMessage): Promise<Buffer>;
   retrievePubKey(type: PubKeyType): Buffer;
@@ -59,6 +61,8 @@ export type TorusStorageLayerAPIParams = {
 };
 
 export interface IStorageLayer extends ISerializable {
+  storageLayerName: string;
+
   getMetadata<T>(params: { serviceProvider?: IServiceProvider; privKey?: BN }): Promise<T>;
 
   setMetadata<T>(params: { input: T; serviceProvider?: IServiceProvider; privKey?: BN }): Promise<{ message: string }>;
@@ -74,6 +78,7 @@ export type TorusStorageLayerArgs = {
   enableLogging?: boolean;
   hostUrl?: string;
   serviceProvider?: IServiceProvider;
+  serverTimeOffset?: number;
 };
 
 export type MockStorageLayerArgs = {

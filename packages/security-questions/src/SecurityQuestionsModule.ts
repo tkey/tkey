@@ -129,17 +129,23 @@ class SecurityQuestionsModule implements IModule {
       return generalStore;
     }
     const sqStore = new SecurityQuestionStore(generalStore as SecurityQuestionStoreArgs);
-    const sqAnswer = oldShareStores[sqStore.shareIndex.toString("hex")].share.share.sub(sqStore.nonce);
-    let newNonce = newShareStores[sqStore.shareIndex.toString("hex")].share.share.sub(sqAnswer);
-    newNonce = newNonce.umod(ecCurve.curve.n);
+    const sqIndex = sqStore.shareIndex.toString("hex");
 
-    return new SecurityQuestionStore({
-      nonce: newNonce,
-      polynomialID: newShareStores[Object.keys(newShareStores)[0]].polynomialID,
-      sqPublicShare: newShareStores[sqStore.shareIndex.toString("hex")].share.getPublicShare(),
-      shareIndex: sqStore.shareIndex,
-      questions: sqStore.questions,
-    });
+    // Assumption: If sqIndex doesn't exist, it must have been explicitly deleted.
+    if (oldShareStores[sqIndex] && newShareStores[sqIndex]) {
+      const sqAnswer = oldShareStores[sqIndex].share.share.sub(sqStore.nonce);
+      let newNonce = newShareStores[sqIndex].share.share.sub(sqAnswer);
+      newNonce = newNonce.umod(ecCurve.curve.n);
+
+      return new SecurityQuestionStore({
+        nonce: newNonce,
+        polynomialID: newShareStores[Object.keys(newShareStores)[0]].polynomialID,
+        sqPublicShare: newShareStores[sqIndex].share.getPublicShare(),
+        shareIndex: sqStore.shareIndex,
+        questions: sqStore.questions,
+      });
+    }
+    return undefined;
   }
 
   async saveAnswerOnTkeyStore(answerString: string): Promise<void> {

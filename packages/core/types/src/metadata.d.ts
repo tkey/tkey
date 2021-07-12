@@ -21,6 +21,7 @@ declare class Metadata implements IMetadata {
     addPublicShare(polynomialID: PolynomialID, publicShare: PublicShare): void;
     setGeneralStoreDomain(key: string, obj: unknown): void;
     getGeneralStoreDomain(key: string): unknown;
+    deleteGeneralStoreDomain(key: string): void;
     setTkeyStoreDomain(key: string, arr: unknown): void;
     getTkeyStoreDomain(key: string): unknown;
     addFromPolynomialAndShares(polynomial: Polynomial, shares: Share[] | ShareMap): void;
@@ -29,6 +30,7 @@ declare class Metadata implements IMetadata {
     getShareDescription(): ShareDescriptionMap;
     addShareDescription(shareIndex: string, description: string): void;
     deleteShareDescription(shareIndex: string, description: string): void;
+    updateShareDescription(shareIndex: string, oldDescription: string, newDescription: string): void;
     shareToShareStore(share: BN): ShareStore;
     clone(): Metadata;
     toJSON(): StringifiedType;
