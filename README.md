@@ -93,7 +93,7 @@ Before including the tKey SDK, we first need to setup [directAuth](https://githu
 
 4. At verifier's interface (where you obtain client id), please use baseUrl/redirect (eg: http://localhost:3000/serviceworker/redirect) as the redirect_uri where baseUrl is the one passed while instantiating tkey
 
-Now we can proceed to the basic usage, for your own application reach out to hello@tor.us to get your verifier spun up on the testnet today!!
+Now we can proceed to the basic usage. For your own applications, please signup on developer.tor.us
 
 ### Basic Usage
 
@@ -102,7 +102,6 @@ Packages who wish to use torus defaults can use `@tkey/default` to initialize
 ```js
 import ThresholdKey from "@tkey/default";
 import WebStorageModule, { WEB_STORAGE_MODULE_NAME } from "@tkey/web-storage";
-import SecurityQuestionsModule, { SECURITY_QUESTIONS_MODULE_NAME } from "@tkey/security-questions";
 
 // Torus service provider uses directAuth to fetch users private key from the set of Torus nodes. This private key is one of the share in TSS.
 // directAuth requires a deployment of a verifier with your clientId. Use developer.tor.us to create your verifier.
@@ -113,10 +112,6 @@ const serviceProvider = new TorusServiceProvider({
     network: "testnet", // or mainnet
     proxyContractAddress: "0x4023d2a0D330bF11426B12C6144Cfb96B7fa6183", // corresponding proxy contract address of the specified network
   },
-});
-// or
-const serviceProvider = new ServiceProviderBase({
-  postboxKey: "<BASE PRIVATE KEY>",
 });
 
 // Storage layer used by the service provider
@@ -132,19 +127,11 @@ const tkey = new ThresholdKey({
   storageLayer,
 });
 
-
-await tkey.serviceProvider.init({ skipSw: true });
-
 // triggers google login.
 // After google login succeeds, initialise tkey, metadata and its modules. (Minimum one share is required to read from the storage layer. In this case it was google login)
 // In case of web applications, we create another share and store it on browsers local storage. This makes the threshold 2/2. You can use modules to create additional shares
-
-await tkey.serviceProvider.triggerLogin({
-  typeOfLogin: "google",
-  name: "Google",
-  clientId: "<GOOGLE_CLIENT_ID>",
-  verifier: "<VERIFIER_NAME>",
-});
+await tkey.serviceProvider.init()
+await tkey.serviceProvider.triggerLogin();
 
 /**
  * initialize({params})
@@ -158,7 +145,7 @@ await tkey.serviceProvider.triggerLogin({
 
 await tkey.initialize({});
 
-// Private key reconstruction
+// Private key reconstruction. This is your threshold key. 
 const reconstructedKey = await tkey.reconstructKey();
 ```
 
@@ -167,6 +154,9 @@ const reconstructedKey = await tkey.reconstructKey();
 Developers who wish to customize can use @tkey/core.
 
 ```js
+
+import SecurityQuestionsModule, { SECURITY_QUESTIONS_MODULE_NAME } from "@tkey/security-questions";
+
 // Constructor
 const tkey = new ThresholdKey({
   modules: {
@@ -178,15 +168,9 @@ const tkey = new ThresholdKey({
   storageLayer,
 });
 
-await tkey.serviceProvider.init({ skipSw: true });
-
 // triggers google login.
-await tkey.serviceProvider.triggerLogin({
-  typeOfLogin: "google",
-  name: "Google",
-  clientId: "<GOOGLE_CLIENT_ID>",
-  verifier: "<VERIFIER_NAME>",
-});
+await tkey.serviceProvider.init({ skipSw: true });
+await tkey.serviceProvider.triggerLogin();
 
 await tkey.initialize();
 const reconstructedKey = await tkey.reconstructKey(); // created 2/2 tkey. Both shares will be required to reconstruct tkey.
@@ -248,15 +232,13 @@ const tkey = new ThresholdKey({
 const exportedSeedShare = await tb.outputShare(resp1.deviceShare.share.shareIndex, "mnemonic"); // exported as 24-word mnemonic
 
 await tb2.inputShare(exportedSeedShare.toString("hex"), "mnemonic"); // import share-mnemonic
-
 ```
 
-### Import existing seedphrases and private keys
+### Import seedphrases and private keys
 
 These imported private keys/seed phrases are encrypted (with threshold key) and stored on share's metadata. They have no relation to threshold key or shares. Usually, they are used by users with existing keys. 
 
 ```js
-
 const metamaskSeedPhraseFormat = new MetamaskSeedPhraseFormat("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68");
 const privateKeyFormat = new SECP256k1Format();
 
@@ -285,7 +267,6 @@ await tkey.modules.privateKeyModule.getAccounts();
 const seedPhraseToSet = "object brass success calm lizard science syrup planet exercise parade honey impulse";
 await tkey.modules.seedPhrase.setSeedPhrase("HD Key Tree", seedPhraseToSet);
 const returnedSeed = await tkey.modules.seedPhrase.getSeedPhrases();
-
 ```
 
 
@@ -294,7 +275,6 @@ const returnedSeed = await tkey.modules.seedPhrase.getSeedPhrases();
 There are many ways to create m/n threshold key. Following is an example of how to create a 4/5 tkey.
 
 ```js
-
 // Constructor
 const tkey = new ThresholdKey({
   modules: { 
