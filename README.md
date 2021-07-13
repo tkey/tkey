@@ -225,6 +225,11 @@ await tkey.initialize();
 const reconstructedKey = await tkey.reconstructKey(); // created 2/2 tkey. All changes are local.
 await tkey.modules.securityQuestions.generateNewShareWithSecurityQuestions("mypassword", "what is your password?"); // update threshold to 2/3. All changes are local
 await tkey.syncLocalMetadataTransitions() // push metadata to cloud
+
+// Rollback example
+await tkey.generateNewShare()
+tkey = await tkey.updateSDK() // this will revert the share generated above
+
 ```
 
 ### Export and import shares as mnemonics
@@ -233,7 +238,7 @@ await tkey.syncLocalMetadataTransitions() // push metadata to cloud
 // Constructor
 const tkey = new ThresholdKey({
   modules: {
-    // Share serialization is included in @tkey/default. Import it explicitly if you are using @tkey/core
+    // Share serialization is included in `@tkey/default`. Import it explicitly if you are using `@tkey/core`
     [SHARE_SERIALIZATION_MODULE_NAME]: new ShareSerializationModule(),
   },
   serviceProvider,
@@ -268,19 +273,20 @@ const tkey = new ThresholdKey({
 });
 
 // You will have to reconstruct key to get seedphrase/private keys back
+await tkey.reconstructKey()
 
 // get/set private keys
-const actualPrivateKeys = [
+const privateKeys = [
         new BN("4bd0041b7654a9b16a7268a5de7982f2422b15635c4fd170c140dc4897624390", "hex"),
         new BN("1ea6edde61c750ec02896e9ac7fe9ac0b48a3630594fdf52ad5305470a2635c0", "hex"),
       ];
-await tb.modules.privateKeyModule.setPrivateKey("secp256k1n", actualPrivateKeys[0]);
-await tb.modules.privateKeyModule.getAccounts();
+await tkey.modules.privateKeyModule.setPrivateKey("secp256k1n", privateKeys[0]);
+await tkey.modules.privateKeyModule.getAccounts();
 
 // get/set seedphrase
 const seedPhraseToSet = "object brass success calm lizard science syrup planet exercise parade honey impulse";
-await tb.modules.seedPhrase.setSeedPhrase("HD Key Tree", seedPhraseToSet);
-const returnedSeed = await tb.modules.seedPhrase.getSeedPhrases();
+await tkey.modules.seedPhrase.setSeedPhrase("HD Key Tree", seedPhraseToSet);
+const returnedSeed = await tkey.modules.seedPhrase.getSeedPhrases();
 
 ```
 
@@ -305,6 +311,7 @@ const existingShareIndexes = tkey.metadata.getShareIndexesForPolynomial(previous
 // _refreshShares() is an internal function. Use it with caution.
 await tkey._refreshShares(4, existingShareIndexes, previousPolyID);
 
+// Reconstruction
 const tkey2 = new ThresholdKey({ serviceProvider: defaultSP, storageLayer: defaultSL, manualSync: mode });
 await tkey2.initialize({ neverInitializeNewKey: true });
 tkey2.inputShareStore(resp1.deviceShare);
