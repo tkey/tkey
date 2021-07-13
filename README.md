@@ -97,7 +97,7 @@ Now we can proceed to the basic usage, for your own application reach out to hel
 
 ### Basic Usage
 
-Packages who wish to use torus defaults can use @tkey/default to initialize
+Packages who wish to use torus defaults can use `@tkey/default` to initialize
 
 ```js
 import ThresholdKey from "@tkey/default";
@@ -243,7 +243,6 @@ const tkey = new ThresholdKey({
   },
   serviceProvider,
   storageLayer,
-  manualSync: true
 });
 
 const exportedSeedShare = await tb.outputShare(resp1.deviceShare.share.shareIndex, "mnemonic"); // exported as 24-word mnemonic
@@ -269,7 +268,6 @@ const tkey = new ThresholdKey({
   },
   serviceProvider,
   storageLayer,
-  manualSync: true
 });
 
 // You will have to reconstruct key to get seedphrase/private keys back
@@ -296,13 +294,23 @@ const returnedSeed = await tkey.modules.seedPhrase.getSeedPhrases();
 There are many ways to create m/n threshold key. Following is an example of how to create a 4/5 tkey.
 
 ```js
-// created 2/5 tkey
-const resp1 = await tkey._initializeNewKey({ initializeModules: true });
+
+// Constructor
+const tkey = new ThresholdKey({
+  modules: { 
+    [WEB_STORAGE_MODULE_NAME]: new WebStorageModule(),
+  },
+  serviceProvider,
+  storageLayer,
+});
+
+const resp1 = await tkey.initialize({}) // 2/2
 const { newShareStores: newShareStores1, newShareIndex: newShareIndex1 } = await tkey.generateNewShare(); // 2/3
 const { newShareStores: newShareStores2, newShareIndex: newShareIndex2 } = await tkey.generateNewShare(); // 2/4
 const { newShareIndex: newShareIndex3 } = await tkey.generateNewShare(); // 2/5
 await tkey.reconstructKey();
 
+// Fetch existing share indexes
 const pubPoly = tkey.metadata.getLatestPublicPolynomial();
 const previousPolyID = pubPoly.getPolynomialID();
 const existingShareIndexes = tkey.metadata.getShareIndexesForPolynomial(previousPolyID);
