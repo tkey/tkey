@@ -166,6 +166,9 @@ class Metadata implements IMetadata {
     const index = currentSD[shareIndex].indexOf(description);
     if (index > -1) {
       currentSD[shareIndex].splice(index, 1);
+    } else {
+      throw CoreError.default(`No share description found for the given shareIndex: ${shareIndex} 
+        and description: ${description}`);
     }
   }
 
@@ -174,6 +177,9 @@ class Metadata implements IMetadata {
     const index = currentSD[shareIndex].indexOf(oldDescription);
     if (index > -1) {
       currentSD[shareIndex][index] = newDescription;
+    } else {
+      throw CoreError.default(`No share description found for the given shareIndex:
+        ${shareIndex} and description: ${oldDescription}`);
     }
   }
 
