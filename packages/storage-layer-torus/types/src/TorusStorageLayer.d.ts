@@ -4,9 +4,8 @@ declare class TorusStorageLayer implements IStorageLayer {
     enableLogging: boolean;
     hostUrl: string;
     storageLayerName: string;
-    serviceProvider: IServiceProvider;
     serverTimeOffset: number;
-    constructor({ enableLogging, hostUrl, serviceProvider, serverTimeOffset }: TorusStorageLayerArgs);
+    constructor({ enableLogging, hostUrl, serverTimeOffset }: TorusStorageLayerArgs);
     /**
      *  Get metadata for a key
      * @param privKey If not provided, it will use service provider's share for decryption

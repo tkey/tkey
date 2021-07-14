@@ -32,14 +32,11 @@ class TorusStorageLayer implements IStorageLayer {
 
   storageLayerName: string;
 
-  serviceProvider: IServiceProvider;
-
   serverTimeOffset: number;
 
-  constructor({ enableLogging = false, hostUrl = "http://localhost:5051", serviceProvider, serverTimeOffset = 0 }: TorusStorageLayerArgs) {
+  constructor({ enableLogging = false, hostUrl = "http://localhost:5051", serverTimeOffset = 0 }: TorusStorageLayerArgs) {
     this.enableLogging = enableLogging;
     this.hostUrl = hostUrl;
-    this.serviceProvider = serviceProvider;
     this.storageLayerName = "TorusStorageLayer";
     this.serverTimeOffset = serverTimeOffset;
   }
@@ -140,10 +137,11 @@ class TorusStorageLayer implements IStorageLayer {
       pubY = pubK.y.toString("hex");
     } else {
       const point = serviceProvider.retrievePubKeyPoint();
-      sig = this.serviceProvider.sign(hash);
+      sig = serviceProvider.sign(hash);
       pubX = point.getX().toString("hex");
       pubY = point.getY().toString("hex");
     }
+    // console.log(pubX, "pub key x");
     return {
       pub_key_X: pubX,
       pub_key_Y: pubY,
@@ -199,14 +197,13 @@ class TorusStorageLayer implements IStorageLayer {
       enableLogging: this.enableLogging,
       hostUrl: this.hostUrl,
       storageLayerName: this.storageLayerName,
-      serviceProvider: this.serviceProvider,
     };
   }
 
   static fromJSON(value: StringifiedType): TorusStorageLayer {
-    const { enableLogging, hostUrl, serviceProvider, storageLayerName, serverTimeOffset = 0 } = value;
+    const { enableLogging, hostUrl, storageLayerName, serverTimeOffset = 0 } = value;
     if (storageLayerName !== "TorusStorageLayer") return undefined;
-    return new TorusStorageLayer({ enableLogging, hostUrl, serviceProvider, serverTimeOffset });
+    return new TorusStorageLayer({ enableLogging, hostUrl, serverTimeOffset });
   }
 }
 
