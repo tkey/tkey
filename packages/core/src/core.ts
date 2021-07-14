@@ -80,7 +80,7 @@ class ThresholdKey implements ITKey {
 
   _shareSerializationMiddleware: ShareSerializationMiddleware;
 
-  storeDeviceShare: (deviceShareStore: ShareStore) => Promise<void>;
+  storeDeviceShare: (deviceShareStore: ShareStore, customDeviceInfo?: StringifiedType) => Promise<void>;
 
   haveWriteMetadataLock: string;
 
@@ -972,6 +972,13 @@ class ThresholdKey implements ITKey {
 
   async deleteShareDescription(shareIndex: string, description: string, updateMetadata?: boolean): Promise<void> {
     this.metadata.deleteShareDescription(shareIndex, description);
+    if (updateMetadata) {
+      await this._syncShareMetadata();
+    }
+  }
+
+  async updateShareDescription(shareIndex: string, oldDescription: string, newDescription: string, updateMetadata?: boolean): Promise<void> {
+    this.metadata.updateShareDescription(shareIndex, oldDescription, newDescription);
     if (updateMetadata) {
       await this._syncShareMetadata();
     }

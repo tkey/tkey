@@ -91,6 +91,7 @@ export interface IMetadata extends ISerializable {
   shareToShareStore(share: BN): ShareStore;
   addShareDescription(shareIndex: string, description: string): void;
   deleteShareDescription(shareIndex: string, description: string): void;
+  updateShareDescription(shareIndex: string, oldDescription: string, newDescription: string): void;
   clone(): IMetadata;
 }
 

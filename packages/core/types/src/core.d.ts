@@ -17,7 +17,7 @@ declare class ThresholdKey implements ITKey {
     _refreshMiddleware: RefreshMiddlewareMap;
     _reconstructKeyMiddleware: ReconstructKeyMiddlewareMap;
     _shareSerializationMiddleware: ShareSerializationMiddleware;
-    storeDeviceShare: (deviceShareStore: ShareStore) => Promise<void>;
+    storeDeviceShare: (deviceShareStore: ShareStore, customDeviceInfo?: StringifiedType) => Promise<void>;
     haveWriteMetadataLock: string;
     constructor(args?: TKeyArgs);
     getStorageLayer(): IStorageLayer;
@@ -105,6 +105,7 @@ declare class ThresholdKey implements ITKey {
     _setDeviceStorage(storeDeviceStorage: (deviceShareStore: ShareStore) => Promise<void>): void;
     addShareDescription(shareIndex: string, description: string, updateMetadata?: boolean): Promise<void>;
     deleteShareDescription(shareIndex: string, description: string, updateMetadata?: boolean): Promise<void>;
+    updateShareDescription(shareIndex: string, oldDescription: string, newDescription: string, updateMetadata?: boolean): Promise<void>;
     encrypt(data: Buffer): Promise<EncryptedMessage>;
     decrypt(encryptedMessage: EncryptedMessage): Promise<Buffer>;
     _setTKeyStoreItem(moduleName: string, data: TkeyStoreItemType): Promise<void>;
