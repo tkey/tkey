@@ -36,7 +36,7 @@ manualSyncModes.forEach((mode) => {
       });
     });
 
-    it("#should be able to input share from web storage", async function () {
+    it(`#should be able to input share from web storage, manualSync=${mode}`, async function () {
       await tb._initializeNewKey({ initializeModules: true });
       await tb.syncLocalMetadataTransitions();
 
@@ -47,7 +47,7 @@ manualSyncModes.forEach((mode) => {
       deepStrictEqual(secondKey, reconstructedKey, "Must be equal");
     });
 
-    it("#should be able to input share from web storage after reconstruction", async function () {
+    it(`#should be able to input share from web storage after reconstruction, manualSync=${mode}`, async function () {
       await tb._initializeNewKey({ initializeModules: true });
       const reconstructedKey = await tb.reconstructKey();
       await tb.generateNewShare();
@@ -62,7 +62,7 @@ manualSyncModes.forEach((mode) => {
       strictEqual(reconstructedKey.privKey.toString("hex"), secondKey.privKey.toString("hex"), "Must be equal");
     });
 
-    it("#should be able to input share from web storage after external share deletion", async function () {
+    it(`#should be able to input share from web storage after external share deletion, manualSync=${mode}`, async function () {
       await tb._initializeNewKey({ initializeModules: true });
       const reconstructedKey = await tb.reconstructKey();
       const newShare = await tb.generateNewShare();
@@ -76,7 +76,7 @@ manualSyncModes.forEach((mode) => {
       strictEqual(reconstructedKey.privKey.toString("hex"), secondKey.privKey.toString("hex"), "Must be equal");
     });
 
-    it("#should not be able to input share from web storage after deletion", async function () {
+    it(`#should not be able to input share from web storage after deletion, manualSync=${mode}`, async function () {
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
       await tb.reconstructKey();
       // console.log("%O", tb.shares);
@@ -93,7 +93,7 @@ manualSyncModes.forEach((mode) => {
       });
     });
 
-    it("#should be able to input external share from web storage after deletion", async function () {
+    it(`#should be able to input external share from web storage after deletion, manualSync=${mode}`, async function () {
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
       const reconstructedKey = await tb.reconstructKey();
       // console.log("%O", tb.shares);
@@ -114,7 +114,7 @@ manualSyncModes.forEach((mode) => {
       strictEqual(reconstructedKey.privKey.toString("hex"), secondKey.privKey.toString("hex"), "Must be equal");
     });
 
-    it(`#should be able to add custom device share info ${mode}`, async function () {
+    it(`#should be able to add custom device share info, manualSync=${mode}`, async function () {
       await tb._initializeNewKey({
         initializeModules: true,
       });
@@ -130,7 +130,6 @@ manualSyncModes.forEach((mode) => {
       const oldShareDesc = shareDesc[deviceShareIndex];
       const newShareDesc = { ...JSON.parse(shareDesc[deviceShareIndex]), customDeviceInfo: JSON.stringify(updatedDeviceShareInfo) };
       await tb.updateShareDescription(deviceShareIndex, oldShareDesc[0], JSON.stringify(newShareDesc), true);
-
       const updatedShareDescs = await tb.metadata.getShareDescription();
       deepStrictEqual(
         JSON.parse(JSON.parse(updatedShareDescs[deviceShareIndex][0]).customDeviceInfo),
