@@ -122,7 +122,8 @@ manualSyncModes.forEach((mode) => {
 
       const shareDesc = await tb.metadata.getShareDescription();
       const deviceShareIndex = Object.keys(shareDesc)[0];
-      deepStrictEqual(JSON.parse(JSON.parse(shareDesc[deviceShareIndex][0]).customDeviceInfo), {}, "device info should be correct");
+
+      deepStrictEqual(JSON.parse(shareDesc[deviceShareIndex][0]).customDeviceInfo, undefined, "device info should be correct");
       const updatedDeviceShareInfo = {
         browser: "brave",
       };

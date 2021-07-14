@@ -95,3 +95,5 @@ export type ShareDescriptionMap = {
 export type FromJSONConstructor = {
   fromJSON(value: StringifiedType): any;
 };
+
+export type DeviceShareDescription = { module: string; userAgent: string; dateAdded: number; customDeviceInfo?: string };

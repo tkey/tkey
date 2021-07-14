@@ -1,4 +1,4 @@
-import { IModule, ITKeyApi, ShareStore, StringifiedType } from "@tkey/common-types";
+import { DeviceShareDescription, IModule, ITKeyApi, ShareStore, StringifiedType } from "@tkey/common-types";
 import { browser } from "webextension-polyfill-ts";
 
 export const CHROME_EXTENSION_STORAGE_MODULE_NAME = "chromeExtensionStorage";
@@ -20,18 +20,17 @@ export default class ChromeExtensionStorageModule implements IModule {
   // eslint-disable-next-line
   async initialize(): Promise<void> {}
 
-  async storeDeviceShare(deviceShareStore: ShareStore, customDeviceInfo: StringifiedType = {}): Promise<void> {
+  async storeDeviceShare(deviceShareStore: ShareStore, customDeviceInfo?: StringifiedType): Promise<void> {
     await this.storeShareOnChromeExtensionStorage(deviceShareStore);
-    await this.tbSDK.addShareDescription(
-      deviceShareStore.share.shareIndex.toString("hex"),
-      JSON.stringify({
-        module: this.moduleName,
-        userAgent: window.navigator.userAgent,
-        dateAdded: Date.now(),
-        customDeviceInfo: JSON.stringify(customDeviceInfo),
-      }),
-      true
-    );
+    const shareDescription: DeviceShareDescription = {
+      module: this.moduleName,
+      userAgent: window.navigator.userAgent,
+      dateAdded: Date.now(),
+    };
+    if (customDeviceInfo) {
+      shareDescription.customDeviceInfo = JSON.stringify(customDeviceInfo);
+    }
+    await this.tbSDK.addShareDescription(deviceShareStore.share.shareIndex.toString("hex"), JSON.stringify(shareDescription), true);
   }
 
   async storeShareOnChromeExtensionStorage(share: ShareStore): Promise<void> {
