@@ -1,7 +1,8 @@
 {
   "rules": {
     "prefer-arrow-callback": "off",
-    "func-names": "off"
+    "func-names": "off",
+    "@typescript-eslint/explicit-module-boundary-types": "off"
   }
   
 }

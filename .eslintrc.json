@@ -94,6 +94,7 @@
     "jest": true,
     "it": true,
     "beforeEach": true,
+    "before": true,
     "afterEach": true,
     "describe": true,
     "expect": true,
