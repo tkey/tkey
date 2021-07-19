@@ -1,4 +1,4 @@
-/* eslint-disable no-console */
+/* eslint-disable import/no-extraneous-dependencies */
 /* eslint-disable no-shadow */
 /* eslint-disable no-await-in-loop */
 /* eslint-disable max-len */
@@ -11,6 +11,7 @@ import ShareTransferModule from "@tkey/share-transfer";
 import { generatePrivate } from "@toruslabs/eccrypto";
 import { deepStrictEqual, fail, notStrictEqual, rejects, strict, strictEqual } from "assert";
 import BN from "bn.js";
+import sinon from "sinon";
 import { keccak256 } from "web3-utils";
 
 import ThresholdKey from "../src/index";
@@ -1052,16 +1053,16 @@ export const sharedTestCases = (mode, torusSp, sl) => {
       await tb2.generateNewShare();
       await tb2.syncLocalMetadataTransitions();
 
-      let outsideErr;
-      try {
-        await tb.generateNewShare();
-        await tb.syncLocalMetadataTransitions();
-      } catch (err) {
-        outsideErr = err;
-      }
-      if (!outsideErr) {
-        fail("should fail");
-      }
+      await rejects(
+        async () => {
+          await tb.generateNewShare();
+          await tb.syncLocalMetadataTransitions();
+        },
+        (err) => {
+          strictEqual(err.code, 1401, "Expected aquireLock failed error is not thrown");
+          return true;
+        }
+      );
     });
 
     it(`#locks should not allow for writes of the same nonce, manualSync=${mode}`, async function () {
@@ -1100,27 +1101,157 @@ export const sharedTestCases = (mode, torusSp, sl) => {
         fail("fulfilled count != 1");
       }
     });
+  });
+  describe("tkey error cases", function () {
+    let tb;
+    let resp1;
+    const sandbox = sinon.createSandbox();
 
-    it(`#locks should fail when tkey/nonce is updated in non-manualSync mode, manualSync=${mode}`, async function () {
-      const tb = new ThresholdKey({ serviceProvider: customSP, manualSync: mode, storageLayer: customSL });
-      const resp1 = await tb._initializeNewKey({ initializeModules: true });
+    before("Setup ThresholdKey", async function () {
+      tb = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
+      resp1 = await tb._initializeNewKey({ initializeModules: true });
       await tb.syncLocalMetadataTransitions();
+    });
+    afterEach(() => {
+      sandbox.restore();
+    });
+    it("#should throw error code 1101 if metadata in undefined", async function () {
+      const tb2 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
+      await rejects(
+        async () => {
+          await tb2.reconstructKey();
+        },
+        (err) => {
+          strictEqual(err.code, 1101, "Expected metadata error is not thrown");
+          return true;
+        }
+      );
+      await rejects(
+        async () => {
+          tb2.getMetadata();
+        },
+        (err) => {
+          strictEqual(err.code, 1101, "Expected metadata error is not thrown");
+          return true;
+        }
+      );
+      await rejects(
+        async () => {
+          await tb2.deleteShare();
+        },
+        (err) => {
+          strictEqual(err.code, 1101, "Expected metadata error is not thrown");
+          return true;
+        }
+      );
+      await rejects(
+        async () => {
+          await tb2.generateNewShare();
+        },
+        (err) => {
+          strictEqual(err.code, 1101, "Expected metadata error is not thrown");
+          return true;
+        }
+      );
+      const exportedSeedShare = await tb.outputShare(resp1.deviceShare.share.shareIndex, "mnemonic");
+      await rejects(
+        async () => {
+          await tb2.inputShare(exportedSeedShare, "mnemonic");
+        },
+        (err) => {
+          strictEqual(err.code, 1101, "Expected metadata error is not thrown");
+          return true;
+        }
+      );
+    });
+    it("#should throw error code 1301 if privKey is not available", async function () {
+      const tb2 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
+      await tb2.initialize({ neverInitializeNewKey: true });
+      await rejects(
+        async () => {
+          await tb2.generateNewShare();
+        },
+        (err) => {
+          strictEqual(err.code, 1301, "Expected 1301 error is not thrown");
+          return true;
+        }
+      );
+      await rejects(
+        async () => {
+          await tb2.deleteShare();
+        },
+        (err) => {
+          strictEqual(err.code, 1301, "Expected 1301 error is not thrown");
+          return true;
+        }
+      );
+      await rejects(
+        async () => {
+          await tb2.encrypt(Buffer.from("test data"));
+        },
+        (err) => {
+          strictEqual(err.code, 1301, "Expected 1301 error is not thrown");
+          return true;
+        }
+      );
+    });
+    it("#should throw error code 1302 if not enough shares are avaible for reconstruction", async function () {
+      const tb2 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
+      await tb2.initialize({ neverInitializeNewKey: true });
+      await rejects(
+        async () => {
+          await tb2.reconstructKey();
+        },
+        (err) => {
+          strictEqual(err.code, 1302, "Expected 1302 error is not thrown");
+          return true;
+        }
+      );
+    });
 
-      const tb2 = new ThresholdKey({ serviceProvider: customSP, manualSync: mode, storageLayer: customSL });
-      await tb2.initialize();
+    it("#should throw error code 1102 if metadata get failed", async function () {
+      const tb2 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
+      sandbox.stub(tb2.storageLayer, "getMetadata").throws(new Error("failed to fetch metadata"));
+      await rejects(
+        async () => {
+          await tb2.initialize({ neverInitializeNewKey: true });
+        },
+        (err) => {
+          strictEqual(err.code, 1102, "Expected 1102 error is not thrown");
+          return true;
+        }
+      );
+    });
+
+    it("#should throw error code 1103 if metadata post failed", async function () {
+      const tb2 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
+      await tb2.initialize({ neverInitializeNewKey: true });
       tb2.inputShareStore(resp1.deviceShare);
-      const reconstructedKey = await tb2.reconstructKey();
-      if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
-        fail("key should be able to be reconstructed");
-      }
-      await tb2.generateNewShare();
+      await tb2.reconstructKey();
       await tb2.syncLocalMetadataTransitions();
-
-      await rejects(async () => {
-        await tb.generateNewShare();
-        await tb.generateNewShare();
-        await tb.syncLocalMetadataTransitions();
-      }, Error);
+      sandbox.stub(tb2.storageLayer, "setMetadataStream").throws(new Error("failed to set metadata"));
+      if (mode) {
+        await rejects(
+          async () => {
+            await tb2.addShareDescription(resp1.deviceShare.share.shareIndex.toString("hex"), JSON.stringify({ test: "unit test" }), true);
+            await tb2.syncLocalMetadataTransitions();
+          },
+          (err) => {
+            strictEqual(err.code, 1103, "Expected 1103 error is not thrown");
+            return true;
+          }
+        );
+      } else {
+        await rejects(
+          async () => {
+            await tb2.addShareDescription(resp1.deviceShare.share.shareIndex.toString("hex"), JSON.stringify({ test: "unit test" }), true);
+          },
+          (err) => {
+            strictEqual(err.code, 1103, "Expected 1103 error is not thrown");
+            return true;
+          }
+        );
+      }
     });
   });
 };
