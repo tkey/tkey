@@ -1115,7 +1115,7 @@ export const sharedTestCases = (mode, torusSp, sl) => {
     afterEach(() => {
       sandbox.restore();
     });
-    it("#should throw error code 1101 if metadata in undefined", async function () {
+    it(`#should throw error code 1101 if metadata is undefined, in manualSync: ${mode}`, async function () {
       const tb2 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
       await rejects(
         async () => {
@@ -1164,7 +1164,7 @@ export const sharedTestCases = (mode, torusSp, sl) => {
         }
       );
     });
-    it("#should throw error code 1301 if privKey is not available", async function () {
+    it(`#should throw error code 1301 if privKey is not available, in manualSync: ${mode}`, async function () {
       const tb2 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
       await tb2.initialize({ neverInitializeNewKey: true });
       await rejects(
@@ -1195,7 +1195,7 @@ export const sharedTestCases = (mode, torusSp, sl) => {
         }
       );
     });
-    it("#should throw error code 1302 if not enough shares are avaible for reconstruction", async function () {
+    it(`#should throw error code 1302 if not enough shares are avaible for reconstruction, in manualSync: ${mode}`, async function () {
       const tb2 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
       await tb2.initialize({ neverInitializeNewKey: true });
       await rejects(
@@ -1209,7 +1209,7 @@ export const sharedTestCases = (mode, torusSp, sl) => {
       );
     });
 
-    it("#should throw error code 1102 if metadata get failed", async function () {
+    it(`#should throw error code 1102 if metadata get failed, in manualSync: ${mode}`, async function () {
       const tb2 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
       sandbox.stub(tb2.storageLayer, "getMetadata").throws(new Error("failed to fetch metadata"));
       await rejects(
@@ -1223,7 +1223,7 @@ export const sharedTestCases = (mode, torusSp, sl) => {
       );
     });
 
-    it("#should throw error code 1103 if metadata post failed", async function () {
+    it(`#should throw error code 1103 if metadata post failed, in manualSync: ${mode}`, async function () {
       const tb2 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
       await tb2.initialize({ neverInitializeNewKey: true });
       tb2.inputShareStore(resp1.deviceShare);
