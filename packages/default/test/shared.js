@@ -421,15 +421,15 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     //   strictEqual(finalKeyPostSerialization.privKey.toString("hex"), resp1.privKey.toString("hex"), "Incorrect serialization");
     // });
     it(`#should be able to serialize and deserialize without service provider share or the postbox key, manualSync=${mode}`, async function () {
-      // const customSP2 = getServiceProvider({ type: torusSP.serviceProviderName });
-      // const customSL2 = initStorageLayer({ serviceProvider: customSP2, hostUrl: metadataURL });
-      // const tb = new ThresholdKey({ serviceProvider: customSP2, storageLayer: customSL2, manualSync: mode });
+      const customSP2 = getServiceProvider({ type: torusSP.serviceProviderName });
+      const customSL2 = initStorageLayer({ serviceProvider: customSP2, hostUrl: metadataURL });
+      const tb = new ThresholdKey({ serviceProvider: customSP2, storageLayer: customSL2, manualSync: mode });
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
       const { newShareStores: newShareStores1, newShareIndex: newShareIndex1 } = await tb.generateNewShare();
       await tb.syncLocalMetadataTransitions();
 
-      const customSP2 = getServiceProvider({ type: torusSP.serviceProviderName, isEmptyProvider: true });
-      const customSL2 = initStorageLayer({ serviceProvider: customSP2, hostUrl: metadataURL });
+      const customSP3 = getServiceProvider({ type: torusSP.serviceProviderName, isEmptyProvider: true });
+      customSL2.serviceProvider = customSP3;
       const tb2 = new ThresholdKey({ serviceProvider: customSP2, storageLayer: customSL2, manualSync: mode });
       await tb2.initialize({ withShare: resp1.deviceShare });
       tb2.inputShareStore(newShareStores1[newShareIndex1.toString("hex")]);
