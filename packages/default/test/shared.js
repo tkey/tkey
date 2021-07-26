@@ -505,6 +505,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         modules: { securityQuestions: new SecurityQuestionsModule() },
         manualSync: mode,
       });
+      tb.serviceProvider.postboxKey = new BN(getTempKey(), "hex");
     });
     it(`#should be able to reconstruct key and initialize a key with security questions, manualSync=${mode}`, async function () {
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
