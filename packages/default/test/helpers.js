@@ -8,11 +8,12 @@ const mocked = process.env.MOCKED || "false";
 export function initStorageLayer(extraParams) {
   return mocked === "true" ? new MockStorageLayer({ serviceProvider: extraParams.serviceProvider }) : new TorusStorageLayer(extraParams);
 }
+
 export function getServiceProvider(params) {
   const { type, privKeyBN, isEmptyProvider } = params;
   const PRIVATE_KEY = privKeyBN ? privKeyBN.toString("hex") : generatePrivate().toString("hex");
-  if (type === "torus") {
-    const torusSp = new ServiceProviderTorus({
+  if (type === "TorusServiceProvider") {
+    return new ServiceProviderTorus({
       postboxKey: isEmptyProvider ? null : PRIVATE_KEY,
       directParams: {
         // this url has no effect as postbox key is passed
@@ -20,8 +21,6 @@ export function getServiceProvider(params) {
         baseUrl: "http://localhost:3000",
       },
     });
-    return torusSp;
   }
-  const tsp = new ServiceProviderBase({ postboxKey: isEmptyProvider ? null : PRIVATE_KEY });
-  return tsp;
+  return new ServiceProviderBase({ postboxKey: isEmptyProvider ? null : PRIVATE_KEY });
 }

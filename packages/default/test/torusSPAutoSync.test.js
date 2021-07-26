@@ -5,7 +5,7 @@ import { initStorageLayer } from "./helpers";
 import { sharedTestCases } from "./shared";
 
 const PRIVATE_KEY = generatePrivate().toString("hex");
-const torusSp = new ServiceProviderTorus({
+const torusSP = new ServiceProviderTorus({
   postboxKey: PRIVATE_KEY,
   directParams: {
     // this url has no effect as postbox key is passed
@@ -15,9 +15,9 @@ const torusSp = new ServiceProviderTorus({
 });
 const metadataURL = process.env.METADATA || "http://localhost:5051";
 
-const torusSL = initStorageLayer({ serviceProvider: torusSp, hostUrl: metadataURL });
+const torusSL = initStorageLayer({ serviceProvider: torusSP, hostUrl: metadataURL });
 
 const MANUAL_SYNC = false;
 describe(`Torus Service provider with manual sync: ${MANUAL_SYNC}`, function () {
-  sharedTestCases(MANUAL_SYNC, torusSp, torusSL);
+  sharedTestCases(MANUAL_SYNC, torusSP, torusSL);
 });
