@@ -11,6 +11,6 @@ const PRIVATE_KEY = generatePrivate().toString("hex");
 const defaultSP = new ServiceProviderBase({ postboxKey: PRIVATE_KEY });
 const defaultSL = initStorageLayer({ serviceProvider: defaultSP, hostUrl: metadataURL });
 
-describe(`Manual sync: ${MANUAL_SYNC}`, function () {
+describe(`BaseServiceProvider with manualSync: ${MANUAL_SYNC}`, function () {
   sharedTestCases(MANUAL_SYNC, defaultSP, defaultSL);
 });

@@ -245,7 +245,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     let shareStoreAfterDelete;
     let tb;
     let tbInitResp;
-    before(`#generate,add and delete a share,  manualSync=${mode}`, async () => {
+    before(`#should be able to generate and delete a share, manualSync=${mode}`, async () => {
       tb = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
       tbInitResp = await tb._initializeNewKey({ initializeModules: true });
       const newShare = await tb.generateNewShare();
@@ -289,23 +289,42 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     beforeEach("Setup ThresholdKey", async function () {
       tb = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
     });
-    it(`#should serialize and deserialize correctly with user input, manualSync=${mode}`, async function () {
+    it(`#should serialize and deserialize correctly without tkeyArgs, manualSync=${mode}`, async function () {
       let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
       userInput = userInput.umod(ecCurve.curve.n);
       const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
-      const newShares = await tb.generateNewShare();
+      await tb.generateNewShare();
       await tb.syncLocalMetadataTransitions();
 
-      const tb2 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
-      await tb2.initialize({ withShare: resp1.userShare });
-      tb2.inputShareStore(newShares.newShareStores[newShares.newShareIndex.toString("hex")]);
-      await tb2.syncLocalMetadataTransitions();
-      const stringified = JSON.stringify(tb2);
+      // new tb object is created in beforeEach. Why do you need this ?
+      // const tb2 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
+      // await tb2.initialize({ withShare: resp1.userShare });
+      // tb2.inputShareStore(newShares.newShareStores[newShares.newShareIndex.toString("hex")]);
+      // // await tb2.syncLocalMetadataTransitions();
+
+      const stringified = JSON.stringify(tb);
+      const tb3 = await ThresholdKey.fromJSON(JSON.parse(stringified));
+      const finalKey = await tb3.reconstructKey();
+      strictEqual(finalKey.privKey.toString("hex"), resp1.privKey.toString("hex"), "Incorrect serialization");
+    });
+    it(`#should serialize and deserialize correctly with tkeyArgs, manualSync=${mode}`, async function () {
+      let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
+      userInput = userInput.umod(ecCurve.curve.n);
+      const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
+      await tb.generateNewShare();
+      await tb.syncLocalMetadataTransitions();
+
+      // const tb2 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
+      // await tb2.initialize({ withShare: resp1.userShare });
+      // tb2.inputShareStore(newShares.newShareStores[newShares.newShareIndex.toString("hex")]);
+      // // await tb2.syncLocalMetadataTransitions();
+
+      const stringified = JSON.stringify(tb);
       const tb3 = await ThresholdKey.fromJSON(JSON.parse(stringified), { serviceProvider: customSP, storageLayer: customSL });
       const finalKey = await tb3.reconstructKey();
       strictEqual(finalKey.privKey.toString("hex"), resp1.privKey.toString("hex"), "Incorrect serialization");
     });
-    it(`#should serialize and deserialize correctly keeping localTransitions consistent before syncing NewKeyAssign, manualSync=${mode}`, async function () {
+    it(`#should serialize and deserialize correctly, keeping localTransitions consistent before syncing NewKeyAssign, manualSync=${mode}`, async function () {
       let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
       userInput = userInput.umod(ecCurve.curve.n);
       const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
@@ -327,85 +346,91 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       await tb2.syncLocalMetadataTransitions();
       strictEqual(finalKey.privKey.toString("hex"), resp1.privKey.toString("hex"), "Incorrect serialization");
 
-      const tb3 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
-      await tb3.initialize({ withShare: resp1.userShare });
-      tb3.inputShareStore(shareStores[shareIndex.toString("hex")]);
-      const reconstructedKey2 = await tb3.reconstructKey();
+      // const tb3 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
+      // await tb3.initialize({ withShare: resp1.userShare });
+      // tb3.inputShareStore(shareStores[shareIndex.toString("hex")]);
+      const reconstructedKey2 = await tb2.reconstructKey();
       if (resp1.privKey.cmp(reconstructedKey2.privKey) !== 0) {
         fail("key should be able to be reconstructed");
       }
     });
-    it(`#should serialize and deserialize correctly keeping localTransitions consistant afterNewKeyAssign, manualSync=${mode}`, async function () {
+    it(`#should serialize and deserialize correctly keeping localTransitions  afterNewKeyAssign, manualSync=${mode}`, async function () {
       let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
       userInput = userInput.umod(ecCurve.curve.n);
       const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
-      const newShares = await tb.generateNewShare();
       await tb.syncLocalMetadataTransitions();
+      const reconstructedKey = await tb.reconstructKey();
+      const { newShareStores: shareStores, newShareIndex: shareIndex } = await tb.generateNewShare();
 
-      const tb2 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
-      await tb2.initialize({ withShare: resp1.userShare });
-      tb2.inputShareStore(newShares.newShareStores[resp1.deviceShare.share.shareIndex.toString("hex")]);
-      const reconstructedKey = await tb2.reconstructKey();
-      // this will test fromJSON in manualSync:true
-      const { newShareStores: shareStores, newShareIndex: shareIndex } = await tb2.generateNewShare();
-      if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
-        fail("key should be able to be reconstructed");
-      }
+      // const tb2 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
+      // await tb2.initialize({ withShare: resp1.userShare });
+      // tb2.inputShareStore(newShares.newShareStores[resp1.deviceShare.share.shareIndex.toString("hex")]);
+      // const reconstructedKey = await tb2.reconstructKey();
+      // // this will test fromJSON in manualSync:true
+      // const { newShareStores: shareStores, newShareIndex: shareIndex } = await tb2.generateNewShare();
+      // if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
+      //   fail("key should be able to be reconstructed");
+      // }
 
-      const stringified = JSON.stringify(tb2);
-      const sharez = tb2.shares[tb2.lastFetchedCloudMetadata.getLatestPublicPolynomial().getPolynomialID()];
-      await customSL.getMetadata({ privKey: sharez["1"] });
-      const tb3 = await ThresholdKey.fromJSON(JSON.parse(stringified), { serviceProvider: customSP, storageLayer: customSL });
-      const finalKey = await tb3.reconstructKey();
-      const shareToVerify = tb3.outputShareStore(shareIndex);
+      const stringified = JSON.stringify(tb);
+
+      // const sharez = tb.shares[tb.lastFetchedCloudMetadata.getLatestPublicPolynomial().getPolynomialID()];
+      // await customSL.getMetadata({ privKey: sharez["1"] });
+
+      const tb2 = await ThresholdKey.fromJSON(JSON.parse(stringified), { serviceProvider: customSP, storageLayer: customSL });
+      const finalKey = await tb2.reconstructKey();
+      const shareToVerify = tb2.outputShareStore(shareIndex);
       strictEqual(shareStores[shareIndex.toString("hex")].share.share.toString("hex"), shareToVerify.share.share.toString("hex"));
-      await tb3.syncLocalMetadataTransitions();
+      await tb2.syncLocalMetadataTransitions();
       strictEqual(finalKey.privKey.toString("hex"), reconstructedKey.privKey.toString("hex"), "Incorrect serialization");
 
-      const tb4 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
-      await tb4.initialize({ withShare: resp1.userShare });
-      tb4.inputShareStore(shareStores[shareIndex.toString("hex")]);
+      // const tb4 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
+      // await tb4.initialize({ withShare: resp1.userShare });
+      // tb4.inputShareStore(shareStores[shareIndex.toString("hex")]);
 
-      const reconstructedKey2 = await tb4.reconstructKey();
+      const reconstructedKey2 = await tb2.reconstructKey();
       if (resp1.privKey.cmp(reconstructedKey2.privKey) !== 0) {
         fail("key should be able to be reconstructed");
       }
     });
-    it(`#should be able to reshare a key and retrieve from service provider serialization, manualSync=${mode}`, async function () {
-      const resp1 = await tb._initializeNewKey({ initializeModules: true });
-      await tb.syncLocalMetadataTransitions();
 
-      const tb2 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
-      await tb2.initialize();
-      tb2.inputShareStore(resp1.deviceShare);
-      const reconstructedKey = await tb2.reconstructKey();
-      // compareBNArray(resp1.privKey, reconstructedKey, "key should be able to be reconstructed");
-      if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
-        fail("key should be able to be reconstructed");
-      }
-      const resp2 = await tb2.generateNewShare();
-      await tb2.syncLocalMetadataTransitions();
+    // This test is same as the first one
+    // it(`#should be able to reshare a key and retrieve from service provider serialization, manualSync=${mode}`, async function () {
+    //   const resp1 = await tb._initializeNewKey({ initializeModules: true });
+    //   const { newShareStores, newShareIndex } = await tb.generateNewShare();
+    //   await tb.syncLocalMetadataTransitions();
 
-      const tb3 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
-      await tb3.initialize();
-      tb3.inputShareStore(resp2.newShareStores[resp2.newShareIndex.toString("hex")]);
+    //   // const tb2 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
+    //   // await tb2.initialize();
+    //   // tb2.inputShareStore(resp1.deviceShare);
+    //   // const reconstructedKey = await tb2.reconstructKey();
+    //   // // compareBNArray(resp1.privKey, reconstructedKey, "key should be able to be reconstructed");
+    //   // if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
+    //   //   fail("key should be able to be reconstructed");
+    //   // }
+    //   // const resp2 = await tb2.generateNewShare();
+    //   // await tb2.syncLocalMetadataTransitions();
 
-      const stringified = JSON.stringify(tb3);
-      const tb4 = await ThresholdKey.fromJSON(JSON.parse(stringified), { serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
-      const finalKeyPostSerialization = await tb4.reconstructKey();
-      strictEqual(finalKeyPostSerialization.privKey.toString("hex"), resp1.privKey.toString("hex"), "Incorrect serialization");
-    });
-    it(`#should be able to serialize and deserialize without service provider and storage layer, manualSync=${mode}`, async function () {
-      const customSP2 = getServiceProvider({ type: torusSP ? "torus" : "base" });
-      const customSL2 = initStorageLayer({ serviceProvider: customSP2, hostUrl: metadataURL });
-      const tb = new ThresholdKey({ serviceProvider: customSP2, storageLayer: customSL2, manualSync: mode });
+    //   const tb3 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
+    //   await tb3.initialize();
+    //   tb3.inputShareStore(newShareStores[newShareIndex.toString("hex")]);
+
+    //   const stringified = JSON.stringify(tb3);
+    //   const tb4 = await ThresholdKey.fromJSON(JSON.parse(stringified), { serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
+    //   const finalKeyPostSerialization = await tb4.reconstructKey();
+    //   strictEqual(finalKeyPostSerialization.privKey.toString("hex"), resp1.privKey.toString("hex"), "Incorrect serialization");
+    // });
+    it(`#should be able to serialize and deserialize without service provider share or the postbox key, manualSync=${mode}`, async function () {
+      // const customSP2 = getServiceProvider({ type: torusSP.serviceProviderName });
+      // const customSL2 = initStorageLayer({ serviceProvider: customSP2, hostUrl: metadataURL });
+      // const tb = new ThresholdKey({ serviceProvider: customSP2, storageLayer: customSL2, manualSync: mode });
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
       const { newShareStores: newShareStores1, newShareIndex: newShareIndex1 } = await tb.generateNewShare();
       await tb.syncLocalMetadataTransitions();
 
-      const customSP3 = getServiceProvider({ type: torusSP ? "torus" : "base", isEmptyProvider: true });
-      customSL2.serviceProvider = customSP3;
-      const tb2 = new ThresholdKey({ serviceProvider: customSP3, storageLayer: customSL2, manualSync: mode });
+      const customSP3 = getServiceProvider({ type: torusSP.serviceProviderName, isEmptyProvider: true });
+      customSL.serviceProvider = customSP3;
+      const tb2 = new ThresholdKey({ serviceProvider: customSP3, storageLayer: customSL, manualSync: mode });
       await tb2.initialize({ withShare: resp1.deviceShare });
       tb2.inputShareStore(newShareStores1[newShareIndex1.toString("hex")]);
       await tb2.reconstructKey();
@@ -415,24 +440,23 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const tb3Key = await tb3.reconstructKey();
       strictEqual(tb3Key.privKey.toString("hex"), resp1.privKey.toString("hex"), "Incorrect serialization");
     });
-    it(`#should not be able to updateSDK with newKeyAssign in, manualSync=${mode}`, async function () {
-      const customSP2 = getServiceProvider({ type: torusSP ? "torus" : "base", isEmptyProvider: true });
-      const customSL2 = initStorageLayer({ serviceProvider: customSP2, hostUrl: metadataURL });
-      const tb = new ThresholdKey({ serviceProvider: customSP2, storageLayer: customSL2, manualSync: mode });
-      tb.serviceProvider.postboxKey = new BN(generatePrivate());
+    it(`#should not be able to updateSDK with newKeyAssign transitions unsynced, manualSync=${mode}`, async function () {
       await tb._initializeNewKey({ initializeModules: true });
       const stringified = JSON.stringify(tb);
       const tb2 = await ThresholdKey.fromJSON(JSON.parse(stringified), {});
+
       if (mode) {
         // Can't updateSDK, please do key assign.
         await rejects(async function () {
           await tb2.updateSDK();
         }, Error);
       }
-      // create new key
-      await tb2.generateNewShare();
-      await tb2.syncLocalMetadataTransitions();
-      await tb2.updateSDK();
+
+      // create new key because the state might have changed after updateSDK()
+      const tb3 = await ThresholdKey.fromJSON(JSON.parse(stringified), {});
+      await tb3.generateNewShare();
+      await tb3.syncLocalMetadataTransitions();
+      await tb3.updateSDK();
     });
   });
 

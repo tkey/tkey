@@ -18,6 +18,6 @@ const metadataURL = process.env.METADATA || "http://localhost:5051";
 const torusSL = initStorageLayer({ serviceProvider: torusSP, hostUrl: metadataURL });
 
 const MANUAL_SYNC = false;
-describe(`Torus Service provider with manual sync: ${MANUAL_SYNC}`, function () {
+describe(`TorusServiceProvider with manualSync: ${MANUAL_SYNC}`, function () {
   sharedTestCases(MANUAL_SYNC, torusSP, torusSL);
 });
