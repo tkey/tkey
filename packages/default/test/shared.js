@@ -428,9 +428,9 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const { newShareStores: newShareStores1, newShareIndex: newShareIndex1 } = await tb.generateNewShare();
       await tb.syncLocalMetadataTransitions();
 
-      const customSP3 = getServiceProvider({ type: torusSP.serviceProviderName, isEmptyProvider: true });
-      customSL.serviceProvider = customSP3;
-      const tb2 = new ThresholdKey({ serviceProvider: customSP3, storageLayer: customSL, manualSync: mode });
+      const customSP2 = getServiceProvider({ type: torusSP.serviceProviderName, isEmptyProvider: true });
+      const customSL2 = initStorageLayer({ serviceProvider: customSP2, hostUrl: metadataURL });
+      const tb2 = new ThresholdKey({ serviceProvider: customSP2, storageLayer: customSL2, manualSync: mode });
       await tb2.initialize({ withShare: resp1.deviceShare });
       tb2.inputShareStore(newShareStores1[newShareIndex1.toString("hex")]);
       await tb2.reconstructKey();
@@ -462,7 +462,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
 
   describe("StorageLayer", function () {
     it(`#should get or set correctly, manualSync=${mode}`, async function () {
-      const tsp = getServiceProvider({ type: torusSP ? "torus" : "base" });
+      const tsp = getServiceProvider({ type: torusSP.serviceProviderName });
       const storageLayer = initStorageLayer({ hostUrl: metadataURL, serviceProvider: tsp });
       const message = { test: Math.random().toString(36).substring(7) };
       await storageLayer.setMetadata({ input: message, privKey: tsp.postboxKey });
@@ -472,7 +472,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     it(`#should get or set with specified private key correctly, manualSync=${mode}`, async function () {
       const privKey = generatePrivate().toString("hex");
       const privKeyBN = new BN(privKey, 16);
-      const tsp = getServiceProvider({ type: torusSP ? "torus" : "base", privKeyBN });
+      const tsp = getServiceProvider({ type: torusSP.serviceProviderName, privKeyBN });
       const storageLayer = initStorageLayer({ hostUrl: metadataURL, serviceProvider: tsp });
       const message = { test: Math.random().toString(36).substring(7) };
       await storageLayer.setMetadata({ input: message, privKey: privKeyBN });
@@ -486,7 +486,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         privkeys.push(new BN(generatePrivate()));
         messages.push({ test: Math.random().toString(36).substring(7) });
       }
-      const tsp = getServiceProvider({ type: torusSP ? "torus" : "base", privKeyBN: privkeys[0] });
+      const tsp = getServiceProvider({ type: torusSP.serviceProviderName, privKeyBN: privkeys[0] });
       const storageLayer = initStorageLayer({ hostUrl: metadataURL, serviceProvider: tsp });
       await storageLayer.setMetadataStream({ input: [...messages], privKey: [...privkeys] });
       const responses = await Promise.all(privkeys.map((el) => storageLayer.getMetadata({ privKey: el })));
