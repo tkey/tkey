@@ -460,7 +460,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     });
   });
 
-  describe("TorusStorageLayer", function () {
+  describe("StorageLayer", function () {
     it(`#should get or set correctly, manualSync=${mode}`, async function () {
       const tsp = getServiceProvider({ type: torusSP ? "torus" : "base" });
       const storageLayer = initStorageLayer({ hostUrl: metadataURL, serviceProvider: tsp });
@@ -629,8 +629,8 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       }
 
       const stringified = JSON.stringify(tb2);
-      const tb4 = await ThresholdKey.fromJSON(JSON.parse(stringified), { serviceProvider: customSP, storageLayer: customSL });
-      const finalKeyPostSerialization = await tb4.reconstructKey();
+      const tb3 = await ThresholdKey.fromJSON(JSON.parse(stringified), { serviceProvider: customSP, storageLayer: customSL });
+      const finalKeyPostSerialization = await tb3.reconstructKey();
       strictEqual(finalKeyPostSerialization.toString("hex"), reconstructedKey.toString("hex"), "Incorrect serialization");
     });
     it(`#should be able to get answers, even when they change, manualSync=${mode}`, async function () {
@@ -673,13 +673,16 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
   });
 
   describe("ShareTransferModule", function () {
-    it(`#should be able to transfer share via the module, manualSync=${mode}`, async function () {
-      const tb = new ThresholdKey({
+    let tb;
+    beforeEach("Setup ThresholdKey", async function () {
+      tb = new ThresholdKey({
         serviceProvider: customSP,
         manualSync: mode,
         storageLayer: customSL,
         modules: { shareTransfer: new ShareTransferModule() },
       });
+    });
+    it(`#should be able to transfer share via the module, manualSync=${mode}`, async function () {
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
       await tb.syncLocalMetadataTransitions();
 
@@ -708,12 +711,6 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     });
 
     it(`#should be able to change share transfer pointer after share deletion, manualSync=${mode}`, async function () {
-      const tb = new ThresholdKey({
-        serviceProvider: customSP,
-        manualSync: mode,
-        storageLayer: customSL,
-        modules: { shareTransfer: new ShareTransferModule() },
-      });
       await tb._initializeNewKey({ initializeModules: true });
       const firstShareTransferPointer = tb.metadata.generalStore.shareTransfer.pointer.toString("hex");
       const { newShareIndex: newShareIndex1 } = await tb.generateNewShare();
@@ -730,12 +727,6 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     });
 
     it(`#should be able to transfer device share, manualSync=${mode}`, async function () {
-      const tb = new ThresholdKey({
-        serviceProvider: customSP,
-        manualSync: mode,
-        storageLayer: customSL,
-        modules: { shareTransfer: new ShareTransferModule() },
-      });
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
       await tb.syncLocalMetadataTransitions();
 
@@ -767,12 +758,6 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       }
     });
     it(`#should be able to delete share transfer from another device, manualSync=${mode}`, async function () {
-      const tb = new ThresholdKey({
-        serviceProvider: customSP,
-        manualSync: mode,
-        storageLayer: customSL,
-        modules: { shareTransfer: new ShareTransferModule() },
-      });
       await tb._initializeNewKey({ initializeModules: true });
       await tb.syncLocalMetadataTransitions();
 
@@ -794,12 +779,6 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       }
     });
     it(`#should be able to reset share transfer store, manualSync=${mode}`, async function () {
-      const tb = new ThresholdKey({
-        serviceProvider: customSP,
-        manualSync: mode,
-        storageLayer: customSL,
-        modules: { shareTransfer: new ShareTransferModule() },
-      });
       await tb._initializeNewKey({ initializeModules: true });
       await tb.syncLocalMetadataTransitions();
 
