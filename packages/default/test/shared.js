@@ -394,32 +394,31 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       }
     });
 
-    // This test is same as the first one
-    // it(`#should be able to reshare a key and retrieve from service provider serialization, manualSync=${mode}`, async function () {
-    //   const resp1 = await tb._initializeNewKey({ initializeModules: true });
-    //   const { newShareStores, newShareIndex } = await tb.generateNewShare();
-    //   await tb.syncLocalMetadataTransitions();
+    it(`#should be able to reshare a key and retrieve from service provider serialization, manualSync=${mode}`, async function () {
+      const resp1 = await tb._initializeNewKey({ initializeModules: true });
+      const { newShareStores, newShareIndex } = await tb.generateNewShare();
+      await tb.syncLocalMetadataTransitions();
 
-    //   // const tb2 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
-    //   // await tb2.initialize();
-    //   // tb2.inputShareStore(resp1.deviceShare);
-    //   // const reconstructedKey = await tb2.reconstructKey();
-    //   // // compareBNArray(resp1.privKey, reconstructedKey, "key should be able to be reconstructed");
-    //   // if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
-    //   //   fail("key should be able to be reconstructed");
-    //   // }
-    //   // const resp2 = await tb2.generateNewShare();
-    //   // await tb2.syncLocalMetadataTransitions();
+      // const tb2 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
+      // await tb2.initialize();
+      // tb2.inputShareStore(resp1.deviceShare);
+      // const reconstructedKey = await tb2.reconstructKey();
+      // // compareBNArray(resp1.privKey, reconstructedKey, "key should be able to be reconstructed");
+      // if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
+      //   fail("key should be able to be reconstructed");
+      // }
+      // const resp2 = await tb2.generateNewShare();
+      // await tb2.syncLocalMetadataTransitions();
 
-    //   const tb3 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
-    //   await tb3.initialize();
-    //   tb3.inputShareStore(newShareStores[newShareIndex.toString("hex")]);
+      const tb3 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
+      await tb3.initialize();
+      tb3.inputShareStore(newShareStores[newShareIndex.toString("hex")]);
 
-    //   const stringified = JSON.stringify(tb3);
-    //   const tb4 = await ThresholdKey.fromJSON(JSON.parse(stringified), { serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
-    //   const finalKeyPostSerialization = await tb4.reconstructKey();
-    //   strictEqual(finalKeyPostSerialization.privKey.toString("hex"), resp1.privKey.toString("hex"), "Incorrect serialization");
-    // });
+      const stringified = JSON.stringify(tb3);
+      const tb4 = await ThresholdKey.fromJSON(JSON.parse(stringified), { serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
+      const finalKeyPostSerialization = await tb4.reconstructKey();
+      strictEqual(finalKeyPostSerialization.privKey.toString("hex"), resp1.privKey.toString("hex"), "Incorrect serialization");
+    });
     it(`#should be able to serialize and deserialize without service provider share or the postbox key, manualSync=${mode}`, async function () {
       const customSP2 = getServiceProvider({ type: torusSP.serviceProviderName });
       const customSL2 = initStorageLayer({ serviceProvider: customSP2, hostUrl: metadataURL });
@@ -505,7 +504,6 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         modules: { securityQuestions: new SecurityQuestionsModule() },
         manualSync: mode,
       });
-      tb.serviceProvider.postboxKey = new BN(getTempKey(), "hex");
     });
     it(`#should be able to reconstruct key and initialize a key with security questions, manualSync=${mode}`, async function () {
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
