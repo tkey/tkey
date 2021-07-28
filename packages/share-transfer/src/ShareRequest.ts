@@ -9,6 +9,8 @@ class ShareRequest {
 
   userAgent: string;
 
+  customInfo: string;
+
   userIp: string;
 
   timestamp: number;
