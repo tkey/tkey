@@ -21,8 +21,7 @@
     "build:types": "lerna run build:types",
     "lint": "lerna run lint --parallel",
     "pack:lerna": "lerna exec -- yarn pack",
-    "pre-commit": "lerna run pre-commit",
-    "preinstall": "cross-env PLAYWRIGHT_BROWSERS_PATH=0"
+    "pre-commit": "lerna run pre-commit"
   },
   "devDependencies": {
     "@babel/cli": "^7.13.16",
@@ -77,6 +76,7 @@
     "playwright": "^1.13.1",
     "prettier": "^2.2.1",
     "rimraf": "^3.0.2",
+    "sinon": "^11.1.1",
     "ts-node": "^9.1.1",
     "tsconfig-paths": "^3.9.0",
     "tsconfig-paths-webpack-plugin": "^3.5.1",

@@ -3,6 +3,7 @@ name: BrowserTests
 on: [push]
 
 env:
+  PLAYWRIGHT_BROWSERS_PATH: 0
   NODE_VERSION: 14
   FORCE_COLOR: 3
 
