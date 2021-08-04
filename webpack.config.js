@@ -57,6 +57,7 @@ function generateWebpackConfig({ pkg, pkgName, currentPath, alias }) {
       alias: {
         "bn.js": path.resolve(currentPath, "node_modules/bn.js"),
         lodash: path.resolve(currentPath, "node_modules/lodash"),
+        assert: path.resolve("../../node_modules/assert"),
         ...alias,
       },
     },

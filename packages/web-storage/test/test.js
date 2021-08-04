@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import ThresholdKey from "@tkey/core";
 import ServiceProviderBase from "@tkey/service-provider-base";
 import TorusStorageLayer, { MockStorageLayer } from "@tkey/storage-layer-torus";
@@ -9,8 +10,13 @@ function initStorageLayer(mocked, extraParams) {
   return mocked === "true" ? new MockStorageLayer({ serviceProvider: extraParams.serviceProvider }) : new TorusStorageLayer(extraParams);
 }
 
-const mocked = process.env.MOCKED || "false";
-const metadataURL = process.env.METADATA || "http://localhost:5051";
+let mocked = process.env.MOCKED || "false";
+
+let metadataURL = process.env.METADATA || "http://localhost:5051";
+if (typeof window !== "undefined") {
+  // eslint-disable-next-line no-undef
+  [mocked, metadataURL] = __karma__.config.args;
+}
 const PRIVATE_KEY = "f70fb5f5970b363879bc36f54d4fc0ad77863bfd059881159251f50f48863acc";
 
 const defaultSP = new ServiceProviderBase({ postboxKey: PRIVATE_KEY });
@@ -87,7 +93,7 @@ manualSyncModes.forEach((mode) => {
       // console.log("%O", tb.shares);
       await tb2.initialize();
       // console.log("%O", tb2.shares);
-      await rejects(async () => {
+      await rejects(async function () {
         await tb2.modules[WEB_STORAGE_MODULE_NAME].inputShareFromWebStorage();
         await tb2.reconstructKey();
       });
@@ -103,7 +109,7 @@ manualSyncModes.forEach((mode) => {
 
       await tb2.initialize();
 
-      await rejects(async () => {
+      await rejects(async function () {
         await tb2.modules[WEB_STORAGE_MODULE_NAME].inputShareFromWebStorage();
         await tb2.reconstructKey();
       });

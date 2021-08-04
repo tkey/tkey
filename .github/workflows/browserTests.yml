@@ -1,0 +1,56 @@
+name: BrowserTests
+
+on: [push]
+
+env:
+  NODE_VERSION: 14
+  FORCE_COLOR: 3
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        browser: [chromium, firefox, webkit]
+        os: [macos-latest, windows-latest, ubuntu-latest]
+        exclude:
+          - browser: webkit
+            os: windows-latest
+          - browser: webkit
+            os: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Get Yarn cache directory
+        id: get-yarn-cache-dir
+        run: echo "::set-output name=path::$(yarn cache dir)"
+
+      - name: Cache Yarn dependencies
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.get-yarn-cache-dir.outputs.path }}
+          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-yarn-
+
+      - name: Install Node.js dependencies
+        run: yarn install --frozen-lockfile
+
+      # - name: Install Ubuntu dependencies
+      #   if: startsWith(matrix.os, 'ubuntu')
+      #   run: yarn run playwright install-deps ${{ matrix.browser }}
+    
+      - name: Bootstrap dependencies
+        run: yarn run bootstrap
+
+      - name: Browser Test Development (Mocked)
+        run: yarn run browser-tests:local-mocked -- --browsers=${{ matrix.browser }}
+      
+      - name: Browser Test Production
+        run: yarn run browser-tests:local-prod -- --browsers=${{ matrix.browser }}
