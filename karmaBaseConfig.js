@@ -47,7 +47,7 @@ const localBrowserConfig = (webpackConfig, karmaConfig, packageConfig) => ({
   colors: true,
 
   // level of logging
-  logLevel: karmaConfig.LOG_DEBUG,
+  logLevel: karmaConfig.LOG_INFO,
 
   // Set the browser to run
   // can be overrided using --browsers args while running test command

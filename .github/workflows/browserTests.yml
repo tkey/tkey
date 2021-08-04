@@ -50,8 +50,27 @@ jobs:
       - name: Bootstrap dependencies
         run: yarn run bootstrap
 
-      - name: Browser Test Development (Mocked)
-        run: yarn run browser-tests:local-mocked -- --browsers=${{ matrix.browser }}
-      
-      - name: Browser Test Production
-        run: yarn run browser-tests:local-prod -- --browsers=${{ matrix.browser }}
+      - name: Browser Test Development Chrome (Mocked)  
+        if: startsWith(matrix.browser, 'chromium')  
+        run: yarn run browser-tests:local-mocked-chrome
+
+       - name: Browser Test Development Firefox (Mocked)  
+        if: startsWith(matrix.browser, 'firefox')  
+        run: yarn run browser-tests:local-mocked-firefox
+
+       - name: Browser Test Development webkit (Mocked)  
+        if: startsWith(matrix.browser, 'webkit')  
+        run: yarn run browser-tests:local-mocked-webkit
+
+      - name: Browser Test Production Chrome (Prod)  
+        if: startsWith(matrix.browser, 'chromium')  
+        run: yarn run browser-tests:local-prod-chrome
+
+       - name: Browser Test Production Firefox (prod)  
+        if: startsWith(matrix.browser, 'firefox')  
+        run: yarn run browser-tests:local-prod-firefox
+
+       - name: Browser Test Production webkit (prod)  
+        if: startsWith(matrix.browser, 'webkit')  
+        run: yarn run browser-tests:local-prod-webkit
+

@@ -10,13 +10,17 @@ function initStorageLayer(mocked, extraParams) {
   return mocked === "true" ? new MockStorageLayer({ serviceProvider: extraParams.serviceProvider }) : new TorusStorageLayer(extraParams);
 }
 
-let mocked = process.env.MOCKED || "false";
-
-let metadataURL = process.env.METADATA || "http://localhost:5051";
-if (typeof window !== "undefined") {
+let mocked;
+let metadataURL;
+const isNode = process.release;
+if (!isNode) {
   // eslint-disable-next-line no-undef
   [mocked, metadataURL] = __karma__.config.args;
+} else {
+  mocked = process.env.MOCKED || "false";
+  metadataURL = process.env.METADATA || "http://localhost:5051";
 }
+
 const PRIVATE_KEY = "f70fb5f5970b363879bc36f54d4fc0ad77863bfd059881159251f50f48863acc";
 
 const defaultSP = new ServiceProviderBase({ postboxKey: PRIVATE_KEY });

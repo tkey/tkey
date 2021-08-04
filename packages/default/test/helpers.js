@@ -3,12 +3,15 @@ import ServiceProviderTorus from "@tkey/service-provider-torus";
 import TorusStorageLayer, { MockStorageLayer } from "@tkey/storage-layer-torus";
 import { generatePrivate } from "@toruslabs/eccrypto";
 
-let mocked = process.env.MOCKED || "false";
-
-if (typeof window !== "undefined") {
+let mocked;
+const isNode = process.release;
+if (!isNode) {
   // eslint-disable-next-line no-undef
   [mocked] = __karma__.config.args;
+} else {
+  mocked = process.env.MOCKED || "false";
 }
+
 export function initStorageLayer(extraParams) {
   return mocked === "true" ? new MockStorageLayer({ serviceProvider: extraParams.serviceProvider }) : new TorusStorageLayer(extraParams);
 }
