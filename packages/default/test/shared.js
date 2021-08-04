@@ -24,6 +24,8 @@ if (!isNode) {
 } else {
   metadataURL = process.env.METADATA || "http://localhost:5051";
 }
+// eslint-disable-next-line no-console
+console.log("metadataURL", metadataURL);
 
 function getTempKey() {
   return generatePrivate().toString("hex");

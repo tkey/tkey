@@ -11,8 +11,12 @@ const torusSp = new ServiceProviderTorus({
     baseUrl: "http://localhost:3000",
   },
 });
-const metadataURL = process.env.METADATA || "http://localhost:5051";
-
+let metadataURL = process.env.METADATA || "http://localhost:5051";
+const isNode = process.release;
+if (!isNode) {
+  // eslint-disable-next-line no-undef
+  [, metadataURL] = __karma__.config.args;
+}
 const torusSL = initStorageLayer({ serviceProvider: torusSp, hostUrl: metadataURL });
 
 const MANUAL_SYNC = true;

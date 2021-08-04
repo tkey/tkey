@@ -27,7 +27,7 @@ const localBrowserConfig = (webpackConfig, karmaConfig, packageConfig) => ({
     resolve: webpackConfig[2].resolve,
   },
 
-  plugins: ["karma-webkit-launcher", "karma-chrome-launcher", "karma-firefox-launcher", "karma-mocha", "karma-webpack"],
+  plugins: ["karma-mocha-reporter", "karma-webkit-launcher", "karma-chrome-launcher", "karma-firefox-launcher", "karma-mocha", "karma-webpack"],
 
   client: {
     mocha: {
@@ -38,7 +38,7 @@ const localBrowserConfig = (webpackConfig, karmaConfig, packageConfig) => ({
 
   singleRun: true,
 
-  reporters: ["progress"],
+  reporters: ["mocha"],
 
   // web server port
   port: 9876,
