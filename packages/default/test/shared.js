@@ -14,18 +14,9 @@ import sinon from "sinon";
 import { keccak256 } from "web3-utils";
 
 import ThresholdKey from "../src/index";
-import { getServiceProvider, initStorageLayer } from "./helpers";
+import { getMetadataUrl, getServiceProvider, initStorageLayer } from "./helpers";
 
-let metadataURL;
-const isNode = process.release;
-if (!isNode) {
-  // eslint-disable-next-line no-undef
-  [, metadataURL] = __karma__.config.args;
-} else {
-  metadataURL = process.env.METADATA || "http://localhost:5051";
-}
-// eslint-disable-next-line no-console
-console.log("metadataURL", metadataURL);
+const metadataURL = getMetadataUrl();
 
 function getTempKey() {
   return generatePrivate().toString("hex");

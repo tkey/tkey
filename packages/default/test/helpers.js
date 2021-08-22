@@ -12,6 +12,15 @@ if (!isNode) {
   mocked = process.env.MOCKED || "false";
 }
 
+export function getMetadataUrl() {
+  let metadataURL = process.env.METADATA || "http://localhost:5051";
+  if (!isNode) {
+    // eslint-disable-next-line no-undef
+    [, metadataURL] = __karma__.config.args;
+  }
+  return metadataURL;
+}
+
 export function initStorageLayer(extraParams) {
   return mocked === "true" ? new MockStorageLayer({ serviceProvider: extraParams.serviceProvider }) : new TorusStorageLayer(extraParams);
 }
