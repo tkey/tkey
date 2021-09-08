@@ -14,9 +14,9 @@ import sinon from "sinon";
 import { keccak256 } from "web3-utils";
 
 import ThresholdKey from "../src/index";
-import { getServiceProvider, initStorageLayer } from "./helpers";
+import { getMetadataUrl, getServiceProvider, initStorageLayer } from "./helpers";
 
-const metadataURL = process.env.METADATA || "http://localhost:5051";
+const metadataURL = getMetadataUrl();
 
 function getTempKey() {
   return generatePrivate().toString("hex");

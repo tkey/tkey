@@ -18,7 +18,7 @@ class ShareRequest {
     if (testEncPubKey.type === "Buffer") {
       this.encPubKey = Buffer.from(testEncPubKey.data);
     } else {
-      this.encPubKey = (encPubKey as unknown) as Buffer;
+      this.encPubKey = encPubKey as unknown as Buffer;
     }
     this.availableShareIndexes = availableShareIndexes;
     this.encShareInTransit = encShareInTransit;

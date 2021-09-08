@@ -808,11 +808,7 @@ class ThresholdKey implements ITKey {
     return authMetadatas;
   }
 
-  setAuthMetadata(params: {
-    input: Metadata;
-    serviceProvider?: IServiceProvider;
-    privKey?: BN;
-  }): Promise<{
+  setAuthMetadata(params: { input: Metadata; serviceProvider?: IServiceProvider; privKey?: BN }): Promise<{
     message: string;
   }> {
     const { input, serviceProvider, privKey } = params;

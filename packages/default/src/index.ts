@@ -21,7 +21,11 @@ class ThresholdKey extends TKey {
       finalServiceProvider = serviceProvider;
     }
     if (!storageLayer) {
-      finalStorageLayer = new TorusStorageLayer({ serviceProvider: finalServiceProvider, hostUrl: "https://metadata.tor.us", serverTimeOffset });
+      finalStorageLayer = new TorusStorageLayer({
+        serviceProvider: finalServiceProvider,
+        hostUrl: "https://metadata.tor.us",
+        serverTimeOffset,
+      });
     } else {
       finalStorageLayer = storageLayer;
     }

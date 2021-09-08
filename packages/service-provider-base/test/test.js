@@ -1,7 +1,7 @@
 import { deepStrictEqual } from "assert";
 import BN from "bn.js";
 
-import ServiceProviderBase from "..";
+import ServiceProviderBase from "../src/ServiceProviderBase";
 
 const PRIVATE_KEY = "e70fb5f5970b363879bc36f54d4fc0ad77863bfd059881159251f50f48863acf";
 

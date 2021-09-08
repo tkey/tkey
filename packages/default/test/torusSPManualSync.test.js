@@ -1,7 +1,7 @@
 import ServiceProviderTorus from "@tkey/service-provider-torus";
 import { generatePrivate } from "@toruslabs/eccrypto";
 
-import { initStorageLayer } from "./helpers";
+import { getMetadataUrl, initStorageLayer } from "./helpers";
 import { sharedTestCases } from "./shared";
 
 const PRIVATE_KEY = generatePrivate().toString("hex");
@@ -11,7 +11,7 @@ const torusSp = new ServiceProviderTorus({
     baseUrl: "http://localhost:3000",
   },
 });
-const metadataURL = process.env.METADATA || "http://localhost:5051";
+const metadataURL = getMetadataUrl();
 
 const torusSL = initStorageLayer({ serviceProvider: torusSp, hostUrl: metadataURL });
 

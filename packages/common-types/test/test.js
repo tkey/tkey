@@ -2,7 +2,8 @@ import { generatePrivate } from "@toruslabs/eccrypto";
 import { fail } from "assert";
 import BN from "bn.js";
 
-import { ecCurve, getPubKeyPoint, Point, Polynomial } from "..";
+import { getPubKeyPoint, Point, Polynomial } from "../src/base";
+import { ecCurve } from "../src/utils";
 
 describe("polynomial", function () {
   it("#should polyEval indexes correctly", async function () {
