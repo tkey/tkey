@@ -75,7 +75,24 @@ class TorusStorageLayer implements IStorageLayer {
    */
   async setMetadata<T>(params: { input: T; serviceProvider?: IServiceProvider; privKey?: BN }): Promise<{ message: string }> {
     const { serviceProvider, privKey, input } = params;
-    const bufferMetadata = Buffer.from(stringify(input));
+    const metadataParams = this.generateMetadataParams(
+      await TorusStorageLayer.serializeMetadataParamsInput(input, serviceProvider, privKey),
+      serviceProvider,
+      privKey
+    );
+    return post<{ message: string }>(`${this.hostUrl}/set`, metadataParams);
+  }
+
+  static async serializeMetadataParamsInput(el: unknown, serviceProvider: IServiceProvider, privKey: BN): Promise<unknown> {
+    if (typeof el === "object") {
+      // Allow using of special message as command, in which case, do not encrypt
+      const obj = el as Record<string, unknown>;
+      const isCommandMessage = obj.message === "__delete_nonce_v2__";
+      if (isCommandMessage) return obj.message;
+    }
+
+    // General case, encrypt message
+    const bufferMetadata = Buffer.from(stringify(el));
     let encryptedDetails: EncryptedMessage;
     if (privKey) {
       encryptedDetails = await encrypt(getPubKeyECC(privKey), bufferMetadata);
@@ -83,26 +100,20 @@ class TorusStorageLayer implements IStorageLayer {
       encryptedDetails = await serviceProvider.encrypt(bufferMetadata);
     }
     const serializedEncryptedDetails = btoa(stringify(encryptedDetails));
-    const metadataParams = this.generateMetadataParams(serializedEncryptedDetails, serviceProvider, privKey);
-    return post<{ message: string }>(`${this.hostUrl}/set`, metadataParams);
+    return serializedEncryptedDetails;
   }
 
   async setMetadataStream<T>(params: { input: Array<T>; serviceProvider?: IServiceProvider; privKey?: Array<BN> }): Promise<{ message: string }> {
     const { serviceProvider, privKey, input } = params;
     const newInput = input;
     const finalMetadataParams = await Promise.all(
-      newInput.map(async (el, i) => {
-        const bufferMetadata = Buffer.from(stringify(el));
-        let encryptedDetails: EncryptedMessage;
-        if (privKey[i]) {
-          encryptedDetails = await encrypt(getPubKeyECC(privKey[i]), bufferMetadata);
-        } else {
-          encryptedDetails = await serviceProvider.encrypt(bufferMetadata);
-        }
-        const serializedEncryptedDetails = btoa(stringify(encryptedDetails));
-        const metadataParams = this.generateMetadataParams(serializedEncryptedDetails, serviceProvider, privKey[i]);
-        return metadataParams;
-      })
+      newInput.map(async (el, i) =>
+        this.generateMetadataParams(
+          await TorusStorageLayer.serializeMetadataParamsInput(el, serviceProvider, privKey[i]),
+          serviceProvider,
+          privKey[i]
+        )
+      )
     );
 
     const FD = new FormData();
@@ -127,10 +138,19 @@ class TorusStorageLayer implements IStorageLayer {
     let sig: string;
     let pubX: string;
     let pubY: string;
+    let namespace = "tkey";
     const setTKeyStore = {
       data: message,
       timestamp: new BN(~~((this.serverTimeOffset + Date.now()) / 1000)).toString(16),
     };
+
+    // Overwrite bulk_set to allow deleting nonce v2 together with creating tKey.
+    // This is a workaround, a better solution is allow upstream API to set tableName/namespace of metadata params
+    if (message === "__delete_nonce_v2__") {
+      namespace = "";
+      setTKeyStore.data = "<deleted>";
+    }
+
     const hash = keccak256(stringify(setTKeyStore)).slice(2);
     if (privKey) {
       const unparsedSig = toPrivKeyEC(privKey).sign(hash);
@@ -144,12 +164,13 @@ class TorusStorageLayer implements IStorageLayer {
       pubX = point.getX().toString("hex");
       pubY = point.getY().toString("hex");
     }
+
     return {
       pub_key_X: pubX,
       pub_key_Y: pubY,
       set_data: setTKeyStore,
       signature: sig,
-      namespace: "tkey",
+      namespace,
     };
   }
 

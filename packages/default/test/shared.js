@@ -2,13 +2,15 @@
 /* eslint-disable no-shadow */
 /* eslint-disable no-await-in-loop */
 /* eslint-disable max-len */
-import { ecCurve } from "@tkey/common-types";
+import { ecCurve, getPubKeyPoint } from "@tkey/common-types";
 import PrivateKeyModule, { SECP256k1Format } from "@tkey/private-keys";
 import SecurityQuestionsModule from "@tkey/security-questions";
 import SeedPhraseModule, { MetamaskSeedPhraseFormat } from "@tkey/seed-phrase";
+import ServiceProviderBase from "@tkey/service-provider-base";
 import ShareTransferModule from "@tkey/share-transfer";
+import TorusStorageLayer from "@tkey/storage-layer-torus";
 import { generatePrivate } from "@toruslabs/eccrypto";
-import { deepStrictEqual, fail, notStrictEqual, rejects, strict, strictEqual } from "assert";
+import { deepStrictEqual, equal, fail, notEqual, notStrictEqual, rejects, strict, strictEqual } from "assert";
 import BN from "bn.js";
 import sinon from "sinon";
 import { keccak256 } from "web3-utils";
@@ -1196,6 +1198,34 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
           }
         );
       }
+    });
+  });
+
+  describe("V2", function () {
+    if (!mode) return;
+
+    it.only("Initialize with 1 out of 1", async function () {
+      const serviceProvider = getServiceProvider({ type: "TorusServiceProvider" });
+
+      const postboxKey = new BN(generatePrivate(), "hex");
+      const pubKey = getPubKeyPoint(postboxKey);
+
+      const { nonce } = await serviceProvider.directWeb.torus.getOrSetNonceV2(pubKey.x.toString("hex"), pubKey.y.toString("hex"));
+
+      const nonceBN = new BN(nonce, 16);
+      const importKey = postboxKey.add(nonceBN).umod(serviceProvider.directWeb.torus.ec.curve.n).toString("hex");
+
+      const newServiceProvider = new ServiceProviderBase({ postboxKey });
+      const tKey = new ThresholdKey({ serviceProvider: newServiceProvider, storageLayer: customSL, manualSync: mode });
+      await tKey.initialize({
+        importKey: new BN(importKey, "hex"),
+        delete1OutOf1: true,
+      });
+      await tKey.syncLocalMetadataTransitions();
+      equal(tKey.privKey.toString("hex"), importKey);
+
+      const { nonce: newNonce } = await serviceProvider.directWeb.torus.getOrSetNonceV2(pubKey.x.toString("hex"), pubKey.y.toString("hex"));
+      notEqual(nonce, newNonce);
     });
   });
 };

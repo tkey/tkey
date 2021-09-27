@@ -53,6 +53,7 @@ class CoreError extends TkeyError {
     1502: "metadata pubkey unavailable",
     1503: "getAuthMetadata errored",
     1504: "setAuthMetadata errored",
+    1601: "delete1OutOf1OnlyManualSync",
   };
 
   public constructor(code: number, message: string) {
@@ -75,6 +76,10 @@ class CoreError extends TkeyError {
   // Metadata
   public static metadataUndefined(extraMessage = ""): ITkeyError {
     return CoreError.fromCode(1101, extraMessage);
+  }
+
+  public static delete1OutOf1OnlyManualSync(extraMessage = ""): ITkeyError {
+    return CoreError.fromCode(1601, extraMessage);
   }
 
   public static metadataGetFailed(extraMessage = ""): ITkeyError {
