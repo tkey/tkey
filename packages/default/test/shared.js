@@ -1204,7 +1204,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
   describe("V2", function () {
     if (!mode) return;
 
-    it.only("Initialize with 1 out of 1", async function () {
+    it("Initialize with 1 out of 1", async function () {
       const postboxKeyBN = new BN(generatePrivate(), "hex");
       const pubKeyPoint = getPubKeyPoint(postboxKeyBN);
 
