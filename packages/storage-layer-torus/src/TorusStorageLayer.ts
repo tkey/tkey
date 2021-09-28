@@ -147,7 +147,7 @@ class TorusStorageLayer implements IStorageLayer {
     // Overwrite bulk_set to allow deleting nonce v2 together with creating tKey.
     // This is a workaround, a better solution is allow upstream API to set tableName/namespace of metadata params
     if (message === "__delete_nonce_v2__") {
-      namespace = "";
+      namespace = "noncev2";
       setTKeyStore.data = "<deleted>";
     }
 

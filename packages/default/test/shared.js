@@ -1230,7 +1230,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       equal(tKey.privKey.toString("hex"), importKey);
 
       const { nonce: newNonce } = await serviceProvider.directWeb.torus.getOrSetNonceV2(pubKeyPoint.x.toString("hex"), pubKeyPoint.y.toString("hex"));
-      notEqual(nonce, newNonce);
+      equal(newNonce, "<deleted>");
     });
   });
 };
