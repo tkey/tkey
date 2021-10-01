@@ -23,6 +23,7 @@ import {
   LocalTransitionData,
   LocalTransitionShares,
   ModuleMap,
+  ONE_KEY_DELETE_NONCE,
   Point,
   Polynomial,
   PolynomialID,
@@ -590,7 +591,7 @@ class ThresholdKey implements ITKey {
     // acquireLock: false. Force push
     await this.addLocalMetadataTransitions({ input: [...authMetadatas, shareStore], privKey: [...sharesToPush, undefined] });
     if (delete1OutOf1) {
-      await this.addLocalMetadataTransitions({ input: [{ message: "__delete_nonce_v2__" }], privKey: [this.serviceProvider.postboxKey] });
+      await this.addLocalMetadataTransitions({ input: [{ message: ONE_KEY_DELETE_NONCE }], privKey: [this.serviceProvider.postboxKey] });
     }
 
     // store metadata on metadata respective to shares

@@ -8,6 +8,8 @@ import {
   IServiceProvider,
   IStorageLayer,
   KEY_NOT_FOUND,
+  ONE_KEY_DELETE_NONCE,
+  ONE_KEY_NAMESPACE,
   StringifiedType,
   stripHexPrefix,
   toPrivKeyEC,
@@ -87,7 +89,7 @@ class TorusStorageLayer implements IStorageLayer {
     if (typeof el === "object") {
       // Allow using of special message as command, in which case, do not encrypt
       const obj = el as Record<string, unknown>;
-      const isCommandMessage = obj.message === "__delete_nonce_v2__";
+      const isCommandMessage = obj.message === ONE_KEY_DELETE_NONCE;
       if (isCommandMessage) return obj.message;
     }
 
@@ -146,8 +148,8 @@ class TorusStorageLayer implements IStorageLayer {
 
     // Overwrite bulk_set to allow deleting nonce v2 together with creating tKey.
     // This is a workaround, a better solution is allow upstream API to set tableName/namespace of metadata params
-    if (message === "__delete_nonce_v2__") {
-      namespace = "noncev2";
+    if (message === ONE_KEY_DELETE_NONCE) {
+      namespace = ONE_KEY_NAMESPACE;
       setTKeyStore.data = "<deleted>";
     }
 
