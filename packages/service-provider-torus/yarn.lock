@@ -230,9 +230,9 @@
   dependencies:
     deepmerge "^4.2.2"
 
-"@toruslabs/torus-direct-web-sdk@file:../torus-direct-web-sdk/toruslabs-torus-direct-web-sdk-4.15.1.tgz":
+"@toruslabs/torus-direct-web-sdk@file:../../../torus-direct-web-sdk/toruslabs-torus-direct-web-sdk-4.15.1.tgz":
   version "4.15.1"
-  resolved "file:../torus-direct-web-sdk/toruslabs-torus-direct-web-sdk-4.15.1.tgz#86d1ea90f85194a5e2900fb66f7648e40b2b99a2"
+  resolved "file:../../../torus-direct-web-sdk/toruslabs-torus-direct-web-sdk-4.15.1.tgz#86d1ea90f85194a5e2900fb66f7648e40b2b99a2"
   dependencies:
     "@chaitanyapotti/random-id" "^1.0.3"
     "@chaitanyapotti/register-service-worker" "^1.7.3"
@@ -248,6 +248,19 @@
 "@toruslabs/torus.js@../torus.js/toruslabs-torus.js-2.5.0.tgz":
   version "2.5.0"
   resolved "../torus.js/toruslabs-torus.js-2.5.0.tgz#e4d2af0c7ee8de667b0e7e36736832d2dcc8187f"
+  dependencies:
+    "@toruslabs/eccrypto" "^1.1.7"
+    "@toruslabs/http-helpers" "^1.4.0"
+    bn.js "^5.2.0"
+    elliptic "^6.5.4"
+    json-stable-stringify "^1.0.1"
+    loglevel "^1.7.1"
+    memory-cache "^0.2.0"
+    web3-utils "^1.5.2"
+
+"@toruslabs/torus.js@file:../../../torus.js/toruslabs-torus.js-2.5.0.tgz":
+  version "2.5.0"
+  resolved "file:../../../torus.js/toruslabs-torus.js-2.5.0.tgz#f0ebab5fc4d8ea097648faf5381550879803b218"
   dependencies:
     "@toruslabs/eccrypto" "^1.1.7"
     "@toruslabs/http-helpers" "^1.4.0"

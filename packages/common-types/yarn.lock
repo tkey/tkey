@@ -230,26 +230,37 @@
   dependencies:
     deepmerge "^4.2.2"
 
-"@toruslabs/torus-direct-web-sdk@^4.12.0":
+"@toruslabs/torus-direct-web-sdk@file:../../../torus-direct-web-sdk/toruslabs-torus-direct-web-sdk-4.15.1.tgz":
   version "4.15.1"
-  resolved "https://registry.yarnpkg.com/@toruslabs/torus-direct-web-sdk/-/torus-direct-web-sdk-4.15.1.tgz#9d1011e8bf93c9d166f1b6d80f86706769159a4d"
-  integrity sha512-InNh2XwQKiFNEId8uEhO3ywDdXT/VMZFz3CZD8DAaUP73cM25kM8bSmS60xWeFsGRFHMULaPnL/4+N02eGzXMg==
+  resolved "file:../../../torus-direct-web-sdk/toruslabs-torus-direct-web-sdk-4.15.1.tgz#86d1ea90f85194a5e2900fb66f7648e40b2b99a2"
   dependencies:
     "@chaitanyapotti/random-id" "^1.0.3"
     "@chaitanyapotti/register-service-worker" "^1.7.3"
     "@toruslabs/fetch-node-details" "^2.7.1"
     "@toruslabs/http-helpers" "^1.4.0"
-    "@toruslabs/torus.js" "^2.5.0"
+    "@toruslabs/torus.js" "../torus.js/toruslabs-torus.js-2.5.0.tgz"
     broadcast-channel "^3.7.0"
     deepmerge "^4.2.2"
     jwt-decode "^3.1.2"
     loglevel "^1.7.1"
     web3-utils "^1.5.2"
 
-"@toruslabs/torus.js@^2.5.0":
+"@toruslabs/torus.js@../torus.js/toruslabs-torus.js-2.5.0.tgz":
   version "2.5.0"
-  resolved "https://registry.yarnpkg.com/@toruslabs/torus.js/-/torus.js-2.5.0.tgz#90f7cdfaa6f7b8de88595c97a8a402400d17cd83"
-  integrity sha512-w6gGl6YxJ9w3Kdcavjq5/QFsERe/fcEILsxowkh24NsP9v++ptRGP+Hu7g9ZbTjPyoxZfXbGOj02ToUWtO5x7A==
+  resolved "../torus.js/toruslabs-torus.js-2.5.0.tgz#e4d2af0c7ee8de667b0e7e36736832d2dcc8187f"
+  dependencies:
+    "@toruslabs/eccrypto" "^1.1.7"
+    "@toruslabs/http-helpers" "^1.4.0"
+    bn.js "^5.2.0"
+    elliptic "^6.5.4"
+    json-stable-stringify "^1.0.1"
+    loglevel "^1.7.1"
+    memory-cache "^0.2.0"
+    web3-utils "^1.5.2"
+
+"@toruslabs/torus.js@file:../../../torus.js/toruslabs-torus.js-2.5.0.tgz":
+  version "2.5.0"
+  resolved "file:../../../torus.js/toruslabs-torus.js-2.5.0.tgz#f0ebab5fc4d8ea097648faf5381550879803b218"
   dependencies:
     "@toruslabs/eccrypto" "^1.1.7"
     "@toruslabs/http-helpers" "^1.4.0"

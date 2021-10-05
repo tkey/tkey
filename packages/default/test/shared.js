@@ -10,7 +10,7 @@ import TorusServiceProvider from "@tkey/service-provider-torus";
 import ShareTransferModule from "@tkey/share-transfer";
 import TorusStorageLayer from "@tkey/storage-layer-torus";
 import { generatePrivate } from "@toruslabs/eccrypto";
-import { deepStrictEqual, equal, fail, notEqual, notStrictEqual, rejects, strict, strictEqual } from "assert";
+import { deepEqual, deepStrictEqual, equal, fail, notEqual, notStrictEqual, rejects, strict, strictEqual } from "assert";
 import BN from "bn.js";
 import sinon from "sinon";
 import { keccak256 } from "web3-utils";
@@ -1204,7 +1204,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
   describe("V2", function () {
     if (!mode) return;
 
-    it("Initialize with 1 out of 1", async function () {
+    it.only("Initialize with 1 out of 1", async function () {
       const postboxKeyBN = new BN(generatePrivate(), "hex");
       const pubKeyPoint = getPubKeyPoint(postboxKeyBN);
 
@@ -1213,11 +1213,20 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         directParams: {
           // This url has no effect as postbox key is passed, passing it just to satisfy direct auth checks.
           baseUrl: "http://localhost:3000",
+          metadataUrl: getMetadataUrl(),
         },
       });
       const storageLayer = new TorusStorageLayer({ serviceProvider, hostUrl: getMetadataUrl() });
 
-      const { nonce } = await serviceProvider.directWeb.torus.getOrSetNonceV2(pubKeyPoint.x.toString("hex"), pubKeyPoint.y.toString("hex"));
+      const { typeOfUser, nonce, pubNonce } = await serviceProvider.directWeb.torus.getOrSetNonce(
+        pubKeyPoint.x.toString("hex"),
+        pubKeyPoint.y.toString("hex"),
+        postboxKeyBN
+      );
+      equal(typeOfUser, "v2");
+      notEqual(nonce, undefined);
+      notEqual(pubNonce, undefined);
+
       const nonceBN = new BN(nonce, "hex");
       const importKey = postboxKeyBN.add(nonceBN).umod(serviceProvider.directWeb.torus.ec.curve.n).toString("hex");
 
@@ -1229,8 +1238,16 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       await tKey.syncLocalMetadataTransitions();
       equal(tKey.privKey.toString("hex"), importKey);
 
-      const { nonce: newNonce } = await serviceProvider.directWeb.torus.getOrSetNonceV2(pubKeyPoint.x.toString("hex"), pubKeyPoint.y.toString("hex"));
-      equal(newNonce, "<deleted>");
+      const {
+        typeOfUser: newTypeOfUser,
+        nonce: newNonce,
+        pubNonce: newPubNonce,
+        upgraded,
+      } = await serviceProvider.directWeb.torus.getOrSetNonce(pubKeyPoint.x.toString("hex"), pubKeyPoint.y.toString("hex"), postboxKeyBN);
+      equal(upgraded, true);
+      equal(newTypeOfUser, "v2");
+      equal(newNonce, undefined);
+      deepEqual(pubNonce, newPubNonce);
     });
   });
 };
