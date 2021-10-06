@@ -10,6 +10,7 @@ import TorusServiceProvider from "@tkey/service-provider-torus";
 import ShareTransferModule from "@tkey/share-transfer";
 import TorusStorageLayer from "@tkey/storage-layer-torus";
 import { generatePrivate } from "@toruslabs/eccrypto";
+import { post } from "@toruslabs/http-helpers";
 import { deepEqual, deepStrictEqual, equal, fail, notEqual, notStrictEqual, rejects, strict, strictEqual } from "assert";
 import BN from "bn.js";
 import sinon from "sinon";
@@ -1201,10 +1202,10 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     });
   });
 
-  describe("V2", function () {
+  describe("v2", function () {
     if (!mode) return;
 
-    it.only("Initialize with 1 out of 1", async function () {
+    it("should be able to init tkey with 1 out of 1", async function () {
       const postboxKeyBN = new BN(generatePrivate(), "hex");
       const pubKeyPoint = getPubKeyPoint(postboxKeyBN);
 
@@ -1248,6 +1249,71 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       equal(newTypeOfUser, "v2");
       equal(newNonce, undefined);
       deepEqual(pubNonce, newPubNonce);
+    });
+
+    it("should not change v1 address without a custom nonce when getOrSetNonce is called", async function () {
+      // Create an existing v1 account
+      const postboxKeyBN = new BN(generatePrivate(), "hex");
+      const pubKeyPoint = getPubKeyPoint(postboxKeyBN);
+      await post(
+        `${getMetadataUrl()}/set_nonce`,
+        {
+          pub_key_X: pubKeyPoint.x.toString("hex"),
+          pub_key_Y: pubKeyPoint.y.toString("hex"),
+        },
+        undefined,
+        { useAPIKey: true }
+      );
+
+      // Call get or set nonce
+      const serviceProvider = new TorusServiceProvider({
+        postboxKey: postboxKeyBN.toString("hex"),
+        directParams: {
+          // This url has no effect as postbox key is passed, passing it just to satisfy direct auth checks.
+          baseUrl: "http://localhost:3000",
+          metadataUrl: getMetadataUrl(),
+        },
+      });
+
+      const res = await serviceProvider.directWeb.torus.getOrSetNonce(pubKeyPoint.x.toString("hex"), pubKeyPoint.y.toString("hex"), postboxKeyBN);
+      equal(res.typeOfUser, "v1");
+
+      const anotherRes = await serviceProvider.directWeb.torus.getOrSetNonce(
+        pubKeyPoint.x.toString("hex"),
+        pubKeyPoint.y.toString("hex"),
+        postboxKeyBN
+      );
+      deepEqual(res, anotherRes);
+    });
+
+    it("should not change v1 address with a custom nonce when getOrSetNonce is called", async function () {
+      // Create an existing v1 account with custom key
+      const postboxKeyBN = new BN(generatePrivate(), "hex");
+      const pubKeyPoint = getPubKeyPoint(postboxKeyBN);
+      const customKey = generatePrivate().toString("hex");
+
+      const serviceProvider = new TorusServiceProvider({
+        postboxKey: postboxKeyBN.toString("hex"),
+        directParams: {
+          // This url has no effect as postbox key is passed, passing it just to satisfy direct auth checks.
+          baseUrl: "http://localhost:3000",
+          metadataUrl: getMetadataUrl(),
+        },
+      });
+      await serviceProvider.directWeb.torus.setCustomKey({ torusKeyHex: postboxKeyBN.toString("hex"), customKeyHex: customKey.toString("hex") });
+
+      // Compare nonce returned from v1 API and v2 API
+      const getMetadataNonce = await serviceProvider.directWeb.torus.getMetadata({
+        pub_key_X: pubKeyPoint.x.toString("hex"),
+        pub_key_Y: pubKeyPoint.y.toString("hex"),
+      });
+      const getOrSetNonce = await serviceProvider.directWeb.torus.getOrSetNonce(
+        pubKeyPoint.x.toString("hex"),
+        pubKeyPoint.y.toString("hex"),
+        postboxKeyBN
+      );
+      equal(getOrSetNonce.typeOfUser, "v1");
+      equal(getOrSetNonce.nonce, getMetadataNonce.toString("hex"));
     });
   });
 };
