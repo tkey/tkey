@@ -232,7 +232,7 @@
 
 "@toruslabs/torus-direct-web-sdk@file:../../../torus-direct-web-sdk/toruslabs-torus-direct-web-sdk-4.15.1.tgz":
   version "4.15.1"
-  resolved "file:../../../torus-direct-web-sdk/toruslabs-torus-direct-web-sdk-4.15.1.tgz#37e3d54eed93f932f517151c82adfe5bcfc9e931"
+  resolved "file:../../../torus-direct-web-sdk/toruslabs-torus-direct-web-sdk-4.15.1.tgz#4dfb495f70db40362a51bafe2816eab9f7512fbc"
   dependencies:
     "@chaitanyapotti/random-id" "^1.0.3"
     "@chaitanyapotti/register-service-worker" "^1.7.3"
@@ -247,7 +247,7 @@
 
 "@toruslabs/torus.js@file:../../../torus.js/toruslabs-torus.js-2.5.0.tgz":
   version "2.5.0"
-  resolved "file:../../../torus.js/toruslabs-torus.js-2.5.0.tgz#9a908cb025a057cafb1e01a10be423e453f5e540"
+  resolved "file:../../../torus.js/toruslabs-torus.js-2.5.0.tgz#152c845a79f484d278e4eb948bca7646dabd8a62"
   dependencies:
     "@toruslabs/eccrypto" "^1.1.7"
     "@toruslabs/http-helpers" "^1.4.0"
