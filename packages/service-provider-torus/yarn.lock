@@ -232,7 +232,7 @@
 
 "@toruslabs/torus-direct-web-sdk@file:../../../torus-direct-web-sdk/toruslabs-torus-direct-web-sdk-4.15.1.tgz":
   version "4.15.1"
-  resolved "file:../../../torus-direct-web-sdk/toruslabs-torus-direct-web-sdk-4.15.1.tgz#9854a98b0a86f2230105035f3a0466cc09064b73"
+  resolved "file:../../../torus-direct-web-sdk/toruslabs-torus-direct-web-sdk-4.15.1.tgz#37e3d54eed93f932f517151c82adfe5bcfc9e931"
   dependencies:
     "@chaitanyapotti/random-id" "^1.0.3"
     "@chaitanyapotti/register-service-worker" "^1.7.3"
