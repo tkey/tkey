@@ -17,7 +17,7 @@ import sinon from "sinon";
 import { keccak256 } from "web3-utils";
 
 import ThresholdKey from "../src/index";
-import { getMetadataUrl, getServiceProvider, initStorageLayer } from "./helpers";
+import { getMetadataUrl, getServiceProvider, initStorageLayer, isMocked } from "./helpers";
 
 const metadataURL = getMetadataUrl();
 
@@ -1203,7 +1203,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
   });
 
   describe("v2", function () {
-    if (!mode || process.env.MOCKED) return;
+    if (!mode || isMocked()) return;
 
     it("should be able to init tkey with 1 out of 1", async function () {
       const postboxKeyBN = new BN(generatePrivate(), "hex");
