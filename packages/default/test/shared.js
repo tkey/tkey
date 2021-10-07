@@ -1203,7 +1203,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
   });
 
   describe("v2", function () {
-    if (!mode) return;
+    if (!mode || process.env.MOCKED) return;
 
     it("should be able to init tkey with 1 out of 1", async function () {
       const postboxKeyBN = new BN(generatePrivate(), "hex");
