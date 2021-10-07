@@ -230,24 +230,26 @@
   dependencies:
     deepmerge "^4.2.2"
 
-"@toruslabs/torus-direct-web-sdk@file:../../../torus-direct-web-sdk/toruslabs-torus-direct-web-sdk-4.15.1.tgz":
-  version "4.15.1"
-  resolved "file:../../../torus-direct-web-sdk/toruslabs-torus-direct-web-sdk-4.15.1.tgz#4dfb495f70db40362a51bafe2816eab9f7512fbc"
+"@toruslabs/torus-direct-web-sdk@^4.16.0-alpha":
+  version "4.16.0-alpha"
+  resolved "https://registry.yarnpkg.com/@toruslabs/torus-direct-web-sdk/-/torus-direct-web-sdk-4.16.0-alpha.tgz#7a3ca2f7e8393d475506aeb43206eb23b04a968e"
+  integrity sha512-d2wzkISb2D0wY9+2uJVIqUVipaS5SM2ufv5kC3NYsHS0YGcAuSPvh/8yuCdQSCVY59xoRMPwOYqJQivM94E7Kg==
   dependencies:
     "@chaitanyapotti/random-id" "^1.0.3"
     "@chaitanyapotti/register-service-worker" "^1.7.3"
     "@toruslabs/fetch-node-details" "^2.7.1"
     "@toruslabs/http-helpers" "^1.4.0"
-    "@toruslabs/torus.js" "file:../../../torus.js/toruslabs-torus.js-2.5.0.tgz"
+    "@toruslabs/torus.js" "^2.6.0-alpha"
     broadcast-channel "^3.7.0"
     deepmerge "^4.2.2"
     jwt-decode "^3.1.2"
     loglevel "^1.7.1"
     web3-utils "^1.5.2"
 
-"@toruslabs/torus.js@file:../../../torus.js/toruslabs-torus.js-2.5.0.tgz":
-  version "2.5.0"
-  resolved "file:../../../torus.js/toruslabs-torus.js-2.5.0.tgz#152c845a79f484d278e4eb948bca7646dabd8a62"
+"@toruslabs/torus.js@^2.6.0-alpha":
+  version "2.6.0-alpha"
+  resolved "https://registry.yarnpkg.com/@toruslabs/torus.js/-/torus.js-2.6.0-alpha.tgz#06eb8a6833ab9b0702a7e67c3e23d42aff98b6f9"
+  integrity sha512-dveRA6DGPb9jLl2aKTL9+rm15svbh1V2SLMyT/mFF5q07H2TYVh4BXd33L/QqXN2dfopMdchiIXY2AlEYtFj8g==
   dependencies:
     "@toruslabs/eccrypto" "^1.1.7"
     "@toruslabs/http-helpers" "^1.4.0"

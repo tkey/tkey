@@ -44,8 +44,8 @@
   },
   "dependencies": {
     "@toruslabs/eccrypto": "^1.1.6",
-    "@toruslabs/torus-direct-web-sdk": "file:/Users/phuctm97/Projects/torusresearch/torus-direct-web-sdk/toruslabs-torus-direct-web-sdk-4.15.1.tgz",
-    "@toruslabs/torus.js": "file:/Users/phuctm97/Projects/torusresearch/torus.js/toruslabs-torus.js-2.5.0.tgz",
+    "@toruslabs/torus-direct-web-sdk": "^4.16.0-alpha",
+    "@toruslabs/torus.js": "^2.6.0-alpha",
     "bn.js": "^5.2.0",
     "elliptic": "^6.5.4",
     "ts-custom-error": "^3.2.0",
