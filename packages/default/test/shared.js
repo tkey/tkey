@@ -1202,7 +1202,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     });
   });
 
-  describe("v2", function () {
+  describe("OneKey", function () {
     if (!mode || isMocked()) return;
 
     it("should be able to init tkey with 1 out of 1", async function () {
@@ -1212,9 +1212,10 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const serviceProvider = new TorusServiceProvider({
         postboxKey: postboxKeyBN.toString("hex"),
         directParams: {
+          enableOneKey: true,
+          metadataUrl: getMetadataUrl(),
           // This url has no effect as postbox key is passed, passing it just to satisfy direct auth checks.
           baseUrl: "http://localhost:3000",
-          metadataUrl: getMetadataUrl(),
         },
       });
       const storageLayer = new TorusStorageLayer({ serviceProvider, hostUrl: getMetadataUrl() });
@@ -1269,9 +1270,10 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const serviceProvider = new TorusServiceProvider({
         postboxKey: postboxKeyBN.toString("hex"),
         directParams: {
+          enableOneKey: true,
+          metadataUrl: getMetadataUrl(),
           // This url has no effect as postbox key is passed, passing it just to satisfy direct auth checks.
           baseUrl: "http://localhost:3000",
-          metadataUrl: getMetadataUrl(),
         },
       });
 
@@ -1295,9 +1297,10 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const serviceProvider = new TorusServiceProvider({
         postboxKey: postboxKeyBN.toString("hex"),
         directParams: {
+          enableOneKey: true,
+          metadataUrl: getMetadataUrl(),
           // This url has no effect as postbox key is passed, passing it just to satisfy direct auth checks.
           baseUrl: "http://localhost:3000",
-          metadataUrl: getMetadataUrl(),
         },
       });
       await serviceProvider.directWeb.torus.setCustomKey({ torusKeyHex: postboxKeyBN.toString("hex"), customKeyHex: customKey.toString("hex") });
