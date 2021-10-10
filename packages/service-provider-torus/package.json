@@ -40,8 +40,8 @@
   "dependencies": {
     "@tkey/common-types": "^4.4.0-alpha.3",
     "@tkey/service-provider-base": "^4.4.0-alpha.3",
-    "@toruslabs/torus-direct-web-sdk": "4.16.0-alpha.3",
-    "@toruslabs/torus.js": "2.6.0-alpha.3",
+    "@toruslabs/torus-direct-web-sdk": "4.16.0-alpha.4",
+    "@toruslabs/torus.js": "2.6.0-alpha.4",
     "bn.js": "^5.2.0",
     "elliptic": "^6.5.4"
   },
