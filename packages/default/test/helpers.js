@@ -12,6 +12,10 @@ if (!isNode) {
   mocked = process.env.MOCKED || "false";
 }
 
+export function isMocked() {
+  return mocked === "true";
+}
+
 export function getMetadataUrl() {
   let metadataURL = process.env.METADATA || "http://localhost:5051";
   if (!isNode) {

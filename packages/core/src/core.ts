@@ -23,6 +23,7 @@ import {
   LocalTransitionData,
   LocalTransitionShares,
   ModuleMap,
+  ONE_KEY_DELETE_NONCE,
   Point,
   Polynomial,
   PolynomialID,
@@ -121,9 +122,13 @@ class ThresholdKey implements ITKey {
     transitionMetadata?: Metadata;
     previouslyFetchedCloudMetadata?: Metadata;
     previousLocalMetadataTransitions?: LocalMetadataTransitions;
+    delete1OutOf1?: boolean;
   }): Promise<KeyDetails> {
     // setup initial params/states
     const p = params || {};
+
+    if (p.delete1OutOf1 && !this.manualSync) throw CoreError.delete1OutOf1OnlyManualSync();
+
     const { withShare, importKey, neverInitializeNewKey, transitionMetadata, previouslyFetchedCloudMetadata, previousLocalMetadataTransitions } = p;
 
     const previousLocalMetadataTransitionsExists =
@@ -158,7 +163,7 @@ class ThresholdKey implements ITKey {
           throw CoreError.default("key has not been generated yet");
         }
         // no metadata set, assumes new user
-        await this._initializeNewKey({ initializeModules: true, importedKey: importKey });
+        await this._initializeNewKey({ initializeModules: true, importedKey: importKey, delete1OutOf1: p.delete1OutOf1 });
         return this.getKeyDetails();
       }
       // else we continue with catching up share and metadata
@@ -532,10 +537,12 @@ class ThresholdKey implements ITKey {
     determinedShare,
     initializeModules,
     importedKey,
+    delete1OutOf1,
   }: {
     determinedShare?: BN;
     initializeModules?: boolean;
     importedKey?: BN;
+    delete1OutOf1?: boolean;
   } = {}): Promise<InitializeNewKeyResult> {
     if (!importedKey) {
       const tmpPriv = generatePrivate();
@@ -579,9 +586,13 @@ class ThresholdKey implements ITKey {
     });
 
     const authMetadatas = this.generateAuthMetadata({ input: metadataToPush });
+
     // because this is the first time we're setting metadata there is no need to acquire a lock
     // acquireLock: false. Force push
     await this.addLocalMetadataTransitions({ input: [...authMetadatas, shareStore], privKey: [...sharesToPush, undefined] });
+    if (delete1OutOf1) {
+      await this.addLocalMetadataTransitions({ input: [{ message: ONE_KEY_DELETE_NONCE }], privKey: [this.serviceProvider.postboxKey] });
+    }
 
     // store metadata on metadata respective to shares
     for (let index = 0; index < shareIndexes.length; index += 1) {
@@ -636,7 +647,7 @@ class ThresholdKey implements ITKey {
         serviceProvider: this.serviceProvider,
       });
     } catch (error) {
-      throw CoreError.metadataPostFailed(`${prettyPrintError(error)}`);
+      throw CoreError.metadataPostFailed(`${JSON.stringify(error)}`);
     }
 
     this._localMetadataTransitions = [[], []];

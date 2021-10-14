@@ -1,6 +1,6 @@
 {
   "name": "@tkey/common-types",
-  "version": "4.3.0",
+  "version": "4.4.0-alpha.4",
   "description": "TKey common types",
   "author": "Torus Labs",
   "homepage": "https://github.com/tkey/tkey#readme",
@@ -44,7 +44,8 @@
   },
   "dependencies": {
     "@toruslabs/eccrypto": "^1.1.6",
-    "@toruslabs/torus-direct-web-sdk": "^4.12.0",
+    "@toruslabs/torus-direct-web-sdk": "^5.0.0",
+    "@toruslabs/torus.js": "^3.0.0",
     "bn.js": "^5.2.0",
     "elliptic": "^6.5.4",
     "ts-custom-error": "^3.2.0",

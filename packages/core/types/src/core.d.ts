@@ -29,6 +29,7 @@ declare class ThresholdKey implements ITKey {
         transitionMetadata?: Metadata;
         previouslyFetchedCloudMetadata?: Metadata;
         previousLocalMetadataTransitions?: LocalMetadataTransitions;
+        delete1OutOf1?: boolean;
     }): Promise<KeyDetails>;
     private setModuleReferences;
     private initializeModules;
@@ -47,10 +48,11 @@ declare class ThresholdKey implements ITKey {
     deleteShare(shareIndex: BNString): Promise<DeleteShareResult>;
     generateNewShare(): Promise<GenerateNewShareResult>;
     _refreshShares(threshold: number, newShareIndexes: Array<string>, previousPolyID: PolynomialID): Promise<RefreshSharesResult>;
-    _initializeNewKey({ determinedShare, initializeModules, importedKey, }?: {
+    _initializeNewKey({ determinedShare, initializeModules, importedKey, delete1OutOf1, }?: {
         determinedShare?: BN;
         initializeModules?: boolean;
         importedKey?: BN;
+        delete1OutOf1?: boolean;
     }): Promise<InitializeNewKeyResult>;
     addLocalMetadataTransitions(params: {
         input: LocalTransitionData;

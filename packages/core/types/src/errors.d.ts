@@ -24,6 +24,7 @@ declare class CoreError extends TkeyError {
     static fromCode(code: number, extraMessage?: string): ITkeyError;
     static default(extraMessage?: string): ITkeyError;
     static metadataUndefined(extraMessage?: string): ITkeyError;
+    static delete1OutOf1OnlyManualSync(extraMessage?: string): ITkeyError;
     static metadataGetFailed(extraMessage?: string): ITkeyError;
     static metadataPostFailed(extraMessage?: string): ITkeyError;
     static tkeyStoreInvalid(extraMessage?: string): ITkeyError;
