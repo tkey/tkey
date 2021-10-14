@@ -24,7 +24,7 @@ const optimization = {
   },
 };
 
-const babelLoaderWithPolyfills = {
+const babelLoader = {
   test: /\.(ts|js)x?$/,
   exclude: /(node_modules|bower_components)/,
   use: {
@@ -33,11 +33,6 @@ const babelLoaderWithPolyfills = {
       rootMode: "upward",
     },
   },
-};
-
-const babelLoader = {
-  ...babelLoaderWithPolyfills,
-  use: { loader: "babel-loader", options: { plugins: ["@babel/transform-runtime"], rootMode: "upward" } },
 };
 
 function generateWebpackConfig({ pkg, pkgName, currentPath, alias }) {
@@ -63,18 +58,6 @@ function generateWebpackConfig({ pkg, pkgName, currentPath, alias }) {
     },
     module: {
       rules: [],
-    },
-  };
-
-  const umdPolyfilledConfig = {
-    ...baseConfig,
-    output: {
-      ...baseConfig.output,
-      filename: `${pkgName}.polyfill.umd.min.js`,
-      libraryTarget: "umd",
-    },
-    module: {
-      rules: [babelLoaderWithPolyfills],
     },
   };
 
@@ -128,7 +111,7 @@ function generateWebpackConfig({ pkg, pkgName, currentPath, alias }) {
     externals: [...Object.keys(pkg.dependencies).filter((x) => !packagesToInclude.includes(x)), /^(@babel\/runtime)/i],
   };
 
-  return [umdPolyfilledConfig, umdConfig, cjsConfig, cjsBundledConfig];
+  return [umdConfig, cjsConfig, cjsBundledConfig];
 }
 
 module.exports = generateWebpackConfig;
