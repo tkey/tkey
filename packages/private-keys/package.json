@@ -1,6 +1,6 @@
 {
   "name": "@tkey/private-keys",
-  "version": "4.4.0-alpha.4",
+  "version": "4.4.0",
   "description": "TKey Private Keys Module",
   "author": "Torus Labs",
   "homepage": "https://github.com/tkey/tkey#readme",
@@ -41,7 +41,7 @@
     "@types/bn.js": "^5.1.0"
   },
   "dependencies": {
-    "@tkey/common-types": "^4.4.0-alpha.4",
+    "@tkey/common-types": "^4.4.0",
     "bn.js": "^5.2.0",
     "randombytes": "^2.1.0"
   },
