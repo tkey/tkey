@@ -1256,8 +1256,12 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       // Create an existing v1 account
       const postboxKeyBN = new BN(generatePrivate(), "hex");
       const pubKeyPoint = getPubKeyPoint(postboxKeyBN);
+
+      // This test require development API, only work with local/beta env
+      let metadataUrl = getMetadataUrl();
+      if (metadataUrl === "https://metadata.tor.us") metadataUrl = "https://beta.metadata.tor.us";
       await post(
-        `${getMetadataUrl()}/set_nonce`,
+        `${metadataUrl}/set_nonce`,
         {
           pub_key_X: pubKeyPoint.x.toString("hex"),
           pub_key_Y: pubKeyPoint.y.toString("hex"),
@@ -1271,7 +1275,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         postboxKey: postboxKeyBN.toString("hex"),
         directParams: {
           enableOneKey: true,
-          metadataUrl: getMetadataUrl(),
+          metadataUrl,
           // This url has no effect as postbox key is passed, passing it just to satisfy direct auth checks.
           baseUrl: "http://localhost:3000",
         },
