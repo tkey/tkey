@@ -26,6 +26,7 @@ declare class TorusStorageLayer implements IStorageLayer {
     }): Promise<{
         message: string;
     }>;
+    static serializeMetadataParamsInput(el: unknown, serviceProvider: IServiceProvider, privKey: BN): Promise<unknown>;
     setMetadataStream<T>(params: {
         input: Array<T>;
         serviceProvider?: IServiceProvider;

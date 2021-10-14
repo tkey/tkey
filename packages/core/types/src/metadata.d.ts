@@ -30,6 +30,7 @@ declare class Metadata implements IMetadata {
     getShareDescription(): ShareDescriptionMap;
     addShareDescription(shareIndex: string, description: string): void;
     deleteShareDescription(shareIndex: string, description: string): void;
+    updateShareDescription(shareIndex: string, oldDescription: string, newDescription: string): void;
     shareToShareStore(share: BN): ShareStore;
     clone(): Metadata;
     toJSON(): StringifiedType;

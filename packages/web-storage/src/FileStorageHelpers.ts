@@ -37,8 +37,8 @@ async function browserRequestFileSystem(grantedBytes: number): Promise<FileSyste
   });
 }
 async function getFile(fs: FileSystem, path: string, create: boolean): Promise<FileEntry> {
-  return new Promise((resolve, reject) => {
-    fs.root.getFile(path, { create }, resolve, reject);
+  return new Promise<FileEntry>((resolve, reject) => {
+    fs.root.getFile(path, { create }, (data) => resolve(data as FileEntry), reject);
   });
 }
 async function readFile(fileEntry: FileEntry): Promise<File> {

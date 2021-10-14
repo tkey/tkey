@@ -110,6 +110,13 @@ class ShareTransferModule implements IModule {
     return encPubKeyX;
   }
 
+  async addCustomInfoToShareRequest(encPubKeyX: string, customInfo: string): Promise<void> {
+    const shareTransferStore = await this.getShareTransferStore();
+    if (!shareTransferStore[encPubKeyX]) throw ShareTransferError.missingEncryptionKey();
+    shareTransferStore[encPubKeyX].customInfo = customInfo;
+    await this.setShareTransferStore(shareTransferStore);
+  }
+
   private _cleanUpCurrentRequest(): void {
     this.currentEncKey = undefined;
     clearInterval(this.requestStatusCheckId);

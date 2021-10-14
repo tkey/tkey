@@ -23,6 +23,7 @@ import {
   LocalTransitionData,
   LocalTransitionShares,
   ModuleMap,
+  ONE_KEY_DELETE_NONCE,
   Point,
   Polynomial,
   PolynomialID,
@@ -80,7 +81,7 @@ class ThresholdKey implements ITKey {
 
   _shareSerializationMiddleware: ShareSerializationMiddleware;
 
-  storeDeviceShare: (deviceShareStore: ShareStore) => Promise<void>;
+  storeDeviceShare: (deviceShareStore: ShareStore, customDeviceInfo?: StringifiedType) => Promise<void>;
 
   haveWriteMetadataLock: string;
 
@@ -121,9 +122,13 @@ class ThresholdKey implements ITKey {
     transitionMetadata?: Metadata;
     previouslyFetchedCloudMetadata?: Metadata;
     previousLocalMetadataTransitions?: LocalMetadataTransitions;
+    delete1OutOf1?: boolean;
   }): Promise<KeyDetails> {
     // setup initial params/states
     const p = params || {};
+
+    if (p.delete1OutOf1 && !this.manualSync) throw CoreError.delete1OutOf1OnlyManualSync();
+
     const { withShare, importKey, neverInitializeNewKey, transitionMetadata, previouslyFetchedCloudMetadata, previousLocalMetadataTransitions } = p;
 
     const previousLocalMetadataTransitionsExists =
@@ -158,7 +163,7 @@ class ThresholdKey implements ITKey {
           throw CoreError.default("key has not been generated yet");
         }
         // no metadata set, assumes new user
-        await this._initializeNewKey({ initializeModules: true, importedKey: importKey });
+        await this._initializeNewKey({ initializeModules: true, importedKey: importKey, delete1OutOf1: p.delete1OutOf1 });
         return this.getKeyDetails();
       }
       // else we continue with catching up share and metadata
@@ -349,6 +354,9 @@ class ThresholdKey implements ITKey {
   }
 
   reconstructLatestPoly(): Polynomial {
+    if (!this.metadata) {
+      throw CoreError.metadataUndefined();
+    }
     const pubPoly = this.metadata.getLatestPublicPolynomial();
     const pubPolyID = pubPoly.getPolynomialID();
     const threshold = pubPoly.getThreshold();
@@ -424,6 +432,12 @@ class ThresholdKey implements ITKey {
   }
 
   async _refreshShares(threshold: number, newShareIndexes: Array<string>, previousPolyID: PolynomialID): Promise<RefreshSharesResult> {
+    if (!this.metadata) {
+      throw CoreError.metadataUndefined();
+    }
+    if (!this.privKey) {
+      throw CoreError.privateKeyUnavailable();
+    }
     if (threshold > newShareIndexes.length) {
       throw CoreError.default(`threshold should not be greater than share indexes. ${threshold} > ${newShareIndexes.length}`);
     }
@@ -523,10 +537,12 @@ class ThresholdKey implements ITKey {
     determinedShare,
     initializeModules,
     importedKey,
+    delete1OutOf1,
   }: {
     determinedShare?: BN;
     initializeModules?: boolean;
     importedKey?: BN;
+    delete1OutOf1?: boolean;
   } = {}): Promise<InitializeNewKeyResult> {
     if (!importedKey) {
       const tmpPriv = generatePrivate();
@@ -570,9 +586,13 @@ class ThresholdKey implements ITKey {
     });
 
     const authMetadatas = this.generateAuthMetadata({ input: metadataToPush });
+
     // because this is the first time we're setting metadata there is no need to acquire a lock
     // acquireLock: false. Force push
     await this.addLocalMetadataTransitions({ input: [...authMetadatas, shareStore], privKey: [...sharesToPush, undefined] });
+    if (delete1OutOf1) {
+      await this.addLocalMetadataTransitions({ input: [{ message: ONE_KEY_DELETE_NONCE }], privKey: [this.serviceProvider.postboxKey] });
+    }
 
     // store metadata on metadata respective to shares
     for (let index = 0; index < shareIndexes.length; index += 1) {
@@ -609,6 +629,9 @@ class ThresholdKey implements ITKey {
   }
 
   async syncLocalMetadataTransitions(): Promise<void> {
+    if (!this.metadata) {
+      throw CoreError.metadataUndefined();
+    }
     if (!(Array.isArray(this._localMetadataTransitions[0]) && this._localMetadataTransitions[0].length > 0)) return;
 
     // get lock
@@ -617,11 +640,16 @@ class ThresholdKey implements ITKey {
       await this.acquireWriteMetadataLock();
       acquiredLock = true;
     }
-    await this.storageLayer.setMetadataStream({
-      input: this._localMetadataTransitions[1],
-      privKey: this._localMetadataTransitions[0],
-      serviceProvider: this.serviceProvider,
-    });
+    try {
+      await this.storageLayer.setMetadataStream({
+        input: this._localMetadataTransitions[1],
+        privKey: this._localMetadataTransitions[0],
+        serviceProvider: this.serviceProvider,
+      });
+    } catch (error) {
+      throw CoreError.metadataPostFailed(`${JSON.stringify(error)}`);
+    }
+
     this._localMetadataTransitions = [[], []];
     this.lastFetchedCloudMetadata = this.metadata.clone();
     // release lock
@@ -683,6 +711,9 @@ class ThresholdKey implements ITKey {
 
   // inputs a share ensuring that the share is the latest share AND metadata is updated to its latest state
   async inputShareStoreSafe(shareStore: ShareStore, autoUpdateMetadata = false): Promise<void> {
+    if (!this.metadata) {
+      throw CoreError.metadataUndefined();
+    }
     let ss: ShareStore;
     if (shareStore instanceof ShareStore) {
       ss = shareStore;
@@ -709,6 +740,9 @@ class ThresholdKey implements ITKey {
   }
 
   outputShareStore(shareIndex: BNString, polyID?: string): ShareStore {
+    if (!this.metadata) {
+      throw CoreError.metadataUndefined();
+    }
     let shareIndexParsed: BN;
     if (typeof shareIndex === "number") {
       shareIndexParsed = new BN(shareIndex);
@@ -739,6 +773,9 @@ class ThresholdKey implements ITKey {
   }
 
   getCurrentShareIndexes(): string[] {
+    if (!this.metadata) {
+      throw CoreError.metadataUndefined();
+    }
     const latestPolynomial = this.metadata.getLatestPublicPolynomial();
     const latestPolynomialId = latestPolynomial.getPolynomialID();
     const currentShareIndexes = Object.keys(this.shares[latestPolynomialId]);
@@ -746,6 +783,9 @@ class ThresholdKey implements ITKey {
   }
 
   getKeyDetails(): KeyDetails {
+    if (!this.metadata) {
+      throw CoreError.metadataUndefined();
+    }
     const poly = this.metadata.getLatestPublicPolynomial();
     const previousPolyID = poly.getPolynomialID();
     const requiredShares = poly.getThreshold() - Object.keys(this.shares[previousPolyID]).length;
@@ -779,11 +819,7 @@ class ThresholdKey implements ITKey {
     return authMetadatas;
   }
 
-  setAuthMetadata(params: {
-    input: Metadata;
-    serviceProvider?: IServiceProvider;
-    privKey?: BN;
-  }): Promise<{
+  setAuthMetadata(params: { input: Metadata; serviceProvider?: IServiceProvider; privKey?: BN }): Promise<{
     message: string;
   }> {
     const { input, serviceProvider, privKey } = params;
@@ -792,6 +828,9 @@ class ThresholdKey implements ITKey {
   }
 
   async setAuthMetadataBulk(params: { input: Metadata[]; serviceProvider?: IServiceProvider; privKey?: BN[] }): Promise<void> {
+    if (!this.privKey) {
+      throw CoreError.privateKeyUnavailable();
+    }
     const { input, serviceProvider, privKey } = params;
     const authMetadatas = [] as AuthMetadata[];
     for (let i = 0; i < input.length; i += 1) {
@@ -814,7 +853,7 @@ class ThresholdKey implements ITKey {
     includeLocalMetadataTransitions?: boolean;
     _localMetadataTransitions?: LocalMetadataTransitions;
   }): Promise<unknown> {
-    if (!(params.serviceProvider || params.privKey)) {
+    if (!((params.serviceProvider && params.serviceProvider.postboxKey.toString("hex") !== "0") || params.privKey)) {
       throw CoreError.default("require either serviceProvider or priv key in getGenericMetadataWithTransitionStates");
     }
     if (params.includeLocalMetadataTransitions) {
@@ -831,7 +870,12 @@ class ThresholdKey implements ITKey {
         return transitions[1][index];
       }
     }
-    const raw = await this.storageLayer.getMetadata(params);
+    let raw: IMessageMetadata;
+    try {
+      raw = await this.storageLayer.getMetadata(params);
+    } catch (err) {
+      throw CoreError.metadataGetFailed(`${prettyPrintError(err)}`);
+    }
     if ((raw as IMessageMetadata).message === SHARE_DELETED) {
       throw CoreError.fromCode(1308);
     }
@@ -890,6 +934,9 @@ class ThresholdKey implements ITKey {
   // Module functions
 
   async _syncShareMetadata(adjustScopedStore?: (ss: unknown) => unknown): Promise<void> {
+    if (!this.metadata) {
+      throw CoreError.metadataUndefined();
+    }
     const pubPoly = this.metadata.getLatestPublicPolynomial();
     const pubPolyID = pubPoly.getPolynomialID();
     const existingShareIndexes = this.metadata.getShareIndexesForPolynomial(pubPolyID);
@@ -911,6 +958,9 @@ class ThresholdKey implements ITKey {
   }
 
   async syncMultipleShareMetadata(shares: Array<BN>, adjustScopedStore?: (ss: unknown) => unknown): Promise<void> {
+    if (!this.metadata) {
+      throw CoreError.metadataUndefined();
+    }
     this.metadata.nonce += 1;
 
     const newMetadataPromise = shares.map(async (share) => {
@@ -919,7 +969,7 @@ class ThresholdKey implements ITKey {
       try {
         specificShareMetadata = await this.getAuthMetadata({ privKey: share, includeLocalMetadataTransitions: true });
       } catch (err) {
-        throw CoreError.metadataGetFailed(`${prettyPrintError(err)}`);
+        throw CoreError.authMetadataGetUnavailable(`${prettyPrintError(err)}`);
       }
 
       let scopedStoreToBeSet;
@@ -964,6 +1014,9 @@ class ThresholdKey implements ITKey {
   }
 
   async addShareDescription(shareIndex: string, description: string, updateMetadata?: boolean): Promise<void> {
+    if (!this.metadata) {
+      throw CoreError.metadataUndefined();
+    }
     this.metadata.addShareDescription(shareIndex, description);
     if (updateMetadata) {
       await this._syncShareMetadata();
@@ -971,7 +1024,20 @@ class ThresholdKey implements ITKey {
   }
 
   async deleteShareDescription(shareIndex: string, description: string, updateMetadata?: boolean): Promise<void> {
+    if (!this.metadata) {
+      throw CoreError.metadataUndefined();
+    }
     this.metadata.deleteShareDescription(shareIndex, description);
+    if (updateMetadata) {
+      await this._syncShareMetadata();
+    }
+  }
+
+  async updateShareDescription(shareIndex: string, oldDescription: string, newDescription: string, updateMetadata?: boolean): Promise<void> {
+    if (!this.metadata) {
+      throw CoreError.metadataUndefined();
+    }
+    this.metadata.updateShareDescription(shareIndex, oldDescription, newDescription);
     if (updateMetadata) {
       await this._syncShareMetadata();
     }
@@ -988,6 +1054,9 @@ class ThresholdKey implements ITKey {
   }
 
   async _setTKeyStoreItem(moduleName: string, data: TkeyStoreItemType): Promise<void> {
+    if (!this.metadata) {
+      throw CoreError.metadataUndefined();
+    }
     const rawTkeyStoreItems: EncryptedMessage[] = (this.metadata.getTkeyStoreDomain(moduleName) as EncryptedMessage[]) || [];
     const decryptedItems = await Promise.all(
       rawTkeyStoreItems.map(async (x) => {
@@ -1009,6 +1078,9 @@ class ThresholdKey implements ITKey {
   }
 
   async _deleteTKeyStoreItem(moduleName: string, id: string): Promise<void> {
+    if (!this.metadata) {
+      throw CoreError.metadataUndefined();
+    }
     const rawTkeyStoreItems = (this.metadata.getTkeyStoreDomain(moduleName) as EncryptedMessage[]) || [];
     const decryptedItems = await Promise.all(
       rawTkeyStoreItems.map(async (x) => {
@@ -1022,6 +1094,9 @@ class ThresholdKey implements ITKey {
   }
 
   async getTKeyStore(moduleName: string): Promise<TkeyStoreItemType[]> {
+    if (!this.metadata) {
+      throw CoreError.metadataUndefined();
+    }
     const rawTkeyStoreItems = (this.metadata.getTkeyStoreDomain(moduleName) as EncryptedMessage[]) || [];
 
     const decryptedItems = await Promise.all(
@@ -1034,6 +1109,9 @@ class ThresholdKey implements ITKey {
   }
 
   async getTKeyStoreItem(moduleName: string, id: string): Promise<TkeyStoreItemType> {
+    if (!this.metadata) {
+      throw CoreError.metadataUndefined();
+    }
     const rawTkeyStoreItems = (this.metadata.getTkeyStoreDomain(moduleName) as EncryptedMessage[]) || [];
 
     const decryptedItems = await Promise.all(
@@ -1055,6 +1133,9 @@ class ThresholdKey implements ITKey {
   }
 
   async inputShare(share: unknown, type?: string): Promise<void> {
+    if (!this.metadata) {
+      throw CoreError.metadataUndefined();
+    }
     let shareStore: ShareStore;
     if (!type) shareStore = this.metadata.shareToShareStore(share as BN);
     else {
@@ -1141,8 +1222,20 @@ class ThresholdKey implements ITKey {
     });
 
     if (metadata || lastFetchedCloudMetadata) {
-      let tempMetadata;
-      let tempCloud;
+      let tempMetadata: Metadata;
+      let tempCloud: Metadata;
+      let shareToUseForSerialization: ShareStore;
+
+      // if service provider key is missing, we should initialize with one of the existing shares
+      // TODO: fix for deleted share
+      if (tb.serviceProvider.postboxKey.toString("hex") === "0") {
+        const latestPolyIDOnCloud = Metadata.fromJSON(lastFetchedCloudMetadata).getLatestPublicPolynomial().getPolynomialID();
+        const shareIndexesExistInSDK = Object.keys(shares[latestPolyIDOnCloud]);
+        const randomIndex = shareIndexesExistInSDK[Math.floor(Math.random() * (shareIndexesExistInSDK.length - 1))];
+        if (shareIndexesExistInSDK.length >= 1) {
+          shareToUseForSerialization = shares[latestPolyIDOnCloud][randomIndex];
+        }
+      }
       if (metadata) tempMetadata = Metadata.fromJSON(metadata);
       if (lastFetchedCloudMetadata) tempCloud = Metadata.fromJSON(lastFetchedCloudMetadata);
       await tb.initialize({
@@ -1150,6 +1243,7 @@ class ThresholdKey implements ITKey {
         transitionMetadata: tempMetadata,
         previouslyFetchedCloudMetadata: tempCloud,
         previousLocalMetadataTransitions: [localTransitionShares, localTransitionData],
+        withShare: shareToUseForSerialization,
       });
     } else {
       await tb.initialize({ neverInitializeNewKey: true });

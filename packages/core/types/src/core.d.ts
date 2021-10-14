@@ -17,7 +17,7 @@ declare class ThresholdKey implements ITKey {
     _refreshMiddleware: RefreshMiddlewareMap;
     _reconstructKeyMiddleware: ReconstructKeyMiddlewareMap;
     _shareSerializationMiddleware: ShareSerializationMiddleware;
-    storeDeviceShare: (deviceShareStore: ShareStore) => Promise<void>;
+    storeDeviceShare: (deviceShareStore: ShareStore, customDeviceInfo?: StringifiedType) => Promise<void>;
     haveWriteMetadataLock: string;
     constructor(args?: TKeyArgs);
     getStorageLayer(): IStorageLayer;
@@ -29,6 +29,7 @@ declare class ThresholdKey implements ITKey {
         transitionMetadata?: Metadata;
         previouslyFetchedCloudMetadata?: Metadata;
         previousLocalMetadataTransitions?: LocalMetadataTransitions;
+        delete1OutOf1?: boolean;
     }): Promise<KeyDetails>;
     private setModuleReferences;
     private initializeModules;
@@ -47,10 +48,11 @@ declare class ThresholdKey implements ITKey {
     deleteShare(shareIndex: BNString): Promise<DeleteShareResult>;
     generateNewShare(): Promise<GenerateNewShareResult>;
     _refreshShares(threshold: number, newShareIndexes: Array<string>, previousPolyID: PolynomialID): Promise<RefreshSharesResult>;
-    _initializeNewKey({ determinedShare, initializeModules, importedKey, }?: {
+    _initializeNewKey({ determinedShare, initializeModules, importedKey, delete1OutOf1, }?: {
         determinedShare?: BN;
         initializeModules?: boolean;
         importedKey?: BN;
+        delete1OutOf1?: boolean;
     }): Promise<InitializeNewKeyResult>;
     addLocalMetadataTransitions(params: {
         input: LocalTransitionData;
@@ -105,6 +107,7 @@ declare class ThresholdKey implements ITKey {
     _setDeviceStorage(storeDeviceStorage: (deviceShareStore: ShareStore) => Promise<void>): void;
     addShareDescription(shareIndex: string, description: string, updateMetadata?: boolean): Promise<void>;
     deleteShareDescription(shareIndex: string, description: string, updateMetadata?: boolean): Promise<void>;
+    updateShareDescription(shareIndex: string, oldDescription: string, newDescription: string, updateMetadata?: boolean): Promise<void>;
     encrypt(data: Buffer): Promise<EncryptedMessage>;
     decrypt(encryptedMessage: EncryptedMessage): Promise<Buffer>;
     _setTKeyStoreItem(moduleName: string, data: TkeyStoreItemType): Promise<void>;

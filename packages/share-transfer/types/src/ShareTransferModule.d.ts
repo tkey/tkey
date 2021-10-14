@@ -17,6 +17,7 @@ declare class ShareTransferModule implements IModule {
     setRequestStatusCheckInterval(interval: number): void;
     initialize(): Promise<void>;
     requestNewShare(userAgent: string, availableShareIndexes: Array<string>, callback?: (err?: ITkeyError, shareStore?: ShareStore) => void): Promise<string>;
+    addCustomInfoToShareRequest(encPubKeyX: string, customInfo: string): Promise<void>;
     private _cleanUpCurrentRequest;
     lookForRequests(): Promise<Array<string>>;
     approveRequest(encPubKeyX: string, shareStore?: ShareStore): Promise<void>;
