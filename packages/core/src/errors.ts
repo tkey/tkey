@@ -53,7 +53,7 @@ class CoreError extends TkeyError {
     1502: "metadata pubkey unavailable",
     1503: "getAuthMetadata errored",
     1504: "setAuthMetadata errored",
-    1601: "delete1OutOf1OnlyManualSync",
+    1601: "delete1OutOf1 require manualSync=true",
   };
 
   public constructor(code: number, message: string) {
