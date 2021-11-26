@@ -1,4 +1,4 @@
-import ServiceProviderBase from "@tkey/service-provider-base";
+import { ServiceProviderBase } from "@tkey/service-provider-base";
 import { generatePrivate } from "@toruslabs/eccrypto";
 
 import { getMetadataUrl, initStorageLayer } from "./helpers";
@@ -11,5 +11,6 @@ const defaultSP = new ServiceProviderBase({ postboxKey: PRIVATE_KEY });
 const defaultSL = initStorageLayer({ serviceProvider: defaultSP, hostUrl: metadataURL });
 
 describe(`BaseServiceProvider with manualSync: ${MANUAL_SYNC}`, function () {
+  // eslint-disable-next-line mocha/no-setup-in-describe
   sharedTestCases(MANUAL_SYNC, defaultSP, defaultSL);
 });

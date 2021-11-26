@@ -1,7 +1,7 @@
 import { deepStrictEqual } from "assert";
 import BN from "bn.js";
 
-import { ShareSerializationModule } from "../index";
+import { ShareSerializationModule } from "../src/index";
 
 describe("Share serialization", function () {
   it("#should export share", async function () {
