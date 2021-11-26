@@ -50,7 +50,9 @@ jobs:
       #   run: yarn run playwright install-deps ${{ matrix.browser }}
 
       - name: Bootstrap dependencies
-        run: yarn run bootstrap
+        run: |
+          yarn run bootstrap
+          yarn run build
 
       - name: Browser Test Development Chrome (Mocked)
         if: startsWith(matrix.browser, 'chromium')

@@ -1,4 +1,4 @@
-name: Build
+name: CI
 
 on: [push]
 
@@ -43,6 +43,12 @@ jobs:
 
       - name: Build
         run: yarn run build
-      
-      - name: Build Types
-        run: yarn run build:types
+
+      - name: Lint
+        run: yarn run lint
+
+      - name: Test Development
+        run: yarn run test
+
+      - name: Test Production
+        run: yarn run test-production

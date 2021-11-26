@@ -1,6 +1,6 @@
 import type { CustomAuthArgs } from "@toruslabs/customauth";
 import BN from "bn.js";
-import { curve } from "elliptic";
+import type { curve } from "elliptic";
 
 export type PubKeyType = "ecc";
 

@@ -1,6 +1,6 @@
 import { getPublic } from "@toruslabs/eccrypto";
 import BN from "bn.js";
-import { curve, ec } from "elliptic";
+import type { curve, ec } from "elliptic";
 
 import { BNString } from "../baseTypes/commonTypes";
 import { ecCurve } from "../utils";
