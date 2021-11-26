@@ -1,4 +1,4 @@
-import { DirectWebSDKArgs } from "@toruslabs/torus-direct-web-sdk";
+import { DirectWebSDKArgs } from "@toruslabs/customauth";
 import BN from "bn.js";
 
 import {

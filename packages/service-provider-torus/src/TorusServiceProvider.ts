@@ -9,7 +9,7 @@ import DirectWebSDK, {
   TorusAggregateLoginResponse,
   TorusHybridAggregateLoginResponse,
   TorusLoginResponse,
-} from "@toruslabs/torus-direct-web-sdk";
+} from "@toruslabs/customauth";
 import BN from "bn.js";
 
 class TorusServiceProvider extends ServiceProviderBase {
