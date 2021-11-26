@@ -16,6 +16,14 @@ class ShareSerializationModule implements IModule {
     this.moduleName = SHARE_SERIALIZATION_MODULE_NAME;
   }
 
+  static serializeMnemonic(share: BN): string {
+    return entropyToMnemonic(share.toString("hex").padStart(64, "0"), english);
+  }
+
+  static deserializeMnemonic(share: string): BN {
+    return new BN(mnemonicToEntropy(share, english), "hex");
+  }
+
   setModuleReferences(tbSDK: ITKeyApi): void {
     this.tbSDK = tbSDK;
     this.tbSDK._addShareSerializationMiddleware(this.serialize.bind(this), this.deserialize.bind(this));
@@ -24,7 +32,6 @@ class ShareSerializationModule implements IModule {
   // eslint-disable-next-line
   async initialize(): Promise<void> {}
 
-  // eslint-disable-next-line class-methods-use-this
   async serialize(share: BN, type: string): Promise<unknown> {
     if (type === "mnemonic") {
       return ShareSerializationModule.serializeMnemonic(share);
@@ -32,18 +39,9 @@ class ShareSerializationModule implements IModule {
     throw ShareSerializationError.typeNotSupported();
   }
 
-  // eslint-disable-next-line class-methods-use-this
   async deserialize(serializedShare: unknown, type: string): Promise<BN> {
     if (type === "mnemonic") return ShareSerializationModule.deserializeMnemonic(serializedShare as string);
     throw ShareSerializationError.typeNotSupported();
-  }
-
-  static serializeMnemonic(share: BN): string {
-    return entropyToMnemonic(share.toString("hex").padStart(64, "0"), english);
-  }
-
-  static deserializeMnemonic(share: string): BN {
-    return new BN(mnemonicToEntropy(share, english), "hex");
   }
 }
 

@@ -58,12 +58,13 @@ class SeedPhraseModule implements IModule {
 
   async getSeedPhrasesWithAccounts(): Promise<ISeedPhraseStoreWithKeys[]> {
     try {
-      // Get seed phrases for all available formats from tkeystore
+      // Get seed phrases for all available formats from TKeyStore
       const seedPhrases = await this.getSeedPhrases();
-      return Promise.all(
+      return await Promise.all(
         seedPhrases.map(async (x) => {
           const suitableFormat = this.seedPhraseFormats.find((y) => y.type === x.type);
-          return { ...x, keys: await suitableFormat.deriveKeysFromSeedPhrase(x) };
+          const keys = await suitableFormat.deriveKeysFromSeedPhrase(x);
+          return { ...x, keys };
         })
       );
     } catch (err) {
@@ -73,7 +74,7 @@ class SeedPhraseModule implements IModule {
 
   async getAccounts(): Promise<BN[]> {
     try {
-      // Get seed phrases for all available formats from tkeystore
+      // Get seed phrases for all available formats from TKeyStore
       const seedPhrases = await this.getSeedPhrases();
       const responses = await Promise.all(
         seedPhrases.map(async (x) => {

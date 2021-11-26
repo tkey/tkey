@@ -30,9 +30,15 @@ class MockStorageLayer implements IStorageLayer {
     this.storageLayerName = "MockStorageLayer";
   }
 
+  static fromJSON(value: StringifiedType): MockStorageLayer {
+    const { dataMap, serviceProvider, lockMap, storageLayerName } = value;
+    if (storageLayerName !== "MockStorageLayer") return undefined;
+    return new MockStorageLayer({ dataMap, serviceProvider, lockMap });
+  }
+
   /**
    *  Get metadata for a key
-   * @param privKey If not provided, it will use service provider's share for decryption
+   * @param privKey - If not provided, it will use service provider's share for decryption
    */
   async getMetadata<T>(params: { serviceProvider?: IServiceProvider; privKey?: BN }): Promise<T> {
     const { serviceProvider, privKey } = params;
@@ -49,8 +55,8 @@ class MockStorageLayer implements IStorageLayer {
 
   /**
    * Set Metadata for a key
-   * @param input data to post
-   * @param privKey If not provided, it will use service provider's share for encryption
+   * @param input - data to post
+   * @param privKey - If not provided, it will use service provider's share for encryption
    */
   async setMetadata<T>(params: { input: T; serviceProvider?: IServiceProvider; privKey?: BN }): Promise<{ message: string }> {
     const { serviceProvider, privKey, input } = params;
@@ -101,12 +107,6 @@ class MockStorageLayer implements IStorageLayer {
       serviceProvider: this.serviceProvider,
       storageLayerName: this.storageLayerName,
     };
-  }
-
-  static fromJSON(value: StringifiedType): MockStorageLayer {
-    const { dataMap, serviceProvider, lockMap, storageLayerName } = value;
-    if (storageLayerName !== "MockStorageLayer") return undefined;
-    return new MockStorageLayer({ dataMap, serviceProvider, lockMap });
   }
 }
 

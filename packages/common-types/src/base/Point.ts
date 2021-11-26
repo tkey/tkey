@@ -13,6 +13,17 @@ class Point implements IPoint {
     this.y = new BN(y, "hex");
   }
 
+  static fromCompressedPub(value: string): Point {
+    const key = ecCurve.keyFromPublic(value, "hex");
+    const pt = key.getPublic();
+    return new Point(pt.getX(), pt.getY());
+  }
+
+  static fromJSON(value: StringifiedType): Point {
+    const { x, y } = value;
+    return new Point(x, y);
+  }
+
   // complies with EC and elliptic pub key types
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   encode(enc: string, params?: any): Buffer {
@@ -36,17 +47,6 @@ class Point implements IPoint {
       x: this.x.toString("hex"),
       y: this.y.toString("hex"),
     };
-  }
-
-  static fromCompressedPub(value: string): Point {
-    const key = ecCurve.keyFromPublic(value, "hex");
-    const pt = key.getPublic();
-    return new Point(pt.getX(), pt.getY());
-  }
-
-  static fromJSON(value: StringifiedType): Point {
-    const { x, y } = value;
-    return new Point(x, y);
   }
 }
 

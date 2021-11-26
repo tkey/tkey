@@ -1,4 +1,4 @@
-import { DirectWebSDKArgs } from "@toruslabs/customauth";
+import type { CustomAuthArgs } from "@toruslabs/customauth";
 import BN from "bn.js";
 
 import {
@@ -138,7 +138,7 @@ export type TKeyArgs = {
   modules?: ModuleMap;
   serviceProvider?: IServiceProvider;
   storageLayer?: IStorageLayer;
-  directParams?: DirectWebSDKArgs;
+  directParams?: CustomAuthArgs;
   manualSync?: boolean;
   serverTimeOffset?: number;
 };
@@ -277,7 +277,6 @@ export interface ITKeyApi {
   _setTKeyStoreItem(moduleName: string, data: TkeyStoreItemType, updateMetadata?: boolean): Promise<void>;
 }
 
-// eslint-disable-next-line no-use-before-define
 export interface ITKey extends ITKeyApi, ISerializable {
   modules: ModuleMap;
 

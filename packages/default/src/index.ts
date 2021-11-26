@@ -1,10 +1,10 @@
 import { IServiceProvider, IStorageLayer, StringifiedType, TKeyArgs } from "@tkey/common-types";
 import TKey from "@tkey/core";
-import ServiceProviderBase from "@tkey/service-provider-base";
-import TorusServiceProvider from "@tkey/service-provider-torus";
+import { ServiceProviderBase } from "@tkey/service-provider-base";
+import { TorusServiceProvider } from "@tkey/service-provider-torus";
 import { SHARE_SERIALIZATION_MODULE_NAME, ShareSerializationModule } from "@tkey/share-serialization";
-import ShareTransferModule, { SHARE_TRANSFER_MODULE_NAME } from "@tkey/share-transfer";
-import TorusStorageLayer, { MockStorageLayer } from "@tkey/storage-layer-torus";
+import { SHARE_TRANSFER_MODULE_NAME, ShareTransferModule } from "@tkey/share-transfer";
+import { MockStorageLayer, TorusStorageLayer } from "@tkey/storage-layer-torus";
 
 class ThresholdKey extends TKey {
   constructor(args?: TKeyArgs) {

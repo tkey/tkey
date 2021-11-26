@@ -1,8 +1,8 @@
 import { CustomError } from "ts-custom-error";
 
 // @flow
-export interface ITkeyError {
-  name?: string;
+export interface ITkeyError extends CustomError {
+  name: string;
   code: number;
   message: string;
   toString(): string;
@@ -29,6 +29,7 @@ export abstract class TkeyError extends CustomError {
 
   toJSON(): ITkeyError {
     return {
+      name: this.name,
       code: this.code,
       message: this.message,
     };

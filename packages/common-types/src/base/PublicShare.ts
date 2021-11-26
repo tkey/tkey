@@ -13,16 +13,16 @@ class PublicShare implements ISerializable {
     this.shareIndex = new BN(shareIndex, "hex");
   }
 
+  static fromJSON(value: StringifiedType): PublicShare {
+    const { shareCommitment, shareIndex } = value;
+    return new PublicShare(shareIndex, Point.fromJSON(shareCommitment));
+  }
+
   toJSON(): StringifiedType {
     return {
       shareCommitment: this.shareCommitment,
       shareIndex: this.shareIndex.toString("hex"),
     };
-  }
-
-  static fromJSON(value: StringifiedType): PublicShare {
-    const { shareCommitment, shareIndex } = value;
-    return new PublicShare(shareIndex, Point.fromJSON(shareCommitment));
   }
 }
 

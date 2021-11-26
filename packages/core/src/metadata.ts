@@ -60,6 +60,40 @@ class Metadata implements IMetadata {
     this.nonce = 0;
   }
 
+  static fromJSON(value: StringifiedType): Metadata {
+    const { pubKey, polyIDList, generalStore, tkeyStore, scopedStore, nonce } = value;
+    const point = Point.fromCompressedPub(pubKey);
+    const metadata = new Metadata(point);
+    const unserializedPolyIDList: PolyIDAndShares[] = [];
+
+    if (generalStore) metadata.generalStore = generalStore;
+    if (tkeyStore) metadata.tkeyStore = tkeyStore;
+    if (scopedStore) metadata.scopedStore = scopedStore;
+    if (nonce) metadata.nonce = nonce;
+
+    for (let i = 0; i < polyIDList.length; i += 1) {
+      const serializedPolyID: string = polyIDList[i];
+      const arrPolyID = serializedPolyID.split("|");
+      const zeroIndex = arrPolyID.findIndex((v) => v === "0x0");
+      const firstHalf = arrPolyID.slice(0, zeroIndex);
+      const secondHalf = arrPolyID.slice(zeroIndex + 1, arrPolyID.length);
+      // for publicPolynomials
+      const pubPolyID = firstHalf.join("|");
+      const pointCommitments = [];
+      firstHalf.forEach((compressedCommitment) => {
+        pointCommitments.push(Point.fromCompressedPub(compressedCommitment));
+      });
+      const publicPolynomial = new PublicPolynomial(pointCommitments);
+      metadata.publicPolynomials[pubPolyID] = publicPolynomial;
+
+      // for polyIDList
+      unserializedPolyIDList.push([pubPolyID, secondHalf]);
+    }
+
+    metadata.polyIDList = unserializedPolyIDList;
+    return metadata;
+  }
+
   getShareIndexesForPolynomial(polyID: PolynomialID): Array<string> {
     const matchingPolyIDs = this.polyIDList.filter((tuple) => tuple[0] === polyID);
     if (matchingPolyIDs.length < 1) {
@@ -189,7 +223,7 @@ class Metadata implements IMetadata {
 
     for (let i = this.polyIDList.length - 1; i >= 0; i -= 1) {
       const el = this.polyIDList[i][0];
-      // eslint-disable-next-line consistent-return
+
       for (let t = 0; t < this.polyIDList[i][1].length; t += 1) {
         const shareIndex = this.polyIDList[i][1][t];
         // find pubshare in cache if its there
@@ -243,40 +277,6 @@ class Metadata implements IMetadata {
       tkeyStore: this.tkeyStore,
       nonce: this.nonce,
     };
-  }
-
-  static fromJSON(value: StringifiedType): Metadata {
-    const { pubKey, polyIDList, generalStore, tkeyStore, scopedStore, nonce } = value;
-    const point = Point.fromCompressedPub(pubKey);
-    const metadata = new Metadata(point);
-    const unserializedPolyIDList: PolyIDAndShares[] = [];
-
-    if (generalStore) metadata.generalStore = generalStore;
-    if (tkeyStore) metadata.tkeyStore = tkeyStore;
-    if (scopedStore) metadata.scopedStore = scopedStore;
-    if (nonce) metadata.nonce = nonce;
-
-    for (let i = 0; i < polyIDList.length; i += 1) {
-      const serializedPolyID: string = polyIDList[i];
-      const arrPolyID = serializedPolyID.split("|");
-      const zeroIndex = arrPolyID.findIndex((v) => v === "0x0");
-      const firstHalf = arrPolyID.slice(0, zeroIndex);
-      const secondHalf = arrPolyID.slice(zeroIndex + 1, arrPolyID.length);
-      // for publicPolynomials
-      const pubPolyID = firstHalf.join("|");
-      const pointCommitments = [];
-      firstHalf.forEach((compressedCommitment) => {
-        pointCommitments.push(Point.fromCompressedPub(compressedCommitment));
-      });
-      const publicPolynomial = new PublicPolynomial(pointCommitments);
-      metadata.publicPolynomials[pubPolyID] = publicPolynomial;
-
-      // for polyIDList
-      unserializedPolyIDList.push([pubPolyID, secondHalf]);
-    }
-
-    metadata.polyIDList = unserializedPolyIDList;
-    return metadata;
   }
 }
 
