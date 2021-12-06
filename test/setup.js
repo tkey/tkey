@@ -2,9 +2,7 @@
 
 const path = require("path");
 const formData = require("form-data");
-require("jsdom-global")("<!doctype html><html><body></body></html>", {
-  url: "https://example.com",
-});
+require("jsdom-global")();
 require("ts-node").register({
   project: path.resolve(".", "tsconfig.json"),
   require: ["tsconfig-paths/register"],
@@ -22,3 +20,14 @@ register({
 global.fetch = require("node-fetch");
 
 global.FormData = formData;
+
+const storeFn = {
+  getItem(key) {
+    return this[key];
+  },
+  setItem(key, value) {
+    this[key] = value;
+  },
+};
+global.localStorage = { ...storeFn };
+global.sessionStorage = { ...storeFn };

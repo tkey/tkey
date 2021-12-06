@@ -1,6 +1,4 @@
 {
-  "node-option": ["experimental-specifier-resolution=node", "loader=ts-node/esm/transpile-only"],
-  "extension": ["ts", "js"],
   "require": ["../../test/setup.js"],
   "timeout": 0,
   "exit": true
