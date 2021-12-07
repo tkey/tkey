@@ -12,7 +12,7 @@ export type ErrorCodes = {
   [key: number]: string;
 };
 
-export abstract class TkeyError extends CustomError {
+export abstract class TkeyError extends CustomError implements ITkeyError {
   code: number;
 
   message: string;
