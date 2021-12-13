@@ -56,7 +56,6 @@ jobs:
           yarn install --frozen-lockfile
           yarn run bootstrap
           yarn run build
-          yarn run test    
           yarn run pack:lerna
 
       - name: Clone comp tests
