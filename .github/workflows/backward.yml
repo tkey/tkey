@@ -55,7 +55,6 @@ jobs:
           cd ./tkey
           yarn install --frozen-lockfile
           yarn run bootstrap
-          yarn run build
           yarn run pack:lerna
 
       - name: Clone comp tests
