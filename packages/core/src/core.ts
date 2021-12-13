@@ -724,7 +724,7 @@ class ThresholdKey implements ITKey {
         serviceProvider: this.serviceProvider,
       });
     } catch (error) {
-      throw CoreError.metadataPostFailed(`${JSON.stringify(error)}`);
+      throw CoreError.metadataPostFailed(prettyPrintError(error));
     }
 
     this._localMetadataTransitions = [[], []];
