@@ -10,13 +10,26 @@ import ShareTransferModule from "@tkey/share-transfer";
 import TorusStorageLayer from "@tkey/storage-layer-torus";
 import { generatePrivate } from "@toruslabs/eccrypto";
 import { post } from "@toruslabs/http-helpers";
-import { deepEqual, deepStrictEqual, equal, fail, notEqual, notStrictEqual, rejects, strict, strictEqual } from "assert";
+import { deepEqual, deepStrictEqual, equal, fail, notEqual, notStrictEqual, strict, strictEqual, throws } from "assert";
 import BN from "bn.js";
 import { createSandbox } from "sinon";
 import { keccak256 } from "web3-utils";
 
 import ThresholdKey from "../src/index";
 import { getMetadataUrl, getServiceProvider, initStorageLayer, isMocked } from "./helpers";
+
+const rejects = async (fn, error, msg) => {
+  let f = () => {};
+  try {
+    await fn();
+  } catch (e) {
+    f = () => {
+      throw e;
+    };
+  } finally {
+    throws(f, error, msg);
+  }
+};
 
 const metadataURL = getMetadataUrl();
 

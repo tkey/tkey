@@ -6,11 +6,10 @@ describe("Errors", function () {
   it("#serialize", function () {
     throws(
       () => {
-        throw CoreError.metadataUndefined().toJSON();
+        throw CoreError.metadataUndefined();
       },
-      {
-        code: 1101,
-        message: "metadata not found, SDK likely not intialized ",
+      function (err) {
+        if (err instanceof CoreError && err.code === 1101 && err.message === "metadata not found, SDK likely not initialized ") return true;
       },
       "metadata error thrown"
     );
@@ -18,11 +17,10 @@ describe("Errors", function () {
   it("#fromCode", function () {
     throws(
       () => {
-        throw CoreError.fromCode(1101).toJSON();
+        throw CoreError.fromCode(1101);
       },
-      {
-        code: 1101,
-        message: "metadata not found, SDK likely not intialized ",
+      function (err) {
+        if (err instanceof CoreError && err.code === 1101 && err.message === "metadata not found, SDK likely not initialized ") return true;
       },
       "metadata error thrown"
     );

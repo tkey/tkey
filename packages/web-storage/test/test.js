@@ -1,9 +1,22 @@
 import ThresholdKey from "@tkey/core";
 import { ServiceProviderBase } from "@tkey/service-provider-base";
 import { MockStorageLayer, TorusStorageLayer } from "@tkey/storage-layer-torus";
-import { deepStrictEqual, rejects, strictEqual } from "assert";
+import { deepStrictEqual, strictEqual, throws } from "assert";
 
 import WebStorageModule, { WEB_STORAGE_MODULE_NAME } from "../src/WebStorageModule";
+
+const rejects = async (fn, error, msg) => {
+  let f = () => {};
+  try {
+    await fn();
+  } catch (e) {
+    f = () => {
+      throw e;
+    };
+  } finally {
+    throws(f, error, msg);
+  }
+};
 
 function initStorageLayer(mocked, extraParams) {
   return mocked === "true" ? new MockStorageLayer({ serviceProvider: extraParams.serviceProvider }) : new TorusStorageLayer(extraParams);
@@ -96,10 +109,15 @@ manualSyncModes.forEach((mode) => {
       // console.log("%O", tb.shares);
       await tb2.initialize();
       // console.log("%O", tb2.shares);
-      await rejects(async function () {
-        await tb2.modules[WEB_STORAGE_MODULE_NAME].inputShareFromWebStorage();
-        await tb2.reconstructKey();
-      });
+      await rejects(
+        async function () {
+          await tb2.modules[WEB_STORAGE_MODULE_NAME].inputShareFromWebStorage();
+          await tb2.reconstructKey();
+        },
+        () => {
+          return true;
+        }
+      );
     });
 
     it(`#should be able to input external share from web storage after deletion, manualSync=${mode}`, async function () {
@@ -112,10 +130,15 @@ manualSyncModes.forEach((mode) => {
 
       await tb2.initialize();
 
-      await rejects(async function () {
-        await tb2.modules[WEB_STORAGE_MODULE_NAME].inputShareFromWebStorage();
-        await tb2.reconstructKey();
-      });
+      await rejects(
+        async function () {
+          await tb2.modules[WEB_STORAGE_MODULE_NAME].inputShareFromWebStorage();
+          await tb2.reconstructKey();
+        },
+        () => {
+          return true;
+        }
+      );
 
       // console.log("%O", tb2.shares);
       await tb2.inputShareStore(newShare.newShareStores[newShare.newShareIndex.toString("hex")]);
