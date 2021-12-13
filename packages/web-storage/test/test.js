@@ -1,7 +1,6 @@
-/* eslint-disable no-console */
 import ThresholdKey from "@tkey/core";
-import ServiceProviderBase from "@tkey/service-provider-base";
-import TorusStorageLayer, { MockStorageLayer } from "@tkey/storage-layer-torus";
+import { ServiceProviderBase } from "@tkey/service-provider-base";
+import { MockStorageLayer, TorusStorageLayer } from "@tkey/storage-layer-torus";
 import { deepStrictEqual, rejects, strictEqual } from "assert";
 
 import WebStorageModule, { WEB_STORAGE_MODULE_NAME } from "../src/WebStorageModule";
