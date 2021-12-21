@@ -12,7 +12,7 @@
   "types": "dist/types/index.d.ts",
   "files": [
     "dist",
-    "types"
+    "src"
   ],
   "publishConfig": {
     "access": "public"

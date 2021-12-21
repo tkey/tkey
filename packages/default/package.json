@@ -31,7 +31,7 @@
   },
   "files": [
     "dist",
-    "types"
+    "src"
   ],
   "dependencies": {
     "@tkey/common-types": "^4.4.0",
