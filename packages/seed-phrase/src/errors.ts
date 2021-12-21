@@ -1,10 +1,6 @@
 import { ErrorCodes, ITkeyError, TkeyError } from "@tkey/common-types";
 
 class SeedPhraseError extends TkeyError {
-  code: number;
-
-  message: string;
-
   protected static messages: ErrorCodes = {
     6000: "Custom",
     // Misc
@@ -12,6 +8,10 @@ class SeedPhraseError extends TkeyError {
     6011: "validation failed",
     6012: "Seed phrase is invalid for ",
   };
+
+  code: number;
+
+  message: string;
 
   public constructor(code: number, message?: string) {
     // takes care of stack and proto

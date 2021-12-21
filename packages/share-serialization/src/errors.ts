@@ -1,10 +1,6 @@
 import { ErrorCodes, ITkeyError, TkeyError } from "@tkey/common-types";
 
 class ShareSerializationError extends TkeyError {
-  code: number;
-
-  message: string;
-
   protected static messages: ErrorCodes = {
     7000: "Custom",
     // Misc
@@ -13,6 +9,10 @@ class ShareSerializationError extends TkeyError {
     7012: "Invalid Checksum",
     7013: "Invalid mnemonic",
   };
+
+  code: number;
+
+  message: string;
 
   public constructor(code: number, message?: string) {
     // takes care of stack and proto

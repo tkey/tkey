@@ -1,9 +1,11 @@
+/* eslint-disable import/no-extraneous-dependencies */
 /* eslint-disable @typescript-eslint/no-var-requires */
 const pkg = require("./package.json");
-
+const generateWebpackConfig = require("@toruslabs/torus-scripts/config/webpack.config");
+const torusConfig = require("@toruslabs/torus-scripts/config/torus.config");
 const pkgName = pkg.name.split("/")[1];
 
-const webpackConfig = require("./webpack.config");
+const webpackConfig = generateWebpackConfig(torusConfig.name);
 const { localBrowserConfig, browserStackConfig } = require("../../karmaBaseConfig");
 
 module.exports = (config) => {

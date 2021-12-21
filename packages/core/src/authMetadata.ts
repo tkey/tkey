@@ -16,19 +16,6 @@ class AuthMetadata implements IAuthMetadata {
     this.privKey = privKey;
   }
 
-  toJSON(): StringifiedType {
-    const data = this.metadata;
-
-    if (!this.privKey) throw CoreError.privKeyUnavailable();
-    const k = toPrivKeyEC(this.privKey);
-    const sig = k.sign(stripHexPrefix(keccak256(stringify(data))));
-
-    return {
-      data,
-      sig: sig.toDER("hex"),
-    };
-  }
-
   static fromJSON(value: StringifiedType): AuthMetadata {
     const { data, sig } = value;
 
@@ -40,6 +27,19 @@ class AuthMetadata implements IAuthMetadata {
       throw CoreError.default("Signature not valid for returning metadata");
     }
     return new AuthMetadata(m);
+  }
+
+  toJSON(): StringifiedType {
+    const data = this.metadata;
+
+    if (!this.privKey) throw CoreError.privKeyUnavailable();
+    const k = toPrivKeyEC(this.privKey);
+    const sig = k.sign(stripHexPrefix(keccak256(stringify(data))));
+
+    return {
+      data,
+      sig: sig.toDER("hex"),
+    };
   }
 }
 

@@ -10,6 +10,11 @@ class PublicPolynomial implements ISerializable {
     this.polynomialCommitments = polynomialCommitments;
   }
 
+  static fromJSON(value: StringifiedType): PublicPolynomial {
+    const points: Point[] = value.polynomialCommitments.map((x: StringifiedType) => Point.fromJSON(x));
+    return new PublicPolynomial(points);
+  }
+
   getThreshold(): number {
     return this.polynomialCommitments.length;
   }
@@ -31,11 +36,6 @@ class PublicPolynomial implements ISerializable {
     return {
       polynomialCommitments: this.polynomialCommitments,
     };
-  }
-
-  static fromJSON(value: StringifiedType): PublicPolynomial {
-    const points: Point[] = value.polynomialCommitments.map((x: StringifiedType) => Point.fromJSON(x));
-    return new PublicPolynomial(points);
   }
 }
 

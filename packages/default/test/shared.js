@@ -1,7 +1,6 @@
+/* eslint-disable mocha/no-exports */
 /* eslint-disable import/no-extraneous-dependencies */
-/* eslint-disable no-shadow */
-/* eslint-disable no-await-in-loop */
-/* eslint-disable max-len */
+
 import { ecCurve, getPubKeyPoint } from "@tkey/common-types";
 import PrivateKeyModule, { SECP256k1Format } from "@tkey/private-keys";
 import SecurityQuestionsModule from "@tkey/security-questions";
@@ -11,13 +10,26 @@ import ShareTransferModule from "@tkey/share-transfer";
 import TorusStorageLayer from "@tkey/storage-layer-torus";
 import { generatePrivate } from "@toruslabs/eccrypto";
 import { post } from "@toruslabs/http-helpers";
-import { deepEqual, deepStrictEqual, equal, fail, notEqual, notStrictEqual, rejects, strict, strictEqual } from "assert";
+import { deepEqual, deepStrictEqual, equal, fail, notEqual, notStrictEqual, strict, strictEqual, throws } from "assert";
 import BN from "bn.js";
-import sinon from "sinon";
+import { createSandbox } from "sinon";
 import { keccak256 } from "web3-utils";
 
 import ThresholdKey from "../src/index";
 import { getMetadataUrl, getServiceProvider, initStorageLayer, isMocked } from "./helpers";
+
+const rejects = async (fn, error, msg) => {
+  let f = () => {};
+  try {
+    await fn();
+  } catch (e) {
+    f = () => {
+      throw e;
+    };
+  } finally {
+    throws(f, error, msg);
+  }
+};
 
 const metadataURL = getMetadataUrl();
 
@@ -35,7 +47,6 @@ function compareBNArray(a, b, message) {
 }
 
 function compareReconstructedKeys(a, b, message) {
-  // eslint-disable-next-line no-unused-expressions
   if (a.privKey.cmp(b.privKey) !== 0) throw new Error(message);
   if (a.seedPhraseModule && b.seedPhraseModule) {
     compareBNArray(a.seedPhraseModule, b.seedPhraseModule, message);
@@ -221,13 +232,13 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     });
   });
 
-  describe(`tkey share deletion, manualSync=${mode}`, () => {
+  describe(`tkey share deletion, manualSync=${mode}`, function () {
     let deletedShareIndex;
     let deletedShareStores;
     let shareStoreAfterDelete;
     let tb;
     let tbInitResp;
-    before(`#should be able to generate and delete a share, manualSync=${mode}`, async () => {
+    before(`#should be able to generate and delete a share, manualSync=${mode}`, async function () {
       tb = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
       tbInitResp = await tb._initializeNewKey({ initializeModules: true });
       const newShare = await tb.generateNewShare();
@@ -684,7 +695,6 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
 
       await tb2.modules.shareTransfer.startRequestStatusCheck(pubkey, true);
 
-      // eslint-disable-next-line promise/param-names
       // await new Promise((res) => {
       //   setTimeout(res, 1001);
       // });
@@ -1052,14 +1062,15 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
   describe("tkey error cases", function () {
     let tb;
     let resp1;
-    const sandbox = sinon.createSandbox();
+    let sandbox;
 
     before("Setup ThresholdKey", async function () {
+      sandbox = createSandbox();
       tb = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
       resp1 = await tb._initializeNewKey({ initializeModules: true });
       await tb.syncLocalMetadataTransitions();
     });
-    afterEach(() => {
+    afterEach(function () {
       sandbox.restore();
     });
     it(`#should throw error code 1101 if metadata is undefined, in manualSync: ${mode}`, async function () {
@@ -1203,7 +1214,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
   });
 
   describe("OneKey", function () {
-    if (!mode || isMocked()) return;
+    if (!mode || isMocked) return;
 
     it("should be able to init tkey with 1 out of 1", async function () {
       const postboxKeyBN = new BN(generatePrivate(), "hex");
@@ -1218,7 +1229,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
           baseUrl: "http://localhost:3000",
         },
       });
-      const storageLayer = new TorusStorageLayer({ serviceProvider, hostUrl: getMetadataUrl() });
+      const storageLayer2 = new TorusStorageLayer({ serviceProvider, hostUrl: getMetadataUrl() });
 
       const { typeOfUser, nonce, pubNonce } = await serviceProvider.directWeb.torus.getOrSetNonce(
         pubKeyPoint.x.toString("hex"),
@@ -1232,7 +1243,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const nonceBN = new BN(nonce, "hex");
       const importKey = postboxKeyBN.add(nonceBN).umod(serviceProvider.directWeb.torus.ec.curve.n).toString("hex");
 
-      const tKey = new ThresholdKey({ serviceProvider, storageLayer, manualSync: mode });
+      const tKey = new ThresholdKey({ serviceProvider, storageLayer: storageLayer2, manualSync: mode });
       await tKey.initialize({
         importKey: new BN(importKey, "hex"),
         delete1OutOf1: true,

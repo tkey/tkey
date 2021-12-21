@@ -1,10 +1,6 @@
 import { ErrorCodes, ITkeyError, TkeyError } from "@tkey/common-types";
 
 class ShareTransferError extends TkeyError {
-  code: number;
-
-  message: string;
-
   protected static messages: ErrorCodes = {
     8000: "Custom",
     // Misc
@@ -12,6 +8,10 @@ class ShareTransferError extends TkeyError {
     8011: "Current request already exists",
     8012: "User cancelled request",
   };
+
+  code: number;
+
+  message: string;
 
   public constructor(code: number, message?: string) {
     // takes care of stack and proto

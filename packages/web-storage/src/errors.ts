@@ -1,10 +1,6 @@
 import { ErrorCodes, ITkeyError, TkeyError } from "@tkey/common-types";
 
 class WebStorageError extends TkeyError {
-  code: number;
-
-  message: string;
-
   protected static messages: ErrorCodes = {
     3000: "default",
     // module
@@ -16,6 +12,10 @@ class WebStorageError extends TkeyError {
     3301: "Local storage is not enabled",
     3302: "No share exists in localstorage",
   };
+
+  code: number;
+
+  message: string;
 
   public constructor(code: number, message?: string) {
     // takes care of stack and proto

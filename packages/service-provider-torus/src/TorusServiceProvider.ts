@@ -1,15 +1,15 @@
 import { StringifiedType, TorusServiceProviderArgs } from "@tkey/common-types";
-import ServiceProviderBase from "@tkey/service-provider-base";
+import { ServiceProviderBase } from "@tkey/service-provider-base";
 import DirectWebSDK, {
   AggregateLoginParams,
-  DirectWebSDKArgs,
+  CustomAuthArgs,
   HybridAggregateLoginParams,
   InitParams,
   SubVerifierDetails,
   TorusAggregateLoginResponse,
   TorusHybridAggregateLoginResponse,
   TorusLoginResponse,
-} from "@toruslabs/torus-direct-web-sdk";
+} from "@toruslabs/customauth";
 import BN from "bn.js";
 
 class TorusServiceProvider extends ServiceProviderBase {
@@ -17,7 +17,7 @@ class TorusServiceProvider extends ServiceProviderBase {
 
   singleLoginKey: BN;
 
-  directParams: DirectWebSDKArgs;
+  directParams: CustomAuthArgs;
 
   serviceProviderName: string;
 
@@ -26,6 +26,17 @@ class TorusServiceProvider extends ServiceProviderBase {
     this.directParams = directParams;
     this.directWeb = new DirectWebSDK(directParams);
     this.serviceProviderName = "TorusServiceProvider";
+  }
+
+  static fromJSON(value: StringifiedType): TorusServiceProvider {
+    const { enableLogging, postboxKey, directParams, serviceProviderName } = value;
+    if (serviceProviderName !== "TorusServiceProvider") return undefined;
+
+    return new TorusServiceProvider({
+      enableLogging,
+      postboxKey,
+      directParams,
+    });
   }
 
   async init(params: InitParams): Promise<void> {
@@ -58,17 +69,6 @@ class TorusServiceProvider extends ServiceProviderBase {
       serviceProviderName: this.serviceProviderName,
       directParams: this.directParams,
     };
-  }
-
-  static fromJSON(value: StringifiedType): TorusServiceProvider {
-    const { enableLogging, postboxKey, directParams, serviceProviderName } = value;
-    if (serviceProviderName !== "TorusServiceProvider") return undefined;
-
-    return new TorusServiceProvider({
-      enableLogging,
-      postboxKey,
-      directParams,
-    });
   }
 }
 

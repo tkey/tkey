@@ -20,16 +20,6 @@ class SecurityQuestionStore implements ISerializable {
     this.questions = questions;
   }
 
-  toJSON(): StringifiedType {
-    return {
-      nonce: this.nonce.toString("hex"),
-      shareIndex: this.shareIndex.toString("hex"),
-      sqPublicShare: this.sqPublicShare,
-      polynomialID: this.polynomialID.toString(),
-      questions: this.questions,
-    };
-  }
-
   static fromJSON(value: StringifiedType): SecurityQuestionStore {
     const { nonce, shareIndex, sqPublicShare, polynomialID, questions } = value;
     return new SecurityQuestionStore({
@@ -39,6 +29,16 @@ class SecurityQuestionStore implements ISerializable {
       polynomialID,
       questions,
     });
+  }
+
+  toJSON(): StringifiedType {
+    return {
+      nonce: this.nonce.toString("hex"),
+      shareIndex: this.shareIndex.toString("hex"),
+      sqPublicShare: this.sqPublicShare,
+      polynomialID: this.polynomialID.toString(),
+      questions: this.questions,
+    };
   }
 }
 export default SecurityQuestionStore;

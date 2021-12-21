@@ -22,7 +22,6 @@ class MetamaskSeedPhraseFormat implements ISeedPhraseFormat {
     this.provider = ethProvider;
   }
 
-  // eslint-disable-next-line class-methods-use-this
   validateSeedPhrase(seedPhrase: string): boolean {
     const parsedSeedPhrase = (seedPhrase || "").trim().toLowerCase().match(/\w+/gu)?.join(" ") || "";
     const wordCount = parsedSeedPhrase.split(/\s/u).length;
@@ -62,7 +61,6 @@ class MetamaskSeedPhraseFormat implements ISeedPhraseFormat {
       const wallet = root.deriveChild(numberOfWallets);
       const address = generateAddressFromPublicKey(wallet.publicKey);
 
-      // eslint-disable-next-line no-await-in-loop
       lastBalance = await web3.getBalance(address);
       lastBalance = fromWei(lastBalance);
 
