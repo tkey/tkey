@@ -83,7 +83,6 @@ export type TorusStorageLayerArgs = {
 export type MockStorageLayerArgs = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   dataMap: any;
-  serviceProvider: IServiceProvider;
   lockMap: any;
 };
 

@@ -19,7 +19,7 @@ const rejects = async (fn, error, msg) => {
 };
 
 function initStorageLayer(mocked, extraParams) {
-  return mocked === "true" ? new MockStorageLayer({ serviceProvider: extraParams.serviceProvider }) : new TorusStorageLayer(extraParams);
+  return mocked === "true" ? new MockStorageLayer() : new TorusStorageLayer(extraParams);
 }
 
 let mocked;
@@ -36,7 +36,7 @@ if (!isNode) {
 const PRIVATE_KEY = "f70fb5f5970b363879bc36f54d4fc0ad77863bfd059881159251f50f48863acc";
 
 const defaultSP = new ServiceProviderBase({ postboxKey: PRIVATE_KEY });
-const defaultSL = initStorageLayer(mocked, { serviceProvider: defaultSP, hostUrl: metadataURL });
+const defaultSL = initStorageLayer(mocked, { hostUrl: metadataURL });
 
 const manualSyncModes = [true, false];
 manualSyncModes.forEach((mode) => {
