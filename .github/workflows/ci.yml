@@ -41,11 +41,8 @@ jobs:
       - name: Bootstrap dependencies
         run: yarn run bootstrap
 
-      - name: Build
+      - name: Build & Lint
         run: yarn run build
-
-      - name: Lint
-        run: yarn run lint
 
       - name: Test Development
         run: yarn run test
