@@ -1,15 +1,15 @@
-# Runs compatibiility tests
+# Runs compatibility tests
 
 name: Build Backward Compatibility Mocks
 
-# Controls when the action will run. 
+# Controls when the action will run.
 on:
+  # Triggers the workflow on push or pull request events but only for the main branch
   create:
-    tags:
-      - v*
 
 jobs:
   test:
+    if: ${{ startsWith(github.ref, 'refs/tags/v') }}
     name: Backward Compatibility Tests
     strategy:
       matrix:
@@ -44,21 +44,20 @@ jobs:
           key: ${{ matrix.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
           restore-keys: |
             ${{ matrix.os }}-yarn-
-        
+
       - name: Install dependencies, bootstrap, pack
         run: |
           cd ./tkey
           yarn install --frozen-lockfile
           yarn run bootstrap
-          yarn run test    
           yarn run pack:lerna
-        
+
       - name: Clone comp tests
         uses: actions/checkout@master
         with:
           repository: tkey/backward-compatibility-tests
           path: ./backward-compatibility-tests
-      
+
       - name: Setup comp tests
         run: |
           cd ./backward-compatibility-tests
@@ -69,19 +68,16 @@ jobs:
             packagename="`ls ${filename}| grep tkey`"
             npm i "${filename}/${packagename}"
           done
-          
+
       - name: Running comp tests
         run: |
           cd ./backward-compatibility-tests
           npm run build-mocks
 
-      - uses: EndBug/add-and-commit@v7 
+      - uses: EndBug/add-and-commit@v7
         with:
           author_name: Auto
           branch: master
-          cwd: './backward-compatibility-tests'
-          message: 'Building Mocks from tkey workflow'
+          cwd: "./backward-compatibility-tests"
+          message: "Building Mocks from tkey workflow"
           push: true
-          
-      
-

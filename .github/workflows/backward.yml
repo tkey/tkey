@@ -1,14 +1,14 @@
-# Runs compatibiility tests
+# Runs compatibility tests
 
 name: Backward Compatibility Tests
 
-# Controls when the action will run. 
+# Controls when the action will run.
 on:
   # Triggers the workflow on push or pull request events but only for the master branch
   push:
-    branches: [ master ]
+    branches: [master]
   pull_request:
-    branches: [ master ]
+    branches: [master]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -49,21 +49,20 @@ jobs:
           key: ${{ matrix.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
           restore-keys: |
             ${{ matrix.os }}-yarn-
-        
+
       - name: Install dependencies, bootstrap, pack
         run: |
           cd ./tkey
           yarn install --frozen-lockfile
           yarn run bootstrap
-          yarn run test    
           yarn run pack:lerna
-        
+
       - name: Clone comp tests
         uses: actions/checkout@master
         with:
           repository: tkey/backward-compatibility-tests
           path: ./backward-compatibility-tests
-      
+
       - name: Setup comp tests
         run: |
           cd ./backward-compatibility-tests
@@ -74,13 +73,8 @@ jobs:
             packagename="`ls ${filename}| grep tkey`"
             npm i "${filename}/${packagename}"
           done
-          
+
       - name: Running comp tests
         run: |
           cd ./backward-compatibility-tests
           npm test
-          
-
-
-
-          

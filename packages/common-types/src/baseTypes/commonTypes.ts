@@ -1,6 +1,6 @@
-import { DirectWebSDKArgs } from "@toruslabs/torus-direct-web-sdk";
+import type { CustomAuthArgs } from "@toruslabs/customauth";
 import BN from "bn.js";
-import { curve } from "elliptic";
+import type { curve } from "elliptic";
 
 export type PubKeyType = "ecc";
 
@@ -23,7 +23,7 @@ export interface ServiceProviderArgs {
 }
 
 export interface TorusServiceProviderArgs extends ServiceProviderArgs {
-  directParams: DirectWebSDKArgs;
+  directParams: CustomAuthArgs;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

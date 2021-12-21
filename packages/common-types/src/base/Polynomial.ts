@@ -21,6 +21,11 @@ class Polynomial implements ISerializable {
     this.polynomial = polynomial;
   }
 
+  static fromJSON(value: StringifiedType): Polynomial {
+    const { polynomial } = value;
+    return new Polynomial(polynomial.map((x: string) => new BN(x, "hex")));
+  }
+
   getThreshold(): number {
     return this.polynomial.length;
   }
@@ -78,11 +83,6 @@ class Polynomial implements ISerializable {
     return {
       polynomial: this.polynomial.map((x) => x.toString("hex")),
     };
-  }
-
-  static fromJSON(value: StringifiedType): Polynomial {
-    const { polynomial } = value;
-    return new Polynomial(polynomial.map((x: string) => new BN(x, "hex")));
   }
 }
 

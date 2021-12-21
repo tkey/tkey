@@ -35,6 +35,30 @@ class SecurityQuestionsModule implements IModule {
     this.moduleName = SECURITY_QUESTIONS_MODULE_NAME;
   }
 
+  static refreshSecurityQuestionsMiddleware(generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap): unknown {
+    if (generalStore === undefined || isEmptyObject(generalStore)) {
+      return generalStore;
+    }
+    const sqStore = new SecurityQuestionStore(generalStore as SecurityQuestionStoreArgs);
+    const sqIndex = sqStore.shareIndex.toString("hex");
+
+    // Assumption: If sqIndex doesn't exist, it must have been explicitly deleted.
+    if (oldShareStores[sqIndex] && newShareStores[sqIndex]) {
+      const sqAnswer = oldShareStores[sqIndex].share.share.sub(sqStore.nonce);
+      let newNonce = newShareStores[sqIndex].share.share.sub(sqAnswer);
+      newNonce = newNonce.umod(ecCurve.curve.n);
+
+      return new SecurityQuestionStore({
+        nonce: newNonce,
+        polynomialID: newShareStores[Object.keys(newShareStores)[0]].polynomialID,
+        sqPublicShare: newShareStores[sqIndex].share.getPublicShare(),
+        shareIndex: sqStore.shareIndex,
+        questions: sqStore.questions,
+      });
+    }
+    return undefined;
+  }
+
   setModuleReferences(tbSDK: ITKeyApi): void {
     this.tbSDK = tbSDK;
     this.tbSDK._addRefreshMiddleware(this.moduleName, SecurityQuestionsModule.refreshSecurityQuestionsMiddleware);
@@ -122,30 +146,6 @@ class SecurityQuestionsModule implements IModule {
     metadata.setGeneralStoreDomain(this.moduleName, newSqStore);
     await this.saveAnswerOnTkeyStore(newAnswerString);
     await this.tbSDK._syncShareMetadata();
-  }
-
-  static refreshSecurityQuestionsMiddleware(generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap): unknown {
-    if (generalStore === undefined || isEmptyObject(generalStore)) {
-      return generalStore;
-    }
-    const sqStore = new SecurityQuestionStore(generalStore as SecurityQuestionStoreArgs);
-    const sqIndex = sqStore.shareIndex.toString("hex");
-
-    // Assumption: If sqIndex doesn't exist, it must have been explicitly deleted.
-    if (oldShareStores[sqIndex] && newShareStores[sqIndex]) {
-      const sqAnswer = oldShareStores[sqIndex].share.share.sub(sqStore.nonce);
-      let newNonce = newShareStores[sqIndex].share.share.sub(sqAnswer);
-      newNonce = newNonce.umod(ecCurve.curve.n);
-
-      return new SecurityQuestionStore({
-        nonce: newNonce,
-        polynomialID: newShareStores[Object.keys(newShareStores)[0]].polynomialID,
-        sqPublicShare: newShareStores[sqIndex].share.getPublicShare(),
-        shareIndex: sqStore.shareIndex,
-        questions: sqStore.questions,
-      });
-    }
-    return undefined;
   }
 
   async saveAnswerOnTkeyStore(answerString: string): Promise<void> {

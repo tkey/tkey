@@ -16,7 +16,7 @@
 | `@tkey/share-transfer`         | [![npm version](https://img.shields.io/npm/v/@tkey/share-transfer/latest.svg)](https://www.npmjs.com/package/@tkey/share-transfer/v/latest)                 | [![minzip](https://img.shields.io/bundlephobia/minzip/@tkey/share-transfer/latest.svg)](https://bundlephobia.com/result?p=@tkey/share-transfer@latest)                 | Transfer share from another device                                           |
 | `@tkey/seed-phrase`            | [![npm version](https://img.shields.io/npm/v/@tkey/seed-phrase/latest.svg)](https://www.npmjs.com/package/@tkey/seed-phrase/v/latest)                       | [![minzip](https://img.shields.io/bundlephobia/minzip/@tkey/seed-phrase/latest.svg)](https://bundlephobia.com/result?p=@tkey/seed-phrase@latest)                       | Store and use seedphrases on metadata                                        |
 | `@tkey/private-keys`           | [![npm version](https://img.shields.io/npm/v/@tkey/private-keys/latest.svg)](https://www.npmjs.com/package/@tkey/private-keys/v/latest)                     | [![minzip](https://img.shields.io/bundlephobia/minzip/@tkey/private-keys/latest.svg)](https://bundlephobia.com/result?p=@tkey/private-keys@latest)                     | Store extra private keys on tKey metadata                                    |
-| `@tkey/share-serialization`    | [![npm version](https://img.shields.io/npm/v/@tkey/share-serialization/latest.svg)](https://www.npmjs.com/package/@tkey/share-serialization/v/latest)       | [![minzip](https://img.shields.io/bundlephobia/minzip/@tkey/share-serialization/latest.svg)](https://bundlephobia.com/result?p=@tkey/share-serialization@latest)       | Import/export a share from tKey                                       |
+| `@tkey/share-serialization`    | [![npm version](https://img.shields.io/npm/v/@tkey/share-serialization/latest.svg)](https://www.npmjs.com/package/@tkey/share-serialization/v/latest)       | [![minzip](https://img.shields.io/bundlephobia/minzip/@tkey/share-serialization/latest.svg)](https://bundlephobia.com/result?p=@tkey/share-serialization@latest)       | Import/export a share from tKey                                              |
 | 🐉 **Torus**                   |
 | `@tkey/default`                | [![npm version](https://img.shields.io/npm/v/@tkey/default/latest.svg)](https://www.npmjs.com/package/@tkey/default/v/latest)                               | [![minzip](https://img.shields.io/bundlephobia/minzip/@tkey/default/latest.svg)](https://bundlephobia.com/result?p=@tkey/default@latest)                               | Bundles `Core` and `Modules` into one importable package                     |
 | `@tkey/service-provider-torus` | [![npm version](https://img.shields.io/npm/v/@tkey/service-provider-torus/latest.svg)](https://www.npmjs.com/package/@tkey/service-provider-torus/v/latest) | [![minzip](https://img.shields.io/bundlephobia/minzip/@tkey/service-provider-torus/latest.svg)](https://bundlephobia.com/result?p=@tkey/service-provider-torus@latest) | `@service-provider-base` with DirectAuth functionality                       |
@@ -81,7 +81,7 @@ This is a plugin that works [only on the client side](https://nuxtjs.org/guide/p
 
 ### Pre-cursors
 
-Before including the tKey SDK, we first need to setup [directAuth](https://github.com/torusresearch/torus-direct-web-sdk) for the Google logins etc... Below are several steps:
+Before including the tKey SDK, we first need to setup [directAuth](https://github.com/torusresearch/CustomAuth) for the Google logins etc... Below are several steps:
 
 `npm i @tkey/default`
 
@@ -130,7 +130,7 @@ const tkey = new ThresholdKey({
 // triggers google login.
 // After google login succeeds, initialise tkey, metadata and its modules. (Minimum one share is required to read from the storage layer. In this case it was google login)
 // In case of web applications, we create another share and store it on browsers local storage. This makes the threshold 2/2. You can use modules to create additional shares
-await tkey.serviceProvider.init()
+await tkey.serviceProvider.init();
 await tkey.serviceProvider.triggerLogin();
 
 /**
@@ -145,7 +145,7 @@ await tkey.serviceProvider.triggerLogin();
 
 await tkey.initialize({});
 
-// Private key reconstruction. This is your threshold key. 
+// Private key reconstruction. This is your threshold key.
 const reconstructedKey = await tkey.reconstructKey();
 ```
 
@@ -154,7 +154,6 @@ const reconstructedKey = await tkey.reconstructKey();
 Developers who wish to customize can use @tkey/core.
 
 ```js
-
 import SecurityQuestionsModule, { SECURITY_QUESTIONS_MODULE_NAME } from "@tkey/security-questions";
 
 // Constructor
@@ -188,7 +187,7 @@ await tkey.modules.securityQuestions.generateNewShareWithSecurityQuestions("mypa
 
 The `manualSync` parameter can be used to save the tkey transitions locally. Following are the benefits of using this parameter:
 
-1. This allows to create m/n threshold key in one step. 
+1. This allows to create m/n threshold key in one step.
 2. For a multiscreen signup flow, you can serialize/deserialize the sdk from one page to another without pushing the changes to the cloud.
 3. Rollback to previous tkey state in case of unexpected errors.
 
@@ -202,18 +201,17 @@ const tkey = new ThresholdKey({
   },
   serviceProvider,
   storageLayer,
-  manualSync: true
+  manualSync: true,
 });
 
 await tkey.initialize();
 const reconstructedKey = await tkey.reconstructKey(); // created 2/2 tkey. All changes are local.
 await tkey.modules.securityQuestions.generateNewShareWithSecurityQuestions("mypassword", "what is your password?"); // update threshold to 2/3. All changes are local
-await tkey.syncLocalMetadataTransitions() // push metadata to cloud
+await tkey.syncLocalMetadataTransitions(); // push metadata to cloud
 
 // Rollback example
-await tkey.generateNewShare()
-tkey = await tkey.updateSDK() // this will revert the share generated above
-
+await tkey.generateNewShare();
+tkey = await tkey.updateSDK(); // this will revert the share generated above
 ```
 
 ### Export and import shares as mnemonics
@@ -236,7 +234,7 @@ await tb2.inputShare(exportedSeedShare.toString("hex"), "mnemonic"); // import s
 
 ### Import seedphrases and private keys
 
-These imported private keys/seed phrases are encrypted (with threshold key) and stored on share's metadata. They have no relation to threshold key or shares. Usually, they are used by users with existing keys. 
+These imported private keys/seed phrases are encrypted (with threshold key) and stored on share's metadata. They have no relation to threshold key or shares. Usually, they are used by users with existing keys.
 
 ```js
 const metamaskSeedPhraseFormat = new MetamaskSeedPhraseFormat("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68");
@@ -244,22 +242,22 @@ const privateKeyFormat = new SECP256k1Format();
 
 // Constructor
 const tkey = new ThresholdKey({
-  modules: { 
-    seedPhrase: new SeedPhraseModule([metamaskSeedPhraseFormat]), 
-    privateKeyModule: new PrivateKeyModule([privateKeyFormat]) 
+  modules: {
+    seedPhrase: new SeedPhraseModule([metamaskSeedPhraseFormat]),
+    privateKeyModule: new PrivateKeyModule([privateKeyFormat]),
   },
   serviceProvider,
   storageLayer,
 });
 
 // You will have to reconstruct key to get seedphrase/private keys back
-await tkey.reconstructKey()
+await tkey.reconstructKey();
 
 // get/set private keys
 const privateKeys = [
-        new BN("4bd0041b7654a9b16a7268a5de7982f2422b15635c4fd170c140dc4897624390", "hex"),
-        new BN("1ea6edde61c750ec02896e9ac7fe9ac0b48a3630594fdf52ad5305470a2635c0", "hex"),
-      ];
+  new BN("4bd0041b7654a9b16a7268a5de7982f2422b15635c4fd170c140dc4897624390", "hex"),
+  new BN("1ea6edde61c750ec02896e9ac7fe9ac0b48a3630594fdf52ad5305470a2635c0", "hex"),
+];
 await tkey.modules.privateKeyModule.setPrivateKey("secp256k1n", privateKeys[0]);
 await tkey.modules.privateKeyModule.getAccounts();
 
@@ -269,7 +267,6 @@ await tkey.modules.seedPhrase.setSeedPhrase("HD Key Tree", seedPhraseToSet);
 const returnedSeed = await tkey.modules.seedPhrase.getSeedPhrases();
 ```
 
-
 ### Advanced: Create 4/5 tkey
 
 There are many ways to create m/n threshold key. Following is an example of how to create a 4/5 tkey.
@@ -277,14 +274,14 @@ There are many ways to create m/n threshold key. Following is an example of how 
 ```js
 // Constructor
 const tkey = new ThresholdKey({
-  modules: { 
+  modules: {
     [WEB_STORAGE_MODULE_NAME]: new WebStorageModule(),
   },
   serviceProvider,
   storageLayer,
 });
 
-const resp1 = await tkey.initialize({}) // 2/2
+const resp1 = await tkey.initialize({}); // 2/2
 const { newShareStores: newShareStores1, newShareIndex: newShareIndex1 } = await tkey.generateNewShare(); // 2/3
 const { newShareStores: newShareStores2, newShareIndex: newShareIndex2 } = await tkey.generateNewShare(); // 2/4
 const { newShareIndex: newShareIndex3 } = await tkey.generateNewShare(); // 2/5

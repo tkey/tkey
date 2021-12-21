@@ -103,6 +103,92 @@ class ThresholdKey implements ITKey {
     this.haveWriteMetadataLock = "";
   }
 
+  static async fromJSON(value: StringifiedType, args: TKeyArgs): Promise<ThresholdKey> {
+    const { enableLogging, privKey, metadata, shares, _localMetadataTransitions, manualSync, lastFetchedCloudMetadata } = value;
+    const { storageLayer, serviceProvider, modules } = args;
+
+    const tb = new ThresholdKey({
+      enableLogging,
+      storageLayer,
+      serviceProvider,
+      modules,
+      manualSync,
+    });
+    if (privKey) tb.privKey = new BN(privKey, "hex");
+
+    for (const key in shares) {
+      if (Object.prototype.hasOwnProperty.call(shares, key)) {
+        const shareStoreMapElement = shares[key];
+        for (const shareElementKey in shareStoreMapElement) {
+          if (Object.prototype.hasOwnProperty.call(shareStoreMapElement, shareElementKey)) {
+            const shareStore = shareStoreMapElement[shareElementKey];
+            shareStoreMapElement[shareElementKey] = ShareStore.fromJSON(shareStore);
+          }
+        }
+      }
+    }
+    tb.shares = shares;
+
+    // switch to deserialize local metadata transition based on Object.keys() of authMetadata, ShareStore's and, IMessageMetadata
+    const AuthMetdataKeys = Object.keys(JSON.parse(stringify(new AuthMetadata(new Metadata(new Point("0", "0")), new BN("0", "hex")))));
+    const ShareStoreKeys = Object.keys(JSON.parse(stringify(new ShareStore(new Share("0", "0"), ""))));
+    const sampleMessageMetadata: IMessageMetadata = { message: "Sample message", dateAdded: Date.now() };
+    const MessageMetadataKeys = Object.keys(sampleMessageMetadata);
+
+    const localTransitionShares: LocalTransitionShares = [];
+    const localTransitionData: LocalTransitionData = [];
+
+    _localMetadataTransitions[0].forEach((x, index) => {
+      if (x) {
+        localTransitionShares.push(new BN(x, "hex"));
+      } else {
+        localTransitionShares.push(undefined);
+      }
+
+      const keys = Object.keys(_localMetadataTransitions[1][index]);
+      if (keys.length === AuthMetdataKeys.length && keys.every((val) => AuthMetdataKeys.includes(val))) {
+        const tempAuth = AuthMetadata.fromJSON(_localMetadataTransitions[1][index]);
+        tempAuth.privKey = privKey;
+        localTransitionData.push(tempAuth);
+      } else if (keys.length === ShareStoreKeys.length && keys.every((val) => ShareStoreKeys.includes(val))) {
+        localTransitionData.push(ShareStore.fromJSON(_localMetadataTransitions[1][index]));
+      } else if (keys.length === MessageMetadataKeys.length && keys.every((val) => MessageMetadataKeys.includes(val))) {
+        localTransitionData.push(_localMetadataTransitions[1][index] as IMessageMetadata);
+      } else {
+        throw CoreError.default("fromJSON failed. Could not deserialise _localMetadataTransitions");
+      }
+    });
+
+    if (metadata || lastFetchedCloudMetadata) {
+      let tempMetadata: Metadata;
+      let tempCloud: Metadata;
+      let shareToUseForSerialization: ShareStore;
+
+      // if service provider key is missing, we should initialize with one of the existing shares
+      // TODO: fix for deleted share
+      if (tb.serviceProvider.postboxKey.toString("hex") === "0") {
+        const latestPolyIDOnCloud = Metadata.fromJSON(lastFetchedCloudMetadata).getLatestPublicPolynomial().getPolynomialID();
+        const shareIndexesExistInSDK = Object.keys(shares[latestPolyIDOnCloud]);
+        const randomIndex = shareIndexesExistInSDK[Math.floor(Math.random() * (shareIndexesExistInSDK.length - 1))];
+        if (shareIndexesExistInSDK.length >= 1) {
+          shareToUseForSerialization = shares[latestPolyIDOnCloud][randomIndex];
+        }
+      }
+      if (metadata) tempMetadata = Metadata.fromJSON(metadata);
+      if (lastFetchedCloudMetadata) tempCloud = Metadata.fromJSON(lastFetchedCloudMetadata);
+      await tb.initialize({
+        neverInitializeNewKey: true,
+        transitionMetadata: tempMetadata,
+        previouslyFetchedCloudMetadata: tempCloud,
+        previousLocalMetadataTransitions: [localTransitionShares, localTransitionData],
+        withShare: shareToUseForSerialization,
+      });
+    } else {
+      await tb.initialize({ neverInitializeNewKey: true });
+    }
+    return tb;
+  }
+
   getStorageLayer(): IStorageLayer {
     return this.storageLayer;
   }
@@ -222,18 +308,10 @@ class ThresholdKey implements ITKey {
     return this.getKeyDetails();
   }
 
-  private setModuleReferences() {
-    Object.keys(this.modules).map((x) => this.modules[x].setModuleReferences(this.getApi()));
-  }
-
-  private async initializeModules() {
-    return Promise.all(Object.keys(this.modules).map((x) => this.modules[x].initialize()));
-  }
-
   /**
    * catchupToLatestShare recursively loops fetches metadata of the provided share and checks if there is an encrypted share for it.
-   * @param shareStore share to start of with
-   * @param polyID if specified, polyID to refresh to if it exists
+   * @param shareStore - share to start of with
+   * @param polyID - if specified, polyID to refresh to if it exists
    */
   async catchupToLatestShare(params: {
     shareStore: ShareStore;
@@ -256,7 +334,7 @@ class ThresholdKey implements ITKey {
         }
       }
       const nextShare = await shareMetadata.getEncryptedShare(shareStore);
-      return this.catchupToLatestShare({ shareStore: nextShare, polyID, includeLocalMetadataTransitions });
+      return await this.catchupToLatestShare({ shareStore: nextShare, polyID, includeLocalMetadataTransitions });
     } catch (err) {
       return { latestShare: shareStore, shareMetadata };
     }
@@ -290,7 +368,6 @@ class ThresholdKey implements ITKey {
             if (currentShareForPoly.polynomialID === pubPolyID) {
               sharesToInput.push(currentShareForPoly);
             } else {
-              // eslint-disable-next-line no-await-in-loop
               const latestShareRes = await this.catchupToLatestShare({
                 shareStore: currentShareForPoly,
                 polyID: pubPolyID,
@@ -647,7 +724,7 @@ class ThresholdKey implements ITKey {
         serviceProvider: this.serviceProvider,
       });
     } catch (error) {
-      throw CoreError.metadataPostFailed(`${JSON.stringify(error)}`);
+      throw CoreError.metadataPostFailed(prettyPrintError(error));
     }
 
     this._localMetadataTransitions = [[], []];
@@ -1165,92 +1242,6 @@ class ThresholdKey implements ITKey {
     };
   }
 
-  static async fromJSON(value: StringifiedType, args: TKeyArgs): Promise<ThresholdKey> {
-    const { enableLogging, privKey, metadata, shares, _localMetadataTransitions, manualSync, lastFetchedCloudMetadata } = value;
-    const { storageLayer, serviceProvider, modules } = args;
-
-    const tb = new ThresholdKey({
-      enableLogging,
-      storageLayer,
-      serviceProvider,
-      modules,
-      manualSync,
-    });
-    if (privKey) tb.privKey = new BN(privKey, "hex");
-
-    for (const key in shares) {
-      if (Object.prototype.hasOwnProperty.call(shares, key)) {
-        const shareStoreMapElement = shares[key];
-        for (const shareElementKey in shareStoreMapElement) {
-          if (Object.prototype.hasOwnProperty.call(shareStoreMapElement, shareElementKey)) {
-            const shareStore = shareStoreMapElement[shareElementKey];
-            shareStoreMapElement[shareElementKey] = ShareStore.fromJSON(shareStore);
-          }
-        }
-      }
-    }
-    tb.shares = shares;
-
-    // switch to deserialize local metadata transition based on Object.keys() of authMetadata, ShareStore's and, IMessageMetadata
-    const AuthMetdataKeys = Object.keys(JSON.parse(stringify(new AuthMetadata(new Metadata(new Point("0", "0")), new BN("0", "hex")))));
-    const ShareStoreKeys = Object.keys(JSON.parse(stringify(new ShareStore(new Share("0", "0"), ""))));
-    const sampleMessageMetadata: IMessageMetadata = { message: "Sample message", dateAdded: Date.now() };
-    const MessageMetadataKeys = Object.keys(sampleMessageMetadata);
-
-    const localTransitionShares: LocalTransitionShares = [];
-    const localTransitionData: LocalTransitionData = [];
-
-    _localMetadataTransitions[0].forEach((x, index) => {
-      if (x) {
-        localTransitionShares.push(new BN(x, "hex"));
-      } else {
-        localTransitionShares.push(undefined);
-      }
-
-      const keys = Object.keys(_localMetadataTransitions[1][index]);
-      if (keys.length === AuthMetdataKeys.length && keys.every((val) => AuthMetdataKeys.includes(val))) {
-        const tempAuth = AuthMetadata.fromJSON(_localMetadataTransitions[1][index]);
-        tempAuth.privKey = privKey;
-        localTransitionData.push(tempAuth);
-      } else if (keys.length === ShareStoreKeys.length && keys.every((val) => ShareStoreKeys.includes(val))) {
-        localTransitionData.push(ShareStore.fromJSON(_localMetadataTransitions[1][index]));
-      } else if (keys.length === MessageMetadataKeys.length && keys.every((val) => MessageMetadataKeys.includes(val))) {
-        localTransitionData.push(_localMetadataTransitions[1][index] as IMessageMetadata);
-      } else {
-        throw CoreError.default("fromJSON failed. Could not deserialise _localMetadataTransitions");
-      }
-    });
-
-    if (metadata || lastFetchedCloudMetadata) {
-      let tempMetadata: Metadata;
-      let tempCloud: Metadata;
-      let shareToUseForSerialization: ShareStore;
-
-      // if service provider key is missing, we should initialize with one of the existing shares
-      // TODO: fix for deleted share
-      if (tb.serviceProvider.postboxKey.toString("hex") === "0") {
-        const latestPolyIDOnCloud = Metadata.fromJSON(lastFetchedCloudMetadata).getLatestPublicPolynomial().getPolynomialID();
-        const shareIndexesExistInSDK = Object.keys(shares[latestPolyIDOnCloud]);
-        const randomIndex = shareIndexesExistInSDK[Math.floor(Math.random() * (shareIndexesExistInSDK.length - 1))];
-        if (shareIndexesExistInSDK.length >= 1) {
-          shareToUseForSerialization = shares[latestPolyIDOnCloud][randomIndex];
-        }
-      }
-      if (metadata) tempMetadata = Metadata.fromJSON(metadata);
-      if (lastFetchedCloudMetadata) tempCloud = Metadata.fromJSON(lastFetchedCloudMetadata);
-      await tb.initialize({
-        neverInitializeNewKey: true,
-        transitionMetadata: tempMetadata,
-        previouslyFetchedCloudMetadata: tempCloud,
-        previousLocalMetadataTransitions: [localTransitionShares, localTransitionData],
-        withShare: shareToUseForSerialization,
-      });
-    } else {
-      await tb.initialize({ neverInitializeNewKey: true });
-    }
-    return tb;
-  }
-
   getApi(): ITKeyApi {
     return {
       getMetadata: this.getMetadata.bind(this),
@@ -1277,6 +1268,14 @@ class ThresholdKey implements ITKey {
       _deleteTKeyStoreItem: this._deleteTKeyStoreItem.bind(this),
       deleteShare: this.deleteShare.bind(this),
     };
+  }
+
+  private setModuleReferences() {
+    Object.keys(this.modules).map((x) => this.modules[x].setModuleReferences(this.getApi()));
+  }
+
+  private async initializeModules() {
+    return Promise.all(Object.keys(this.modules).map((x) => this.modules[x].initialize()));
   }
 }
 

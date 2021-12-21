@@ -28,6 +28,13 @@ class ServiceProviderBase implements IServiceProvider {
     this.serviceProviderName = "ServiceProviderBase";
   }
 
+  static fromJSON(value: StringifiedType): IServiceProvider {
+    const { enableLogging, postboxKey, serviceProviderName } = value;
+    if (serviceProviderName !== "ServiceProviderBase") return undefined;
+
+    return new ServiceProviderBase({ enableLogging, postboxKey });
+  }
+
   async encrypt(msg: Buffer): Promise<EncryptedMessage> {
     const publicKey = this.retrievePubKey("ecc");
     return encryptUtils(publicKey, msg);
@@ -60,13 +67,6 @@ class ServiceProviderBase implements IServiceProvider {
       postboxKey: this.postboxKey.toString("hex"),
       serviceProviderName: this.serviceProviderName,
     };
-  }
-
-  static fromJSON(value: StringifiedType): IServiceProvider {
-    const { enableLogging, postboxKey, serviceProviderName } = value;
-    if (serviceProviderName !== "ServiceProviderBase") return undefined;
-
-    return new ServiceProviderBase({ enableLogging, postboxKey });
   }
 }
 

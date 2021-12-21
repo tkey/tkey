@@ -20,5 +20,6 @@ const torusSL = initStorageLayer({ serviceProvider: torusSP, hostUrl: metadataUR
 
 const MANUAL_SYNC = false;
 describe(`TorusServiceProvider with manualSync: ${MANUAL_SYNC}`, function () {
+  // eslint-disable-next-line mocha/no-setup-in-describe
   sharedTestCases(MANUAL_SYNC, torusSP, torusSL);
 });

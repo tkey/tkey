@@ -1,20 +1,21 @@
 {
   "compilerOptions": {
-    "outDir": "dist",
-    "module": "commonjs",
-    "target": "es5",
-    "lib": ["ES2019", "DOM"],
     "moduleResolution": "node",
+    "rootDir": ".",
+    "baseUrl": ".",
+    "strict": false,
+    "module": "es6",
+    "target": "es6",
+    "lib": ["ES2020", "DOM"],
     "sourceMap": true,
     "esModuleInterop": true,
     "noImplicitThis": true,
     "declaration": true,
-    "downlevelIteration": true,
+    "declarationDir": "./types",
     "allowSyntheticDefaultImports": true,
-    "baseUrl": "./packages",
-    "paths": {
-      "@tkey/*": ["*/index.ts"]
-    },
     "skipLibCheck": true,
+    "paths": {
+      "@tkey/*": ["packages/*/src"]
+    }
   }
 }

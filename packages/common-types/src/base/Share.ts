@@ -14,6 +14,11 @@ class Share implements ISerializable {
     this.shareIndex = new BN(shareIndex, "hex");
   }
 
+  static fromJSON(value: StringifiedType): Share {
+    const { share, shareIndex } = value;
+    return new Share(shareIndex, share);
+  }
+
   getPublicShare(): PublicShare {
     return new PublicShare(this.shareIndex, getPubKeyPoint(this.share));
   }
@@ -23,11 +28,6 @@ class Share implements ISerializable {
       share: this.share.toString("hex"),
       shareIndex: this.shareIndex.toString("hex"),
     };
-  }
-
-  static fromJSON(value: StringifiedType): Share {
-    const { share, shareIndex } = value;
-    return new Share(shareIndex, share);
   }
 }
 

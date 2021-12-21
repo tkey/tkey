@@ -24,7 +24,7 @@ import { keccak256 } from "web3-utils";
 
 function signDataWithPrivKey(data: { timestamp: number }, privKey: BN): string {
   const sig = ecCurve.sign(stripHexPrefix(keccak256(stringify(data))), toPrivKeyECC(privKey), "utf-8");
-  return sig.toDER();
+  return sig.toDER("hex");
 }
 
 class TorusStorageLayer implements IStorageLayer {
@@ -43,9 +43,35 @@ class TorusStorageLayer implements IStorageLayer {
     this.serverTimeOffset = serverTimeOffset;
   }
 
+  static async serializeMetadataParamsInput(el: unknown, serviceProvider: IServiceProvider, privKey: BN): Promise<unknown> {
+    if (typeof el === "object") {
+      // Allow using of special message as command, in which case, do not encrypt
+      const obj = el as Record<string, unknown>;
+      const isCommandMessage = obj.message === ONE_KEY_DELETE_NONCE;
+      if (isCommandMessage) return obj.message;
+    }
+
+    // General case, encrypt message
+    const bufferMetadata = Buffer.from(stringify(el));
+    let encryptedDetails: EncryptedMessage;
+    if (privKey) {
+      encryptedDetails = await encrypt(getPubKeyECC(privKey), bufferMetadata);
+    } else {
+      encryptedDetails = await serviceProvider.encrypt(bufferMetadata);
+    }
+    const serializedEncryptedDetails = btoa(stringify(encryptedDetails));
+    return serializedEncryptedDetails;
+  }
+
+  static fromJSON(value: StringifiedType): TorusStorageLayer {
+    const { enableLogging, hostUrl, storageLayerName, serverTimeOffset = 0 } = value;
+    if (storageLayerName !== "TorusStorageLayer") return undefined;
+    return new TorusStorageLayer({ enableLogging, hostUrl, serverTimeOffset });
+  }
+
   /**
    *  Get metadata for a key
-   * @param privKey If not provided, it will use service provider's share for decryption
+   * @param privKey - If not provided, it will use service provider's share for decryption
    */
   async getMetadata<T>(params: { serviceProvider?: IServiceProvider; privKey?: BN }): Promise<T> {
     const { serviceProvider, privKey } = params;
@@ -69,8 +95,8 @@ class TorusStorageLayer implements IStorageLayer {
 
   /**
    * Set Metadata for a key
-   * @param input data to post
-   * @param privKey If not provided, it will use service provider's share for encryption
+   * @param input - data to post
+   * @param privKey - If not provided, it will use service provider's share for encryption
    */
   async setMetadata<T>(params: { input: T; serviceProvider?: IServiceProvider; privKey?: BN }): Promise<{ message: string }> {
     const { serviceProvider, privKey, input } = params;
@@ -80,26 +106,6 @@ class TorusStorageLayer implements IStorageLayer {
       privKey
     );
     return post<{ message: string }>(`${this.hostUrl}/set`, metadataParams);
-  }
-
-  static async serializeMetadataParamsInput(el: unknown, serviceProvider: IServiceProvider, privKey: BN): Promise<unknown> {
-    if (typeof el === "object") {
-      // Allow using of special message as command, in which case, do not encrypt
-      const obj = el as Record<string, unknown>;
-      const isCommandMessage = obj.message === ONE_KEY_DELETE_NONCE;
-      if (isCommandMessage) return obj.message;
-    }
-
-    // General case, encrypt message
-    const bufferMetadata = Buffer.from(stringify(el));
-    let encryptedDetails: EncryptedMessage;
-    if (privKey) {
-      encryptedDetails = await encrypt(getPubKeyECC(privKey), bufferMetadata);
-    } else {
-      encryptedDetails = await serviceProvider.encrypt(bufferMetadata);
-    }
-    const serializedEncryptedDetails = btoa(stringify(encryptedDetails));
-    return serializedEncryptedDetails;
   }
 
   async setMetadataStream<T>(params: { input: Array<T>; serviceProvider?: IServiceProvider; privKey?: Array<BN> }): Promise<{ message: string }> {
@@ -219,12 +225,6 @@ class TorusStorageLayer implements IStorageLayer {
       hostUrl: this.hostUrl,
       storageLayerName: this.storageLayerName,
     };
-  }
-
-  static fromJSON(value: StringifiedType): TorusStorageLayer {
-    const { enableLogging, hostUrl, storageLayerName, serverTimeOffset = 0 } = value;
-    if (storageLayerName !== "TorusStorageLayer") return undefined;
-    return new TorusStorageLayer({ enableLogging, hostUrl, serverTimeOffset });
   }
 }
 

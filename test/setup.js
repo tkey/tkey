@@ -2,10 +2,27 @@
 
 const path = require("path");
 const formData = require("form-data");
-require("jsdom-global")("<!doctype html><html><body></body></html>", {
-  url: "https://example.com",
+require("jsdom-global")(``, {
+  url: "http://localhost",
 });
-require("ts-node").register({ project: path.resolve("tsconfig.json"), require: ["tsconfig-paths/register"] });
+
+// const storeFn = {
+//   getItem(key) {
+//     return this[key];
+//   },
+//   setItem(key, value) {
+//     this[key] = value;
+//   },
+// };
+// globalThis.localStorage = { ...storeFn };
+// globalThis.sessionStorage = { ...storeFn };
+
+require("ts-node").register({
+  project: path.resolve(".", "tsconfig.json"),
+  require: ["tsconfig-paths/register"],
+  transpileOnly: true,
+  compilerOptions: { module: "commonjs" },
+});
 
 const register = require("@babel/register").default;
 
@@ -14,6 +31,6 @@ register({
   rootMode: "upward",
 });
 
-global.fetch = require("node-fetch");
+globalThis.fetch = require("node-fetch");
 
-global.FormData = formData;
+globalThis.FormData = formData;

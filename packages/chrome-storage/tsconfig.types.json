@@ -1,9 +1,0 @@
-{
-  "extends": "./tsconfig.json",
-  "compilerOptions": {
-    "emitDeclarationOnly": true,
-    "declarationDir": "./types",
-    "paths": {},
-    "typeRoots": ["node_modules/@types", "node_modules/web-ext-types"]
-  }
-}

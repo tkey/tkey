@@ -8,6 +8,7 @@ export async function getClientIp(): Promise<string> {
         if (response.ok) {
           return response.text();
         }
+        // eslint-disable-next-line @typescript-eslint/no-throw-literal
         throw response;
       })
     );

@@ -19,7 +19,6 @@ import ShareRequest from "./ShareRequest";
 import ShareTransferStorePointer from "./ShareTransferStorePointer";
 import { getClientIp } from "./utils";
 
-// @flow
 export type ShareTransferStore = {
   [encPubKeyX: string]: ShareRequest;
 };
@@ -40,6 +39,23 @@ class ShareTransferModule implements IModule {
   constructor() {
     this.moduleName = SHARE_TRANSFER_MODULE_NAME;
     this.requestStatusCheckInterval = 1000;
+  }
+
+  static refreshShareTransferMiddleware(
+    generalStore: unknown,
+    oldShareStores: ShareStoreMap,
+    newShareStores: ShareStoreMap
+  ): ShareTransferStorePointer {
+    const numberOfOldShares = Object.keys(oldShareStores).length;
+    const numberOfNewShares = Object.keys(newShareStores).length;
+
+    // This is needed to avoid MIM during share deletion.
+    if (numberOfNewShares <= numberOfOldShares) {
+      const shareTransferStorePointer: ShareTransferStorePointer = { pointer: new BN(generatePrivate()) };
+      return shareTransferStorePointer;
+    }
+
+    return generalStore as ShareTransferStorePointer;
   }
 
   setModuleReferences(tbSDK: ITKeyApi): void {
@@ -115,11 +131,6 @@ class ShareTransferModule implements IModule {
     if (!shareTransferStore[encPubKeyX]) throw ShareTransferError.missingEncryptionKey();
     shareTransferStore[encPubKeyX].customInfo = customInfo;
     await this.setShareTransferStore(shareTransferStore);
-  }
-
-  private _cleanUpCurrentRequest(): void {
-    this.currentEncKey = undefined;
-    clearInterval(this.requestStatusCheckId);
   }
 
   async lookForRequests(): Promise<Array<string>> {
@@ -200,23 +211,6 @@ class ShareTransferModule implements IModule {
     });
   }
 
-  static refreshShareTransferMiddleware(
-    generalStore: unknown,
-    oldShareStores: ShareStoreMap,
-    newShareStores: ShareStoreMap
-  ): ShareTransferStorePointer {
-    const numberOfOldShares = Object.keys(oldShareStores).length;
-    const numberOfNewShares = Object.keys(newShareStores).length;
-
-    // This is needed to avoid MIM during share deletion.
-    if (numberOfNewShares <= numberOfOldShares) {
-      const shareTransferStorePointer: ShareTransferStorePointer = { pointer: new BN(generatePrivate()) };
-      return shareTransferStorePointer;
-    }
-
-    return generalStore as ShareTransferStorePointer;
-  }
-
   async cancelRequestStatusCheck(): Promise<void> {
     clearInterval(this.requestStatusCheckId);
   }
@@ -232,6 +226,11 @@ class ShareTransferModule implements IModule {
     const shareTransferStorePointer = { pointer: new BN(generatePrivate()) };
     metadata.setGeneralStoreDomain(this.moduleName, shareTransferStorePointer);
     await this.tbSDK._syncShareMetadata();
+  }
+
+  private _cleanUpCurrentRequest(): void {
+    this.currentEncKey = undefined;
+    clearInterval(this.requestStatusCheckId);
   }
 }
 

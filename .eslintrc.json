@@ -1,90 +1,11 @@
 {
-  "extends": [
-    "plugin:@typescript-eslint/recommended",
-    "standard",
-    "eslint:recommended",
-    "plugin:prettier/recommended",
-    "plugin:import/errors",
-    "plugin:import/warnings",
-    "plugin:import/typescript",
-    "plugin:promise/recommended",
-    "airbnb-base",
-    "prettier"
-  ],
-  "plugins": ["prettier", "@babel", "promise", "import", "simple-import-sort", "@typescript-eslint"],
+  "root": true,
+  "extends": ["@toruslabs/typescript"],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
     "sourceType": "module",
     "ecmaVersion": 11,
     "project": "./tsconfig.json"
-  },
-  "rules": {
-    "no-console": 2,
-    "no-bitwise": [2, { "allow": ["~"] }],
-    "camelcase": 0,
-    "no-useless-constructor": 0,
-    "@typescript-eslint/no-useless-constructor": 2,
-    "no-dupe-class-members": 0,
-    "@typescript-eslint/no-dupe-class-members": 2,
-    "import/extensions": [
-      "error",
-      "ignorePackages",
-      {
-        "js": "never",
-        "ts": "never"
-      }
-    ],
-    "no-restricted-syntax": 0,
-    "simple-import-sort/imports": "error",
-    "simple-import-sort/exports": "error",
-    "operator-linebreak": 0,
-    "object-curly-newline": 0,
-    "no-underscore-dangle": 0,
-    "max-len": [
-      2,
-      {
-        "code": 150
-      }
-    ],
-    "import/prefer-default-export": 0,
-    "no-nested-ternary": 0,
-    "no-confusing-arrow": 0,
-    "linebreak-style": 0,
-    "no-unused-vars": "off",
-    "@typescript-eslint/no-unused-vars": ["error", { "args": "after-used", "argsIgnorePattern": "_" }],
-    "no-param-reassign": [
-      "error",
-      {
-        "props": false
-      }
-    ],
-    "prettier/prettier": [
-      "error",
-      {
-        "singleQuote": false,
-        "printWidth": 150,
-        "semi": true
-      }
-    ]
-  },
-  "settings": {
-    "import/resolver": {
-      "node": {
-        "extensions": [".js", ".jsx", ".ts", ".tsx", ".json", ".vue"]
-      }
-    }
-  },
-  "overrides": [
-    {
-      "files": ["examples"],
-      "parser": "vue-eslint-parser"
-    }
-  ],
-  "env": {
-    "es2020": true,
-    "browser": true,
-    "node": true,
-    "serviceworker": true
   },
   "globals": {
     "atob": true,
@@ -94,7 +15,6 @@
     "jest": true,
     "it": true,
     "beforeEach": true,
-    "before": true,
     "afterEach": true,
     "describe": true,
     "expect": true,
