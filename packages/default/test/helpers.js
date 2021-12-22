@@ -24,7 +24,7 @@ export function getMetadataUrl() {
 }
 
 export function initStorageLayer(extraParams) {
-  return mocked === "true" ? new MockStorageLayer({ serviceProvider: extraParams.serviceProvider }) : new TorusStorageLayer(extraParams);
+  return mocked === "true" ? new MockStorageLayer() : new TorusStorageLayer(extraParams);
 }
 
 export function getServiceProvider(params) {

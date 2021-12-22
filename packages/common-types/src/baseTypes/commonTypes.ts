@@ -77,14 +77,12 @@ export interface IStorageLayer extends ISerializable {
 export type TorusStorageLayerArgs = {
   enableLogging?: boolean;
   hostUrl?: string;
-  serviceProvider?: IServiceProvider;
   serverTimeOffset?: number;
 };
 
 export type MockStorageLayerArgs = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   dataMap: any;
-  serviceProvider: IServiceProvider;
   lockMap: any;
 };
 

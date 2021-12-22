@@ -16,7 +16,7 @@ const torusSP = new ServiceProviderTorus({
   },
 });
 
-const torusSL = initStorageLayer({ serviceProvider: torusSP, hostUrl: metadataURL });
+const torusSL = initStorageLayer({ hostUrl: metadataURL });
 
 const MANUAL_SYNC = false;
 describe(`TorusServiceProvider with manualSync: ${MANUAL_SYNC}`, function () {

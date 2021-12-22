@@ -8,7 +8,7 @@ const MANUAL_SYNC = false;
 const metadataURL = getMetadataUrl();
 const PRIVATE_KEY = generatePrivate().toString("hex");
 const defaultSP = new ServiceProviderBase({ postboxKey: PRIVATE_KEY });
-const defaultSL = initStorageLayer({ serviceProvider: defaultSP, hostUrl: metadataURL });
+const defaultSL = initStorageLayer({ hostUrl: metadataURL });
 
 describe(`BaseServiceProvider with manualSync: ${MANUAL_SYNC}`, function () {
   // eslint-disable-next-line mocha/no-setup-in-describe
