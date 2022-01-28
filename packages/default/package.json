@@ -36,21 +36,20 @@
   "dependencies": {
     "@tkey/common-types": "^5.0.0",
     "@tkey/core": "^5.0.0",
-    "@tkey/private-keys": "^5.0.0",
     "@tkey/security-questions": "^5.0.0",
-    "@tkey/seed-phrase": "^5.0.0",
     "@tkey/service-provider-base": "^5.0.0",
     "@tkey/service-provider-torus": "^5.0.0",
     "@tkey/share-serialization": "^5.0.0",
     "@tkey/share-transfer": "^5.0.0",
     "@tkey/storage-layer-torus": "^5.0.0",
-    "@toruslabs/customauth": "^6.0.4",
+    "bn.js": "^5.2.0"
+  },
+  "devDependencies": {
     "@toruslabs/eccrypto": "^1.1.8",
     "@toruslabs/http-helpers": "^2.1.4",
-    "@toruslabs/torus.js": "^4.2.3",
-    "bn.js": "^5.2.0",
-    "json-stable-stringify": "^1.0.1",
-    "web3-utils": "^1.6.1"
+    "web3-utils": "^1.6.1",
+    "@tkey/private-keys": "^5.0.0",
+    "@tkey/seed-phrase": "^5.0.0"
   },
   "peerDependencies": {
     "@babel/runtime": "7.x"
