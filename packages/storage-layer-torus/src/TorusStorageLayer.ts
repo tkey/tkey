@@ -135,6 +135,7 @@ class TorusStorageLayer implements IStorageLayer {
 
     const customOptions = {
       isUrlEncodedData: true,
+      timeout: 120000, // 2mins of timeout for excessive shares case
     };
     return post<{ message: string }>(`${this.hostUrl}/bulk_set_stream`, FD, options, customOptions);
   }

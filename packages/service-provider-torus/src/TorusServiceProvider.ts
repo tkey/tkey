@@ -1,6 +1,6 @@
 import { StringifiedType, TorusServiceProviderArgs } from "@tkey/common-types";
 import { ServiceProviderBase } from "@tkey/service-provider-base";
-import DirectWebSDK, {
+import CustomAuth, {
   AggregateLoginParams,
   CustomAuthArgs,
   HybridAggregateLoginParams,
@@ -13,7 +13,7 @@ import DirectWebSDK, {
 import BN from "bn.js";
 
 class TorusServiceProvider extends ServiceProviderBase {
-  directWeb: DirectWebSDK;
+  directWeb: CustomAuth;
 
   singleLoginKey: BN;
 
@@ -24,7 +24,7 @@ class TorusServiceProvider extends ServiceProviderBase {
   constructor({ enableLogging = false, postboxKey, directParams }: TorusServiceProviderArgs) {
     super({ enableLogging, postboxKey });
     this.directParams = directParams;
-    this.directWeb = new DirectWebSDK(directParams);
+    this.directWeb = new CustomAuth(directParams);
     this.serviceProviderName = "TorusServiceProvider";
   }
 

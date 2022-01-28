@@ -43,7 +43,7 @@
   "dependencies": {
     "@tkey/common-types": "^5.0.0",
     "bn.js": "^5.2.0",
-    "web3-utils": "^1.6.1"
+    "web3-utils": "^1.7.0"
   },
   "devDependencies": {
     "@types/bn.js": "^5.1.0"

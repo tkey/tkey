@@ -45,9 +45,9 @@
     "bip39": "^3.0.4",
     "bn.js": "^5.2.0",
     "hdkey": "^2.0.1",
-    "web3-core": "^1.6.1",
-    "web3-eth": "^1.6.1",
-    "web3-utils": "^1.6.1"
+    "web3-core": "^1.7.0",
+    "web3-eth": "^1.7.0",
+    "web3-utils": "^1.7.0"
   },
   "devDependencies": {
     "@types/bn.js": "^5.1.0"
