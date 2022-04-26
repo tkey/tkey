@@ -10,10 +10,6 @@ class ShareSerializationError extends TkeyError {
     7013: "Invalid mnemonic",
   };
 
-  code: number;
-
-  message: string;
-
   public constructor(code: number, message?: string) {
     // takes care of stack and proto
     super(code, message);

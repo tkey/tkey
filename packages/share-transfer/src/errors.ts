@@ -9,10 +9,6 @@ class ShareTransferError extends TkeyError {
     8012: "User cancelled request",
   };
 
-  code: number;
-
-  message: string;
-
   public constructor(code: number, message?: string) {
     // takes care of stack and proto
     super(code, message);
