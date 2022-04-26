@@ -19,8 +19,6 @@ class TorusServiceProvider extends ServiceProviderBase {
 
   directParams: CustomAuthArgs;
 
-  serviceProviderName: string;
-
   constructor({ enableLogging = false, postboxKey, directParams }: TorusServiceProviderArgs) {
     super({ enableLogging, postboxKey });
     this.directParams = directParams;

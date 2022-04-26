@@ -13,10 +13,6 @@ class WebStorageError extends TkeyError {
     3302: "No share exists in localstorage",
   };
 
-  code: number;
-
-  message: string;
-
   public constructor(code: number, message?: string) {
     // takes care of stack and proto
     super(code, message);

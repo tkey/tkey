@@ -9,10 +9,6 @@ class SeedPhraseError extends TkeyError {
     6012: "Seed phrase is invalid for ",
   };
 
-  code: number;
-
-  message: string;
-
   public constructor(code: number, message?: string) {
     // takes care of stack and proto
     super(code, message);

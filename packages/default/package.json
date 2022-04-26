@@ -48,8 +48,8 @@
     "@tkey/private-keys": "^5.1.0",
     "@tkey/seed-phrase": "^5.1.0",
     "@toruslabs/eccrypto": "^1.1.8",
-    "@toruslabs/http-helpers": "^2.1.4",
-    "web3-utils": "^1.6.1"
+    "@toruslabs/http-helpers": "^2.2.0",
+    "web3-utils": "^1.7.3"
   },
   "peerDependencies": {
     "@babel/runtime": "7.x"

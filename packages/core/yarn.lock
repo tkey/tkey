@@ -36,10 +36,10 @@
   dependencies:
     "@types/bn.js" "*"
 
-"@types/json-stable-stringify@^1.0.33":
-  version "1.0.33"
-  resolved "https://registry.yarnpkg.com/@types/json-stable-stringify/-/json-stable-stringify-1.0.33.tgz#099b0712d824d15e2660c20e1c16e6a8381f308c"
-  integrity sha512-qEWiQff6q2tA5gcJGWwzplQcXdJtm+0oy6IHGHzlOf3eFAkGE/FIPXZK9ofWgNSHVp8AFFI33PJJshS0ei3Gvw==
+"@types/json-stable-stringify@^1.0.34":
+  version "1.0.34"
+  resolved "https://registry.yarnpkg.com/@types/json-stable-stringify/-/json-stable-stringify-1.0.34.tgz#c0fb25e4d957e0ee2e497c1f553d7f8bb668fd75"
+  integrity sha512-s2cfwagOQAS8o06TcwKfr9Wx11dNGbH2E9vJz1cqV+a/LOyhWNLUNd6JSRYNzvB4d29UuJX2M0Dj9vE1T8fRXw==
 
 "@types/node@*":
   version "17.0.13"
@@ -488,10 +488,10 @@ util-deprecate@^1.0.1:
   resolved "https://registry.yarnpkg.com/util-deprecate/-/util-deprecate-1.0.2.tgz#450d4dc9fa70de732762fbd2d4a28981419a0ccf"
   integrity sha1-RQ1Nyfpw3nMnYvvS1KKJgUGaDM8=
 
-web3-utils@^1.7.0:
-  version "1.7.0"
-  resolved "https://registry.yarnpkg.com/web3-utils/-/web3-utils-1.7.0.tgz#c59f0fd43b2449357296eb54541810b99b1c771c"
-  integrity sha512-O8Tl4Ky40Sp6pe89Olk2FsaUkgHyb5QAXuaKo38ms3CxZZ4d3rPGfjP9DNKGm5+IUgAZBNpF1VmlSmNCqfDI1w==
+web3-utils@^1.7.3:
+  version "1.7.3"
+  resolved "https://registry.yarnpkg.com/web3-utils/-/web3-utils-1.7.3.tgz#b214d05f124530d8694ad364509ac454d05f207c"
+  integrity sha512-g6nQgvb/bUpVUIxJE+ezVN+rYwYmlFyMvMIRSuqpi1dk6ApDD00YNArrk7sPcZnjvxOJ76813Xs2vIN2rgh4lg==
   dependencies:
     bn.js "^4.11.9"
     ethereum-bloom-filters "^1.0.6"
