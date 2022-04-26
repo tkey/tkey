@@ -1,6 +1,6 @@
 {
   "name": "@tkey/share-transfer",
-  "version": "5.1.0",
+  "version": "5.1.1",
   "description": "TKey Share Transfer Module",
   "author": "Torus Labs",
   "homepage": "https://github.com/tkey/tkey#readme",
@@ -38,7 +38,7 @@
     "@babel/runtime": "7.x"
   },
   "dependencies": {
-    "@tkey/common-types": "^5.1.0",
+    "@tkey/common-types": "^5.1.1",
     "@toruslabs/eccrypto": "^1.1.8",
     "@toruslabs/http-helpers": "^2.2.0",
     "bn.js": "^5.2.0"
