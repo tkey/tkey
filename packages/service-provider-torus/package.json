@@ -57,5 +57,5 @@
       "prettier --write 'src/**/*.ts'"
     ]
   },
-  "gitHead": "9d4db2955bbfd2876fddf1e31ebf357ef577eb56"
+  "gitHead": "9967ce9f795f495f28ef0da1fc50acde31dcc258"
 }
