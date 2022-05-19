@@ -1,6 +1,9 @@
 {
   "name": "tkey",
   "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "bootstrap": "lerna bootstrap",
     "just:publish:lerna": "lerna publish",

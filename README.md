@@ -292,7 +292,7 @@ const pubPoly = tkey.metadata.getLatestPublicPolynomial();
 const previousPolyID = pubPoly.getPolynomialID();
 const existingShareIndexes = tkey.metadata.getShareIndexesForPolynomial(previousPolyID);
 
-// increase thresold to 4. 4/5 tkey
+// increase threshold to 4. 4/5 tkey
 // _refreshShares() is an internal function. Use it with caution.
 await tkey._refreshShares(4, existingShareIndexes, previousPolyID);
 

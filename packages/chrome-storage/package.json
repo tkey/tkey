@@ -42,9 +42,10 @@
   },
   "dependencies": {
     "@tkey/common-types": "^5.1.4",
-    "webextension-polyfill-ts": "^0.25.0"
+    "webextension-polyfill": "^0.9.0"
   },
   "devDependencies": {
+    "@types/webextension-polyfill": "^0.8.3",
     "@types/chrome": "^0.0.187"
   },
   "lint-staged": {
