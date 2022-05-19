@@ -14,10 +14,10 @@
   optionalDependencies:
     secp256k1 "^3.8.0"
 
-"@toruslabs/http-helpers@^2.2.0":
-  version "2.2.0"
-  resolved "https://registry.yarnpkg.com/@toruslabs/http-helpers/-/http-helpers-2.2.0.tgz#c494984701ff60eb93c0eaef279daa93b5bcea81"
-  integrity sha512-xkzZZuE+DmWmJBTYneCrMJY24izNQCOdoJMpsXKQx20Va/rTQvNPbdkpx9LBf/pisk8jOwETNAfFQ8YTBc/bZw==
+"@toruslabs/http-helpers@^3.0.0":
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/@toruslabs/http-helpers/-/http-helpers-3.0.0.tgz#e25df35921c603fece838bd3553ad0e85b34f839"
+  integrity sha512-nO6f1szn9SxWtbeAHGdgdIqCQe7PvA1dLFcjienk/cU/MxKVtVgI4IBhAZYt7SRxBI/NB+S2WHvqiIpCOu2Tuw==
   dependencies:
     lodash.merge "^4.6.2"
     loglevel "^1.8.0"
