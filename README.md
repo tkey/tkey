@@ -304,3 +304,8 @@ tkey2.inputShareStore(newShareStores1[newShareIndex1.toString("hex")]);
 tkey2.inputShareStore(newShareStores2[newShareIndex2.toString("hex")]);
 await tkey2.reconstructKey();
 ```
+
+## Requirements
+
+- This package requires a peer dependency of `@babel/runtime`
+- Node 14+
