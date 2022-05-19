@@ -2604,10 +2604,10 @@
     json-stable-stringify "^1.0.1"
     keccak "^3.0.2"
 
-"@toruslabs/torus-scripts@^1.0.2":
-  version "1.0.2"
-  resolved "https://registry.yarnpkg.com/@toruslabs/torus-scripts/-/torus-scripts-1.0.2.tgz#ceeeee6ac0e8b746808bdb5f1ff4c3f3715d53fd"
-  integrity sha512-c+m1NiwbqBSJ4LmsTOnDwAyVIvEv1946sDi6PbI13nMfzsqCFzIXLGMA1j7NlOouujagU9u5MOBJG77dAhsvLw==
+"@toruslabs/torus-scripts@^1.0.3":
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/@toruslabs/torus-scripts/-/torus-scripts-1.0.3.tgz#d908997c63e75f03d289136ddcfa5dba245bf1ba"
+  integrity sha512-3EeMnh1g/rdSbm0ulbMVt11A8UNNKTzWENUDS742DbDCLn8iUzn/+gRdDQAEUsLMjyy55gXVjZoHqjx4VhP7AA==
   dependencies:
     "@babel/core" "~7.17.10"
     "@babel/plugin-proposal-class-properties" "^7.16.7"

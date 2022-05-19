@@ -9,56 +9,58 @@ process.env.FIREFOX_BIN = playwright.firefox.executablePath();
 process.env.CHROME_BIN = playwright.chromium.executablePath();
 process.env.WEBKIT_HEADLESS_BIN = playwright.webkit.executablePath();
 
-const localBrowserConfig = (webpackConfig, karmaConfig, packageConfig) => ({
-  // base path that will be used to resolve all patterns (eg. files, exclude)
-  basePath: "",
+const localBrowserConfig = (webpackConfig, karmaConfig, packageConfig) => {
+  return {
+    // base path that will be used to resolve all patterns (eg. files, exclude)
+    basePath: "",
 
-  files: [{ pattern: "./test/*.js" }],
+    files: [{ pattern: "./test/*.js" }],
 
-  preprocessors: {
-    "./test/*.js": ["webpack"],
-  },
-
-  // frameworks to us
-  frameworks: ["mocha", "webpack"],
-
-  webpack: {
-    module: webpackConfig[2].module,
-    resolve: webpackConfig[2].resolve,
-  },
-
-  plugins: ["karma-mocha-reporter", "karma-webkit-launcher", "karma-chrome-launcher", "karma-firefox-launcher", "karma-mocha", "karma-webpack"],
-
-  client: {
-    mocha: {
-      timeout: 0,
+    preprocessors: {
+      "./test/*.js": ["webpack"],
     },
-    args: packageConfig.args,
-  },
 
-  singleRun: true,
+    // frameworks to us
+    frameworks: ["mocha", "webpack"],
 
-  reporters: ["mocha"],
+    webpack: {
+      module: webpackConfig[1].module,
+      resolve: webpackConfig[1].resolve,
+      plugins: webpackConfig[1].plugins,
+    },
 
-  // web server port
-  port: 9876,
+    plugins: ["karma-mocha-reporter", "karma-webkit-launcher", "karma-chrome-launcher", "karma-firefox-launcher", "karma-mocha", "karma-webpack"],
 
-  // enable / disable colors in the output (reporters and logs)
-  colors: true,
+    client: {
+      mocha: {
+        timeout: 0,
+      },
+      args: packageConfig.args,
+    },
 
-  // level of logging
-  logLevel: karmaConfig.LOG_INFO,
+    singleRun: true,
 
-  // Set the browser to run
-  // can be overrided using --browsers args while running test command
-  // but due to limitation in lerna package scoping cannot be done while
-  // passing other args.
-  // Args are passed in CI file as scoping is not required in CI,
-  // for local testing , edit here directly.
-  browsers: ["ChromeHeadless"],
-});
+    reporters: ["mocha"],
 
-// eslint-disable-next-line no-console
+    // web server port
+    port: 9876,
+
+    // enable / disable colors in the output (reporters and logs)
+    colors: true,
+
+    // level of logging
+    logLevel: karmaConfig.LOG_INFO,
+
+    // Set the browser to run
+    // can be overrided using --browsers args while running test command
+    // but due to limitation in lerna package scoping cannot be done while
+    // passing other args.
+    // Args are passed in CI file as scoping is not required in CI,
+    // for local testing , edit here directly.
+    browsers: ["ChromeHeadless"],
+  };
+};
+
 const browserStackConfig = (webpackConfig, karmaConfig, packageConfig) => ({
   browserStack: {
     username: process.env.BROWSER_STACK_USERNAME,
@@ -78,8 +80,9 @@ const browserStackConfig = (webpackConfig, karmaConfig, packageConfig) => ({
   frameworks: ["mocha", "webpack"],
 
   webpack: {
-    module: webpackConfig[2].module,
-    resolve: webpackConfig[2].resolve,
+    module: webpackConfig[1].module,
+    resolve: webpackConfig[1].resolve,
+    plugins: webpackConfig[1].plugins,
   },
 
   plugins: ["karma-webpack", "karma-mocha", "karma-browserstack-launcher"],
