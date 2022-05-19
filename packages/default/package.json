@@ -1,6 +1,6 @@
 {
   "name": "@tkey/default",
-  "version": "5.1.4",
+  "version": "6.0.0",
   "description": "TKey default library",
   "main": "dist/default.cjs.js",
   "module": "dist/default.esm.js",
@@ -34,19 +34,19 @@
     "src"
   ],
   "dependencies": {
-    "@tkey/common-types": "^5.1.4",
-    "@tkey/core": "^5.1.4",
-    "@tkey/security-questions": "^5.1.4",
-    "@tkey/service-provider-base": "^5.1.4",
-    "@tkey/service-provider-torus": "^5.1.4",
-    "@tkey/share-serialization": "^5.1.4",
-    "@tkey/share-transfer": "^5.1.4",
-    "@tkey/storage-layer-torus": "^5.1.4",
+    "@tkey/common-types": "^6.0.0",
+    "@tkey/core": "^6.0.0",
+    "@tkey/security-questions": "^6.0.0",
+    "@tkey/service-provider-base": "^6.0.0",
+    "@tkey/service-provider-torus": "^6.0.0",
+    "@tkey/share-serialization": "^6.0.0",
+    "@tkey/share-transfer": "^6.0.0",
+    "@tkey/storage-layer-torus": "^6.0.0",
     "bn.js": "^5.2.0"
   },
   "devDependencies": {
-    "@tkey/private-keys": "^5.1.4",
-    "@tkey/seed-phrase": "^5.1.4",
+    "@tkey/private-keys": "^6.0.0",
+    "@tkey/seed-phrase": "^6.0.0",
     "@toruslabs/eccrypto": "^1.1.8",
     "@toruslabs/http-helpers": "^3.0.0",
     "web3-utils": "^1.7.3"
