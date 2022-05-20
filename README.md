@@ -46,10 +46,10 @@ yarn run pack:lerna
 
 Each sub package is distributed in 4 formats
 
+- `esm` build `dist/<MODULE_NAME>.esm.js` in es6 format
 - `commonjs` build `dist/<MODULE_NAME>.cjs.js` in es5 format
 - `commonjs` build `dist/<MODULE_NAME>-bundled.cjs.js` in es5 format with problematic packages bundled (benfits non-webpack users)
 - `umd` build `dist/<MODULE_NAME>.umd.min.js` in es5 format without polyfilling corejs minified
-- `umd` build `dist/<MODULE_NAME>.polyfill.umd.min.js` in es5 format with polyfilling corejs minified
 
 By default, the appropriate format is used for your specified usecase
 You can use a different format (if you know what you're doing) by referencing the correct file
