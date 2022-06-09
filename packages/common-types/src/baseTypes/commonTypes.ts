@@ -1,6 +1,7 @@
 import type { CustomAuthArgs } from "@toruslabs/customauth";
 import BN from "bn.js";
 import type { curve } from "elliptic";
+import ShareStore from "../base/ShareStore";
 
 export type PubKeyType = "ecc";
 
@@ -17,9 +18,14 @@ export interface EncryptedMessage {
   iv: string;
   mac: string;
 }
+
+export type GetTSSPkFunc = () => IPoint;
+export type GetTSSsignFunc = (msg: BNString, otherShares: ShareStore[]) => Buffer;
 export interface ServiceProviderArgs {
   enableLogging?: boolean;
   postboxKey?: string;
+  getTSSPk?: GetTSSPkFunc; // for now is just sum of key
+  getTSSsign?: GetTSSsignFunc;
 }
 
 export interface TorusServiceProviderArgs extends ServiceProviderArgs {
@@ -51,6 +57,11 @@ export interface IServiceProvider extends ISerializable {
   retrievePubKey(type: PubKeyType): Buffer;
   retrievePubKeyPoint(): curve.base.BasePoint;
   sign(msg: BNString): string;
+
+  // Added items for TSSKey
+  getTSSPk: GetTSSPkFunc; // for now is just sum of key
+  getTSSsign: GetTSSsignFunc;
+
 }
 export type TorusStorageLayerAPIParams = {
   pub_key_X: string;
