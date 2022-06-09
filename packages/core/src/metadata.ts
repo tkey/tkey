@@ -217,7 +217,7 @@ class Metadata implements IMetadata {
     }
   }
 
-  shareToShareStore(share: BN): ShareStore {
+  shareToShareStore(share: BN, tssShare: BN): ShareStore {
     const pubkey = getPubKeyPoint(share);
     let returnShare: ShareStore;
 
@@ -240,7 +240,7 @@ class Metadata implements IMetadata {
         }
         if (pubShare.shareCommitment.x.eq(pubkey.x) && pubShare.shareCommitment.y.eq(pubkey.y)) {
           const tempShare = new Share(pubShare.shareIndex, share);
-          return new ShareStore(tempShare, el);
+          return new ShareStore(tempShare, el, new Share(new BN(2), tssShare));
         }
       }
     }

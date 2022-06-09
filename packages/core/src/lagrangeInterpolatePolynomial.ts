@@ -2,6 +2,7 @@ import { ecCurve, generatePrivateExcludingIndexes, Point, Polynomial, Share } fr
 import { generatePrivate } from "@toruslabs/eccrypto";
 import BN from "bn.js";
 import { curve } from "elliptic";
+import common from "mocha/lib/interfaces/common";
 
 import CoreError from "./errors";
 
@@ -75,6 +76,22 @@ const lagrange = (unsortedPoints: Point[]) => {
   return new Polynomial(polynomial);
 };
 
+// const lagrangePublicPoly = (indexes: BN[], pks: Point[]) => {
+//   const sortedPoints = pointSort(unsortedPoints);
+//   const polynomial = generateEmptyBNArray(sortedPoints.length);
+//   for (let i = 0; i < sortedPoints.length; i += 1) {
+//     const coefficients = interpolationPoly(i, sortedPoints);
+//     for (let k = 0; k < sortedPoints.length; k += 1) {
+//       let tmp = new BN(sortedPoints[i].y);
+//       tmp = tmp.mul(coefficients[k]);
+//       polynomial[k] = polynomial[k].add(tmp);
+//       polynomial[k] = polynomial[k].umod(ecCurve.curve.n);
+//     }
+//   }
+//   return new Polynomial(polynomial);
+// };
+
+// TODO: rename to lagrangeInterpolateSharePoly
 export function lagrangeInterpolatePolynomial(points: Array<Point>): Polynomial {
   return lagrange(points);
 }
@@ -139,6 +156,7 @@ export function generateRandomPolynomial(degree: number, secret?: BN, determinis
   return lagrangeInterpolatePolynomial(Object.values(points));
 }
 
+
 //  2 + 3x = y | secret for index 1 is 5 >>> g^5 is the commitment | now we have g^2, g^3 and 1, |
 export function polyCommitmentEval(polyCommitments: Array<Point>, index: BN): Point {
   // convert to base points, this is badly written, its the only way to access the point rn zzz TODO: refactor
@@ -155,3 +173,132 @@ export function polyCommitmentEval(polyCommitments: Array<Point>, index: BN): Po
   }
   return new Point(shareCommitment.getX(), shareCommitment.getY());
 }
+
+// we have two points g^s1, g^s2 (or even g^x) | we want to figure out what is the evaluation for a polynomial that goes through both points
+// export function generatePublicPolyFromShareCommitments(shareCommitments: Array<Point>, index: BN): Point {
+//   // convert to base points, this is badly written, its the only way to access the point rn zzz TODO: refactor
+//   const basePtPolyCommitments: Array<curve.base.BasePoint> = [];
+//   for (let i = 0; i < polyCommitments.length; i += 1) {
+//     const key = ecCurve.keyFromPublic({ x: polyCommitments[i].x.toString("hex"), y: polyCommitments[i].y.toString("hex") }, "");
+//     basePtPolyCommitments.push(key.getPublic());
+//   }
+//   let shareCommitment = basePtPolyCommitments[0];
+//   for (let i = 1; i < basePtPolyCommitments.length; i += 1) {
+//     const factor = index.pow(new BN(i)).umod(ecCurve.n);
+//     const e = basePtPolyCommitments[i].mul(factor);
+//     shareCommitment = shareCommitment.add(e);
+//   }
+//   return new Point(shareCommitment.getX(), shareCommitment.getY());
+// }
+
+const  lagrangePublicCommitments = (indexes :BN[], polys :curve.base.BasePoint[][]) : Point[] => {
+  if (indexes.length != polys.length) {
+    throw "Indexes and poly needs to be equal length in lagrangePublicPoints"
+  }
+  let res = [];
+  for (let l = 0; l < polys[0].length; l++) {
+    let sum: curve.base.BasePoint;
+    for (let j = 0; j < indexes.length; j++) {
+      let index = indexes[j];
+      // let lambda = new BN(1);
+      let upper = new BN(1);
+      let lower = new BN(1);
+      for (let z = 0; z < indexes.length; z++) {
+        let otherIndex = indexes[z];
+        if (otherIndex != index) {
+          let tempUpper = new BN(0);
+          tempUpper = tempUpper.sub(new BN(otherIndex));
+          upper = upper.mul(tempUpper);
+          upper = upper.umod(ecCurve.curve.n);
+
+          let tempLower = new BN(index);
+          tempLower = tempLower.sub(otherIndex);
+          tempLower = tempLower.umod(ecCurve.curve.n);
+
+          lower = lower.mul(tempLower);
+          lower = lower.umod(ecCurve.curve.n);
+        }
+      }
+      let inv = lower.invm(ecCurve.curve.n);
+      let lambda = upper.mul(inv);
+      lambda = lambda.umod(ecCurve.curve.n);
+      let tmpPt = polys[j][l].mul(lambda);
+      if (sum) {
+        sum = sum.add(tmpPt);
+      } else {
+        sum = tmpPt;
+      }
+    }
+    res.push(sum)
+  }
+  return res;
+}
+
+export function lagrangePublicPoints(indexes : BN[], points: Point[] ): Point {
+  let sm: curve.base.BasePoint[][] = [];
+  for (let i = 0; i < points.length; i++) {
+    const pk = ecCurve.keyFromPublic({ x: points[i].x.toString("hex"), y: points[i].y.toString("hex") }, "")
+    sm.push([pk.getPublic()]);
+  }
+  let res = lagrangePublicCommitments(indexes, sm);
+  return res[0];
+}
+
+// // LagrangeCurvePts finds the ^0 coefficient for points given in points an indexes given
+// func LagrangeCurvePts(indexes []int, points []common.Point) *common.Point {
+// 	var sm [][]common.Point
+// 	for i := 0; i < len(points); i++ {
+// 		var temp []common.Point
+// 		temp = append(temp, points[i])
+// 		sm = append(sm, temp)
+// 	}
+// 	poly := LagrangePolys(indexes, sm)
+// 	return &poly[0]
+// }
+
+// LagrangePolys is used in PSS
+// When each share is subshared, each share is associated with a commitment polynomial
+// we then choose k such subsharings to form the refreshed shares and secrets
+// those refreshed shares are lagrange interpolated, but they also correspond to a langrage
+// interpolated polynomial commitment that is different from the original commitment
+// here, we calculate this interpolated polynomial commitment
+// func LagrangePolys(indexes []int, polys [][]common.Point) (res []common.Point) {
+// 	if len(polys) == 0 {
+// 		return
+// 	}
+// 	if len(indexes) != len(polys) {
+// 		return
+// 	}
+// 	for l := 0; l < len(polys[0]); l++ {
+// 		sum := common.Point{X: *big.NewInt(int64(0)), Y: *big.NewInt(int64(0))}
+// 		for j, index := range indexes {
+// 			lambda := new(big.Int).SetInt64(int64(1))
+// 			upper := new(big.Int).SetInt64(int64(1))
+// 			lower := new(big.Int).SetInt64(int64(1))
+// 			for _, otherIndex := range indexes {
+// 				if otherIndex != index {
+// 					tempUpper := big.NewInt(int64(0))
+// 					tempUpper.Sub(tempUpper, big.NewInt(int64(otherIndex)))
+// 					upper.Mul(upper, tempUpper)
+// 					upper.Mod(upper, secp256k1.GeneratorOrder)
+
+// 					tempLower := big.NewInt(int64(index))
+// 					tempLower.Sub(tempLower, big.NewInt(int64(otherIndex)))
+// 					tempLower.Mod(tempLower, secp256k1.GeneratorOrder)
+
+// 					lower.Mul(lower, tempLower)
+// 					lower.Mod(lower, secp256k1.GeneratorOrder)
+// 				}
+// 			}
+// 			// finite field division
+// 			inv := new(big.Int)
+// 			inv.ModInverse(lower, secp256k1.GeneratorOrder)
+// 			lambda.Mul(upper, inv)
+// 			lambda.Mod(lambda, secp256k1.GeneratorOrder)
+// 			tempPt := common.BigIntToPoint(secp256k1.Curve.ScalarMult(&polys[j][l].X, &polys[j][l].Y, lambda.Bytes()))
+// 			sum = common.BigIntToPoint(secp256k1.Curve.Add(&tempPt.X, &tempPt.Y, &sum.X, &sum.Y))
+// 		}
+// 		res = append(res, sum)
+// 	}
+// 	return
+// }
