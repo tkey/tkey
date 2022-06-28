@@ -1,9 +1,10 @@
-module.exports = {
+const { defineConfig } = require("@vue/cli-service");
+const NodePolyfillPlugin = require("node-polyfill-webpack-plugin");
+module.exports = defineConfig({
   devServer: {
     https: false,
     host: "localhost",
-    port: 3000, // CHANGE YOUR PORT HERE!
-    hotOnly: false,
+    port: 3000,
     headers: {
       "Access-Control-Allow-Origin": "*",
     },
@@ -13,18 +14,15 @@ module.exports = {
         { from: /./, to: "/index.html" },
       ],
     },
-    quiet: true
   },
-  // configureWebpack: (config) => {
-  //   // config.devtool = 'source-map'
-  // },
-  // chainWebpack: config => {
-  //   config.module
-  //     .rule('sourcemap')
-  //     .test(/\.js$/)
-  //     .enforce('pre')
-  //     .use('source-map-loader')
-  //     .loader('source-map-loader')
-  //     .end()
-  // }
-};
+  transpileDependencies: true,
+  lintOnSave: false,
+  configureWebpack: {
+    plugins: [new NodePolyfillPlugin()],
+    optimization: {
+      splitChunks: {
+        chunks: "all",
+      },
+    },
+  },
+});

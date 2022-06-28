@@ -80,7 +80,7 @@ export default {
       torusdirectsdk: undefined,
       selectedVerifier: "google",
       loginHint: "",
-      mocked: true,
+      mocked: false,
       answer: "",
       verifierMap: {
         [GOOGLE]: {
@@ -228,14 +228,8 @@ export default {
         if (!this.mocked) {
           const jwtParams = this.loginToConnectionMap[this.selectedVerifier] || {};
           const { typeOfLogin, clientId, verifier } = this.verifierMap[this.selectedVerifier];
-          // await this.tbsdk.serviceProvider.triggerLogin({
-          //   typeOfLogin,
-          //   verifier,
-          //   clientId,
-          //   jwtParams
-          // });
-
-          await this.tbsdk.serviceProvider.triggerHybridAggregateLogin({
+          console.log("231");
+          const x = await this.tbsdk.serviceProvider.triggerHybridAggregateLogin({
             singleLogin: {
               typeOfLogin,
               verifier,
@@ -255,7 +249,7 @@ export default {
             }
           });
         }
-
+        console.log(x);
         await this.initializeAndReconstruct();
       } catch (error) {
         console.error(error, "caught");
@@ -388,7 +382,9 @@ export default {
       this.tbsdk = tbsdk;
       this.torusdirectsdk = tbsdk.serviceProvider;
 
-      if (!this.mocked) await tbsdk.serviceProvider.init({ skipSw: false });
+      if (!this.mocked) {
+        await tbsdk.serviceProvider.init({ skipSw: false })
+      };
     },
     console(text) {
       document.querySelector("#console>p").innerHTML = typeof text === "object" ? JSON.stringify(text) : text;
