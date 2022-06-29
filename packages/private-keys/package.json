@@ -42,6 +42,7 @@
   },
   "dependencies": {
     "@tkey/common-types": "^6.0.0",
+    "@toruslabs/openlogin-ed25519": "^2.0.0",
     "bn.js": "^5.2.0",
     "randombytes": "^2.1.0"
   },

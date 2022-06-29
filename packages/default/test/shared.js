@@ -935,11 +935,12 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       await tb._initializeNewKey({ initializeModules: true });
 
       await tb.modules.privateKeyModule.setPrivateKey("secp256k1n");
+      // await tb.modules.privateKeyModule.setPrivateKey("ed25519k1n");
       await tb.modules.privateKeyModule.setPrivateKey("secp256k1n");
       await tb.syncLocalMetadataTransitions();
 
       const accounts = await tb.modules.privateKeyModule.getAccounts();
-      strictEqual(accounts.length, 2);
+      strictEqual(accounts.length, 3);
     });
 
     it(`#should be able to get/set private keys and seed phrase, manualSync=${mode}`, async function () {

@@ -49,8 +49,8 @@
     "eslint": "^8.15.0",
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-mocha": "^10.0.4",
-    "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-n": "^15.2.0",
+    "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-prettier": "^4.0.0",
     "eslint-plugin-promise": "^6.0.0",
     "eslint-plugin-simple-import-sort": "^7.0.0",
@@ -88,6 +88,5 @@
     "hooks": {
       "pre-commit": "lerna run pre-commit --concurrency 1 --since HEAD"
     }
-  },
-  "dependencies": {}
+  }
 }
