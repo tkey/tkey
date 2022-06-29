@@ -935,7 +935,6 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       await tb._initializeNewKey({ initializeModules: true });
 
       await tb.modules.privateKeyModule.setPrivateKey("secp256k1n");
-      // await tb.modules.privateKeyModule.setPrivateKey("ed25519k1n");
       await tb.modules.privateKeyModule.setPrivateKey("secp256k1n");
       await tb.syncLocalMetadataTransitions();
 
