@@ -112,11 +112,11 @@
         <div class="beat beat-even"></div>
         <div class="beat beat-odd"></div>
       </div>
-      <h1 class="title content" id="closeText" style="display: none;">You can close this window now</h1>
+      <h1 class="title content" id="closeText" style="display: none">You can close this window now</h1>
     </div>
     <script
-      src="https://scripts.toruswallet.io/broadcastChannel_3_1_0.js"
-      integrity="sha384-xZA9e8T2sQ3eBH6+D8PNECKbFOogWEHbtcYOFp1lB1bifyxBKzWRIHnk9ecVUse4"
+      src="https://scripts.toruswallet.io/broadcastChannel_6_0_0.js"
+      integrity="sha384-tWiIvEY4iDOl9h6tNeoxETpLfPxq0tgzbIXFYjok42Gu5KoDaA9uSiAk2nG6XBcp"
       crossorigin="anonymous"
     ></script>
     <script>
@@ -224,6 +224,19 @@
           } else {
             // communicate via broadcast channel
             bc = new broadcastChannelLib.BroadcastChannel("redirect_channel_" + instanceParams.instanceId, broadcastChannelOptions);
+            bc.addEventListener("message", function (ev) {
+              if (ev.success) {
+                bc.close();
+                console.log("posted", {
+                  queryParams,
+                  instanceParams,
+                  hashParams,
+                });
+              } else {
+                window.close();
+                showCloseText();
+              }
+            });
             bc.postMessage({
               data: {
                 instanceParams: instanceParams,
@@ -232,15 +245,8 @@
               },
               error: error,
             }).then(function () {
-              bc.close();
-              console.log("posted", {
-                queryParams,
-                instanceParams,
-                hashParams,
-              });
               setTimeout(function () {
-                window.close();
-                showCloseText();
+                window.location.href = url.origin + location.search + location.hash;
               }, 5000);
             });
           }
