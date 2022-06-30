@@ -42,14 +42,14 @@
     "@tkey/share-serialization": "^6.0.0",
     "@tkey/share-transfer": "^6.0.0",
     "@tkey/storage-layer-torus": "^6.0.0",
-    "bn.js": "^5.2.0"
+    "bn.js": "^5.2.1"
   },
   "devDependencies": {
     "@tkey/private-keys": "^6.0.0",
     "@tkey/seed-phrase": "^6.0.0",
     "@toruslabs/eccrypto": "^1.1.8",
     "@toruslabs/http-helpers": "^3.0.0",
-    "web3-utils": "^1.7.3"
+    "web3-utils": "^1.7.4"
   },
   "peerDependencies": {
     "@babel/runtime": "7.x"
