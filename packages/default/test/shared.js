@@ -2,7 +2,7 @@
 /* eslint-disable import/no-extraneous-dependencies */
 
 import { ecCurve, getPubKeyPoint } from "@tkey/common-types";
-import PrivateKeyModule, { SECP256k1Format } from "@tkey/private-keys";
+import PrivateKeyModule, { ED25519K1Format, SECP256K1Format } from "@tkey/private-keys";
 import SecurityQuestionsModule from "@tkey/security-questions";
 import SeedPhraseModule, { MetamaskSeedPhraseFormat } from "@tkey/seed-phrase";
 import TorusServiceProvider from "@tkey/service-provider-torus";
@@ -779,15 +779,19 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     let tb;
     let metamaskSeedPhraseFormat;
     let privateKeyFormat;
+    let ed25519privateKeyFormat;
     beforeEach("Setup ThresholdKey", async function () {
       metamaskSeedPhraseFormat = new MetamaskSeedPhraseFormat("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68");
-      privateKeyFormat = new SECP256k1Format();
-
+      privateKeyFormat = new SECP256K1Format();
+      ed25519privateKeyFormat = new ED25519K1Format();
       tb = new ThresholdKey({
         serviceProvider: customSP,
         manualSync: mode,
         storageLayer: customSL,
-        modules: { seedPhrase: new SeedPhraseModule([metamaskSeedPhraseFormat]), privateKeyModule: new PrivateKeyModule([privateKeyFormat]) },
+        modules: {
+          seedPhrase: new SeedPhraseModule([metamaskSeedPhraseFormat]),
+          privateKeyModule: new PrivateKeyModule([privateKeyFormat, ed25519privateKeyFormat]),
+        },
       });
     });
     it(`#should not to able to initalize without seedphrase formats, manualSync=${mode}`, async function () {
@@ -936,6 +940,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
 
       await tb.modules.privateKeyModule.setPrivateKey("secp256k1n");
       await tb.modules.privateKeyModule.setPrivateKey("secp256k1n");
+      await tb.modules.privateKeyModule.setPrivateKey("ed25519k1n");
       await tb.syncLocalMetadataTransitions();
 
       const accounts = await tb.modules.privateKeyModule.getAccounts();

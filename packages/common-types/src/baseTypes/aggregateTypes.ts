@@ -207,10 +207,6 @@ export type IPrivateKeyStore = TkeyStoreItemType & {
   type: string;
 };
 
-export type SECP256k1NStore = IPrivateKeyStore;
-
-export type ED25519k1NStore = IPrivateKeyStore;
-
 export interface ISeedPhraseFormat {
   type: string;
   validateSeedPhrase(seedPhrase: string): boolean;
@@ -223,13 +219,6 @@ export interface IPrivateKeyFormat {
   type: string;
   validatePrivateKey(privateKey: BN): boolean;
   createPrivateKeyStore(privateKey: BN): IPrivateKeyStore;
-}
-
-export interface IPrivateKeyED25519Format {
-  privateKey: BN;
-  type: string;
-  validatePrivateKey(privateKey: BN): boolean;
-  createPrivateKeyStore(privateKey: BN): ED25519k1NStore;
 }
 
 export interface IAuthMetadata {
