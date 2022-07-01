@@ -24,7 +24,7 @@ export class ED25519K1Format implements IPrivateKeyFormat {
 
   createPrivateKeyStore(privateKey?: BN): IPrivateKeyStore {
     const finalPrivateKey = privateKey || new BN(randombytes(64));
-    const ed25519k = getED25519Key(finalPrivateKey.toBuffer());
+    const ed25519k = getED25519Key(finalPrivateKey.toString());
     return {
       id: generateID(),
       privateKey: new BN(ed25519k.sk),
