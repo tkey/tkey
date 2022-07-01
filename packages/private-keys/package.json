@@ -1,6 +1,6 @@
 {
   "name": "@tkey/private-keys",
-  "version": "6.0.0",
+  "version": "6.1.0",
   "description": "TKey Private Keys Module",
   "author": "Torus Labs",
   "homepage": "https://github.com/tkey/tkey#readme",
@@ -41,10 +41,10 @@
     "@types/bn.js": "^5.1.0"
   },
   "dependencies": {
-    "@tkey/common-types": "^6.0.0",
+    "@tkey/common-types": "^6.1.0",
     "@toruslabs/openlogin-ed25519": "^2.0.0",
-    "bn.js": "^5.2.0",
     "elliptic": "^6.5.4",
+    "bn.js": "^5.2.1",
     "randombytes": "^2.1.0"
   },
   "bugs": {

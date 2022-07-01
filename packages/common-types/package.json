@@ -1,6 +1,6 @@
 {
   "name": "@tkey/common-types",
-  "version": "6.0.0",
+  "version": "6.1.0",
   "description": "TKey common types",
   "author": "Torus Labs",
   "homepage": "https://github.com/tkey/tkey#readme",
@@ -43,12 +43,12 @@
     "@babel/runtime": "7.x"
   },
   "dependencies": {
-    "@toruslabs/customauth": "^9.0.0",
+    "@toruslabs/customauth": "^10.0.0",
     "@toruslabs/eccrypto": "^1.1.8",
-    "bn.js": "^5.2.0",
+    "bn.js": "^5.2.1",
     "elliptic": "^6.5.4",
     "ts-custom-error": "^3.2.0",
-    "web3-utils": "^1.7.3"
+    "web3-utils": "^1.7.4"
   },
   "devDependencies": {
     "@types/bn.js": "^5.1.0",
