@@ -23,7 +23,7 @@ export interface ServiceProviderArgs {
 }
 
 export interface TorusServiceProviderArgs extends ServiceProviderArgs {
-  directParams: CustomAuthArgs;
+  customAuthArgs: CustomAuthArgs;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

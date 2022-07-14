@@ -107,7 +107,7 @@ import WebStorageModule, { WEB_STORAGE_MODULE_NAME } from "@tkey/web-storage";
 // directAuth requires a deployment of a verifier with your clientId. Use developer.tor.us to create your verifier.
 // Can use ServiceProviderBase which takes private key as input instead
 const serviceProvider = new TorusServiceProvider({
-  directParams: {
+  customAuthArgs: {
     baseUrl: "<REDIRECT_URL>",
     network: "testnet", // or mainnet
     proxyContractAddress: "0x4023d2a0D330bF11426B12C6144Cfb96B7fa6183", // corresponding proxy contract address of the specified network
