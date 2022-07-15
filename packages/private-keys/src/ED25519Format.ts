@@ -26,6 +26,7 @@ export class ED25519Format implements IPrivateKeyFormat {
     if (!privateKey) {
       privKey = new BN(nacl.box.keyPair().secretKey);
     } else {
+      this.validatePrivateKey(privateKey);
       privKey = privateKey;
     }
     return {

@@ -21,10 +21,16 @@ export class SECP256K1Format implements IPrivateKeyFormat {
   }
 
   createPrivateKeyStore(privateKey?: BN): IPrivateKeyStore {
-    const finalPrivateKey = privateKey || new BN(randombytes(64));
+    let privKey: BN;
+    if (!privateKey) {
+      privKey = new BN(randombytes(64));
+    } else {
+      this.validatePrivateKey(privateKey);
+      privKey = privateKey;
+    }
     return {
       id: generateID(),
-      privateKey: finalPrivateKey,
+      privateKey: privKey,
       type: this.type,
     };
   }
