@@ -42,10 +42,9 @@
   },
   "dependencies": {
     "@tkey/common-types": "^6.1.0",
-    "@toruslabs/openlogin-ed25519": "^2.0.0",
-    "elliptic": "^6.5.4",
     "bn.js": "^5.2.1",
-    "randombytes": "^2.1.0"
+    "randombytes": "^2.1.0",
+    "tweetnacl": "^1.0.3"
   },
   "bugs": {
     "url": "https://github.com/tkey/tkey/issues"

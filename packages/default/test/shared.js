@@ -1,8 +1,9 @@
+/* eslint-disable @typescript-eslint/no-shadow */
 /* eslint-disable mocha/no-exports */
 /* eslint-disable import/no-extraneous-dependencies */
 
 import { ecCurve, getPubKeyPoint } from "@tkey/common-types";
-import PrivateKeyModule, { ED25519K1Format, SECP256K1Format } from "@tkey/private-keys";
+import PrivateKeyModule, { ED25519Format, SECP256K1Format } from "@tkey/private-keys";
 import SecurityQuestionsModule from "@tkey/security-questions";
 import SeedPhraseModule, { MetamaskSeedPhraseFormat } from "@tkey/seed-phrase";
 import TorusServiceProvider from "@tkey/service-provider-torus";
@@ -420,7 +421,6 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     it(`#should get or set with specified private key correctly, manualSync=${mode}`, async function () {
       const privKey = generatePrivate().toString("hex");
       const privKeyBN = new BN(privKey, 16);
-      const tsp = getServiceProvider({ type: torusSP.serviceProviderName, privKeyBN });
       const storageLayer = initStorageLayer({ hostUrl: metadataURL });
       const message = { test: Math.random().toString(36).substring(7) };
       await storageLayer.setMetadata({ input: message, privKey: privKeyBN });
@@ -434,7 +434,6 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         privkeys.push(new BN(generatePrivate()));
         messages.push({ test: Math.random().toString(36).substring(7) });
       }
-      const tsp = getServiceProvider({ type: torusSP.serviceProviderName, privKeyBN: privkeys[0] });
       const storageLayer = initStorageLayer({ hostUrl: metadataURL });
       await storageLayer.setMetadataStream({ input: [...messages], privKey: [...privkeys] });
       const responses = await Promise.all(privkeys.map((el) => storageLayer.getMetadata({ privKey: el })));
@@ -783,7 +782,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     beforeEach("Setup ThresholdKey", async function () {
       metamaskSeedPhraseFormat = new MetamaskSeedPhraseFormat("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68");
       privateKeyFormat = new SECP256K1Format();
-      ed25519privateKeyFormat = new ED25519K1Format();
+      ed25519privateKeyFormat = new ED25519Format();
       tb = new ThresholdKey({
         serviceProvider: customSP,
         manualSync: mode,
@@ -922,9 +921,33 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const actualPrivateKeys = [
         new BN("4bd0041b7654a9b16a7268a5de7982f2422b15635c4fd170c140dc4897624390", "hex"),
         new BN("1ea6edde61c750ec02896e9ac7fe9ac0b48a3630594fdf52ad5305470a2635c0", "hex"),
+        new BN("1498b5467a63dffa2dc9d9e069caf075d16fc33fdd4c3b01bfadae6433767d93", "hex"),
       ];
       await tb.modules.privateKeyModule.setPrivateKey("secp256k1n", actualPrivateKeys[0]);
       await tb.modules.privateKeyModule.setPrivateKey("secp256k1n", actualPrivateKeys[1]);
+      await tb.modules.privateKeyModule.setPrivateKey("ed25519", actualPrivateKeys[2]);
+      await tb.syncLocalMetadataTransitions();
+      await tb.modules.privateKeyModule.getAccounts();
+
+      const getAccounts = await tb.modules.privateKeyModule.getAccounts();
+      deepStrictEqual(
+        actualPrivateKeys.map((x) => x.toString("hex")),
+        getAccounts.map((x) => x.toString("hex"))
+      );
+    });
+
+    it(`#should be able to get/set private key, manualSync=${mode}`, async function () {
+      await tb._initializeNewKey({ initializeModules: true });
+
+      const actualPrivateKeys = [
+        new BN("4bd0041b7654a9b16a7268a5de7982f2422b15635c4fd170c140dc4897624390", "hex"),
+        new BN("1ea6edde61c750ec02896e9ac7fe9ac0b48a3630594fdf52ad5305470a2635c0", "hex"),
+        new BN("1498b5467a63dffa2dc9d9e069caf075d16fc33fdd4c3b01bfadae6433767d93", "hex"),
+      ];
+
+      await tb.modules.privateKeyModule.setPrivateKey("secp256k1n", actualPrivateKeys[0]);
+      await tb.modules.privateKeyModule.setPrivateKey("secp256k1n", actualPrivateKeys[1]);
+      await tb.modules.privateKeyModule.setPrivateKey("ed25519", actualPrivateKeys[2]);
       await tb.syncLocalMetadataTransitions();
       await tb.modules.privateKeyModule.getAccounts();
 
@@ -940,7 +963,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
 
       await tb.modules.privateKeyModule.setPrivateKey("secp256k1n");
       await tb.modules.privateKeyModule.setPrivateKey("secp256k1n");
-      await tb.modules.privateKeyModule.setPrivateKey("ed25519k1n");
+      await tb.modules.privateKeyModule.setPrivateKey("ed25519");
       await tb.syncLocalMetadataTransitions();
 
       const accounts = await tb.modules.privateKeyModule.getAccounts();
