@@ -144,7 +144,7 @@ export default {
       const serviceProvider = this.isMocked
         ? new BaseServiceProvider({ postboxKey: "f1f02ee186749cfe1ef8f957fc3d7a5b7128f979bacc10ab3b2a811d4f990852" })
         : new TorusServiceProvider({
-            directParams: {
+            customAuthArgs: {
               baseUrl: `${location.origin}/serviceworker`,
               enableLogging: true,
               proxyContractAddress: "0x4023d2a0D330bF11426B12C6144Cfb96B7fa6183", // details for test net

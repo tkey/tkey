@@ -87,7 +87,7 @@ export default {
           name: "Google",
           typeOfLogin: "google",
           clientId: "221898609709-obfn3p63741l5333093430j3qeiinaa8.apps.googleusercontent.com",
-          verifier: "google-lrc"
+          verifier: "google-lrc",
         },
         [FACEBOOK]: { name: "Facebook", typeOfLogin: "facebook", clientId: "617201755556395", verifier: "facebook-lrc" },
         [REDDIT]: { name: "Reddit", typeOfLogin: "reddit", clientId: "YNsv1YtA_o66fA", verifier: "torus-reddit-test" },
@@ -97,13 +97,13 @@ export default {
           name: "Email Password",
           typeOfLogin: "email_password",
           clientId: "sqKRBVSdwa4WLkaq419U7Bamlh5vK1H7",
-          verifier: "torus-auth0-email-password"
+          verifier: "torus-auth0-email-password",
         },
         [PASSWORDLESS]: {
           name: "Passwordless",
           typeOfLogin: "passwordless",
           clientId: "P7PJuBCXIHP41lcyty0NEb7Lgf7Zme8Q",
-          verifier: "torus-auth0-passwordless"
+          verifier: "torus-auth0-passwordless",
         },
         [APPLE]: { name: "Apple", typeOfLogin: "apple", clientId: "m1Q0gvDfOyZsJCZ3cucSQEe9XMvl9d9L", verifier: "torus-auth0-apple-lrc" },
         [GITHUB]: { name: "Github", typeOfLogin: "github", clientId: "PC2a4tfNRvXbT48t89J5am0oFM21Nxff", verifier: "torus-auth0-github-lrc" },
@@ -115,15 +115,15 @@ export default {
           name: "Hosted Email Passwordless",
           typeOfLogin: "jwt",
           clientId: "P7PJuBCXIHP41lcyty0NEb7Lgf7Zme8Q",
-          verifier: "torus-auth0-passwordless"
+          verifier: "torus-auth0-passwordless",
         },
         [HOSTED_SMS_PASSWORDLESS]: {
           name: "Hosted SMS Passwordless",
           typeOfLogin: "jwt",
           clientId: "nSYBFalV2b1MSg5b2raWqHl63tfH3KQa",
-          verifier: "torus-auth0-sms-passwordless"
-        }
-      }
+          verifier: "torus-auth0-sms-passwordless",
+        },
+      },
     };
   },
   computed: {
@@ -138,9 +138,9 @@ export default {
         [LINKEDIN]: { domain: AUTH_DOMAIN },
         [TWITTER]: { domain: AUTH_DOMAIN },
         [WEIBO]: { domain: AUTH_DOMAIN },
-        [LINE]: { domain: AUTH_DOMAIN }
+        [LINE]: { domain: AUTH_DOMAIN },
       };
-    }
+    },
   },
   methods: {
     getKeyDetails() {
@@ -168,8 +168,8 @@ export default {
         // console.log(initializedDetails.shareDescriptions[2].length)
 
         let shareDesc = Object.assign({}, initializedDetails.shareDescriptions);
-        Object.keys(shareDesc).map(el => {
-          shareDesc[el] = shareDesc[el].map(jl => {
+        Object.keys(shareDesc).map((el) => {
+          shareDesc[el] = shareDesc[el].map((jl) => {
             return JSON.parse(jl);
           });
         });
@@ -179,7 +179,7 @@ export default {
         let priorityOrder = ["webStorage", "securityQuestions"];
 
         let tempSD = Object.values(shareDesc)
-          .flatMap(x => x)
+          .flatMap((x) => x)
           .sort((a, b) => {
             return priorityOrder.indexOf(a.module) - priorityOrder.indexOf(b.module);
           });
@@ -240,7 +240,7 @@ export default {
               typeOfLogin,
               verifier,
               clientId,
-              jwtParams
+              jwtParams,
             },
             aggregateLoginParams: {
               aggregateVerifierType: "single_id_verifier",
@@ -249,10 +249,10 @@ export default {
                 {
                   clientId: "221898609709-obfn3p63741l5333093430j3qeiinaa8.apps.googleusercontent.com",
                   typeOfLogin: "google",
-                  verifier: "torus"
-                }
-              ]
-            }
+                  verifier: "torus",
+                },
+              ],
+            },
           });
         }
 
@@ -363,11 +363,11 @@ export default {
       }
     },
     async initTkey() {
-      const directParams = {
+      const customAuthArgs = {
         baseUrl: `${location.origin}/serviceworker`,
         enableLogging: true,
         proxyContractAddress: "0x4023d2a0D330bF11426B12C6144Cfb96B7fa6183", // details for test net
-        network: "testnet" // details for test net
+        network: "testnet", // details for test net
       };
       const webStorageModule = new WebStorageModule();
       const securityQuestionsModule = new SecurityQuestionsModule();
@@ -377,13 +377,13 @@ export default {
       if (this.mocked) {
         serviceProvider = new ServiceProviderBase({ postboxKey: "f1f02ee186749cfe1ef8f957fc3d7a5b7128f979bacc10ab3b2a811d4f990852" });
       } else {
-        serviceProvider = new TorusServiceProvider({ directParams });
+        serviceProvider = new TorusServiceProvider({ customAuthArgs });
       }
       const storageLayer = new TorusStorageLayer({ hostUrl: "https://metadata.tor.us", serviceProvider: serviceProvider });
       const tbsdk = new ThresholdKey({
         serviceProvider: serviceProvider,
         storageLayer,
-        modules: { webStorage: webStorageModule, securityQuestions: securityQuestionsModule, shareTransfer: shareTransferModule }
+        modules: { webStorage: webStorageModule, securityQuestions: securityQuestionsModule, shareTransfer: shareTransferModule },
       });
       this.tbsdk = tbsdk;
       this.torusdirectsdk = tbsdk.serviceProvider;
@@ -392,7 +392,7 @@ export default {
     },
     console(text) {
       document.querySelector("#console>p").innerHTML = typeof text === "object" ? JSON.stringify(text) : text;
-    }
+    },
   },
   async mounted() {
     try {
@@ -400,7 +400,7 @@ export default {
     } catch (error) {
       console.error(error, "mounted caught");
     }
-  }
+  },
 };
 </script>
 

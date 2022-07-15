@@ -33,7 +33,7 @@ export function getServiceProvider(params) {
   if (type === "TorusServiceProvider") {
     return new ServiceProviderTorus({
       postboxKey: isEmptyProvider ? null : PRIVATE_KEY,
-      directParams: {
+      customAuthArgs: {
         // this url has no effect as postbox key is passed
         // passing it just to satisfy direct auth checks.
         baseUrl: "http://localhost:3000",

@@ -138,7 +138,7 @@ export type TKeyArgs = {
   modules?: ModuleMap;
   serviceProvider?: IServiceProvider;
   storageLayer?: IStorageLayer;
-  directParams?: CustomAuthArgs;
+  customAuthArgs?: CustomAuthArgs;
   manualSync?: boolean;
   serverTimeOffset?: number;
 };
