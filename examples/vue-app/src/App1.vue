@@ -228,7 +228,6 @@ export default {
         if (!this.mocked) {
           const jwtParams = this.loginToConnectionMap[this.selectedVerifier] || {};
           const { typeOfLogin, clientId, verifier } = this.verifierMap[this.selectedVerifier];
-          console.log("231");
           const x = await this.tbsdk.serviceProvider.triggerHybridAggregateLogin({
             singleLogin: {
               typeOfLogin,
@@ -249,7 +248,6 @@ export default {
             }
           });
         }
-        console.log(x);
         await this.initializeAndReconstruct();
       } catch (error) {
         console.error(error, "caught");

@@ -719,7 +719,6 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const encKey2 = await tb2.modules.shareTransfer.requestNewShare();
       await tb.modules.shareTransfer.deleteShareTransferStore(encKey2); // delete 1st request from 2nd
       const newRequests = await tb2.modules.shareTransfer.getShareTransferStore();
-      // console.log(newRequests)
       if (encKey2 in newRequests) {
         fail("Unable to delete share transfer request");
       }
@@ -777,11 +776,11 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
   describe("TkeyStore", function () {
     let tb;
     let metamaskSeedPhraseFormat;
-    let privateKeyFormat;
+    let secpPrivateKeyFormat;
     let ed25519privateKeyFormat;
     beforeEach("Setup ThresholdKey", async function () {
       metamaskSeedPhraseFormat = new MetamaskSeedPhraseFormat("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68");
-      privateKeyFormat = new SECP256K1Format();
+      secpPrivateKeyFormat = new SECP256K1Format();
       ed25519privateKeyFormat = new ED25519Format();
       tb = new ThresholdKey({
         serviceProvider: customSP,
@@ -789,7 +788,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         storageLayer: customSL,
         modules: {
           seedPhrase: new SeedPhraseModule([metamaskSeedPhraseFormat]),
-          privateKeyModule: new PrivateKeyModule([privateKeyFormat, ed25519privateKeyFormat]),
+          privateKeyModule: new PrivateKeyModule([secpPrivateKeyFormat, ed25519privateKeyFormat]),
         },
       });
     });
@@ -989,7 +988,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         serviceProvider: customSP,
         manualSync: mode,
         storageLayer: customSL,
-        modules: { seedPhrase: new SeedPhraseModule([metamaskSeedPhraseFormat2]), privateKeyModule: new PrivateKeyModule([privateKeyFormat]) },
+        modules: { seedPhrase: new SeedPhraseModule([metamaskSeedPhraseFormat2]), privateKeyModule: new PrivateKeyModule([secpPrivateKeyFormat]) },
       });
       await tb2.initialize();
       tb2.inputShareStore(resp1.deviceShare);
