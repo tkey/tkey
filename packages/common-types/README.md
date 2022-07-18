@@ -1,12 +1,11 @@
-# `@tkey/common-types`
+# tKey Common Types
 
-> TODO: description
+Common Types in `tKey` is used to get the access to common types and interfaces of the `tKey` SDK. This comes in handy by providing you a standard way of importing the values you need to work with the SDKs. We highly recommend using it while working with `Typescript`.  
 
-## Usage
+## Installation
 
+```shell
+npm install --save @tkey/common-types
 ```
-const types = require('@tkey/common-types');
 
-
-// TODO: DEMONSTRATE API
-```
+### Checkout the [tKey SDK](https://github.com/tkey/tkey)
