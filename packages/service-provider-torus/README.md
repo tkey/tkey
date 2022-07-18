@@ -1,5 +1,7 @@
 # tKey Torus Service Provider
 
+[![npm version](https://img.shields.io/npm/v/@tkey/service-provider-torus?label=%22%22)](https://www.npmjs.com/package/@tkey/service-provider-torus/v/latest) [![minzip](https://img.shields.io/bundlephobia/minzip/@tkey/service-provider-torus?label=%22%22)](https://bundlephobia.com/result?p=@tkey/service-provider-torus@latest)
+
 Service Provider in `tKey` is used for generating a social login share of the private key share managed by a wallet service provider via
 their own authentication flows. 
 
