@@ -719,6 +719,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const encKey2 = await tb2.modules.shareTransfer.requestNewShare();
       await tb.modules.shareTransfer.deleteShareTransferStore(encKey2); // delete 1st request from 2nd
       const newRequests = await tb2.modules.shareTransfer.getShareTransferStore();
+      // console.log(newRequests)
       if (encKey2 in newRequests) {
         fail("Unable to delete share transfer request");
       }
@@ -776,11 +777,11 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
   describe("TkeyStore", function () {
     let tb;
     let metamaskSeedPhraseFormat;
-    let secpPrivateKeyFormat;
+    let secp256k1Format;
     let ed25519privateKeyFormat;
     beforeEach("Setup ThresholdKey", async function () {
       metamaskSeedPhraseFormat = new MetamaskSeedPhraseFormat("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68");
-      secpPrivateKeyFormat = new SECP256K1Format();
+      secp256k1Format = new SECP256K1Format();
       ed25519privateKeyFormat = new ED25519Format();
       tb = new ThresholdKey({
         serviceProvider: customSP,
@@ -788,7 +789,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         storageLayer: customSL,
         modules: {
           seedPhrase: new SeedPhraseModule([metamaskSeedPhraseFormat]),
-          privateKeyModule: new PrivateKeyModule([secpPrivateKeyFormat, ed25519privateKeyFormat]),
+          privateKeyModule: new PrivateKeyModule([secp256k1Format, ed25519privateKeyFormat]),
         },
       });
     });
@@ -920,7 +921,10 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const actualPrivateKeys = [
         new BN("4bd0041b7654a9b16a7268a5de7982f2422b15635c4fd170c140dc4897624390", "hex"),
         new BN("1ea6edde61c750ec02896e9ac7fe9ac0b48a3630594fdf52ad5305470a2635c0", "hex"),
-        new BN("1498b5467a63dffa2dc9d9e069caf075d16fc33fdd4c3b01bfadae6433767d93", "hex"),
+        new BN(
+          "7a3118ccdd405b2750271f51cc8fe237d9863584173aec3fa4579d40e5b4951215351c3d54ef416e49567b79c42fd985fcda60a6da9a794e4e844ac8dec47e98",
+          "hex"
+        ),
       ];
       await tb.modules.privateKeyModule.setPrivateKey("secp256k1n", actualPrivateKeys[0]);
       await tb.modules.privateKeyModule.setPrivateKey("secp256k1n", actualPrivateKeys[1]);
@@ -941,7 +945,10 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const actualPrivateKeys = [
         new BN("4bd0041b7654a9b16a7268a5de7982f2422b15635c4fd170c140dc4897624390", "hex"),
         new BN("1ea6edde61c750ec02896e9ac7fe9ac0b48a3630594fdf52ad5305470a2635c0", "hex"),
-        new BN("1498b5467a63dffa2dc9d9e069caf075d16fc33fdd4c3b01bfadae6433767d93", "hex"),
+        new BN(
+          "99da9559e15e913ee9ab2e53e3dfad575da33b49be1125bb922e33494f4988281b2f49096e3e5dbd0fcfa9c0c0cd92d9ab3b21544b34d5dd4a65d98b878b9922",
+          "hex"
+        ),
       ];
 
       await tb.modules.privateKeyModule.setPrivateKey("secp256k1n", actualPrivateKeys[0]);
@@ -988,7 +995,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         serviceProvider: customSP,
         manualSync: mode,
         storageLayer: customSL,
-        modules: { seedPhrase: new SeedPhraseModule([metamaskSeedPhraseFormat2]), privateKeyModule: new PrivateKeyModule([secpPrivateKeyFormat]) },
+        modules: { seedPhrase: new SeedPhraseModule([metamaskSeedPhraseFormat2]), privateKeyModule: new PrivateKeyModule([secp256k1Format]) },
       });
       await tb2.initialize();
       tb2.inputShareStore(resp1.deviceShare);

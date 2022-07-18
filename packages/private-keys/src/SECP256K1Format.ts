@@ -25,7 +25,9 @@ export class SECP256K1Format implements IPrivateKeyFormat {
     if (!privateKey) {
       privKey = new BN(randombytes(64));
     } else {
-      this.validatePrivateKey(privateKey);
+      if (!this.validatePrivateKey(privateKey)) {
+        throw Error("Invalid Private Key");
+      }
       privKey = privateKey;
     }
     return {
