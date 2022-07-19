@@ -1256,7 +1256,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
 
       const serviceProvider = new TorusServiceProvider({
         postboxKey: postboxKeyBN.toString("hex"),
-        directParams: {
+        customAuthArgs: {
           enableOneKey: true,
           metadataUrl: getMetadataUrl(),
           // This url has no effect as postbox key is passed, passing it just to satisfy direct auth checks.
@@ -1318,7 +1318,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       // Call get or set nonce
       const serviceProvider = new TorusServiceProvider({
         postboxKey: postboxKeyBN.toString("hex"),
-        directParams: {
+        customAuthArgs: {
           enableOneKey: true,
           metadataUrl,
           // This url has no effect as postbox key is passed, passing it just to satisfy direct auth checks.
@@ -1345,7 +1345,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
 
       const serviceProvider = new TorusServiceProvider({
         postboxKey: postboxKeyBN.toString("hex"),
-        directParams: {
+        customAuthArgs: {
           enableOneKey: true,
           metadataUrl: getMetadataUrl(),
           // This url has no effect as postbox key is passed, passing it just to satisfy direct auth checks.

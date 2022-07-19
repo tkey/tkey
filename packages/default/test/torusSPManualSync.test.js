@@ -7,7 +7,7 @@ import { sharedTestCases } from "./shared";
 const PRIVATE_KEY = generatePrivate().toString("hex");
 const torusSp = new ServiceProviderTorus({
   postboxKey: PRIVATE_KEY,
-  directParams: {
+  customAuthArgs: {
     baseUrl: "http://localhost:3000",
   },
 });
