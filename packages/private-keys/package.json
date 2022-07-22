@@ -42,9 +42,9 @@
   },
   "dependencies": {
     "@tkey/common-types": "^6.1.0",
+    "@toruslabs/tweetnacl-js": "^1.0.3",
     "bn.js": "^5.2.1",
-    "randombytes": "^2.1.0",
-    "tweetnacl": "^1.0.3"
+    "randombytes": "^2.1.0"
   },
   "bugs": {
     "url": "https://github.com/tkey/tkey/issues"

@@ -1,6 +1,6 @@
 import { generateID, IPrivateKeyFormat, IPrivateKeyStore } from "@tkey/common-types";
+import nacl from "@toruslabs/tweetnacl-js";
 import BN from "bn.js";
-import nacl from "tweetnacl";
 
 export class ED25519Format implements IPrivateKeyFormat {
   privateKey: BN;
