@@ -88,6 +88,5 @@
     "hooks": {
       "pre-commit": "lerna run pre-commit --concurrency 1 --since HEAD"
     }
-  },
-  "dependencies": {}
+  }
 }
