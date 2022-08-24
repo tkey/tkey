@@ -1304,7 +1304,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
 
       // This test require development API, only work with local/beta env
       let metadataUrl = getMetadataUrl();
-      if (metadataUrl === "https://metadata.tor.us") metadataUrl = "https://beta.metadata.tor.us";
+      if (metadataUrl === "https://metadata.tor.us") metadataUrl = "https://metadata-testing.tor.us";
       await post(
         `${metadataUrl}/set_nonce`,
         {
