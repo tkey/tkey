@@ -124,6 +124,8 @@ export function generateRandomPolynomial(degree: number, secret?: BN, determinis
   if (deterministicShares.length > degree) {
     throw CoreError.default("deterministicShares in generateRandomPolynomial should be less or equal than degree to ensure an element of randomness");
   }
+  // TODO: points doesn't have to be a hashmap here, is line :134 the optimization
+  // TODO: We're not checking if the deterministicShares has private key 0
   const points = {};
   deterministicShares.forEach((share) => {
     points[share.shareIndex.toString("hex")] = new Point(share.shareIndex, share.share);
