@@ -1,8 +1,11 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
+import Register from "@babel/register";
+import FormData from "form-data";
+import JSDOM from "jsdom-global";
+import fetch from "node-fetch";
+import path from "path";
+import { register } from "ts-node";
 
-const path = require("path");
-const formData = require("form-data");
-require("jsdom-global")(``, {
+JSDOM(``, {
   url: "http://localhost",
 });
 
@@ -17,20 +20,18 @@ require("jsdom-global")(``, {
 // globalThis.localStorage = { ...storeFn };
 // globalThis.sessionStorage = { ...storeFn };
 
-require("ts-node").register({
+register({
   project: path.resolve(".", "tsconfig.json"),
   require: ["tsconfig-paths/register"],
   transpileOnly: true,
   compilerOptions: { module: "commonjs" },
 });
 
-const register = require("@babel/register").default;
-
-register({
+Register({
   extensions: [".ts", ".js"],
   rootMode: "upward",
 });
 
-globalThis.fetch = require("node-fetch");
+globalThis.fetch = fetch;
 
-globalThis.FormData = formData;
+globalThis.FormData = FormData;

@@ -17,23 +17,23 @@ class TorusServiceProvider extends ServiceProviderBase {
 
   singleLoginKey: BN;
 
-  directParams: CustomAuthArgs;
+  customAuthArgs: CustomAuthArgs;
 
-  constructor({ enableLogging = false, postboxKey, directParams }: TorusServiceProviderArgs) {
+  constructor({ enableLogging = false, postboxKey, customAuthArgs }: TorusServiceProviderArgs) {
     super({ enableLogging, postboxKey });
-    this.directParams = directParams;
-    this.directWeb = new CustomAuth(directParams);
+    this.customAuthArgs = customAuthArgs;
+    this.directWeb = new CustomAuth(customAuthArgs);
     this.serviceProviderName = "TorusServiceProvider";
   }
 
   static fromJSON(value: StringifiedType): TorusServiceProvider {
-    const { enableLogging, postboxKey, directParams, serviceProviderName } = value;
+    const { enableLogging, postboxKey, customAuthArgs, serviceProviderName } = value;
     if (serviceProviderName !== "TorusServiceProvider") return undefined;
 
     return new TorusServiceProvider({
       enableLogging,
       postboxKey,
-      directParams,
+      customAuthArgs,
     });
   }
 
@@ -75,7 +75,7 @@ class TorusServiceProvider extends ServiceProviderBase {
     return {
       ...super.toJSON(),
       serviceProviderName: this.serviceProviderName,
-      directParams: this.directParams,
+      customAuthArgs: this.customAuthArgs,
     };
   }
 }
