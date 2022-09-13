@@ -130,7 +130,7 @@ class ThresholdKey implements ITKey {
     tb.shares = shares;
 
     // switch to deserialize local metadata transition based on Object.keys() of authMetadata, ShareStore's and, IMessageMetadata
-    const AuthMetdataKeys = Object.keys(JSON.parse(stringify(new AuthMetadata(new Metadata(new Point("0", "0")), new BN("0", "hex")))));
+    const AuthMetadataKeys = Object.keys(JSON.parse(stringify(new AuthMetadata(new Metadata(new Point("0", "0")), new BN("0", "hex")))));
     const ShareStoreKeys = Object.keys(JSON.parse(stringify(new ShareStore(new Share("0", "0"), ""))));
     const sampleMessageMetadata: IMessageMetadata = { message: "Sample message", dateAdded: Date.now() };
     const MessageMetadataKeys = Object.keys(sampleMessageMetadata);
@@ -146,7 +146,7 @@ class ThresholdKey implements ITKey {
       }
 
       const keys = Object.keys(_localMetadataTransitions[1][index]);
-      if (keys.length === AuthMetdataKeys.length && keys.every((val) => AuthMetdataKeys.includes(val))) {
+      if (keys.length === AuthMetadataKeys.length && keys.every((val) => AuthMetadataKeys.includes(val))) {
         const tempAuth = AuthMetadata.fromJSON(_localMetadataTransitions[1][index]);
         tempAuth.privKey = privKey;
         localTransitionData.push(tempAuth);
@@ -259,7 +259,7 @@ class ThresholdKey implements ITKey {
     }
 
     // We determine the latest metadata on the SDK and if there has been
-    // needed transtions to include
+    // needed transitions to include
     let currentMetadata: Metadata;
     let latestCloudMetadata: Metadata;
     // we fetch the latest metadata for the account from the share
@@ -268,7 +268,7 @@ class ThresholdKey implements ITKey {
       latestShareDetails = await this.catchupToLatestShare({ shareStore });
     } catch (err) {
       // check if error is not the undefined error
-      // if so we dont throw immedietly incase there is valid transition metadata
+      // if so we don't throw immediately incase there is valid transition metadata
       const noMetadataExistsForShare = err.code === 1503;
       if (!noMetadataExistsForShare || !reinitializing) {
         throw err;

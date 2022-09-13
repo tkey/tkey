@@ -223,7 +223,7 @@ export interface IPrivateKeyFormat {
 
 export interface IAuthMetadata {
   metadata: IMetadata;
-  privKey: BN;
+  privKey?: BN;
 }
 
 export interface IMessageMetadata {
