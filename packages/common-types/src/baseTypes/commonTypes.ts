@@ -16,6 +16,7 @@ export interface EncryptedMessage {
   ephemPublicKey: string;
   iv: string;
   mac: string;
+  isCompressed: boolean;
 }
 export interface ServiceProviderArgs {
   enableLogging?: boolean;
