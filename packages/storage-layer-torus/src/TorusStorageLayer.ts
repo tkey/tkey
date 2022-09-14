@@ -20,7 +20,7 @@ import {
 import { post } from "@toruslabs/http-helpers";
 import BN from "bn.js";
 import stringify from "json-stable-stringify";
-import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from "lz-string";
+import { compressToUTF16, decompressFromUTF16 } from "lz-string";
 import { keccak256 } from "web3-utils";
 
 function signDataWithPrivKey(data: { timestamp: number }, privKey: BN): string {
@@ -53,7 +53,7 @@ class TorusStorageLayer implements IStorageLayer {
     }
 
     // General case, encrypt message
-    const bufferMetadata = Buffer.from(compressToEncodedURIComponent(stringify(el)));
+    const bufferMetadata = Buffer.from(compressToUTF16(stringify(el)));
     let encryptedDetails: EncryptedMessage;
     if (privKey) {
       encryptedDetails = await encrypt(getPubKeyECC(privKey), bufferMetadata);
@@ -93,7 +93,7 @@ class TorusStorageLayer implements IStorageLayer {
     }
 
     if (encryptedMessage.isCompressed) {
-      return JSON.parse(decompressFromEncodedURIComponent(decrypted.toString())) as T;
+      return JSON.parse(decompressFromUTF16(decrypted.toString())) as T;
     }
 
     return JSON.parse(decrypted.toString()) as T;
