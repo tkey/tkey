@@ -53,7 +53,7 @@ class TorusStorageLayer implements IStorageLayer {
     }
 
     // General case, encrypt message
-    const bufferMetadata = Buffer.from(compressToUTF16(stringify(el)));
+    const bufferMetadata = Buffer.from(compressToUTF16(stringify(el)), "utf16le");
     let encryptedDetails: EncryptedMessage;
     if (privKey) {
       encryptedDetails = await encrypt(getPubKeyECC(privKey), bufferMetadata);
@@ -93,7 +93,7 @@ class TorusStorageLayer implements IStorageLayer {
     }
 
     if (encryptedMessage.isCompressed) {
-      return JSON.parse(decompressFromUTF16(decrypted.toString())) as T;
+      return JSON.parse(decompressFromUTF16(decrypted.toString("utf16le"))) as T;
     }
 
     return JSON.parse(decrypted.toString()) as T;

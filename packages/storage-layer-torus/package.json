@@ -38,6 +38,7 @@
     "@babel/runtime": "7.x"
   },
   "dependencies": {
+    "@toruslabs/eccrypto": "^1.1.8",
     "lz-string": "^1.4.4",
     "@tkey/common-types": "^7.0.0",
     "@toruslabs/http-helpers": "^3.1.0",
