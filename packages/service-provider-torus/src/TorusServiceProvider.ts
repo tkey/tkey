@@ -1,4 +1,4 @@
-import { StringifiedType, TorusServiceProviderArgs, IPoint, BNString, ShareStore } from "@tkey/common-types";
+import { StringifiedType, TorusServiceProviderArgs } from "@tkey/common-types";
 import { ServiceProviderBase } from "@tkey/service-provider-base";
 import CustomAuth, {
   AggregateLoginParams,
@@ -19,11 +19,13 @@ class TorusServiceProvider extends ServiceProviderBase {
 
   customAuthArgs: CustomAuthArgs;
 
-  constructor({ enableLogging = false, postboxKey, customAuthArgs }: TorusServiceProviderArgs) {
+  constructor({ enableLogging = false, postboxKey, customAuthArgs, getTSSPubKey, getTSSSign }: TorusServiceProviderArgs) {
     super({ enableLogging, postboxKey });
     this.customAuthArgs = customAuthArgs;
     this.directWeb = new CustomAuth(customAuthArgs);
     this.serviceProviderName = "TorusServiceProvider";
+    if (getTSSPubKey) this.getTSSPubKey = getTSSPubKey;
+    if (getTSSSign) this.getTSSSign = getTSSSign;
   }
 
   static fromJSON(value: StringifiedType): TorusServiceProvider {
@@ -59,16 +61,6 @@ class TorusServiceProvider extends ServiceProviderBase {
     this.postboxKey = new BN(aggregateLoginKey, "hex");
     this.singleLoginKey = new BN(obj.singleLogin.privateKey, "hex");
     return obj;
-  }
-
-
-
-  // Added items for TSSKey
-  getTSSPk(): IPoint {
-    return this.nodeTSSPk
-  } // for now is just sum of key
-  getTSSsign(msg: BNString, otherShares: ShareStore[]): Buffer {
-    return Buffer.from("test");
   }
 
   toJSON(): StringifiedType {

@@ -49,7 +49,7 @@ import stringify from "json-stable-stringify";
 
 import AuthMetadata from "./authMetadata";
 import CoreError from "./errors";
-import { generateRandomPolynomial, lagrangeInterpolatePolynomial, lagrangeInterpolation, lagrangePublicPoints } from "./lagrangeInterpolatePolynomial";
+import { generateRandomPolynomial, lagrangeInterpolatePolynomial, lagrangeInterpolation } from "./lagrangeInterpolatePolynomial";
 import Metadata from "./metadata";
 
 // TODO: handle errors for get and set with retries
@@ -617,7 +617,7 @@ class ThresholdKey implements ITKey {
     initializeModules,
     importedKey,
     delete1OutOf1,
-    importedTSSShare
+    importedTSSShare,
   }: {
     determinedShare?: BN;
     initializeModules?: boolean;
@@ -637,8 +637,11 @@ class ThresholdKey implements ITKey {
       const tmpPriv = generatePrivate();
       tssShare = new BN(tmpPriv);
     } else {
-      tssShare = new BN(importedKey);
+      tssShare = new BN(importedTSSShare);
     }
+
+    // create our TSS key as well
+    this._setTSSShare(new Share(new BN(2), tssShare));
 
     // create a random poly and respective shares
     // 1 is defined as the serviceProvider share
@@ -655,11 +658,6 @@ class ThresholdKey implements ITKey {
       poly = generateRandomPolynomial(1, this.privKey);
     }
     const shares = poly.generateShares(shareIndexes);
-
-    // create our TSS key as well
-    const nodeTSSpk = this.serviceProvider.getTSSPk();
-    const tssPK = lagrangePublicPoints([new BN(1), new BN(2)], [nodeTSSpk, getPubKeyPoint(tssShare) ]);
-    this._setTSSShare(new Share(new BN(2),tssShare));
 
     // create metadata to be stored
     const metadata = new Metadata(getPubKeyPoint(this.privKey));
@@ -1230,7 +1228,7 @@ class ThresholdKey implements ITKey {
     return this._shareSerializationMiddleware.serialize(share, type);
   }
 
-  async inputShare(share: unknown, tssShare:unknown, type?: string): Promise<void> {
+  async inputShare(share: unknown, tssShare: unknown, type?: string): Promise<void> {
     if (!this.metadata) {
       throw CoreError.metadataUndefined();
     }

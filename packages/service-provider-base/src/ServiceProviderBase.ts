@@ -4,16 +4,15 @@ import {
   encrypt as encryptUtils,
   EncryptedMessage,
   getPubKeyECC,
+  GetTSSPubKeyFunc,
+  GetTSSSignFunc,
+  IPoint,
   IServiceProvider,
   PubKeyType,
   ServiceProviderArgs,
   StringifiedType,
   toPrivKeyEC,
   toPrivKeyECC,
-  IPoint,
-  ShareStore,
-  GetTSSPkFunc,
-  GetTSSsignFunc
 } from "@tkey/common-types";
 import BN from "bn.js";
 import { curve } from "elliptic";
@@ -28,23 +27,21 @@ class ServiceProviderBase implements IServiceProvider {
 
   nodeTSSPk: IPoint;
 
-  // getTSSPk: GetTSSPkFunc; // for now is just sum of key
+  getTSSPubKey?: GetTSSPubKeyFunc; // for now is just sum of key
 
-  // getTSSsign: GetTSSsignFunc;
-  
+  getTSSSign?: GetTSSSignFunc;
 
-
-  constructor({ enableLogging = false, postboxKey, getTSSPk,  getTSSsign }: ServiceProviderArgs) {
+  constructor({ enableLogging = false, postboxKey, getTSSPubKey, getTSSSign }: ServiceProviderArgs) {
     this.enableLogging = enableLogging;
     this.postboxKey = new BN(postboxKey, "hex");
     this.serviceProviderName = "ServiceProviderBase";
-    
+    if (getTSSPubKey) this.getTSSPubKey = getTSSPubKey;
+    if (getTSSSign) this.getTSSSign = getTSSSign;
   }
 
   static fromJSON(value: StringifiedType): IServiceProvider {
     const { enableLogging, postboxKey, serviceProviderName } = value;
     if (serviceProviderName !== "ServiceProviderBase") return undefined;
-    
 
     return new ServiceProviderBase({ enableLogging, postboxKey });
   }
@@ -73,15 +70,6 @@ class ServiceProviderBase implements IServiceProvider {
     const tmp = new BN(msg, "hex");
     const sig = toPrivKeyEC(this.postboxKey).sign(tmp.toString("hex"));
     return Buffer.from(sig.r.toString(16, 64) + sig.s.toString(16, 64) + new BN(0).toString(16, 2), "hex").toString("base64");
-  }
-
-
-  // Added items for TSSKey
-  getTSSPk(): IPoint {
-    return this.nodeTSSPk
-  } // for now is just sum of key
-  getTSSsign(msg: BNString, otherShares: ShareStore[]): Buffer {
-    return Buffer.from("test");
   }
 
   toJSON(): StringifiedType {

@@ -1,6 +1,7 @@
 import type { CustomAuthArgs } from "@toruslabs/customauth";
 import BN from "bn.js";
 import type { curve } from "elliptic";
+
 import ShareStore from "../base/ShareStore";
 
 export type PubKeyType = "ecc";
@@ -19,19 +20,6 @@ export interface EncryptedMessage {
   mac: string;
 }
 
-export type GetTSSPkFunc = () => IPoint;
-export type GetTSSsignFunc = (msg: BNString, otherShares: ShareStore[]) => Buffer;
-export interface ServiceProviderArgs {
-  enableLogging?: boolean;
-  postboxKey?: string;
-  getTSSPk?: GetTSSPkFunc; // for now is just sum of key
-  getTSSsign?: GetTSSsignFunc;
-}
-
-export interface TorusServiceProviderArgs extends ServiceProviderArgs {
-  customAuthArgs: CustomAuthArgs;
-}
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type StringifiedType = Record<string, any>;
 
@@ -45,6 +33,19 @@ export interface IPoint extends ISerializable {
   encode(enc: string, params?: unknown): Buffer;
 }
 
+export type GetTSSPubKeyFunc = () => IPoint;
+export type GetTSSSignFunc = (msg: BNString, otherShares: ShareStore[]) => Buffer;
+
+export interface ServiceProviderArgs {
+  enableLogging?: boolean;
+  postboxKey?: string;
+  getTSSPubKey?: GetTSSPubKeyFunc; // for now is just sum of key
+  getTSSSign?: GetTSSSignFunc;
+}
+
+export interface TorusServiceProviderArgs extends ServiceProviderArgs {
+  customAuthArgs: CustomAuthArgs;
+}
 export interface IServiceProvider extends ISerializable {
   enableLogging: boolean;
 
@@ -52,16 +53,15 @@ export interface IServiceProvider extends ISerializable {
 
   serviceProviderName: string;
 
+  // Added items for TSSKey
+  getTSSPubKey?: GetTSSPubKeyFunc; // for now is just sum of key
+  getTSSSign?: GetTSSSignFunc;
+
   encrypt(msg: Buffer): Promise<EncryptedMessage>;
   decrypt(msg: EncryptedMessage): Promise<Buffer>;
   retrievePubKey(type: PubKeyType): Buffer;
   retrievePubKeyPoint(): curve.base.BasePoint;
   sign(msg: BNString): string;
-
-  // Added items for TSSKey
-  getTSSPk: GetTSSPkFunc; // for now is just sum of key
-  getTSSsign: GetTSSsignFunc;
-
 }
 export type TorusStorageLayerAPIParams = {
   pub_key_X: string;

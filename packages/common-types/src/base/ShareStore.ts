@@ -6,11 +6,12 @@ class ShareStore implements ISerializable {
 
   polynomialID: PolynomialID;
 
-  tssShare: Share;
+  tssShare?: Share;
 
-  constructor(share: Share, polynomialID: PolynomialID, tssShare: Share) {
+  constructor(share: Share, polynomialID: PolynomialID, tssShare?: Share) {
     this.share = share;
     this.polynomialID = polynomialID;
+    this.tssShare = tssShare;
   }
 
   static fromJSON(value: StringifiedType): ShareStore {

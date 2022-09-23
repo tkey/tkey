@@ -2,7 +2,6 @@ import { ecCurve, generatePrivateExcludingIndexes, Point, Polynomial, Share } fr
 import { generatePrivate } from "@toruslabs/eccrypto";
 import BN from "bn.js";
 import { curve } from "elliptic";
-import common from "mocha/lib/interfaces/common";
 
 import CoreError from "./errors";
 
@@ -156,7 +155,6 @@ export function generateRandomPolynomial(degree: number, secret?: BN, determinis
   return lagrangeInterpolatePolynomial(Object.values(points));
 }
 
-
 //  2 + 3x = y | secret for index 1 is 5 >>> g^5 is the commitment | now we have g^2, g^3 and 1, |
 export function polyCommitmentEval(polyCommitments: Array<Point>, index: BN): Point {
   // convert to base points, this is badly written, its the only way to access the point rn zzz TODO: refactor
@@ -191,21 +189,21 @@ export function polyCommitmentEval(polyCommitments: Array<Point>, index: BN): Po
 //   return new Point(shareCommitment.getX(), shareCommitment.getY());
 // }
 
-const  lagrangePublicCommitments = (indexes :BN[], polys :curve.base.BasePoint[][]) : Point[] => {
-  if (indexes.length != polys.length) {
-    throw "Indexes and poly needs to be equal length in lagrangePublicPoints"
+const lagrangePublicCommitments = (indexes: BN[], polys: curve.base.BasePoint[][]): Point[] => {
+  if (indexes.length !== polys.length) {
+    throw new Error("Indexes and poly needs to be equal length in lagrangePublicPoints");
   }
-  let res = [];
+  const res = [];
   for (let l = 0; l < polys[0].length; l++) {
     let sum: curve.base.BasePoint;
     for (let j = 0; j < indexes.length; j++) {
-      let index = indexes[j];
+      const index = indexes[j];
       // let lambda = new BN(1);
       let upper = new BN(1);
       let lower = new BN(1);
       for (let z = 0; z < indexes.length; z++) {
-        let otherIndex = indexes[z];
-        if (otherIndex != index) {
+        const otherIndex = indexes[z];
+        if (otherIndex !== index) {
           let tempUpper = new BN(0);
           tempUpper = tempUpper.sub(new BN(otherIndex));
           upper = upper.mul(tempUpper);
@@ -219,28 +217,28 @@ const  lagrangePublicCommitments = (indexes :BN[], polys :curve.base.BasePoint[]
           lower = lower.umod(ecCurve.curve.n);
         }
       }
-      let inv = lower.invm(ecCurve.curve.n);
+      const inv = lower.invm(ecCurve.curve.n);
       let lambda = upper.mul(inv);
       lambda = lambda.umod(ecCurve.curve.n);
-      let tmpPt = polys[j][l].mul(lambda);
+      const tmpPt = polys[j][l].mul(lambda);
       if (sum) {
         sum = sum.add(tmpPt);
       } else {
         sum = tmpPt;
       }
     }
-    res.push(sum)
+    res.push(sum);
   }
   return res;
-}
+};
 
-export function lagrangePublicPoints(indexes : BN[], points: Point[] ): Point {
-  let sm: curve.base.BasePoint[][] = [];
+export function lagrangePublicPoints(indexes: BN[], points: Point[]): Point {
+  const sm: curve.base.BasePoint[][] = [];
   for (let i = 0; i < points.length; i++) {
-    const pk = ecCurve.keyFromPublic({ x: points[i].x.toString("hex"), y: points[i].y.toString("hex") }, "")
+    const pk = ecCurve.keyFromPublic({ x: points[i].x.toString("hex"), y: points[i].y.toString("hex") }, "");
     sm.push([pk.getPublic()]);
   }
-  let res = lagrangePublicCommitments(indexes, sm);
+  const res = lagrangePublicCommitments(indexes, sm);
   return res[0];
 }
 
