@@ -50,7 +50,7 @@ export type ReconstructKeyMiddlewareMap = {
 
 export type ShareSerializationMiddleware = {
   serialize: (share: BN, type: string) => Promise<unknown>;
-  deserialize: (serializedShare: unknown, type: string) => Promise<BN>;
+  deserialize: (serializedShare: unknown, type: string) => Promise<BN | { share: BN; tssShare: BN }>;
 };
 
 export interface IMetadata extends ISerializable {

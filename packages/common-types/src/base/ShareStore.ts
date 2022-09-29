@@ -16,7 +16,10 @@ class ShareStore implements ISerializable {
 
   static fromJSON(value: StringifiedType): ShareStore {
     const { share, polynomialID, tssShare } = value;
-    return new ShareStore(Share.fromJSON(share), polynomialID, Share.fromJSON(tssShare));
+    if (tssShare) {
+      return new ShareStore(Share.fromJSON(share), polynomialID, Share.fromJSON(tssShare));
+    }
+    return new ShareStore(Share.fromJSON(share), polynomialID);
   }
 
   toJSON(): StringifiedType {
