@@ -1094,7 +1094,7 @@ class ThresholdKey implements ITKey {
 
   _addShareSerializationMiddleware(
     serialize: (share: BN, type: string) => Promise<unknown>,
-    deserialize: (serializedShare: unknown, type: string) => Promise<BN>
+    deserialize: (serializedShare: unknown, type: string) => Promise<{ share: BN; tssShare?: BN }>
   ): void {
     this._shareSerializationMiddleware = {
       serialize,
@@ -1232,20 +1232,13 @@ class ThresholdKey implements ITKey {
     if (!this.metadata) {
       throw CoreError.metadataUndefined();
     }
-    let deserialized: BN | { share: BN; tssShare: BN };
+    let deserialized: { share: BN; tssShare?: BN };
     if (type) {
       deserialized = await this._shareSerializationMiddleware.deserialize(_share, type);
     } else {
-      deserialized = _share as BN | { share: BN; tssShare: BN };
+      deserialized = { share: _share as BN };
     }
-    let share, tssShare: BN;
-    if (Object.keys(deserialized).includes("tssShare")) {
-      const shareObj = deserialized as { share: BN; tssShare: BN };
-      share = shareObj.share;
-      tssShare = shareObj.tssShare;
-    } else {
-      share = deserialized;
-    }
+    const { share, tssShare } = deserialized;
     const shareStore = this.metadata.shareToShareStore(share, tssShare);
     const pubPoly = this.metadata.getLatestPublicPolynomial();
     const pubPolyID = pubPoly.getPolynomialID();
