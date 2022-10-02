@@ -49,7 +49,7 @@ export type ReconstructKeyMiddlewareMap = {
 };
 
 export type ShareSerializationMiddleware = {
-  serialize: (share: BN, type: string) => Promise<unknown>;
+  serialize: (share: BN, type: string, tssShare: BN) => Promise<unknown>;
   deserialize: (serializedShare: unknown, type: string) => Promise<{ share: BN; tssShare?: BN }>;
 };
 
@@ -103,6 +103,7 @@ export type InitializeNewKeyResult = {
 
 export type ReconstructedKeyResult = {
   privKey: BN;
+  tssShare?: Share;
   seedPhrase?: BN[];
   allKeys?: BN[];
 };

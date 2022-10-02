@@ -53,12 +53,12 @@ class ShareSerializationModule implements IModule {
     throw ShareSerializationError.typeNotSupported();
   }
 
-  async deserialize(serialized: unknown, type: string): Promise<BN | { share: BN; tssShare: BN }> {
+  async deserialize(serialized: unknown, type: string): Promise<{ share: BN; tssShare?: BN }> {
     if (type === "mnemonic") {
       if ((serialized as string).indexOf("|") > -1) {
         return ShareSerializationModule.deserializeTSSMnemonic(serialized as string);
       }
-      return ShareSerializationModule.deserializeMnemonic(serialized as string);
+      return { share: ShareSerializationModule.deserializeMnemonic(serialized as string) };
     }
     throw ShareSerializationError.typeNotSupported();
   }

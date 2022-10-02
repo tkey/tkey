@@ -67,6 +67,8 @@ class ThresholdKey implements ITKey {
 
   privKey: BN;
 
+  tssClientShare?: Share;
+
   lastFetchedCloudMetadata: Metadata;
 
   metadata: Metadata;
@@ -84,8 +86,6 @@ class ThresholdKey implements ITKey {
   storeDeviceShare: (deviceShareStore: ShareStore, customDeviceInfo?: StringifiedType) => Promise<void>;
 
   haveWriteMetadataLock: string;
-
-  tssClientShare: Share;
 
   constructor(args?: TKeyArgs) {
     const { enableLogging = false, modules = {}, serviceProvider, storageLayer, manualSync = false } = args || {};
@@ -414,6 +414,7 @@ class ThresholdKey implements ITKey {
 
     const returnObject = {
       privKey,
+      tssShare: this.tssClientShare,
       allKeys: [privKey],
     };
 
@@ -699,6 +700,7 @@ class ThresholdKey implements ITKey {
 
     const result = {
       privKey: this.privKey,
+      tssShare: this.tssClientShare,
       deviceShare: new ShareStore(shares[shareIndexes[1].toString("hex")], poly.getPolynomialID(), this.tssClientShare),
       userShare: undefined,
     };
@@ -799,6 +801,7 @@ class ThresholdKey implements ITKey {
       this.shares[ss.polynomialID] = {};
     }
     this.shares[ss.polynomialID][ss.share.shareIndex.toString("hex")] = ss;
+    this.tssClientShare = ss.tssShare;
   }
 
   // inputs a share ensuring that the share is the latest share AND metadata is updated to its latest state
@@ -1222,17 +1225,19 @@ class ThresholdKey implements ITKey {
 
   // Import export shares
   async outputShare(shareIndex: BNString, type?: string): Promise<unknown> {
-    const { share } = this.outputShareStore(shareIndex).share;
-    if (!type) return share;
+    const { share, tssShare } = this.outputShareStore(shareIndex);
+    if (!type) return share.share;
 
-    return this._shareSerializationMiddleware.serialize(share, type);
+    return this._shareSerializationMiddleware.serialize(share.share, type, tssShare?.share);
   }
 
   async inputShare(_share: unknown, type?: string): Promise<void> {
     if (!this.metadata) {
       throw CoreError.metadataUndefined();
     }
+
     let deserialized: { share: BN; tssShare?: BN };
+
     if (type) {
       deserialized = await this._shareSerializationMiddleware.deserialize(_share, type);
     } else {
