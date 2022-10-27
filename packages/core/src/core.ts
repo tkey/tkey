@@ -1030,7 +1030,7 @@ class ThresholdKey implements ITKey {
     const currentPoly = lagrangeInterpolatePolynomial(pointsArr);
     const allExistingShares = currentPoly.generateShares(existingShareIndexes);
 
-    const shareArray = existingShareIndexes.map((shareIndex) => allExistingShares[shareIndex].share);
+    const shareArray = Object.values(allExistingShares).map((x) => x.share);
     await this.syncMultipleShareMetadata(shareArray, adjustScopedStore);
   }
 
@@ -1131,6 +1131,7 @@ class ThresholdKey implements ITKey {
   }
 
   async _setTKeyStoreItem(moduleName: string, data: TkeyStoreItemType): Promise<void> {
+    // TODO: there's no need for decryption here
     if (!this.metadata) {
       throw CoreError.metadataUndefined();
     }
