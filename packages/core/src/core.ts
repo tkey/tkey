@@ -489,6 +489,33 @@ class ThresholdKey implements ITKey {
     return { newShareStores };
   }
 
+  /// Destructive method. All data will be wiped!
+  async wipe(): Promise<void> {
+    if (!this.metadata) {
+      throw CoreError.metadataUndefined();
+    }
+    if (!this.privKey) {
+      throw CoreError.privateKeyUnavailable();
+    }
+
+    const pubPoly = this.metadata.getLatestPublicPolynomial();
+    const currentPolyID = pubPoly.getPolynomialID();
+
+    const shareStores = Object.values(this.shares[currentPolyID]);
+
+    await this.addLocalMetadataTransitions({
+      input: [...Array(shareStores.length).fill({ message: SHARE_DELETED, dateAdded: Date.now() }), { message: KEY_NOT_FOUND }],
+      privKey: [...shareStores.map((shareStore) => shareStore.share.share), undefined],
+    });
+
+    await this.syncLocalMetadataTransitions();
+
+    this.privKey = undefined;
+    this.metadata = undefined;
+    this.shares = {};
+    this.lastFetchedCloudMetadata = undefined;
+  }
+
   async generateNewShare(): Promise<GenerateNewShareResult> {
     if (!this.metadata) {
       throw CoreError.metadataUndefined();
