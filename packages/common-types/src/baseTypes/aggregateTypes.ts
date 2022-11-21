@@ -49,8 +49,8 @@ export type ReconstructKeyMiddlewareMap = {
 };
 
 export type ShareSerializationMiddleware = {
-  serialize: (share: BN, type: string) => Promise<unknown>;
-  deserialize: (serializedShare: unknown, type: string) => Promise<BN>;
+  serialize: (share: BN, type: string, tssShare: BN) => Promise<unknown>;
+  deserialize: (serializedShare: unknown, type: string) => Promise<{ share: BN; tssShare?: BN }>;
 };
 
 export interface IMetadata extends ISerializable {
@@ -88,7 +88,7 @@ export interface IMetadata extends ISerializable {
   setScopedStore(domain: string, data: unknown): void;
   getEncryptedShare(shareStore: ShareStore): Promise<ShareStore>;
   getShareDescription(): ShareDescriptionMap;
-  shareToShareStore(share: BN): ShareStore;
+  shareToShareStore(share: BN, tssShare: BN): ShareStore;
   addShareDescription(shareIndex: string, description: string): void;
   deleteShareDescription(shareIndex: string, description: string): void;
   updateShareDescription(shareIndex: string, oldDescription: string, newDescription: string): void;
@@ -103,6 +103,7 @@ export type InitializeNewKeyResult = {
 
 export type ReconstructedKeyResult = {
   privKey: BN;
+  tssShare?: Share;
   seedPhrase?: BN[];
   allKeys?: BN[];
 };
@@ -257,8 +258,8 @@ export interface ITKeyApi {
   ): void;
   _addReconstructKeyMiddleware(moduleName: string, middleware: () => Promise<Array<BN>>): void;
   _addShareSerializationMiddleware(
-    serialize: (share: BN, type: string) => Promise<unknown>,
-    deserialize: (serializedShare: unknown, type: string) => Promise<BN>
+    serialize: (share: BN, type: string, tssShare?: BN) => Promise<unknown>,
+    deserialize: (serializedShare: unknown, type: string) => Promise<{ share: BN; tssShare?: BN }>
   ): void;
   generateNewShare(): Promise<GenerateNewShareResult>;
   outputShareStore(shareIndex: BNString, polyID?: string): ShareStore;

@@ -67,6 +67,8 @@ class ThresholdKey implements ITKey {
 
   privKey: BN;
 
+  tssClientShare?: Share;
+
   lastFetchedCloudMetadata: Metadata;
 
   metadata: Metadata;
@@ -412,6 +414,7 @@ class ThresholdKey implements ITKey {
 
     const returnObject = {
       privKey,
+      tssShare: this.tssClientShare,
       allKeys: [privKey],
     };
 
@@ -553,7 +556,7 @@ class ThresholdKey implements ITKey {
     const newShareStores = {};
     const polyID = poly.getPolynomialID();
     newShareIndexes.forEach((shareIndexHex) => {
-      newShareStores[shareIndexHex] = new ShareStore(shares[shareIndexHex], polyID);
+      newShareStores[shareIndexHex] = new ShareStore(shares[shareIndexHex], polyID, this.tssClientShare);
     });
 
     // evaluate oldPoly for old shares and set new metadata with encrypted share for new polynomial
@@ -565,7 +568,7 @@ class ThresholdKey implements ITKey {
         const oldShare = oldPoly.polyEval(new BN(shareIndex, "hex"));
         const encryptedShare = await encrypt(getPubKeyECC(oldShare), Buffer.from(JSON.stringify(newShareStores[shareIndex])));
         newScopedStore[getPubKeyPoint(oldShare).x.toString("hex")] = encryptedShare;
-        oldShareStores[shareIndex] = new ShareStore(new Share(shareIndex, oldShare), previousPolyID);
+        oldShareStores[shareIndex] = new ShareStore(new Share(shareIndex, oldShare), previousPolyID, this.tssClientShare);
         return oldShare;
       })
     );
@@ -615,11 +618,13 @@ class ThresholdKey implements ITKey {
     initializeModules,
     importedKey,
     delete1OutOf1,
+    importedTSSShare,
   }: {
     determinedShare?: BN;
     initializeModules?: boolean;
     importedKey?: BN;
     delete1OutOf1?: boolean;
+    importedTSSShare?: BN;
   } = {}): Promise<InitializeNewKeyResult> {
     if (!importedKey) {
       const tmpPriv = generatePrivate();
@@ -627,6 +632,17 @@ class ThresholdKey implements ITKey {
     } else {
       this._setKey(new BN(importedKey));
     }
+
+    let tssShare: BN;
+    if (!importedTSSShare) {
+      const tmpPriv = generatePrivate();
+      tssShare = new BN(tmpPriv);
+    } else {
+      tssShare = new BN(importedTSSShare);
+    }
+
+    // create our TSS key as well
+    this._setTSSShare(new Share(new BN(2), tssShare));
 
     // create a random poly and respective shares
     // 1 is defined as the serviceProvider share
@@ -648,7 +664,7 @@ class ThresholdKey implements ITKey {
     const metadata = new Metadata(getPubKeyPoint(this.privKey));
     metadata.addFromPolynomialAndShares(poly, shares);
     const serviceProviderShare = shares[shareIndexes[0].toString("hex")];
-    const shareStore = new ShareStore(serviceProviderShare, poly.getPolynomialID());
+    const shareStore = new ShareStore(serviceProviderShare, poly.getPolynomialID(), this.tssClientShare);
     this.metadata = metadata;
 
     // initialize modules
@@ -675,20 +691,21 @@ class ThresholdKey implements ITKey {
     for (let index = 0; index < shareIndexes.length; index += 1) {
       const shareIndex = shareIndexes[index];
       // also add into our share store
-      this.inputShareStore(new ShareStore(shares[shareIndex.toString("hex")], poly.getPolynomialID()));
+      this.inputShareStore(new ShareStore(shares[shareIndex.toString("hex")], poly.getPolynomialID(), this.tssClientShare));
     }
 
     if (this.storeDeviceShare) {
-      await this.storeDeviceShare(new ShareStore(shares[shareIndexes[1].toString("hex")], poly.getPolynomialID()));
+      await this.storeDeviceShare(new ShareStore(shares[shareIndexes[1].toString("hex")], poly.getPolynomialID(), this.tssClientShare));
     }
 
     const result = {
       privKey: this.privKey,
-      deviceShare: new ShareStore(shares[shareIndexes[1].toString("hex")], poly.getPolynomialID()),
+      tssShare: this.tssClientShare,
+      deviceShare: new ShareStore(shares[shareIndexes[1].toString("hex")], poly.getPolynomialID(), this.tssClientShare),
       userShare: undefined,
     };
     if (determinedShare) {
-      result.userShare = new ShareStore(shares[shareIndexes[2].toString("hex")], poly.getPolynomialID());
+      result.userShare = new ShareStore(shares[shareIndexes[2].toString("hex")], poly.getPolynomialID(), this.tssClientShare);
     }
     return result;
   }
@@ -784,6 +801,7 @@ class ThresholdKey implements ITKey {
       this.shares[ss.polynomialID] = {};
     }
     this.shares[ss.polynomialID][ss.share.shareIndex.toString("hex")] = ss;
+    this.tssClientShare = ss.tssShare;
   }
 
   // inputs a share ensuring that the share is the latest share AND metadata is updated to its latest state
@@ -842,11 +860,15 @@ class ThresholdKey implements ITKey {
     const poly = this.reconstructLatestPoly();
     const shareMap = poly.generateShares([shareIndexParsed]);
 
-    return new ShareStore(shareMap[shareIndexParsed.toString("hex")], polyIDToSearch);
+    return new ShareStore(shareMap[shareIndexParsed.toString("hex")], polyIDToSearch, this.tssClientShare);
   }
 
   _setKey(privKey: BN): void {
     this.privKey = privKey;
+  }
+
+  _setTSSShare(tssShare: Share): void {
+    this.tssClientShare = tssShare;
   }
 
   getCurrentShareIndexes(): string[] {
@@ -1075,7 +1097,7 @@ class ThresholdKey implements ITKey {
 
   _addShareSerializationMiddleware(
     serialize: (share: BN, type: string) => Promise<unknown>,
-    deserialize: (serializedShare: unknown, type: string) => Promise<BN>
+    deserialize: (serializedShare: unknown, type: string) => Promise<{ share: BN; tssShare?: BN }>
   ): void {
     this._shareSerializationMiddleware = {
       serialize,
@@ -1203,22 +1225,26 @@ class ThresholdKey implements ITKey {
 
   // Import export shares
   async outputShare(shareIndex: BNString, type?: string): Promise<unknown> {
-    const { share } = this.outputShareStore(shareIndex).share;
-    if (!type) return share;
+    const { share, tssShare } = this.outputShareStore(shareIndex);
+    if (!type) return share.share;
 
-    return this._shareSerializationMiddleware.serialize(share, type);
+    return this._shareSerializationMiddleware.serialize(share.share, type, tssShare?.share);
   }
 
-  async inputShare(share: unknown, type?: string): Promise<void> {
+  async inputShare(_share: unknown, type?: string): Promise<void> {
     if (!this.metadata) {
       throw CoreError.metadataUndefined();
     }
-    let shareStore: ShareStore;
-    if (!type) shareStore = this.metadata.shareToShareStore(share as BN);
-    else {
-      const deserialized = await this._shareSerializationMiddleware.deserialize(share, type);
-      shareStore = this.metadata.shareToShareStore(deserialized);
+
+    let deserialized: { share: BN; tssShare?: BN };
+
+    if (type) {
+      deserialized = await this._shareSerializationMiddleware.deserialize(_share, type);
+    } else {
+      deserialized = { share: _share as BN };
     }
+    const { share, tssShare } = deserialized;
+    const shareStore = this.metadata.shareToShareStore(share, tssShare);
     const pubPoly = this.metadata.getLatestPublicPolynomial();
     const pubPolyID = pubPoly.getPolynomialID();
     const fullShareIndexesList = this.metadata.getShareIndexesForPolynomial(pubPolyID);

@@ -6,13 +6,19 @@ class ShareStore implements ISerializable {
 
   polynomialID: PolynomialID;
 
-  constructor(share: Share, polynomialID: PolynomialID) {
+  tssShare?: Share;
+
+  constructor(share: Share, polynomialID: PolynomialID, tssShare?: Share) {
     this.share = share;
     this.polynomialID = polynomialID;
+    this.tssShare = tssShare;
   }
 
   static fromJSON(value: StringifiedType): ShareStore {
-    const { share, polynomialID } = value;
+    const { share, polynomialID, tssShare } = value;
+    if (tssShare) {
+      return new ShareStore(Share.fromJSON(share), polynomialID, Share.fromJSON(tssShare));
+    }
     return new ShareStore(Share.fromJSON(share), polynomialID);
   }
 
@@ -20,6 +26,7 @@ class ShareStore implements ISerializable {
     return {
       share: this.share,
       polynomialID: this.polynomialID.toString(),
+      tssShare: this.tssShare,
     };
   }
 }

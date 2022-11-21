@@ -744,7 +744,6 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         storageLayer: customSL,
       });
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
-
       // should throw
       await rejects(async function () {
         await tb.outputShare(resp1.deviceShare.share.shareIndex, "mnemonic-49");
@@ -762,14 +761,18 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
 
       // should throw
       await rejects(async function () {
-        await tb2.inputShare(exportedSeedShare.toString("hex"), "mnemonic-49");
+        await tb2.inputShare(exportedSeedShare, "mnemonic-49");
       });
 
-      await tb2.inputShare(exportedSeedShare.toString("hex"), "mnemonic");
+      await tb2.inputShare(exportedSeedShare, "mnemonic");
       const reconstructedKey = await tb2.reconstructKey();
 
       if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
         fail("key should be able to be reconstructed");
+      }
+
+      if (resp1.tssShare.share.cmp(reconstructedKey.tssShare.share) !== 0) {
+        fail("tssShare should be returned correctly");
       }
     });
   });

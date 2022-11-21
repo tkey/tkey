@@ -4,6 +4,9 @@ import {
   encrypt as encryptUtils,
   EncryptedMessage,
   getPubKeyECC,
+  GetTSSPubKeyFunc,
+  GetTSSSignFunc,
+  IPoint,
   IServiceProvider,
   PubKeyType,
   ServiceProviderArgs,
@@ -22,10 +25,18 @@ class ServiceProviderBase implements IServiceProvider {
 
   serviceProviderName: string;
 
-  constructor({ enableLogging = false, postboxKey }: ServiceProviderArgs) {
+  nodeTSSPk: IPoint;
+
+  getTSSPubKey?: GetTSSPubKeyFunc; // for now is just sum of key
+
+  getTSSSign?: GetTSSSignFunc;
+
+  constructor({ enableLogging = false, postboxKey, getTSSPubKey, getTSSSign }: ServiceProviderArgs) {
     this.enableLogging = enableLogging;
     this.postboxKey = new BN(postboxKey, "hex");
     this.serviceProviderName = "ServiceProviderBase";
+    if (getTSSPubKey) this.getTSSPubKey = getTSSPubKey;
+    if (getTSSSign) this.getTSSSign = getTSSSign;
   }
 
   static fromJSON(value: StringifiedType): IServiceProvider {

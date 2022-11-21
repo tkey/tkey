@@ -2,6 +2,8 @@ import type { CustomAuthArgs } from "@toruslabs/customauth";
 import BN from "bn.js";
 import type { curve } from "elliptic";
 
+import ShareStore from "../base/ShareStore";
+
 export type PubKeyType = "ecc";
 
 // @flow
@@ -18,14 +20,6 @@ export interface EncryptedMessage {
   mac: string;
   isCompressed: boolean;
 }
-export interface ServiceProviderArgs {
-  enableLogging?: boolean;
-  postboxKey?: string;
-}
-
-export interface TorusServiceProviderArgs extends ServiceProviderArgs {
-  customAuthArgs: CustomAuthArgs;
-}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type StringifiedType = Record<string, any>;
@@ -40,12 +34,29 @@ export interface IPoint extends ISerializable {
   encode(enc: string, params?: unknown): Buffer;
 }
 
+export type GetTSSPubKeyFunc = () => IPoint;
+export type GetTSSSignFunc = (msg: BNString, otherShares: ShareStore[]) => Buffer;
+
+export interface ServiceProviderArgs {
+  enableLogging?: boolean;
+  postboxKey?: string;
+  getTSSPubKey?: GetTSSPubKeyFunc; // for now is just sum of key
+  getTSSSign?: GetTSSSignFunc;
+}
+
+export interface TorusServiceProviderArgs extends ServiceProviderArgs {
+  customAuthArgs: CustomAuthArgs;
+}
 export interface IServiceProvider extends ISerializable {
   enableLogging: boolean;
 
   postboxKey: BN;
 
   serviceProviderName: string;
+
+  // Added items for TSSKey
+  getTSSPubKey?: GetTSSPubKeyFunc; // for now is just sum of key
+  getTSSSign?: GetTSSSignFunc;
 
   encrypt(msg: Buffer): Promise<EncryptedMessage>;
   decrypt(msg: EncryptedMessage): Promise<Buffer>;
