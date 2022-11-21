@@ -19,7 +19,7 @@ user three shares: ShareA, ShareB, and ShareC.
 
 Similar to existing 2FA systems, a user needs to prove ownership of at least 2 out of 3 (2/3) shares, in order to retrieve his private key.
 
-For more information, checkout the [technical overview](https://hackmd.io/Tej2tf83SZOxZmz70ObEpg). Before integrating you can also checkout the example  for [tKey](github.com/tkey/tkey-example).
+For more information, check out the [technical overview](https://hackmd.io/Tej2tf83SZOxZmz70ObEpg). Before integrating you can also check out the example  for [tKey](https://github.com/tkey/tkey-example).
 
 ### To use the SDK in your application, please refer to our [SDK Reference](https://web3auth.io/docs/sdk/self-host/installation) in Web3Auth Documentation
 
