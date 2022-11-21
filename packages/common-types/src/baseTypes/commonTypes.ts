@@ -18,6 +18,7 @@ export interface EncryptedMessage {
   ephemPublicKey: string;
   iv: string;
   mac: string;
+  isCompressed: boolean;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
