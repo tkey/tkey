@@ -44,7 +44,7 @@
   },
   "dependencies": {
     "@tkey/common-types": "^7.0.0",
-    "@types/bn.js": "^5.1.0",
+    "@types/bn.js": "^5.1.1",
     "bn.js": "^5.2.1"
   },
   "devDependencies": {

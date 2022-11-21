@@ -25,6 +25,7 @@ export async function encrypt(publicKey: Buffer, msg: Buffer): Promise<Encrypted
     ephemPublicKey: encryptedDetails.ephemPublicKey.toString("hex"),
     iv: encryptedDetails.iv.toString("hex"),
     mac: encryptedDetails.mac.toString("hex"),
+    isCompressed: false,
   };
 }
 

@@ -19,11 +19,13 @@ class TorusServiceProvider extends ServiceProviderBase {
 
   customAuthArgs: CustomAuthArgs;
 
-  constructor({ enableLogging = false, postboxKey, customAuthArgs }: TorusServiceProviderArgs) {
+  constructor({ enableLogging = false, postboxKey, customAuthArgs, getTSSPubKey, getTSSSign }: TorusServiceProviderArgs) {
     super({ enableLogging, postboxKey });
     this.customAuthArgs = customAuthArgs;
     this.directWeb = new CustomAuth(customAuthArgs);
     this.serviceProviderName = "TorusServiceProvider";
+    if (getTSSPubKey) this.getTSSPubKey = getTSSPubKey;
+    if (getTSSSign) this.getTSSSign = getTSSSign;
   }
 
   static fromJSON(value: StringifiedType): TorusServiceProvider {
