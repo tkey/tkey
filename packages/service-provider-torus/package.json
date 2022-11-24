@@ -41,6 +41,7 @@
     "@tkey/common-types": "^7.0.0",
     "@tkey/service-provider-base": "^7.0.0",
     "@toruslabs/customauth": "^10.1.0",
+    "@toruslabs/torus.js": "^6.2.0",
     "bn.js": "^5.2.1",
     "elliptic": "^6.5.4"
   },

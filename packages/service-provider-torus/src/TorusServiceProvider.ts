@@ -10,6 +10,7 @@ import CustomAuth, {
   TorusHybridAggregateLoginResponse,
   TorusLoginResponse,
 } from "@toruslabs/customauth";
+import { TorusPublicKey } from "@toruslabs/torus.js";
 import BN from "bn.js";
 
 class TorusServiceProvider extends ServiceProviderBase {
@@ -19,11 +20,16 @@ class TorusServiceProvider extends ServiceProviderBase {
 
   customAuthArgs: CustomAuthArgs;
 
-  constructor({ enableLogging = false, postboxKey, customAuthArgs }: TorusServiceProviderArgs) {
+  tssVerifier?: string;
+
+  tssServerPub?: string | TorusPublicKey;
+
+  constructor({ enableLogging = false, postboxKey, customAuthArgs, tssVerifier }: TorusServiceProviderArgs) {
     super({ enableLogging, postboxKey });
     this.customAuthArgs = customAuthArgs;
     this.directWeb = new CustomAuth(customAuthArgs);
     this.serviceProviderName = "TorusServiceProvider";
+    this.tssVerifier = tssVerifier;
   }
 
   static fromJSON(value: StringifiedType): TorusServiceProvider {
@@ -44,12 +50,28 @@ class TorusServiceProvider extends ServiceProviderBase {
   async triggerLogin(params: SubVerifierDetails): Promise<TorusLoginResponse> {
     const obj = await this.directWeb.triggerLogin(params);
     this.postboxKey = new BN(obj.privateKey, "hex");
+    if (this.tssVerifier) {
+      const { verifier, verifierId } = obj.userInfo;
+      const nodeDetails = await this.directWeb.nodeDetailManager.getNodeDetails({ verifier: this.tssVerifier, verifierId });
+      this.tssServerPub = await this.directWeb.torus.getPublicAddress(nodeDetails.torusNodeEndpoints, nodeDetails.torusNodePub, {
+        verifier,
+        verifierId,
+      });
+    }
     return obj;
   }
 
   async triggerAggregateLogin(params: AggregateLoginParams): Promise<TorusAggregateLoginResponse> {
     const obj = await this.directWeb.triggerAggregateLogin(params);
     this.postboxKey = new BN(obj.privateKey, "hex");
+    if (this.tssVerifier) {
+      const { verifier, verifierId } = obj.userInfo[0];
+      const nodeDetails = await this.directWeb.nodeDetailManager.getNodeDetails({ verifier: this.tssVerifier, verifierId });
+      this.tssServerPub = await this.directWeb.torus.getPublicAddress(nodeDetails.torusNodeEndpoints, nodeDetails.torusNodePub, {
+        verifier,
+        verifierId,
+      });
+    }
     return obj;
   }
 
@@ -58,6 +80,14 @@ class TorusServiceProvider extends ServiceProviderBase {
     const aggregateLoginKey = obj.aggregateLogins[0].privateKey;
     this.postboxKey = new BN(aggregateLoginKey, "hex");
     this.singleLoginKey = new BN(obj.singleLogin.privateKey, "hex");
+    if (this.tssVerifier) {
+      const { verifier, verifierId } = obj.singleLogin.userInfo;
+      const nodeDetails = await this.directWeb.nodeDetailManager.getNodeDetails({ verifier: this.tssVerifier, verifierId });
+      this.tssServerPub = await this.directWeb.torus.getPublicAddress(nodeDetails.torusNodeEndpoints, nodeDetails.torusNodePub, {
+        verifier,
+        verifierId,
+      });
+    }
     return obj;
   }
 

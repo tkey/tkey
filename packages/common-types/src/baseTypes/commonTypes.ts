@@ -24,6 +24,7 @@ export interface ServiceProviderArgs {
 
 export interface TorusServiceProviderArgs extends ServiceProviderArgs {
   customAuthArgs: CustomAuthArgs;
+  tssVerifier?: string;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
