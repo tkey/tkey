@@ -211,7 +211,7 @@ class ThresholdKey implements ITKey {
     previousLocalMetadataTransitions?: LocalMetadataTransitions;
     delete1OutOf1?: boolean;
     useTSS?: boolean;
-    factorKey?: BN;
+    factorPub?: Point;
   }): Promise<KeyDetails> {
     // setup initial params/states
     const p = params || {};
@@ -226,10 +226,10 @@ class ThresholdKey implements ITKey {
       previouslyFetchedCloudMetadata,
       previousLocalMetadataTransitions,
       useTSS,
-      factorKey,
+      factorPub,
     } = p;
 
-    if (useTSS && !factorKey) {
+    if (useTSS && !factorPub) {
       throw CoreError.default("cannot use TSS without providing factor key");
     }
 
@@ -265,7 +265,7 @@ class ThresholdKey implements ITKey {
           throw CoreError.default("key has not been generated yet");
         }
         // no metadata set, assumes new user
-        await this._initializeNewKey({ initializeModules: true, importedKey: importKey, delete1OutOf1: p.delete1OutOf1, useTSS, factorKey });
+        await this._initializeNewKey({ initializeModules: true, importedKey: importKey, delete1OutOf1: p.delete1OutOf1, useTSS, factorPub });
         return this.getKeyDetails();
       }
       // else we continue with catching up share and metadata
@@ -632,14 +632,14 @@ class ThresholdKey implements ITKey {
     importedKey,
     delete1OutOf1,
     useTSS,
-    factorKey,
+    factorPub,
   }: {
     determinedShare?: BN;
     initializeModules?: boolean;
     importedKey?: BN;
     delete1OutOf1?: boolean;
     useTSS?: boolean;
-    factorKey?: BN;
+    factorPub?: Point;
   } = {}): Promise<InitializeNewKeyResult> {
     if (!importedKey) {
       const tmpPriv = generatePrivate();
@@ -664,9 +664,9 @@ class ThresholdKey implements ITKey {
     }
     const shares = poly.generateShares(shareIndexes);
 
-    let tssPolyCommits, factorPubs, factorEncs;
+    let tss2, tssPolyCommits, factorPubs, factorEncs;
     if (useTSS) {
-      const tss2 = new BN(generatePrivate());
+      tss2 = new BN(generatePrivate());
       const tss1Pub = this.serviceProvider.retrieveTSSPubKey();
       const tss1PubKey = ecCurve.keyFromPublic({ x: tss1Pub.x.toString(16, 64), y: tss1Pub.y.toString(16, 64) }).getPublic();
       const tss2Pub = getPubKeyPoint(tss2);
@@ -682,17 +682,13 @@ class ThresholdKey implements ITKey {
         new Point(a0Pub.getX().toString(16, 64), a0Pub.getY().toString(16, 64)),
         new Point(a1Pub.getX().toString(16, 64), a1Pub.getY().toString(16, 64)),
       ];
-      factorPubs = [getPubKeyPoint(factorKey)];
+      factorPubs = [factorPub];
       factorEncs = {};
 
       for (let i = 0; i < factorPubs.length; i++) {
-        const factorPub = factorPubs[i];
-        factorEncs[factorPub.x.toString(16, 64)] = encrypt(
-          Buffer.concat([
-            Buffer.from("0x04", "hex"),
-            Buffer.from(factorPub.x.toString("hex"), "hex"),
-            Buffer.from(factorPub.y.toString("hex"), "hex"),
-          ]),
+        const f = factorPubs[i];
+        factorEncs[f.x.toString(16, 64)] = encrypt(
+          Buffer.concat([Buffer.from("0x04", "hex"), Buffer.from(f.x.toString("hex"), "hex"), Buffer.from(f.y.toString("hex"), "hex")]),
           tss2.toBuffer()
         );
       }
@@ -742,6 +738,7 @@ class ThresholdKey implements ITKey {
 
     const result = {
       privKey: this.privKey,
+      ...(useTSS && { tssShare: tss2 }),
       deviceShare: new ShareStore(shares[shareIndexes[1].toString("hex")], poly.getPolynomialID()),
       userShare: undefined,
     };
