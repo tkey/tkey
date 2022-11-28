@@ -78,6 +78,13 @@ export interface IMetadata extends ISerializable {
 
   getShareIndexesForPolynomial(polyID: PolynomialID): string[];
   getLatestPublicPolynomial(): PublicPolynomial;
+  addTSSData(
+    tssPolyCommits: Point[],
+    factorPubs: Point[],
+    factorEncs: {
+      [factorPubID: string]: EncryptedMessage;
+    }
+  ): void;
   addPublicShare(polynomialID: PolynomialID, publicShare: PublicShare): void;
   setGeneralStoreDomain(key: string, obj: unknown): void;
   getGeneralStoreDomain(key: string): unknown;

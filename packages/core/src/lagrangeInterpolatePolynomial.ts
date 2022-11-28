@@ -155,3 +155,23 @@ export function polyCommitmentEval(polyCommitments: Array<Point>, index: BN): Po
   }
   return new Point(shareCommitment.getX(), shareCommitment.getY());
 }
+
+export function getLagrangeCoeffs(_allIndexes, _myIndex, _target = 0) {
+  const allIndexes = _allIndexes.map((i) => new BN(i));
+  const myIndex = new BN(_myIndex);
+  const target = new BN(_target);
+  let upper = new BN(1);
+  let lower = new BN(1);
+  for (let j = 0; j < allIndexes.length; j += 1) {
+    if (myIndex.cmp(allIndexes[j]) !== 0) {
+      let tempUpper = target.sub(allIndexes[j]);
+      tempUpper = tempUpper.umod(ecCurve.curve.n);
+      upper = upper.mul(tempUpper);
+      upper = upper.umod(ecCurve.curve.n);
+      let tempLower = myIndex.sub(allIndexes[j]);
+      tempLower = tempLower.umod(ecCurve.curve.n);
+      lower = lower.mul(tempLower).umod(ecCurve.curve.n);
+    }
+  }
+  return upper.mul(lower.invm(ecCurve.curve.n)).umod(ecCurve.curve.n);
+}

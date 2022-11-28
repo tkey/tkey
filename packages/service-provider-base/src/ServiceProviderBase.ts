@@ -5,6 +5,7 @@ import {
   EncryptedMessage,
   getPubKeyECC,
   IServiceProvider,
+  Point,
   PubKeyType,
   ServiceProviderArgs,
   StringifiedType,
@@ -20,11 +21,16 @@ class ServiceProviderBase implements IServiceProvider {
   // For easy serialization
   postboxKey: BN;
 
+  tssPubKey?: Point;
+
   serviceProviderName: string;
 
-  constructor({ enableLogging = false, postboxKey }: ServiceProviderArgs) {
+  constructor({ enableLogging = false, postboxKey, tssPubKey = undefined }: ServiceProviderArgs) {
     this.enableLogging = enableLogging;
     this.postboxKey = new BN(postboxKey, "hex");
+    if (tssPubKey) {
+      this.tssPubKey = tssPubKey;
+    }
     this.serviceProviderName = "ServiceProviderBase";
   }
 
@@ -42,6 +48,10 @@ class ServiceProviderBase implements IServiceProvider {
 
   async decrypt(msg: EncryptedMessage): Promise<Buffer> {
     return decryptUtils(toPrivKeyECC(this.postboxKey), msg);
+  }
+
+  retrieveTSSPubKey(): Point {
+    return this.tssPubKey;
   }
 
   retrievePubKeyPoint(): curve.base.BasePoint {

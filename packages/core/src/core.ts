@@ -3,6 +3,7 @@ import {
   CatchupToLatestShareResult,
   decrypt,
   DeleteShareResult,
+  ecCurve,
   encrypt,
   EncryptedMessage,
   FromJSONConstructor,
@@ -49,7 +50,7 @@ import stringify from "json-stable-stringify";
 
 import AuthMetadata from "./authMetadata";
 import CoreError from "./errors";
-import { generateRandomPolynomial, lagrangeInterpolatePolynomial, lagrangeInterpolation } from "./lagrangeInterpolatePolynomial";
+import { generateRandomPolynomial, getLagrangeCoeffs, lagrangeInterpolatePolynomial, lagrangeInterpolation } from "./lagrangeInterpolatePolynomial";
 import Metadata from "./metadata";
 
 // TODO: handle errors for get and set with retries
@@ -209,13 +210,28 @@ class ThresholdKey implements ITKey {
     previouslyFetchedCloudMetadata?: Metadata;
     previousLocalMetadataTransitions?: LocalMetadataTransitions;
     delete1OutOf1?: boolean;
+    useTSS?: boolean;
+    factorKey?: BN;
   }): Promise<KeyDetails> {
     // setup initial params/states
     const p = params || {};
 
     if (p.delete1OutOf1 && !this.manualSync) throw CoreError.delete1OutOf1OnlyManualSync();
 
-    const { withShare, importKey, neverInitializeNewKey, transitionMetadata, previouslyFetchedCloudMetadata, previousLocalMetadataTransitions } = p;
+    const {
+      withShare,
+      importKey,
+      neverInitializeNewKey,
+      transitionMetadata,
+      previouslyFetchedCloudMetadata,
+      previousLocalMetadataTransitions,
+      useTSS,
+      factorKey,
+    } = p;
+
+    if (useTSS && !factorKey) {
+      throw CoreError.default("cannot use TSS without providing factor key");
+    }
 
     const previousLocalMetadataTransitionsExists =
       previousLocalMetadataTransitions && previousLocalMetadataTransitions[0].length > 0 && previousLocalMetadataTransitions[1].length > 0;
@@ -249,7 +265,7 @@ class ThresholdKey implements ITKey {
           throw CoreError.default("key has not been generated yet");
         }
         // no metadata set, assumes new user
-        await this._initializeNewKey({ initializeModules: true, importedKey: importKey, delete1OutOf1: p.delete1OutOf1 });
+        await this._initializeNewKey({ initializeModules: true, importedKey: importKey, delete1OutOf1: p.delete1OutOf1, useTSS, factorKey });
         return this.getKeyDetails();
       }
       // else we continue with catching up share and metadata
@@ -615,11 +631,15 @@ class ThresholdKey implements ITKey {
     initializeModules,
     importedKey,
     delete1OutOf1,
+    useTSS,
+    factorKey,
   }: {
     determinedShare?: BN;
     initializeModules?: boolean;
     importedKey?: BN;
     delete1OutOf1?: boolean;
+    useTSS?: boolean;
+    factorKey?: BN;
   } = {}): Promise<InitializeNewKeyResult> {
     if (!importedKey) {
       const tmpPriv = generatePrivate();
@@ -644,9 +664,47 @@ class ThresholdKey implements ITKey {
     }
     const shares = poly.generateShares(shareIndexes);
 
+    let tssPolyCommits, factorPubs, factorEncs;
+    if (useTSS) {
+      const tss2 = new BN(generatePrivate());
+      const tss1Pub = this.serviceProvider.retrieveTSSPubKey();
+      const tss1PubKey = ecCurve.keyFromPublic({ x: tss1Pub.x.toString(16, 64), y: tss1Pub.y.toString(16, 64) }).getPublic();
+      const tss2Pub = getPubKeyPoint(tss2);
+      const tss2PubKey = ecCurve.keyFromPublic({ x: tss2Pub.x.toString(16, 64), y: tss2Pub.y.toString(16, 64) }).getPublic();
+
+      const L1_0 = getLagrangeCoeffs([1, 2], 1, 0);
+      const L2_0 = getLagrangeCoeffs([1, 2], 2, 0);
+
+      const a0Pub = tss1PubKey.mul(L1_0).add(tss2PubKey.mul(L2_0));
+      const a1Pub = tss1PubKey.add(a0Pub.neg());
+
+      tssPolyCommits = [
+        new Point(a0Pub.getX().toString(16, 64), a0Pub.getY().toString(16, 64)),
+        new Point(a1Pub.getX().toString(16, 64), a1Pub.getY().toString(16, 64)),
+      ];
+      factorPubs = [getPubKeyPoint(factorKey)];
+      factorEncs = {};
+
+      for (let i = 0; i < factorPubs.length; i++) {
+        const factorPub = factorPubs[i];
+        factorEncs[factorPub.x.toString(16, 64)] = encrypt(
+          Buffer.concat([
+            Buffer.from("0x04", "hex"),
+            Buffer.from(factorPub.x.toString("hex"), "hex"),
+            Buffer.from(factorPub.y.toString("hex"), "hex"),
+          ]),
+          tss2.toBuffer()
+        );
+      }
+    }
+
     // create metadata to be stored
     const metadata = new Metadata(getPubKeyPoint(this.privKey));
     metadata.addFromPolynomialAndShares(poly, shares);
+    if (useTSS) {
+      metadata.addTSSData(tssPolyCommits, factorPubs, factorEncs);
+    }
+
     const serviceProviderShare = shares[shareIndexes[0].toString("hex")];
     const shareStore = new ShareStore(serviceProviderShare, poly.getPolynomialID());
     this.metadata = metadata;

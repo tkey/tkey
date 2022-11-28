@@ -2,6 +2,8 @@ import type { CustomAuthArgs } from "@toruslabs/customauth";
 import BN from "bn.js";
 import type { curve } from "elliptic";
 
+import Point from "../base/Point";
+
 export type PubKeyType = "ecc";
 
 // @flow
@@ -20,6 +22,7 @@ export interface EncryptedMessage {
 export interface ServiceProviderArgs {
   enableLogging?: boolean;
   postboxKey?: string;
+  tssPubKey?: Point;
 }
 
 export interface TorusServiceProviderArgs extends ServiceProviderArgs {
@@ -51,6 +54,7 @@ export interface IServiceProvider extends ISerializable {
   decrypt(msg: EncryptedMessage): Promise<Buffer>;
   retrievePubKey(type: PubKeyType): Buffer;
   retrievePubKeyPoint(): curve.base.BasePoint;
+  retrieveTSSPubKey(): Point;
   sign(msg: BNString): string;
 }
 export type TorusStorageLayerAPIParams = {
