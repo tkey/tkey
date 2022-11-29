@@ -2,14 +2,14 @@
 /* eslint-disable mocha/no-exports */
 /* eslint-disable import/no-extraneous-dependencies */
 
-import { ecCurve, getPubKeyPoint } from "@tkey/common-types";
+import { ecCurve, getPubKeyPoint, Point } from "@tkey/common-types";
 import PrivateKeyModule, { ED25519Format, SECP256K1Format } from "@tkey/private-keys";
 import SecurityQuestionsModule from "@tkey/security-questions";
 import SeedPhraseModule, { MetamaskSeedPhraseFormat } from "@tkey/seed-phrase";
 import TorusServiceProvider from "@tkey/service-provider-torus";
 import ShareTransferModule from "@tkey/share-transfer";
 import TorusStorageLayer from "@tkey/storage-layer-torus";
-import { generatePrivate } from "@toruslabs/eccrypto";
+import { generatePrivate, getPublic } from "@toruslabs/eccrypto";
 import { post } from "@toruslabs/http-helpers";
 import { deepEqual, deepStrictEqual, equal, fail, notEqual, notStrictEqual, strict, strictEqual, throws } from "assert";
 import BN from "bn.js";
@@ -74,6 +74,30 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const storageLayer = initStorageLayer({ hostUrl: metadataURL });
       const tb2 = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync: mode });
       await tb2.initialize();
+      const reconstructedKey = await tb2.reconstructKey();
+      await tb2.syncLocalMetadataTransitions();
+      if (tb2.privKey.cmp(reconstructedKey.privKey) !== 0) {
+        fail("key should be able to be reconstructed");
+      }
+    });
+    it.only("#should be able to reconstruct key when initializing a key with useTSS true", async function () {
+      const sp = customSP;
+      if (!sp.tssVerifier) return;
+      sp.setTSSPubKey(
+        new Point(
+          "9c381cea525bcc72b05272afe8ea75b1c3029966caa5953aa64b5d84d7a97773",
+          "4f3909bf64be23a32887086fccd449e0e57042622a1364e0d670f6eb798238d7"
+        )
+      );
+      sp.postboxKey = new BN(getTempKey(), "hex");
+      const storageLayer = initStorageLayer({ hostUrl: metadataURL });
+      const tb2 = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync: mode });
+      // const factorKey = new BN("871a3d19025584c3b27874b5cc49d6d7a7681bf1cecb52007cd7e28f58cd837b", "hex");
+      const factorPub = new Point(
+        "ffd144335c92e4cbe6fa59c47868b37f0dbd68b5535343f17e884c8a2b73a9f9",
+        "b56d2d46044efcfa15195cca2cdeacad05da34b567c8ad29528b39730fb15153"
+      );
+      await tb2.initialize({ useTSS: true, factorPub });
       const reconstructedKey = await tb2.reconstructKey();
       await tb2.syncLocalMetadataTransitions();
       if (tb2.privKey.cmp(reconstructedKey.privKey) !== 0) {

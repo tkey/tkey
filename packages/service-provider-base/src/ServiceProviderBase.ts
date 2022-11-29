@@ -50,7 +50,14 @@ class ServiceProviderBase implements IServiceProvider {
     return decryptUtils(toPrivKeyECC(this.postboxKey), msg);
   }
 
+  setTSSPubKey(tssPubKey: Point) {
+    this.tssPubKey = tssPubKey;
+  }
+
   retrieveTSSPubKey(): Point {
+    if (this.tssPubKey === undefined) {
+      throw new Error("tssPubKey is undefined");
+    }
     return this.tssPubKey;
   }
 
