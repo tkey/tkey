@@ -779,6 +779,7 @@ class ThresholdKey implements ITKey {
     return tb;
   }
 
+  // NOTE: This API will be DEPRECATED in the future in favour of inputShareStoreSafe()
   inputShareStore(shareStore: ShareStore): void {
     let ss: ShareStore;
     if (shareStore instanceof ShareStore) {
