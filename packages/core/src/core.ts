@@ -359,7 +359,7 @@ class ThresholdKey implements ITKey {
     // check if we have enough shares to meet threshold
     let sharesLeft = requiredThreshold;
     // we don't just check the latest poly but
-    //  we check if the shares on previous polynomials in our stores have the share indexes we require
+    // we check if the shares on previous polynomials in our stores have the share indexes we require
     const fullShareList = this.metadata.getShareIndexesForPolynomial(pubPolyID);
     const shareIndexesRequired = {};
     for (let i = 0; i < fullShareList.length; i += 1) {
@@ -1023,23 +1023,8 @@ class ThresholdKey implements ITKey {
     if (!this.metadata) {
       throw CoreError.metadataUndefined();
     }
-    const pubPoly = this.metadata.getLatestPublicPolynomial();
-    const pubPolyID = pubPoly.getPolynomialID();
-    const existingShareIndexes = this.metadata.getShareIndexesForPolynomial(pubPolyID);
-    const threshold = pubPoly.getThreshold();
 
-    const pointsArr = [];
-    const sharesForExistingPoly = Object.keys(this.shares[pubPolyID]);
-    if (sharesForExistingPoly.length < threshold) {
-      throw CoreError.unableToReconstruct("not enough shares for polynomial reconstruction");
-    }
-    for (let i = 0; i < threshold; i += 1) {
-      pointsArr.push(new Point(new BN(sharesForExistingPoly[i], "hex"), this.shares[pubPolyID][sharesForExistingPoly[i]].share.share));
-    }
-    const currentPoly = lagrangeInterpolatePolynomial(pointsArr);
-    const allExistingShares = currentPoly.generateShares(existingShareIndexes);
-
-    const shareArray = existingShareIndexes.map((shareIndex) => allExistingShares[shareIndex].share);
+    const shareArray = this.getAllSharesForLatestPolynomial().map((x) => x.share.share);
     await this.syncMultipleShareMetadata(shareArray, adjustScopedStore);
   }
 
@@ -1251,7 +1236,7 @@ class ThresholdKey implements ITKey {
     };
   }
 
-  getAllSharesForPolynomial(): Array<BN> {
+  getAllSharesForLatestPolynomial(): Array<ShareStore> {
     const pubPoly = this.metadata.getLatestPublicPolynomial();
     const pubPolyID = pubPoly.getPolynomialID();
     const existingShareIndexes = this.metadata.getShareIndexesForPolynomial(pubPolyID);
@@ -1267,7 +1252,10 @@ class ThresholdKey implements ITKey {
     }
     const currentPoly = lagrangeInterpolatePolynomial(pointsArr);
     const allExistingShares = currentPoly.generateShares(existingShareIndexes);
-    const shareArray = existingShareIndexes.map((shareIndex) => allExistingShares[shareIndex].share);
+    const shareArray = existingShareIndexes.map((shareIndex) => {
+      return this.metadata.shareToShareStore(allExistingShares[shareIndex].share);
+      // return new ShareStore(allExistingShares[shareIndex].share, pubPolyID as PolynomialID);
+    });
     return shareArray;
   }
 
@@ -1284,10 +1272,10 @@ class ThresholdKey implements ITKey {
     }
 
     // Construct all shares
-    const shareArray = this.getAllSharesForPolynomial();
+    const shareArray = this.getAllSharesForLatestPolynomial();
     await this.addLocalMetadataTransitions({
       input: [...Array(shareArray.length).fill({ message: SHARE_DELETED, dateAdded: Date.now() }), { message: KEY_NOT_FOUND }],
-      privKey: [...shareArray, undefined],
+      privKey: [...shareArray.map((x) => x.share.share), undefined],
     });
     await this.syncLocalMetadataTransitions(); // forcesync
 

@@ -280,20 +280,20 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       // create 2/4
       await tb._initializeNewKey({ initializeModules: true });
       await tb.generateNewShare();
-      const sharesAtEpoch2 = tb.getAllSharesForPolynomial();
-      const shareStoresAtEpoch2 = sharesAtEpoch2.map((x) => tb.metadata.shareToShareStore(x));
+      // const sharesAtEpoch2 = tb.getAllSharesForLatestPolynomial();
+      const shareStoresAtEpoch2 = tb.getAllSharesForLatestPolynomial();
 
       await tb.generateNewShare();
       await tb.syncLocalMetadataTransitions();
-      const sharesAtEpoch3 = tb.getAllSharesForPolynomial();
+      const sharesStoresAtEpoch3 = tb.getAllSharesForLatestPolynomial();
       // const shareStoresAtEpoch3 = sharesAtEpoch2.map((x) => tb.metadata.shareToShareStore(x));
       await tb.wipe();
 
-      const data = await customSL.getMetadata({ serviceProvider: customSP });
+      const spData = await customSL.getMetadata({ serviceProvider: customSP });
       const data2 = await Promise.allSettled(shareStoresAtEpoch2.map((x) => tb.catchupToLatestShare({ shareStore: x })));
-      const data3 = await Promise.all(sharesAtEpoch3.map((x) => customSL.getMetadata({ privKey: x })));
+      const data3 = await Promise.all(sharesStoresAtEpoch3.map((x) => customSL.getMetadata({ privKey: x.share.share })));
 
-      deepStrictEqual(data.message, KEY_NOT_FOUND);
+      deepStrictEqual(spData.message, KEY_NOT_FOUND);
 
       data2.forEach((x) => {
         deepStrictEqual(x.status, "rejected");
