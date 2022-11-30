@@ -323,6 +323,10 @@ class ThresholdKey implements ITKey {
     try {
       shareMetadata = await this.getAuthMetadata({ privKey: shareStore.share.share, includeLocalMetadataTransitions });
     } catch (err) {
+      // delete share error
+      if ((err as CoreError) && err.code === 1308) {
+        throw err;
+      }
       throw CoreError.authMetadataGetUnavailable(`, ${prettyPrintError(err)}`);
     }
 
@@ -336,6 +340,10 @@ class ThresholdKey implements ITKey {
       const nextShare = await shareMetadata.getEncryptedShare(shareStore);
       return await this.catchupToLatestShare({ shareStore: nextShare, polyID, includeLocalMetadataTransitions });
     } catch (err) {
+      // delete share error
+      if ((err as CoreError) && err.code === 1308) {
+        throw err;
+      }
       return { latestShare: shareStore, shareMetadata };
     }
   }
@@ -1240,6 +1248,51 @@ class ThresholdKey implements ITKey {
       serviceProvider: this.serviceProvider,
       storageLayer: this.storageLayer,
     };
+  }
+
+  getAllSharesForPolynomial(): Array<BN> {
+    const pubPoly = this.metadata.getLatestPublicPolynomial();
+    const pubPolyID = pubPoly.getPolynomialID();
+    const existingShareIndexes = this.metadata.getShareIndexesForPolynomial(pubPolyID);
+    const threshold = pubPoly.getThreshold();
+
+    const pointsArr = [];
+    const sharesForExistingPoly = Object.keys(this.shares[pubPolyID]);
+    if (sharesForExistingPoly.length < threshold) {
+      throw CoreError.unableToReconstruct("not enough shares for polynomial reconstruction");
+    }
+    for (let i = 0; i < threshold; i += 1) {
+      pointsArr.push(new Point(new BN(sharesForExistingPoly[i], "hex"), this.shares[pubPolyID][sharesForExistingPoly[i]].share.share));
+    }
+    const currentPoly = lagrangeInterpolatePolynomial(pointsArr);
+    const allExistingShares = currentPoly.generateShares(existingShareIndexes);
+    const shareArray = existingShareIndexes.map((shareIndex) => allExistingShares[shareIndex].share);
+    return shareArray;
+  }
+
+  /// Destructive method. All data will be wiped!
+  async wipe(): Promise<void> {
+    if (!this.metadata) {
+      throw CoreError.metadataUndefined();
+    }
+    if (!this.privKey) {
+      throw CoreError.privateKeyUnavailable();
+    }
+
+    // Construct all shares
+    const shareArray = this.getAllSharesForPolynomial();
+    await this.addLocalMetadataTransitions({
+      input: [...Array(shareArray.length).fill({ message: SHARE_DELETED, dateAdded: Date.now() }), { message: KEY_NOT_FOUND }],
+      privKey: [...shareArray, undefined],
+    });
+
+    // forced for now
+    await this.syncLocalMetadataTransitions();
+
+    this.privKey = undefined;
+    this.metadata = undefined;
+    this.shares = {};
+    this.lastFetchedCloudMetadata = undefined;
   }
 
   getApi(): ITKeyApi {

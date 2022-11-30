@@ -80,6 +80,7 @@ class TorusStorageLayer implements IStorageLayer {
     // returns empty object if object
     if (metadataResponse.message === "") {
       return Object.create({ message: KEY_NOT_FOUND }) as T;
+      // return { message: KEY_NOT_FOUND } as T;
     }
     const encryptedMessage = JSON.parse(atob(metadataResponse.message));
 

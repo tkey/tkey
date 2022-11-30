@@ -2,7 +2,8 @@
 /* eslint-disable mocha/no-exports */
 /* eslint-disable import/no-extraneous-dependencies */
 
-import { ecCurve, getPubKeyPoint } from "@tkey/common-types";
+import { ecCurve, getPubKeyPoint, KEY_NOT_FOUND, SHARE_DELETED } from "@tkey/common-types";
+import { CoreError } from "@tkey/core";
 import PrivateKeyModule, { ED25519Format, SECP256K1Format } from "@tkey/private-keys";
 import SecurityQuestionsModule from "@tkey/security-questions";
 import SeedPhraseModule, { MetamaskSeedPhraseFormat } from "@tkey/seed-phrase";
@@ -63,7 +64,7 @@ function compareReconstructedKeys(a, b, message) {
 export const sharedTestCases = (mode, torusSP, storageLayer) => {
   const customSP = torusSP;
   const customSL = storageLayer;
-  describe("tkey", function () {
+  describe.only("tkey", function () {
     let tb;
     beforeEach("Setup ThresholdKey", async function () {
       tb = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
@@ -80,6 +81,58 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         fail("key should be able to be reconstructed");
       }
     });
+    it.only(`#should be able to delete a user, manualSync=${mode}`, async function () {
+      // create 2/4
+      const resp1 = await tb._initializeNewKey({ initializeModules: true });
+      await tb.generateNewShare();
+      await tb.syncLocalMetadataTransitions();
+      const sharesAtEpoch2 = tb.getAllSharesForPolynomial();
+      const shareStoresAtEpoch2 = sharesAtEpoch2.map((x) => tb.metadata.shareToShareStore(x));
+
+      await tb.generateNewShare();
+      await tb.syncLocalMetadataTransitions();
+      const sharesAtEpoch3 = tb.getAllSharesForPolynomial();
+      // const shareStoresAtEpoch3 = sharesAtEpoch2.map((x) => tb.metadata.shareToShareStore(x));
+      await tb.wipe();
+
+      const data = await customSL.getMetadata({ serviceProvider: customSP });
+      const data2 = await Promise.allSettled(shareStoresAtEpoch2.map((x) => tb.catchupToLatestShare({ shareStore: x })));
+      const data3 = await Promise.all(sharesAtEpoch3.map((x) => customSL.getMetadata({ privKey: x })));
+
+      deepStrictEqual(data.message, KEY_NOT_FOUND);
+
+      data2.forEach((x) => {
+        deepStrictEqual(x.status, "rejected");
+        deepStrictEqual(x.reason.code, 1308);
+      });
+
+      data3.forEach((x) => {
+        deepStrictEqual(x.message, SHARE_DELETED);
+      });
+
+      // console.log(data2.latestShare, SHARE_DELETED);
+
+      // const tb2 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
+      // await tb2.initialize();
+      // await tb2.syncLocalMetadataTransitions();
+
+      // const data3 = await customSL.getMetadata({ serviceProvider: customSP });
+      // // notEqual(data3.message, KEY_NOT_FOUND);
+
+      // const reconstructedKey = await tb2.reconstructKey();
+      // if (resp1.privKey.cmp(reconstructedKey.privKey) === 0) {
+      //   fail("key should be different");
+      // }
+    });
+    // it(`#should be able to reinitialize after wipe, manualSync=${mode}`, async function () {
+    //   // create 2/4
+    //   const resp1 = await tb._initializeNewKey({ initializeModules: true });
+    //   await tb.generateNewShare();
+    //   await tb.syncLocalMetadataTransitions();
+    //   const sharesAtEpoch2 = tb.getAllSharesForPolynomial();
+    //   const shareStoresAtEpoch2 = sharesAtEpoch2.map((x) => tb.metadata.shareToShareStore(x));
+    //   await tb.wipe();
+    // });
     it(`#should be able to reconstruct key when initializing a key, manualSync=${mode}`, async function () {
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
       await tb.syncLocalMetadataTransitions();
