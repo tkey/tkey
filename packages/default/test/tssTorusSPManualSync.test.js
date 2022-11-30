@@ -1,6 +1,5 @@
 import ServiceProviderTorus from "@tkey/service-provider-torus";
 import { generatePrivate } from "@toruslabs/eccrypto";
-import { BN } from "bn.js";
 
 import { getMetadataUrl, initStorageLayer } from "./helpers";
 import { sharedTestCases } from "./shared";
