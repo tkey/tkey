@@ -489,6 +489,33 @@ class ThresholdKey implements ITKey {
     return { newShareStores };
   }
 
+  /// Destructive method. All data will be wiped!
+  async wipe(): Promise<void> {
+    if (!this.metadata) {
+      throw CoreError.metadataUndefined();
+    }
+    if (!this.privKey) {
+      throw CoreError.privateKeyUnavailable();
+    }
+
+    const existingShares = this.getExistingShares();
+    if (existingShares.length === 0) {
+      throw CoreError.default("No shares to delete");
+    }
+
+    await this.addLocalMetadataTransitions({
+      input: [...Array(existingShares.length).fill({ message: SHARE_DELETED, dateAdded: Date.now() }), { message: KEY_NOT_FOUND }],
+      privKey: [...existingShares.map((existingShare) => existingShare), undefined],
+    });
+
+    await this.syncLocalMetadataTransitions();
+
+    this.privKey = undefined;
+    this.metadata = undefined;
+    this.shares = {};
+    this.lastFetchedCloudMetadata = undefined;
+  }
+
   async generateNewShare(): Promise<GenerateNewShareResult> {
     if (!this.metadata) {
       throw CoreError.metadataUndefined();
@@ -1011,26 +1038,7 @@ class ThresholdKey implements ITKey {
   // Module functions
 
   async _syncShareMetadata(adjustScopedStore?: (ss: unknown) => unknown): Promise<void> {
-    if (!this.metadata) {
-      throw CoreError.metadataUndefined();
-    }
-    const pubPoly = this.metadata.getLatestPublicPolynomial();
-    const pubPolyID = pubPoly.getPolynomialID();
-    const existingShareIndexes = this.metadata.getShareIndexesForPolynomial(pubPolyID);
-    const threshold = pubPoly.getThreshold();
-
-    const pointsArr = [];
-    const sharesForExistingPoly = Object.keys(this.shares[pubPolyID]);
-    if (sharesForExistingPoly.length < threshold) {
-      throw CoreError.unableToReconstruct("not enough shares for polynomial reconstruction");
-    }
-    for (let i = 0; i < threshold; i += 1) {
-      pointsArr.push(new Point(new BN(sharesForExistingPoly[i], "hex"), this.shares[pubPolyID][sharesForExistingPoly[i]].share.share));
-    }
-    const currentPoly = lagrangeInterpolatePolynomial(pointsArr);
-    const allExistingShares = currentPoly.generateShares(existingShareIndexes);
-
-    const shareArray = existingShareIndexes.map((shareIndex) => allExistingShares[shareIndex].share);
+    const shareArray = this.getExistingShares();
     await this.syncMultipleShareMetadata(shareArray, adjustScopedStore);
   }
 
@@ -1060,6 +1068,29 @@ class ThresholdKey implements ITKey {
     });
     const newMetadata = await Promise.all(newMetadataPromise);
     return this.setAuthMetadataBulk({ input: newMetadata, privKey: shares });
+  }
+
+  getExistingShares(): BN[] {
+    if (!this.metadata) {
+      throw CoreError.metadataUndefined();
+    }
+    const pubPoly = this.metadata.getLatestPublicPolynomial();
+    const pubPolyID = pubPoly.getPolynomialID();
+    const existingShareIndexes = this.metadata.getShareIndexesForPolynomial(pubPolyID);
+    const threshold = pubPoly.getThreshold();
+
+    const pointsArr = [];
+    const sharesForExistingPoly = Object.keys(this.shares[pubPolyID]);
+    if (sharesForExistingPoly.length < threshold) {
+      throw CoreError.unableToReconstruct("not enough shares for polynomial reconstruction");
+    }
+    for (let i = 0; i < threshold; i += 1) {
+      pointsArr.push(new Point(new BN(sharesForExistingPoly[i], "hex"), this.shares[pubPolyID][sharesForExistingPoly[i]].share.share));
+    }
+    const currentPoly = lagrangeInterpolatePolynomial(pointsArr);
+    const allExistingShares = currentPoly.generateShares(existingShareIndexes);
+
+    return existingShareIndexes.map((shareIndex) => allExistingShares[shareIndex].share);
   }
 
   _addRefreshMiddleware(
