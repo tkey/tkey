@@ -260,6 +260,7 @@ export interface ITKeyApi {
     serialize: (share: BN, type: string) => Promise<unknown>,
     deserialize: (serializedShare: unknown, type: string) => Promise<BN>
   ): void;
+  getExistingShares(): BN[];
   generateNewShare(): Promise<GenerateNewShareResult>;
   outputShareStore(shareIndex: BNString, polyID?: string): ShareStore;
   inputShare(share: unknown, type?: string): Promise<void>;

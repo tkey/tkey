@@ -278,6 +278,34 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     });
   });
 
+  describe(`tkey wipe, manualSync=${mode}`, function () {
+    let tb;
+    const numberOfShares = 10;
+    const shareStore = [numberOfShares];
+    const shareIndex = [numberOfShares];
+    before(`#should be able to generate shares, manualSync=${mode}`, async function () {
+      tb = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
+      await tb._initializeNewKey({ initializeModules: true });
+      // generate a bunch of shares
+      for (let i = 0; i < numberOfShares; i += 1) {
+        const newShare = await tb.generateNewShare();
+        shareStore[i] = newShare.newShareStores;
+        shareIndex[i] = newShare.newShareIndex;
+      }
+    });
+    it(`#should be able to wipe all shares, manualSync=${mode}`, async function () {
+      await tb.wipe();
+    });
+    it(`#should not be able to initialize with any of the shares after wipe, manualSync=${mode}`, async function () {
+      const tb2 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
+      for (let i = 0; i < numberOfShares; i += 1) {
+        await rejects(async function () {
+          await tb2.initialize({ withShare: shareStore[i][shareIndex[i].toString("hex")] });
+        });
+      }
+    });
+  });
+
   describe("tkey serialization/deserialization", function () {
     let tb;
     beforeEach("Setup ThresholdKey", async function () {

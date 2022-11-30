@@ -1280,6 +1280,7 @@ class ThresholdKey implements ITKey {
       initialize: this.initialize.bind(this),
       catchupToLatestShare: this.catchupToLatestShare.bind(this),
       _syncShareMetadata: this._syncShareMetadata.bind(this),
+      getExistingShares: this.getExistingShares.bind(this),
       _addRefreshMiddleware: this._addRefreshMiddleware.bind(this),
       _addReconstructKeyMiddleware: this._addReconstructKeyMiddleware.bind(this),
       _addShareSerializationMiddleware: this._addShareSerializationMiddleware.bind(this),
