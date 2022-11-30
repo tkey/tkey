@@ -1024,7 +1024,7 @@ class ThresholdKey implements ITKey {
       throw CoreError.metadataUndefined();
     }
 
-    const shareArray = this.getAllSharesForLatestPolynomial().map((x) => x.share.share);
+    const shareArray = this.getAllShareStoresForLatestPolynomial().map((x) => x.share.share);
     await this.syncMultipleShareMetadata(shareArray, adjustScopedStore);
   }
 
@@ -1236,7 +1236,7 @@ class ThresholdKey implements ITKey {
     };
   }
 
-  getAllSharesForLatestPolynomial(): Array<ShareStore> {
+  getAllShareStoresForLatestPolynomial(): Array<ShareStore> {
     const pubPoly = this.metadata.getLatestPublicPolynomial();
     const pubPolyID = pubPoly.getPolynomialID();
     const existingShareIndexes = this.metadata.getShareIndexesForPolynomial(pubPolyID);
@@ -1271,7 +1271,7 @@ class ThresholdKey implements ITKey {
     }
 
     // Construct all shares
-    const shareArray = this.getAllSharesForLatestPolynomial();
+    const shareArray = this.getAllShareStoresForLatestPolynomial();
     await this.addLocalMetadataTransitions({
       input: [...Array(shareArray.length).fill({ message: SHARE_DELETED, dateAdded: Date.now() }), { message: KEY_NOT_FOUND }],
       privKey: [...shareArray.map((x) => x.share.share), undefined],
