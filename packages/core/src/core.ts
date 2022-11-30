@@ -1279,6 +1279,9 @@ class ThresholdKey implements ITKey {
     if (!this.privKey) {
       throw CoreError.privateKeyUnavailable();
     }
+    if (this._localMetadataTransitions[0].length > 0 || this._localMetadataTransitions[1].length > 0) {
+      throw CoreError.default("Please sync all local state before calling this function");
+    }
 
     // Construct all shares
     const shareArray = this.getAllSharesForPolynomial();
@@ -1286,9 +1289,7 @@ class ThresholdKey implements ITKey {
       input: [...Array(shareArray.length).fill({ message: SHARE_DELETED, dateAdded: Date.now() }), { message: KEY_NOT_FOUND }],
       privKey: [...shareArray, undefined],
     });
-
-    // forced for now
-    await this.syncLocalMetadataTransitions();
+    await this.syncLocalMetadataTransitions(); // forcesync
 
     this.privKey = undefined;
     this.metadata = undefined;
