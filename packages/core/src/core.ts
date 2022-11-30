@@ -1254,7 +1254,6 @@ class ThresholdKey implements ITKey {
     const allExistingShares = currentPoly.generateShares(existingShareIndexes);
     const shareArray = existingShareIndexes.map((shareIndex) => {
       return this.metadata.shareToShareStore(allExistingShares[shareIndex].share);
-      // return new ShareStore(allExistingShares[shareIndex].share, pubPolyID as PolynomialID);
     });
     return shareArray;
   }
