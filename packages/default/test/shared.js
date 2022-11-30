@@ -280,13 +280,11 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       // create 2/4
       await tb._initializeNewKey({ initializeModules: true });
       await tb.generateNewShare();
-      // const sharesAtEpoch2 = tb.getAllSharesForLatestPolynomial();
       const shareStoresAtEpoch2 = tb.getAllSharesForLatestPolynomial();
 
       await tb.generateNewShare();
       await tb.syncLocalMetadataTransitions();
       const sharesStoresAtEpoch3 = tb.getAllSharesForLatestPolynomial();
-      // const shareStoresAtEpoch3 = sharesAtEpoch2.map((x) => tb.metadata.shareToShareStore(x));
       await tb.wipe();
 
       const spData = await customSL.getMetadata({ serviceProvider: customSP });
