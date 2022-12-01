@@ -285,7 +285,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       await tb.generateNewShare();
       await tb.syncLocalMetadataTransitions();
       const sharesStoresAtEpoch3 = tb.getAllShareStoresForLatestPolynomial();
-      await tb.wipe();
+      await tb.CRITICAL_deleteTkey();
 
       const spData = await customSL.getMetadata({ serviceProvider: customSP });
       const data2 = await Promise.allSettled(shareStoresAtEpoch2.map((x) => tb.catchupToLatestShare({ shareStore: x })));
@@ -309,7 +309,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       if (mode) {
         await tb.syncLocalMetadataTransitions();
       }
-      await tb.wipe();
+      await tb.CRITICAL_deleteTkey();
 
       const tb2 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
       await tb2.initialize();

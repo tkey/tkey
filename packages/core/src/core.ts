@@ -1259,7 +1259,7 @@ class ThresholdKey implements ITKey {
   }
 
   /// Destructive method. All data will be wiped!
-  async wipe(): Promise<void> {
+  async CRITICAL_deleteTkey(): Promise<void> {
     if (!this.metadata) {
       throw CoreError.metadataUndefined();
     }
