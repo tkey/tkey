@@ -324,6 +324,16 @@ class ThresholdKey implements ITKey {
     return this.getKeyDetails();
   }
 
+  getFactorEnc(factorPub: Point): EncryptedMessage {
+    if (!this.metadata) throw CoreError.metadataUndefined();
+    if (!this.metadata.factorEncs) throw CoreError.default("no factor encryptions");
+    return this.metadata.factorPubs[factorPub.encode("elliptic-compressed").toString()];
+  }
+
+  async decryptFactorEnc(factorKey: BN, factorEnc: EncryptedMessage): Promise<Buffer> {
+    return decrypt(Buffer.from(factorKey.toString(16, 64), "hex"), factorEnc);
+  }
+
   /**
    * catchupToLatestShare recursively loops fetches metadata of the provided share and checks if there is an encrypted share for it.
    * @param shareStore - share to start of with
@@ -689,7 +699,7 @@ class ThresholdKey implements ITKey {
         const f = factorPubs[i];
         factorEncs[f.x.toString(16, 64)] = encrypt(
           Buffer.concat([Buffer.from("0x04", "hex"), Buffer.from(f.x.toString("hex"), "hex"), Buffer.from(f.y.toString("hex"), "hex")]),
-          tss2.toBuffer()
+          Buffer.from(tss2.toString(16, 64), "hex")
         );
       }
     }
