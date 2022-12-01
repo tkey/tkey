@@ -516,7 +516,7 @@ class ThresholdKey implements ITKey {
     return { newShareStores, newShareIndex };
   }
 
-  async _refreshShares(threshold: number, newShareIndexes: Array<string>, previousPolyID: PolynomialID): Promise<RefreshSharesResult> {
+  async _refreshShares(threshold: number, newShareIndexes: string[], previousPolyID: PolynomialID): Promise<RefreshSharesResult> {
     if (!this.metadata) {
       throw CoreError.metadataUndefined();
     }
@@ -704,7 +704,7 @@ class ThresholdKey implements ITKey {
   async addLocalMetadataTransitions(params: {
     input: LocalTransitionData;
     serviceProvider?: IServiceProvider;
-    privKey?: Array<BN>;
+    privKey?: BN[];
     acquireLock?: boolean;
   }): Promise<void> {
     const { privKey, input } = params;
@@ -1028,7 +1028,7 @@ class ThresholdKey implements ITKey {
     await this.syncMultipleShareMetadata(shareArray, adjustScopedStore);
   }
 
-  async syncMultipleShareMetadata(shares: Array<BN>, adjustScopedStore?: (ss: unknown) => unknown): Promise<void> {
+  async syncMultipleShareMetadata(shares: BN[], adjustScopedStore?: (ss: unknown) => unknown): Promise<void> {
     if (!this.metadata) {
       throw CoreError.metadataUndefined();
     }
@@ -1063,7 +1063,7 @@ class ThresholdKey implements ITKey {
     this._refreshMiddleware[moduleName] = middleware;
   }
 
-  _addReconstructKeyMiddleware(moduleName: string, middleware: () => Promise<Array<BN>>): void {
+  _addReconstructKeyMiddleware(moduleName: string, middleware: () => Promise<BN[]>): void {
     this._reconstructKeyMiddleware[moduleName] = middleware;
   }
 
@@ -1236,7 +1236,7 @@ class ThresholdKey implements ITKey {
     };
   }
 
-  getAllShareStoresForLatestPolynomial(): Array<ShareStore> {
+  getAllShareStoresForLatestPolynomial(): ShareStore[] {
     const pubPoly = this.metadata.getLatestPublicPolynomial();
     const pubPolyID = pubPoly.getPolynomialID();
     const existingShareIndexes = this.metadata.getShareIndexesForPolynomial(pubPolyID);
