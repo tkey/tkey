@@ -727,7 +727,7 @@ class ThresholdKey implements ITKey {
         const factorPubID = f.x.toString(16, 64);
         factorEncs[factorPubID] = [
           await encrypt(
-            Buffer.concat([Buffer.from("0x04", "hex"), Buffer.from(f.x.toString("hex"), "hex"), Buffer.from(f.y.toString("hex"), "hex")]),
+            Buffer.concat([Buffer.from("04", "hex"), Buffer.from(f.x.toString(16, 64), "hex"), Buffer.from(f.y.toString(16, 64), "hex")]),
             Buffer.from(tss2.toString(16, 64), "hex")
           ),
         ];
