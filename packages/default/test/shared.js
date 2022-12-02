@@ -2,15 +2,15 @@
 /* eslint-disable mocha/no-exports */
 /* eslint-disable import/no-extraneous-dependencies */
 
-import { getPubKeyECC } from "@tkey/common-types";
-import { ecCurve, getPubKeyPoint, Point } from "@tkey/common-types";
+import { ecCurve, getPubKeyPoint } from "@tkey/common-types";
+import { getLagrangeCoeffs } from "@tkey/core";
 import PrivateKeyModule, { ED25519Format, SECP256K1Format } from "@tkey/private-keys";
 import SecurityQuestionsModule from "@tkey/security-questions";
 import SeedPhraseModule, { MetamaskSeedPhraseFormat } from "@tkey/seed-phrase";
 import TorusServiceProvider from "@tkey/service-provider-torus";
 import ShareTransferModule from "@tkey/share-transfer";
 import TorusStorageLayer from "@tkey/storage-layer-torus";
-import { generatePrivate, getPublic } from "@toruslabs/eccrypto";
+import { generatePrivate } from "@toruslabs/eccrypto";
 import { post } from "@toruslabs/http-helpers";
 import { deepEqual, deepStrictEqual, equal, fail, notEqual, notStrictEqual, strict, strictEqual, throws } from "assert";
 import BN from "bn.js";
@@ -81,17 +81,12 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         fail("key should be able to be reconstructed");
       }
     });
-    it("#should be able to reconstruct key when initializing a key with useTSS true", async function () {
+    it("#should be able to reconstruct tssShare from factor key (tss2) when initializing a key with useTSS true", async function () {
       const sp = customSP;
       if (!sp.tssVerifier) return;
 
-      // mock tss1 pubkey where tss1 = bc0def03430ddb9d57a5fa2cb18786ee21c55255016c7b5db9616d0463b4b7ed
-      sp.setTSSPubKey(
-        new Point(
-          "9c381cea525bcc72b05272afe8ea75b1c3029966caa5953aa64b5d84d7a97773",
-          "4f3909bf64be23a32887086fccd449e0e57042622a1364e0d670f6eb798238d7"
-        )
-      );
+      const tss1 = new BN(generatePrivate());
+      sp.setTSSPubKey(getPubKeyPoint(tss1));
       sp.postboxKey = new BN(getTempKey(), "hex");
       const storageLayer = initStorageLayer({ hostUrl: metadataURL });
       const tb1 = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync: mode });
@@ -120,6 +115,44 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const _tss2Pub = tssCommitA0.add(tssCommitA1).add(tssCommitA1);
       strictEqual(tss2Pub.x.toString(16, 64), _tss2Pub.x.toString(16, 64));
       strictEqual(tss2Pub.y.toString(16, 64), _tss2Pub.y.toString(16, 64));
+    });
+    it("#should be able to reconstruct tss key from factor key (tss2) when initializing a key with useTSS true", async function () {
+      const sp = customSP;
+      if (!sp.tssVerifier) return;
+
+      const tss1 = new BN(generatePrivate());
+      sp.setTSSPubKey(getPubKeyPoint(tss1));
+      sp.postboxKey = new BN(getTempKey(), "hex");
+      const storageLayer = initStorageLayer({ hostUrl: metadataURL });
+      const tb1 = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync: mode });
+
+      // factor key needs to passed from outside of tKey
+      const factorKey = new BN(generatePrivate());
+      const factorPub = getPubKeyPoint(factorKey);
+
+      await tb1.initialize({ useTSS: true, factorPub });
+      const newShare = await tb1.generateNewShare();
+      const reconstructedKey = await tb1.reconstructKey();
+      await tb1.syncLocalMetadataTransitions();
+      if (tb1.privKey.cmp(reconstructedKey.privKey) !== 0) {
+        fail("key should be able to be reconstructed");
+      }
+
+      const tb2 = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync: mode });
+      await tb2.initialize({ useTSS: true, factorPub });
+      await tb2.inputShareStore(newShare.newShareStores[newShare.newShareIndex.toString("hex")]);
+      await tb2.reconstructKey();
+      const tss2 = await tb2.getTSSShare(factorKey);
+      const tssCommits = tb2.getTSSCommits();
+
+      const tssPrivKey = getLagrangeCoeffs([1, 2], 1)
+        .mul(tss1)
+        .add(getLagrangeCoeffs([1, 2], 2).mul(tss2))
+        .umod(ecCurve.n);
+
+      const tssPubKey = getPubKeyPoint(tssPrivKey);
+      strictEqual(tssPubKey.x.toString(16, 64), tssCommits[0].x.toString(16, 64));
+      strictEqual(tssPubKey.y.toString(16, 64), tssCommits[0].y.toString(16, 64));
     });
     it(`#should be able to reconstruct key when initializing a key, manualSync=${mode}`, async function () {
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
