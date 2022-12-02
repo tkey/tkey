@@ -79,6 +79,7 @@ export interface IMetadata extends ISerializable {
   getShareIndexesForPolynomial(polyID: PolynomialID): string[];
   getLatestPublicPolynomial(): PublicPolynomial;
   addTSSData(
+    tssTag: string,
     tssPolyCommits: Point[],
     factorPubs: Point[],
     factorEncs: {
@@ -148,6 +149,7 @@ export type TKeyArgs = {
   customAuthArgs?: CustomAuthArgs;
   manualSync?: boolean;
   serverTimeOffset?: number;
+  tssTag?: string;
 };
 
 export interface SecurityQuestionStoreArgs {

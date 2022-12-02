@@ -74,6 +74,8 @@ class ThresholdKey implements ITKey {
 
   manualSync: boolean;
 
+  tssTag: string;
+
   _localMetadataTransitions: LocalMetadataTransitions;
 
   _refreshMiddleware: RefreshMiddlewareMap;
@@ -87,7 +89,7 @@ class ThresholdKey implements ITKey {
   haveWriteMetadataLock: string;
 
   constructor(args?: TKeyArgs) {
-    const { enableLogging = false, modules = {}, serviceProvider, storageLayer, manualSync = false } = args || {};
+    const { enableLogging = false, modules = {}, serviceProvider, storageLayer, manualSync = false, tssTag } = args || {};
     this.enableLogging = enableLogging;
     this.serviceProvider = serviceProvider;
     this.storageLayer = storageLayer;
@@ -102,6 +104,7 @@ class ThresholdKey implements ITKey {
     this._localMetadataTransitions = [[], []];
     this.setModuleReferences(); // Providing ITKeyApi access to modules
     this.haveWriteMetadataLock = "";
+    this.tssTag = tssTag || "default";
   }
 
   static async fromJSON(value: StringifiedType, args: TKeyArgs): Promise<ThresholdKey> {
@@ -327,11 +330,24 @@ class ThresholdKey implements ITKey {
   getFactorEnc(factorPub: Point): EncryptedMessage {
     if (!this.metadata) throw CoreError.metadataUndefined();
     if (!this.metadata.factorEncs) throw CoreError.default("no factor encryptions");
-    return this.metadata.factorPubs[factorPub.encode("elliptic-compressed").toString()];
+    const factorPubs = this.metadata.factorPubs[this.tssTag];
+    if (!factorPubs) throw CoreError.default(`no factor pubs for this tssTag: ${this.tssTag}`);
+    return factorPubs[factorPub.encode("elliptic-compressed").toString()];
   }
 
   async decryptFactorEnc(factorKey: BN, factorEnc: EncryptedMessage): Promise<Buffer> {
     return decrypt(Buffer.from(factorKey.toString(16, 64), "hex"), factorEnc);
+  }
+
+  /**
+   * getTSSShare accepts a factorKey and returns the TSS share based on the factor encrypted TSS shares in the metadata
+   * @param factorKey - factor key
+   */
+  async getTSSShare(factorKey: BN): Promise<BN> {
+    const factorPub = getPubKeyPoint(factorKey);
+    const factorEnc = this.getFactorEnc(factorPub);
+    const tssShareBuf = await this.decryptFactorEnc(factorKey, factorEnc);
+    return new BN(tssShareBuf.toString("hex"), "hex");
   }
 
   /**
@@ -708,7 +724,7 @@ class ThresholdKey implements ITKey {
     const metadata = new Metadata(getPubKeyPoint(this.privKey));
     metadata.addFromPolynomialAndShares(poly, shares);
     if (useTSS) {
-      metadata.addTSSData(tssPolyCommits, factorPubs, factorEncs);
+      metadata.addTSSData(this.tssTag, tssPolyCommits, factorPubs, factorEncs);
     }
 
     const serviceProviderShare = shares[shareIndexes[0].toString("hex")];

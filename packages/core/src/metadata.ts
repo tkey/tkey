@@ -49,17 +49,23 @@ class Metadata implements IMetadata {
 
   nonce: number;
 
-  tssPolyCommits?: Point[];
+  tssPolyCommits?: {
+    [tssTag: string]: Point[];
+  };
 
-  factorPubs?: Point[];
+  factorPubs?: {
+    [tssTag: string]: Point[];
+  };
 
   factorEncs?: {
-    [factorPubID: string]: EncryptedMessage;
+    [tssTag: string]: {
+      [factorPubID: string]: EncryptedMessage;
+    };
   };
 
   constructor(input: Point) {
-    this.tssPolyCommits = [];
-    this.factorPubs = [];
+    this.tssPolyCommits = {};
+    this.factorPubs = {};
     this.factorEncs = {};
     this.publicPolynomials = {};
     this.publicShares = {};
@@ -154,15 +160,16 @@ class Metadata implements IMetadata {
   }
 
   addTSSData(
+    tssTag: string,
     tssPolyCommits: Point[],
     factorPubs: Point[],
     factorEncs: {
       [factorPubID: string]: EncryptedMessage;
     }
   ): void {
-    this.tssPolyCommits = tssPolyCommits;
-    this.factorPubs = factorPubs;
-    this.factorEncs = factorEncs;
+    this.tssPolyCommits[tssTag] = tssPolyCommits;
+    this.factorPubs[tssTag] = factorPubs;
+    this.factorEncs[tssTag] = factorEncs;
   }
 
   // appends shares and public polynomial to metadata.
