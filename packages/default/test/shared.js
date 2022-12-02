@@ -81,7 +81,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         fail("key should be able to be reconstructed");
       }
     });
-    it.only("#should be able to reconstruct key when initializing a key with useTSS true", async function () {
+    it("#should be able to reconstruct key when initializing a key with useTSS true", async function () {
       const sp = customSP;
       if (!sp.tssVerifier) return;
 
