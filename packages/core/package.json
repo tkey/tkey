@@ -36,14 +36,14 @@
   "dependencies": {
     "@tkey/common-types": "^7.1.0",
     "@toruslabs/eccrypto": "^1.1.8",
-    "@toruslabs/http-helpers": "^3.1.0",
+    "@toruslabs/http-helpers": "^3.2.0",
     "bn.js": "^5.2.1",
     "elliptic": "^6.5.4",
-    "json-stable-stringify": "^1.0.1",
-    "web3-utils": "^1.7.4"
+    "json-stable-stringify": "^1.0.2",
+    "web3-utils": "^1.8.1"
   },
   "devDependencies": {
-    "@types/bn.js": "^5.1.0",
+    "@types/bn.js": "^5.1.1",
     "@types/elliptic": "^6.4.14",
     "@types/json-stable-stringify": "^1.0.34"
   },
