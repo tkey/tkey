@@ -2,6 +2,7 @@
 /* eslint-disable mocha/no-exports */
 /* eslint-disable import/no-extraneous-dependencies */
 
+import { getPubKeyECC } from "@tkey/common-types";
 import { ecCurve, getPubKeyPoint, Point } from "@tkey/common-types";
 import PrivateKeyModule, { ED25519Format, SECP256K1Format } from "@tkey/private-keys";
 import SecurityQuestionsModule from "@tkey/security-questions";
@@ -9,7 +10,7 @@ import SeedPhraseModule, { MetamaskSeedPhraseFormat } from "@tkey/seed-phrase";
 import TorusServiceProvider from "@tkey/service-provider-torus";
 import ShareTransferModule from "@tkey/share-transfer";
 import TorusStorageLayer from "@tkey/storage-layer-torus";
-import { generatePrivate } from "@toruslabs/eccrypto";
+import { generatePrivate, getPublic } from "@toruslabs/eccrypto";
 import { post } from "@toruslabs/http-helpers";
 import { deepEqual, deepStrictEqual, equal, fail, notEqual, notStrictEqual, strict, strictEqual, throws } from "assert";
 import BN from "bn.js";
@@ -83,6 +84,8 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     it.only("#should be able to reconstruct key when initializing a key with useTSS true", async function () {
       const sp = customSP;
       if (!sp.tssVerifier) return;
+
+      // mock tss1 pubkey where tss1 = bc0def03430ddb9d57a5fa2cb18786ee21c55255016c7b5db9616d0463b4b7ed
       sp.setTSSPubKey(
         new Point(
           "9c381cea525bcc72b05272afe8ea75b1c3029966caa5953aa64b5d84d7a97773",
@@ -94,11 +97,8 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const tb1 = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync: mode });
 
       // factor key needs to passed from outside of tKey
-      const factorKey = new BN("871a3d19025584c3b27874b5cc49d6d7a7681bf1cecb52007cd7e28f58cd837b", "hex");
-      const factorPub = new Point(
-        "ffd144335c92e4cbe6fa59c47868b37f0dbd68b5535343f17e884c8a2b73a9f9",
-        "b56d2d46044efcfa15195cca2cdeacad05da34b567c8ad29528b39730fb15153"
-      );
+      const factorKey = new BN(generatePrivate());
+      const factorPub = getPubKeyPoint(factorKey);
 
       await tb1.initialize({ useTSS: true, factorPub });
       const newShare = await tb1.generateNewShare();
