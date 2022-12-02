@@ -59,7 +59,7 @@ class Metadata implements IMetadata {
 
   factorEncs?: {
     [tssTag: string]: {
-      [factorPubID: string]: EncryptedMessage;
+      [factorPubID: string]: EncryptedMessage[];
     };
   };
 
@@ -164,7 +164,7 @@ class Metadata implements IMetadata {
     tssPolyCommits: Point[],
     factorPubs: Point[],
     factorEncs: {
-      [factorPubID: string]: EncryptedMessage;
+      [factorPubID: string]: EncryptedMessage[];
     }
   ): void {
     this.tssPolyCommits[tssTag] = tssPolyCommits;

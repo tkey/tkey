@@ -327,12 +327,17 @@ class ThresholdKey implements ITKey {
     return this.getKeyDetails();
   }
 
-  getFactorEnc(factorPub: Point): EncryptedMessage {
+  getFactorEncs(factorPub: Point): EncryptedMessage[] {
     if (!this.metadata) throw CoreError.metadataUndefined();
-    if (!this.metadata.factorEncs) throw CoreError.default("no factor encryptions");
+    if (!this.metadata.factorEncs) throw CoreError.default("no factor encs mapping");
+    if (!this.metadata.factorPubs) throw CoreError.default("no factor pubs mapping");
     const factorPubs = this.metadata.factorPubs[this.tssTag];
-    if (!factorPubs) throw CoreError.default(`no factor pubs for this tssTag: ${this.tssTag}`);
-    return factorPubs[factorPub.encode("elliptic-compressed").toString()];
+    if (!factorPubs) throw CoreError.default(`no factor pubs for this tssTag ${this.tssTag}`);
+    if (factorPubs.filter((f) => f.x.cmp(factorPub.x) === 0 && f.y.cmp(factorPub.y) === 0).length === 0)
+      throw CoreError.default(`factor pub ${factorPub} not found for tssTag ${this.tssTag}`);
+    if (!this.metadata.factorEncs[this.tssTag]) throw CoreError.default(`no factor encs for tssTag ${this.tssTag}`);
+    const factorPubID = factorPub.x.toString(16, 64);
+    return this.metadata.factorEncs[this.tssTag][factorPubID];
   }
 
   async decryptFactorEnc(factorKey: BN, factorEnc: EncryptedMessage): Promise<Buffer> {
@@ -345,9 +350,10 @@ class ThresholdKey implements ITKey {
    */
   async getTSSShare(factorKey: BN): Promise<BN> {
     const factorPub = getPubKeyPoint(factorKey);
-    const factorEnc = this.getFactorEnc(factorPub);
-    const tssShareBuf = await this.decryptFactorEnc(factorKey, factorEnc);
-    return new BN(tssShareBuf.toString("hex"), "hex");
+    const factorEncs = this.getFactorEncs(factorPub);
+    const tssShareBufs = await Promise.all(factorEncs.map((factorEnc) => this.decryptFactorEnc(factorKey, factorEnc)));
+    const tssShareBNs = tssShareBufs.map((buf) => new BN(buf.toString("hex"), "hex"));
+    return tssShareBNs.reduce((acc, shareFragment) => acc.add(shareFragment).umod(ecCurve.n));
   }
 
   /**
@@ -690,7 +696,12 @@ class ThresholdKey implements ITKey {
     }
     const shares = poly.generateShares(shareIndexes);
 
-    let tss2, tssPolyCommits, factorPubs, factorEncs;
+    let tss2: BN;
+    let tssPolyCommits: Point[];
+    let factorPubs: Point[];
+    let factorEncs: {
+      [factorPubID: string]: EncryptedMessage[];
+    };
     if (useTSS) {
       tss2 = new BN(generatePrivate());
       const tss1Pub = this.serviceProvider.retrieveTSSPubKey();
@@ -713,10 +724,13 @@ class ThresholdKey implements ITKey {
 
       for (let i = 0; i < factorPubs.length; i++) {
         const f = factorPubs[i];
-        factorEncs[f.x.toString(16, 64)] = encrypt(
-          Buffer.concat([Buffer.from("0x04", "hex"), Buffer.from(f.x.toString("hex"), "hex"), Buffer.from(f.y.toString("hex"), "hex")]),
-          Buffer.from(tss2.toString(16, 64), "hex")
-        );
+        const factorPubID = f.x.toString(16, 64);
+        factorEncs[factorPubID] = [
+          await encrypt(
+            Buffer.concat([Buffer.from("0x04", "hex"), Buffer.from(f.x.toString("hex"), "hex"), Buffer.from(f.y.toString("hex"), "hex")]),
+            Buffer.from(tss2.toString(16, 64), "hex")
+          ),
+        ];
       }
     }
 

@@ -83,7 +83,7 @@ export interface IMetadata extends ISerializable {
     tssPolyCommits: Point[],
     factorPubs: Point[],
     factorEncs: {
-      [factorPubID: string]: EncryptedMessage;
+      [factorPubID: string]: EncryptedMessage[];
     }
   ): void;
   addPublicShare(polynomialID: PolynomialID, publicShare: PublicShare): void;
