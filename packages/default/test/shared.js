@@ -91,18 +91,35 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       );
       sp.postboxKey = new BN(getTempKey(), "hex");
       const storageLayer = initStorageLayer({ hostUrl: metadataURL });
-      const tb2 = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync: mode });
-      // const factorKey = new BN("871a3d19025584c3b27874b5cc49d6d7a7681bf1cecb52007cd7e28f58cd837b", "hex");
+      const tb1 = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync: mode });
+
+      // factor key needs to passed from outside of tKey
+      const factorKey = new BN("871a3d19025584c3b27874b5cc49d6d7a7681bf1cecb52007cd7e28f58cd837b", "hex");
       const factorPub = new Point(
         "ffd144335c92e4cbe6fa59c47868b37f0dbd68b5535343f17e884c8a2b73a9f9",
         "b56d2d46044efcfa15195cca2cdeacad05da34b567c8ad29528b39730fb15153"
       );
-      await tb2.initialize({ useTSS: true, factorPub });
-      const reconstructedKey = await tb2.reconstructKey();
-      await tb2.syncLocalMetadataTransitions();
-      if (tb2.privKey.cmp(reconstructedKey.privKey) !== 0) {
+
+      await tb1.initialize({ useTSS: true, factorPub });
+      const newShare = await tb1.generateNewShare();
+      const reconstructedKey = await tb1.reconstructKey();
+      await tb1.syncLocalMetadataTransitions();
+      if (tb1.privKey.cmp(reconstructedKey.privKey) !== 0) {
         fail("key should be able to be reconstructed");
       }
+
+      const tb2 = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync: mode });
+      await tb2.initialize({ useTSS: true, factorPub });
+      await tb2.inputShareStore(newShare.newShareStores[newShare.newShareIndex.toString("hex")]);
+      await tb2.reconstructKey();
+      const tss2 = await tb2.getTSSShare(factorKey);
+      const tssCommits = tb2.getTSSCommits();
+      const tss2Pub = ecCurve.g.mul(tss2);
+      const tssCommitA0 = ecCurve.keyFromPublic({ x: tssCommits[0].x, y: tssCommits[0].y }).getPublic();
+      const tssCommitA1 = ecCurve.keyFromPublic({ x: tssCommits[1].x, y: tssCommits[1].y }).getPublic();
+      const _tss2Pub = tssCommitA0.add(tssCommitA1).add(tssCommitA1);
+      strictEqual(tss2Pub.x.toString(16, 64), _tss2Pub.x.toString(16, 64));
+      strictEqual(tss2Pub.y.toString(16, 64), _tss2Pub.y.toString(16, 64));
     });
     it(`#should be able to reconstruct key when initializing a key, manualSync=${mode}`, async function () {
       const resp1 = await tb._initializeNewKey({ initializeModules: true });

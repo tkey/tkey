@@ -349,11 +349,25 @@ class ThresholdKey implements ITKey {
    * @param factorKey - factor key
    */
   async getTSSShare(factorKey: BN): Promise<BN> {
+    if (!this.privKey) throw CoreError.default("tss share cannot be returned until you've reconstructed tkey");
     const factorPub = getPubKeyPoint(factorKey);
     const factorEncs = this.getFactorEncs(factorPub);
     const tssShareBufs = await Promise.all(factorEncs.map((factorEnc) => this.decryptFactorEnc(factorKey, factorEnc)));
     const tssShareBNs = tssShareBufs.map((buf) => new BN(buf.toString("hex"), "hex"));
     return tssShareBNs.reduce((acc, shareFragment) => acc.add(shareFragment).umod(ecCurve.n));
+  }
+
+  getTSSCommits(): Point[] {
+    if (!this.privKey) throw CoreError.default("tss pub cannot be returned until you've reconstructed tkey");
+    if (!this.metadata) throw CoreError.metadataUndefined();
+    const tssPolyCommits = this.metadata.tssPolyCommits[this.tssTag];
+    if (!tssPolyCommits) throw CoreError.default(`tss poly commits not found for tssTag ${this.tssTag}`);
+    if (tssPolyCommits.length === 0) throw CoreError.default("tss poly commits is empty");
+    return tssPolyCommits;
+  }
+
+  getTSSPub(): Point {
+    return this.getTSSCommits()[0];
   }
 
   /**

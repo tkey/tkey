@@ -87,8 +87,18 @@ class Metadata implements IMetadata {
     if (tkeyStore) metadata.tkeyStore = tkeyStore;
     if (scopedStore) metadata.scopedStore = scopedStore;
     if (nonce) metadata.nonce = nonce;
-    if (tssPolyCommits) metadata.tssPolyCommits = tssPolyCommits;
-    if (factorPubs) metadata.factorPubs = factorPubs;
+    if (tssPolyCommits) {
+      metadata.tssPolyCommits = {};
+      for (const key in tssPolyCommits) {
+        metadata.tssPolyCommits[key] = tssPolyCommits[key].map((obj) => new Point(obj.x, obj.y));
+      }
+    }
+    if (factorPubs) {
+      metadata.factorPubs = {};
+      for (const key in factorPubs) {
+        metadata.factorPubs[key] = factorPubs[key].map((obj) => new Point(obj.x, obj.y));
+      }
+    }
     if (factorEncs) metadata.factorEncs = factorEncs;
 
     for (let i = 0; i < polyIDList.length; i += 1) {
