@@ -27,6 +27,7 @@ jobs:
       - name: checkout tkey repo
         uses: actions/checkout@v3
         with:
+          repository: tkey/tkey
           path: ./tkey
 
       - name: Set up node
