@@ -63,8 +63,8 @@ For more information, check out the [technical overview](https://hackmd.io/Tej2t
 ### Installation
 
 ```
-yarn run bootstrap
-yarn run pack:lerna
+npm run bootstrap
+npm run pack:lerna
 ```
 
 ## Bundling

@@ -4,7 +4,7 @@ on: [push]
 
 env:
   PLAYWRIGHT_BROWSERS_PATH: 0
-  NODE_VERSION: 14
+  NODE_VERSION: 16
   FORCE_COLOR: 3
 
 jobs:
@@ -24,34 +24,28 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Setup Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
 
-      - name: Get Yarn cache directory
-        id: get-yarn-cache-dir
-        run: echo "::set-output name=path::$(yarn cache dir)"
-
-      - name: Cache Yarn dependencies
-        uses: actions/cache@v2
+      - name: Get npm cache directory
+        id: npm-cache-dir
+        run: |
+          echo "::set-output name=dir::$(npm config get cache)"
+      - uses: actions/cache@v3
+        id: npm-cache # use this to check for `cache-hit` ==> if: steps.npm-cache.outputs.cache-hit != 'true'
         with:
-          path: ${{ steps.get-yarn-cache-dir.outputs.path }}
-          key: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-yarn-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: ${{ runner.os }}-node-${{ env.NODE_VERSION }}-yarn-
+          path: ${{ steps.npm-cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
 
       - name: Install Node.js dependencies
-        run: yarn install --frozen-lockfile
-
-      # - name: Install Ubuntu dependencies
-      #   if: startsWith(matrix.os, 'ubuntu')
-      #   run: yarn run playwright install-deps ${{ matrix.browser }}
-
-      - name: Bootstrap dependencies
-        run: |
-          yarn run bootstrap
+        run: npm ci
 
       - name: Browser Test Development Chrome (Mocked)
         if: startsWith(matrix.browser, 'chromium')

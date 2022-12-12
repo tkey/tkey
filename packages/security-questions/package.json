@@ -43,10 +43,10 @@
   "dependencies": {
     "@tkey/common-types": "^7.1.0",
     "bn.js": "^5.2.1",
-    "web3-utils": "^1.7.4"
+    "web3-utils": "^1.8.1"
   },
   "devDependencies": {
-    "@types/bn.js": "^5.1.0"
+    "@types/bn.js": "^5.1.1"
   },
   "lint-staged": {
     "!(*d).ts": [

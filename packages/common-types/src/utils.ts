@@ -1,6 +1,7 @@
 import { decrypt as ecDecrypt, encrypt as ecEncrypt, generatePrivate } from "@toruslabs/eccrypto";
 import BN from "bn.js";
 import { ec as EC } from "elliptic";
+import { serializeError } from "serialize-error";
 import { keccak256, toChecksumAddress } from "web3-utils";
 
 import { EncryptedMessage } from "./baseTypes/commonTypes";
@@ -49,7 +50,7 @@ export function prettyPrintError(error: Error): string {
   if (isErrorObj(error)) {
     return error.message;
   }
-  return error.toString();
+  return JSON.stringify(serializeError(error));
 }
 
 export function generateAddressFromPublicKey(publicKey: Buffer): string {
