@@ -1420,7 +1420,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     });
   });
 
-  describe.only("Multiple Service Provider", function () {
+  describe("Multiple Service Provider", function () {
     it("#should be able to reconstruct with multiple SP as independent shares", async function () {
       // initiate tkey with 1st service provider
       const postboxKey1 = new BN(getTempKey(), "hex");
