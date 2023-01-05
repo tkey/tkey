@@ -13,7 +13,6 @@ import { generatePrivate } from "@toruslabs/eccrypto";
 import { post } from "@toruslabs/http-helpers";
 import { deepEqual, deepStrictEqual, equal, fail, notEqual, notStrictEqual, strict, strictEqual, throws } from "assert";
 import BN from "bn.js";
-import stringify from "json-stable-stringify";
 import { createSandbox } from "sinon";
 import { keccak256 } from "web3-utils";
 
@@ -60,7 +59,6 @@ function compareReconstructedKeys(a, b, message) {
     compareBNArray(a.allKeys, b.allKeys, message);
   }
 }
-global.structuredClone = (val) => JSON.parse(stringify(val));
 
 export const sharedTestCases = (mode, torusSP, storageLayer) => {
   const customSP = torusSP;
@@ -1424,7 +1422,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
 
   describe("Multiple Service Provider", function () {
     it("#should be able to reconstruct with multiple SP as independent shares", async function () {
-      // const sp1 = structuredClone(customSP);
+      // initiate tkey with 1st service provider
       const postboxKey1 = new BN(getTempKey(), "hex");
       const sp1 = customSP;
       sp1.postboxKey = postboxKey1;
@@ -1438,14 +1436,12 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const index = result.newShareIndex.toString("hex");
       const shareStore = result.newShareStores[index];
 
-      // const sp2 = structuredClone(customSP);
       const postboxKey2 = new BN(getTempKey(), "hex");
-      // const sp2 = customSP;
-      // sp2.postboxKey = postboxKey2;
       await tb.storageLayer.setMetadata({ input: shareStore, privKey: postboxKey2 });
 
       await tb.syncLocalMetadataTransitions();
 
+      // try recreating tkey with 1st and 2nd service provider share using 1st service provider as tkey initiator
       const tb2 = new ThresholdKey({ serviceProvider: sp1, storageLayer: customSL, manualSync: mode });
 
       const shareStoreSP = await tb2.storageLayer.getMetadata({ privKey: postboxKey2 });
@@ -1458,6 +1454,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         fail("key should be able to be reconstructed");
       }
 
+      // try recreating tkey with 1st and 2nd service provider share using 2st service provider as tkey initiator
       const sp2 = customSP;
       sp2.postboxKey = postboxKey2;
       const tb3 = new ThresholdKey({ serviceProvider: sp2, storageLayer: customSL, manualSync: mode });
@@ -1473,7 +1470,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     });
 
     it("#should be able to reconstruct it with SP1 or SP2 which have the same share", async function () {
-      // const sp1 = structuredClone(customSP);
+      // initiate tkey with 1st service provider
       const postboxKey1 = new BN(getTempKey(), "hex");
       const sp1 = customSP;
       sp1.postboxKey = postboxKey1;
@@ -1482,20 +1479,18 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       await tb.initialize();
       const reconstructedKey = await tb.reconstructKey();
 
-      // generate new share and link it to sp2
+      // get shareA and link it to sp2
       const shareStore = tb.outputShareStore("1");
-
-      const tbIndex = tb.getCurrentShareIndexes();
-
-      const deviceShare = tb.outputShareStore(tbIndex[1]);
-
       const postboxKey2 = new BN(getTempKey(), "hex");
-      // const sp2 = customSP;
-      // sp2.postboxKey = postboxKey2;
       await tb.storageLayer.setMetadata({ input: shareStore, privKey: postboxKey2 });
+
+      // get shareB (device share) for tkey 2 later
+      const tbIndex = tb.getCurrentShareIndexes();
+      const deviceShare = tb.outputShareStore(tbIndex[1]);
 
       await tb.syncLocalMetadataTransitions();
 
+      // try recreate tkey with 2nd service provider
       const sp2 = customSP;
       sp2.postboxKey = postboxKey2;
       const tb2 = new ThresholdKey({ serviceProvider: sp2, storageLayer: customSL, manualSync: mode });
