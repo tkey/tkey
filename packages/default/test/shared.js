@@ -1420,7 +1420,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     });
   });
 
-  describe("Multiple Service Provider", function () {
+  describe.only("Multiple Service Provider", function () {
     it("#should be able to reconstruct with multiple SP as independent shares", async function () {
       // initiate tkey with 1st service provider
       const postboxKey1 = new BN(getTempKey(), "hex");
@@ -1439,6 +1439,9 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const postboxKey2 = new BN(getTempKey(), "hex");
       await tb.storageLayer.setMetadata({ input: shareStore, privKey: postboxKey2 });
 
+      // try add new share
+      const newShare = await tb.generateNewShare();
+
       await tb.syncLocalMetadataTransitions();
 
       // try recreating tkey with 1st and 2nd service provider share using 1st service provider as tkey initiator
@@ -1448,6 +1451,10 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       await tb2.initialize();
       tb2.inputShareStore(shareStoreSP);
       await tb2.reconstructKey();
+
+      // try delete share and and new share
+      await tb.deleteShare(newShare.newShareIndex);
+      await tb.generateNewShare();
 
       await tb2.syncLocalMetadataTransitions();
       if (tb2.privKey.cmp(reconstructedKey.privKey) !== 0) {
@@ -1483,6 +1490,11 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const shareStore = tb.outputShareStore("1");
       const postboxKey2 = new BN(getTempKey(), "hex");
       await tb.storageLayer.setMetadata({ input: shareStore, privKey: postboxKey2 });
+
+      // try delete share and and new share
+      const newShare = await tb.generateNewShare();
+      await tb.deleteShare(newShare.newShareIndex);
+      await tb.generateNewShare();
 
       // get shareB (device share) for tkey 2 later
       const tbIndex = tb.getCurrentShareIndexes();
