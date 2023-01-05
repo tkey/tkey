@@ -13,6 +13,7 @@ import { generatePrivate } from "@toruslabs/eccrypto";
 import { post } from "@toruslabs/http-helpers";
 import { deepEqual, deepStrictEqual, equal, fail, notEqual, notStrictEqual, strict, strictEqual, throws } from "assert";
 import BN from "bn.js";
+import stringify from "json-stable-stringify";
 import { createSandbox } from "sinon";
 import { keccak256 } from "web3-utils";
 
@@ -59,6 +60,7 @@ function compareReconstructedKeys(a, b, message) {
     compareBNArray(a.allKeys, b.allKeys, message);
   }
 }
+global.structuredClone = (val) => JSON.parse(stringify(val));
 
 export const sharedTestCases = (mode, torusSP, storageLayer) => {
   const customSP = torusSP;
@@ -1417,6 +1419,95 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       );
       equal(getOrSetNonce.typeOfUser, "v1");
       equal(getOrSetNonce.nonce, getMetadataNonce.toString("hex"));
+    });
+  });
+
+  describe("Multiple Service Provider", function () {
+    it("#should be able to reconstruct with multiple SP as independent shares", async function () {
+      // const sp1 = structuredClone(customSP);
+      const postboxKey1 = new BN(getTempKey(), "hex");
+      const sp1 = customSP;
+      sp1.postboxKey = postboxKey1;
+
+      const tb = new ThresholdKey({ serviceProvider: sp1, storageLayer: customSL, manualSync: mode });
+      await tb.initialize();
+      const reconstructedKey = await tb.reconstructKey();
+
+      // generate new share and link it to sp2
+      const result = await tb.generateNewShare();
+      const index = result.newShareIndex.toString("hex");
+      const shareStore = result.newShareStores[index];
+
+      // const sp2 = structuredClone(customSP);
+      const postboxKey2 = new BN(getTempKey(), "hex");
+      // const sp2 = customSP;
+      // sp2.postboxKey = postboxKey2;
+      await tb.storageLayer.setMetadata({ input: shareStore, privKey: postboxKey2 });
+
+      await tb.syncLocalMetadataTransitions();
+
+      const tb2 = new ThresholdKey({ serviceProvider: sp1, storageLayer: customSL, manualSync: mode });
+
+      const shareStoreSP = await tb2.storageLayer.getMetadata({ privKey: postboxKey2 });
+      await tb2.initialize({ neverInitializeNewKey: true });
+      tb2.inputShareStore(shareStoreSP);
+      await tb2.reconstructKey();
+
+      await tb2.syncLocalMetadataTransitions();
+      if (tb2.privKey.cmp(reconstructedKey.privKey) !== 0) {
+        fail("key should be able to be reconstructed");
+      }
+
+      const sp2 = customSP;
+      sp2.postboxKey = postboxKey2;
+      const tb3 = new ThresholdKey({ serviceProvider: sp2, storageLayer: customSL, manualSync: mode });
+      const shareStoreSP3 = await tb3.storageLayer.getMetadata({ privKey: postboxKey1 });
+      await tb3.initialize({ neverInitializeNewKey: true });
+      tb3.inputShareStore(shareStoreSP3);
+      await tb3.reconstructKey();
+
+      await tb3.syncLocalMetadataTransitions();
+      if (tb3.privKey.cmp(reconstructedKey.privKey) !== 0) {
+        fail("key should be able to be reconstructed");
+      }
+    });
+
+    it("#should be able to reconstruct it with SP1 or SP2 which have the same share", async function () {
+      // const sp1 = structuredClone(customSP);
+      const postboxKey1 = new BN(getTempKey(), "hex");
+      const sp1 = customSP;
+      sp1.postboxKey = postboxKey1;
+
+      const tb = new ThresholdKey({ serviceProvider: sp1, storageLayer: customSL, manualSync: mode });
+      await tb.initialize();
+      const reconstructedKey = await tb.reconstructKey();
+
+      // generate new share and link it to sp2
+      const shareStore = tb.outputShareStore("1");
+
+      const tbIndex = tb.getCurrentShareIndexes();
+
+      const deviceShare = tb.outputShareStore(tbIndex[1]);
+
+      const postboxKey2 = new BN(getTempKey(), "hex");
+      // const sp2 = customSP;
+      // sp2.postboxKey = postboxKey2;
+      await tb.storageLayer.setMetadata({ input: shareStore, privKey: postboxKey2 });
+
+      await tb.syncLocalMetadataTransitions();
+
+      const sp2 = customSP;
+      sp2.postboxKey = postboxKey2;
+      const tb2 = new ThresholdKey({ serviceProvider: sp2, storageLayer: customSL, manualSync: mode });
+
+      await tb2.initialize({ neverInitializeNewKey: true });
+      tb2.inputShareStore(deviceShare);
+      await tb2.reconstructKey();
+
+      await tb2.syncLocalMetadataTransitions();
+      if (tb2.privKey.cmp(reconstructedKey.privKey) !== 0) {
+        fail("key should be able to be reconstructed");
+      }
     });
   });
 };
