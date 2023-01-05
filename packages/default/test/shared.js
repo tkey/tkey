@@ -1445,7 +1445,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const tb2 = new ThresholdKey({ serviceProvider: sp1, storageLayer: customSL, manualSync: mode });
 
       const shareStoreSP = await tb2.storageLayer.getMetadata({ privKey: postboxKey2 });
-      await tb2.initialize({ neverInitializeNewKey: true });
+      await tb2.initialize();
       tb2.inputShareStore(shareStoreSP);
       await tb2.reconstructKey();
 
@@ -1459,7 +1459,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       sp2.postboxKey = postboxKey2;
       const tb3 = new ThresholdKey({ serviceProvider: sp2, storageLayer: customSL, manualSync: mode });
       const shareStoreSP3 = await tb3.storageLayer.getMetadata({ privKey: postboxKey1 });
-      await tb3.initialize({ neverInitializeNewKey: true });
+      await tb3.initialize();
       tb3.inputShareStore(shareStoreSP3);
       await tb3.reconstructKey();
 
@@ -1495,7 +1495,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       sp2.postboxKey = postboxKey2;
       const tb2 = new ThresholdKey({ serviceProvider: sp2, storageLayer: customSL, manualSync: mode });
 
-      await tb2.initialize({ neverInitializeNewKey: true });
+      await tb2.initialize();
       tb2.inputShareStore(deviceShare);
       await tb2.reconstructKey();
 
