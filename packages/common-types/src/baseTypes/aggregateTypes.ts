@@ -17,6 +17,7 @@ import {
 import {
   BNString,
   EncryptedMessage,
+  FactorEnc,
   ISerializable,
   IServiceProvider,
   IStorageLayer,
@@ -80,10 +81,11 @@ export interface IMetadata extends ISerializable {
   getLatestPublicPolynomial(): PublicPolynomial;
   addTSSData(
     tssTag: string,
+    tssNonce: number,
     tssPolyCommits: Point[],
     factorPubs: Point[],
     factorEncs: {
-      [factorPubID: string]: EncryptedMessage[];
+      [factorPubID: string]: FactorEnc;
     }
   ): void;
   addPublicShare(polynomialID: PolynomialID, publicShare: PublicShare): void;

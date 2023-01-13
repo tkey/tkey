@@ -156,6 +156,50 @@ export function polyCommitmentEval(polyCommitments: Array<Point>, index: BN): Po
   return new Point(shareCommitment.getX(), shareCommitment.getY());
 }
 
+export function dotProduct(arr1: BN[], arr2: BN[], modulus = new BN(0)) {
+  if (arr1.length !== arr2.length) {
+    throw new Error("arrays of different lengths");
+  }
+  let sum = new BN(0);
+  for (let i = 0; i < arr1.length; i++) {
+    sum = sum.add(arr1[i].mul(arr2[i]));
+    if (modulus.cmp(new BN(0)) !== 0) {
+      sum = sum.umod(modulus);
+    }
+  }
+  return sum;
+}
+
+export const kCombinations = (s: number | number[], k: number): number[][] => {
+  let set = s;
+  if (typeof set === "number") {
+    set = Array.from({ length: set }, (_, i) => i);
+  }
+  if (k > set.length || k <= 0) {
+    return [];
+  }
+
+  if (k === set.length) {
+    return [set];
+  }
+
+  if (k === 1) {
+    return set.reduce((acc, cur) => [...acc, [cur]], [] as number[][]);
+  }
+
+  const combs: number[][] = [];
+  let tailCombs: number[][] = [];
+
+  for (let i = 0; i <= set.length - k + 1; i += 1) {
+    tailCombs = kCombinations(set.slice(i + 1), k - 1);
+    for (let j = 0; j < tailCombs.length; j += 1) {
+      combs.push([set[i], ...tailCombs[j]]);
+    }
+  }
+
+  return combs;
+};
+
 export function getLagrangeCoeffs(_allIndexes, _myIndex, _target = 0) {
   const allIndexes = _allIndexes.map((i) => new BN(i));
   const myIndex = new BN(_myIndex);

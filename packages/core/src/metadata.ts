@@ -2,6 +2,7 @@ import {
   decrypt,
   ecCurve,
   EncryptedMessage,
+  FactorEnc,
   getPubKeyPoint,
   IMetadata,
   Point,
@@ -49,6 +50,10 @@ class Metadata implements IMetadata {
 
   nonce: number;
 
+  tssNonces?: {
+    [tssTag: string]: number;
+  };
+
   tssPolyCommits?: {
     [tssTag: string]: Point[];
   };
@@ -59,7 +64,7 @@ class Metadata implements IMetadata {
 
   factorEncs?: {
     [tssTag: string]: {
-      [factorPubID: string]: EncryptedMessage[];
+      [factorPubID: string]: FactorEnc;
     };
   };
 
@@ -171,12 +176,14 @@ class Metadata implements IMetadata {
 
   addTSSData(
     tssTag: string,
+    tssNonce: number,
     tssPolyCommits: Point[],
     factorPubs: Point[],
     factorEncs: {
-      [factorPubID: string]: EncryptedMessage[];
+      [factorPubID: string]: FactorEnc;
     }
   ): void {
+    this.tssNonces[tssTag] = tssNonce;
     this.tssPolyCommits[tssTag] = tssPolyCommits;
     this.factorPubs[tssTag] = factorPubs;
     this.factorEncs[tssTag] = factorEncs;
@@ -319,6 +326,7 @@ class Metadata implements IMetadata {
       generalStore: this.generalStore,
       tkeyStore: this.tkeyStore,
       nonce: this.nonce,
+      ...(this.tssNonces && { tssNonces: this.tssNonces }),
       ...(this.tssPolyCommits && { tssPolyCommits: this.tssPolyCommits }),
       ...(this.factorPubs && { factorPubs: this.factorPubs }),
       ...(this.factorEncs && { factorEncs: this.factorEncs }),

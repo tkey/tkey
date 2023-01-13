@@ -21,15 +21,24 @@ class ServiceProviderBase implements IServiceProvider {
   // For easy serialization
   postboxKey: BN;
 
-  tssPubKey?: Point;
+  currentTSSTag?: string;
+
+  tssPubKey?: {
+    [tssTag: string]: Point;
+  };
+
+  tssNonce?: {
+    [tssTag: string]: number;
+  };
 
   serviceProviderName: string;
 
   constructor({ enableLogging = false, postboxKey, tssPubKey = undefined }: ServiceProviderArgs) {
     this.enableLogging = enableLogging;
     this.postboxKey = new BN(postboxKey, "hex");
+    this.currentTSSTag = "default";
     if (tssPubKey) {
-      this.tssPubKey = tssPubKey;
+      this.tssPubKey[this.currentTSSTag] = tssPubKey;
     }
     this.serviceProviderName = "ServiceProviderBase";
   }
@@ -50,15 +59,22 @@ class ServiceProviderBase implements IServiceProvider {
     return decryptUtils(toPrivKeyECC(this.postboxKey), msg);
   }
 
-  setTSSPubKey(tssPubKey: Point) {
-    this.tssPubKey = tssPubKey;
+  setCurrentTSSTag(tssTag: string): void {
+    this.currentTSSTag = tssTag;
   }
 
-  retrieveTSSPubKey(): Point {
-    if (this.tssPubKey === undefined) {
-      throw new Error("tssPubKey is undefined");
-    }
-    return this.tssPubKey;
+  retrieveCurrentTSSTag(): string {
+    return this.currentTSSTag;
+  }
+
+  setTSSPubKey(tssPubKey: Point, tssTag = this.currentTSSTag) {
+    this.tssPubKey[tssTag] = tssPubKey;
+  }
+
+  retrieveTSSPubKey(tssTag = this.currentTSSTag): Point {
+    const pubkey = this.tssPubKey[tssTag];
+    if (!pubkey) throw new Error("tssPubKey not found");
+    return pubkey;
   }
 
   retrievePubKeyPoint(): curve.base.BasePoint {

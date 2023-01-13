@@ -81,7 +81,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         fail("key should be able to be reconstructed");
       }
     });
-    it("#should be able to reconstruct tssShare from factor key (tss2) when initializing a key with useTSS true", async function () {
+    it.only("#should be able to refresh tss shares", async function () {
       const sp = customSP;
       if (!sp.tssVerifier) return;
 
@@ -109,14 +109,91 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       await tb2.reconstructKey();
       const tss2 = await tb2.getTSSShare(factorKey);
       const tssCommits = tb2.getTSSCommits();
+
+      const tssPrivKey = getLagrangeCoeffs([1, 2], 1)
+        .mul(tss1)
+        .add(getLagrangeCoeffs([1, 2], 2).mul(tss2))
+        .umod(ecCurve.n);
+
+      const tssPubKey = getPubKeyPoint(tssPrivKey);
+      strictEqual(tssPubKey.x.toString(16, 64), tssCommits[0].x.toString(16, 64));
+      strictEqual(tssPubKey.y.toString(16, 64), tssCommits[0].y.toString(16, 64));
+    });
+    it("#should be able to reconstruct tssShare from factor key (tss2) when initializing a key with useTSS true", async function () {
+      const sp = customSP;
+      if (!sp.tssVerifier) return;
+
+      const tss1 = new BN(generatePrivate());
+      sp.setTSSPubKey(getPubKeyPoint(tss1));
+      sp.postboxKey = new BN(getTempKey(), "hex");
+      const storageLayer = initStorageLayer({ hostUrl: metadataURL });
+      const tb1 = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync: mode });
+
+      // factor key needs to passed from outside of tKey
+      const factorKey = new BN(generatePrivate());
+      const factorPub = getPubKeyPoint(factorKey);
+
+      await tb1.initialize({ useTSS: true, factorPub });
+      const newShare = await tb1.generateNewShare();
+      const reconstructedKey = await tb1.reconstructKey();
+      await tb1.syncLocalMetadataTransitions();
+      if (tb1.privKey.cmp(reconstructedKey.privKey) !== 0) {
+        fail("key should be able to be reconstructed");
+      }
+
+      const tb2 = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync: mode });
+      await tb2.initialize({ useTSS: true, factorPub });
+      await tb2.inputShareStore(newShare.newShareStores[newShare.newShareIndex.toString("hex")]);
+      await tb2.reconstructKey();
+      const tss2 = await tb2.getTSSShare(factorKey);
+
+      const tssCommits = tb2.getTSSCommits();
       const tss2Pub = ecCurve.g.mul(tss2);
-      const tssCommitA0 = ecCurve.keyFromPublic({ x: tssCommits[0].x, y: tssCommits[0].y }).getPublic();
-      const tssCommitA1 = ecCurve.keyFromPublic({ x: tssCommits[1].x, y: tssCommits[1].y }).getPublic();
+      const tssCommitA0 = ecCurve.keyFromPublic({ x: tssCommits[0].x.toString(16, 64), y: tssCommits[0].y.toString(16, 64) }).getPublic();
+      const tssCommitA1 = ecCurve.keyFromPublic({ x: tssCommits[1].x.toString(16, 64), y: tssCommits[1].y.toString(16, 64) }).getPublic();
       const _tss2Pub = tssCommitA0.add(tssCommitA1).add(tssCommitA1);
       strictEqual(tss2Pub.x.toString(16, 64), _tss2Pub.x.toString(16, 64));
       strictEqual(tss2Pub.y.toString(16, 64), _tss2Pub.y.toString(16, 64));
     });
     it("#should be able to reconstruct tss key from factor key (tss2) when initializing a key with useTSS true", async function () {
+      const sp = customSP;
+      if (!sp.tssVerifier) return;
+
+      const tss1 = new BN(generatePrivate());
+      sp.setTSSPubKey(getPubKeyPoint(tss1));
+      sp.postboxKey = new BN(getTempKey(), "hex");
+      const storageLayer = initStorageLayer({ hostUrl: metadataURL });
+      const tb1 = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync: mode });
+
+      // factor key needs to passed from outside of tKey
+      const factorKey = new BN(generatePrivate());
+      const factorPub = getPubKeyPoint(factorKey);
+
+      await tb1.initialize({ useTSS: true, factorPub });
+      const newShare = await tb1.generateNewShare();
+      const reconstructedKey = await tb1.reconstructKey();
+      await tb1.syncLocalMetadataTransitions();
+      if (tb1.privKey.cmp(reconstructedKey.privKey) !== 0) {
+        fail("key should be able to be reconstructed");
+      }
+
+      const tb2 = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync: mode });
+      await tb2.initialize({ useTSS: true, factorPub });
+      await tb2.inputShareStore(newShare.newShareStores[newShare.newShareIndex.toString("hex")]);
+      await tb2.reconstructKey();
+      const tss2 = await tb2.getTSSShare(factorKey);
+      const tssCommits = tb2.getTSSCommits();
+
+      const tssPrivKey = getLagrangeCoeffs([1, 2], 1)
+        .mul(tss1)
+        .add(getLagrangeCoeffs([1, 2], 2).mul(tss2))
+        .umod(ecCurve.n);
+
+      const tssPubKey = getPubKeyPoint(tssPrivKey);
+      strictEqual(tssPubKey.x.toString(16, 64), tssCommits[0].x.toString(16, 64));
+      strictEqual(tssPubKey.y.toString(16, 64), tssCommits[0].y.toString(16, 64));
+    });
+    it.only(`#should be able to recover tssShare from hierarchical encryption`, async function () {
       const sp = customSP;
       if (!sp.tssVerifier) return;
 

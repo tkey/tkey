@@ -6,6 +6,7 @@ import {
   ecCurve,
   encrypt,
   EncryptedMessage,
+  FactorEnc,
   FromJSONConstructor,
   GenerateNewShareResult,
   generatePrivateExcludingIndexes,
@@ -45,12 +46,20 @@ import {
   toPrivKeyECC,
 } from "@tkey/common-types";
 import { generatePrivate } from "@toruslabs/eccrypto";
+import { ecPoint, hexPoint, PointHex, RSSClient } from "@toruslabs/rss-client";
 import BN from "bn.js";
 import stringify from "json-stable-stringify";
 
 import AuthMetadata from "./authMetadata";
 import CoreError from "./errors";
-import { generateRandomPolynomial, getLagrangeCoeffs, lagrangeInterpolatePolynomial, lagrangeInterpolation } from "./lagrangeInterpolatePolynomial";
+import {
+  dotProduct,
+  generateRandomPolynomial,
+  getLagrangeCoeffs,
+  kCombinations,
+  lagrangeInterpolatePolynomial,
+  lagrangeInterpolation,
+} from "./lagrangeInterpolatePolynomial";
 import Metadata from "./metadata";
 
 // TODO: handle errors for get and set with retries
@@ -327,7 +336,7 @@ class ThresholdKey implements ITKey {
     return this.getKeyDetails();
   }
 
-  getFactorEncs(factorPub: Point): EncryptedMessage[] {
+  getFactorEncs(factorPub: Point): FactorEnc {
     if (!this.metadata) throw CoreError.metadataUndefined();
     if (!this.metadata.factorEncs) throw CoreError.default("no factor encs mapping");
     if (!this.metadata.factorPubs) throw CoreError.default("no factor pubs mapping");
@@ -340,21 +349,66 @@ class ThresholdKey implements ITKey {
     return this.metadata.factorEncs[this.tssTag][factorPubID];
   }
 
-  async decryptFactorEnc(factorKey: BN, factorEnc: EncryptedMessage): Promise<Buffer> {
-    return decrypt(Buffer.from(factorKey.toString(16, 64), "hex"), factorEnc);
-  }
-
   /**
    * getTSSShare accepts a factorKey and returns the TSS share based on the factor encrypted TSS shares in the metadata
    * @param factorKey - factor key
    */
-  async getTSSShare(factorKey: BN): Promise<BN> {
+  async getTSSShare(factorKey: BN, opts?: { threshold: number }): Promise<BN> {
     if (!this.privKey) throw CoreError.default("tss share cannot be returned until you've reconstructed tkey");
     const factorPub = getPubKeyPoint(factorKey);
     const factorEncs = this.getFactorEncs(factorPub);
-    const tssShareBufs = await Promise.all(factorEncs.map((factorEnc) => this.decryptFactorEnc(factorKey, factorEnc)));
+    const { userEnc, serverEncs, tssIndex, type } = factorEncs;
+    const tssShareBufs = await Promise.all(
+      [decrypt(Buffer.from(factorKey.toString(16, 64), "hex"), userEnc)].concat(
+        serverEncs.map((factorEnc) => decrypt(Buffer.from(factorKey.toString(16, 64), "hex"), factorEnc))
+      )
+    );
+
     const tssShareBNs = tssShareBufs.map((buf) => new BN(buf.toString("hex"), "hex"));
-    return tssShareBNs.reduce((acc, shareFragment) => acc.add(shareFragment).umod(ecCurve.n));
+    const tssCommits = this.getTSSCommits();
+
+    const userDec = tssShareBNs[0];
+
+    if (type === "direct") {
+      const tssSharePub = ecCurve.g.mul(userDec);
+      const tssCommitA0 = ecCurve.keyFromPublic({ x: tssCommits[0].x.toString(16, 64), y: tssCommits[0].y.toString(16, 64) }).getPublic();
+      const tssCommitA1 = ecCurve.keyFromPublic({ x: tssCommits[1].x.toString(16, 64), y: tssCommits[1].y.toString(16, 64) }).getPublic();
+      let _tssSharePub = tssCommitA0;
+      for (let j = 0; j < tssIndex; j++) {
+        _tssSharePub = _tssSharePub.add(tssCommitA1);
+      }
+      if (tssSharePub.getX().cmp(_tssSharePub.getX()) === 0 && tssSharePub.getY().cmp(_tssSharePub.getY()) === 0) {
+        return userDec;
+      }
+      throw new Error("user decryption does not match tss commitments...");
+    }
+
+    const serverDecs = tssShareBNs.slice(1); // 5 elems
+    const serverIndexes = new Array(serverDecs.length).fill(null).map((_, i) => i + 1);
+
+    const { threshold } = opts || {};
+
+    const combis = kCombinations(serverDecs.length, threshold || Math.ceil(serverDecs.length / 2));
+    for (let i = 0; i < combis.length; i++) {
+      const combi = combis[i];
+      const selectedServerDecs = serverDecs.filter((_, j) => combi.indexOf(j) > -1);
+      const selectedServerIndexes = serverIndexes.filter((_, j) => combi.indexOf(j) > -1);
+      const serverLagrangeCoeffs = selectedServerIndexes.map((x) => getLagrangeCoeffs(serverLagrangeCoeffs, x));
+      const serverInterpolated = dotProduct(serverLagrangeCoeffs, selectedServerDecs, ecCurve.n);
+      const lagrangeCoeffs = [getLagrangeCoeffs([1, tssIndex], 1), getLagrangeCoeffs([1, tssIndex], tssIndex)];
+      const tssShare = dotProduct(lagrangeCoeffs, [userDec, serverInterpolated], ecCurve.n);
+      const tssSharePub = ecCurve.g.mul(tssShare);
+      const tssCommitA0 = ecCurve.keyFromPublic({ x: tssCommits[0].x.toString(16, 64), y: tssCommits[0].y.toString(16, 64) }).getPublic();
+      const tssCommitA1 = ecCurve.keyFromPublic({ x: tssCommits[1].x.toString(16, 64), y: tssCommits[1].y.toString(16, 64) }).getPublic();
+      let _tssSharePub = tssCommitA0;
+      for (let j = 0; j < tssIndex; j++) {
+        _tssSharePub = _tssSharePub.add(tssCommitA1);
+      }
+      if (tssSharePub.getX().cmp(_tssSharePub.getX()) === 0 && tssSharePub.getY().cmp(_tssSharePub.getY()) === 0) {
+        return tssShare;
+      }
+    }
+    throw new Error("could not find any combination of server decryptions that match tss commitments...");
   }
 
   getTSSCommits(): Point[] {
@@ -570,6 +624,78 @@ class ThresholdKey implements ITKey {
     return { newShareStores, newShareIndex };
   }
 
+  async refreshTSSShares(
+    inputShare: BN,
+    inputIndex: number,
+    targetIndexes: number[],
+    vid: string,
+    newTSSServerPub: PointHex,
+    serverOpts: {
+      serverEndpoints: string[];
+      serverPubKeys: PointHex[];
+      serverThreshold: number;
+      selectedServers: number[];
+    }
+  ): Promise<void> {
+    const tssTag = this.serviceProvider.retrieveCurrentTSSTag();
+
+    if (!this.metadata) throw CoreError.metadataUndefined();
+    if (!this.metadata.tssPolyCommits) throw CoreError.default(`tss poly commits obj not found`);
+    const tssCommits = this.metadata.tssPolyCommits[tssTag];
+    if (!tssCommits) throw CoreError.default(`tss commits not found for tssTag ${tssTag}`);
+    if (tssCommits.length === 0) throw CoreError.default(`tssCommits is empty`);
+    const tssPubKeyPoint = tssCommits[0];
+    const tssPubKey = hexPoint(tssPubKeyPoint);
+    const { serverEndpoints, serverPubKeys, serverThreshold, selectedServers } = serverOpts;
+    this.serviceProvider.retrieveTSSPubKey();
+
+    const rssClient = new RSSClient({
+      serverEndpoints,
+      serverPubKeys,
+      serverThreshold,
+      tssPubKey,
+    });
+
+    if (!this.metadata.factorPubs) throw CoreError.default(`factorPubs obj not found`);
+    const factorPubs = this.metadata.factorPubs[tssTag];
+    if (!factorPubs) throw CoreError.default(`factorPubs not found for tssTag ${tssTag}`);
+    if (factorPubs.length === 0) throw CoreError.default(`factorPubs is empty`);
+
+    if (!this.metadata.tssNonces) throw CoreError.default(`tssNonces obj not found`);
+    const tssNonce: number = this.metadata.tssNonces[tssTag] || 0;
+
+    const vid1 = `${vid}\u0015${tssTag}\u0016${tssNonce}`;
+    const vid2 = `${vid}\u0015${tssTag}\u0016${tssNonce + 1}`;
+
+    const refreshResponses = await rssClient.refresh({
+      factorPubs: factorPubs.map((f) => hexPoint(f)),
+      targetIndexes,
+      vid1,
+      vid2,
+      vidSigs: [], // TODO: add auth data
+      dkgNewPub: newTSSServerPub,
+      inputShare,
+      inputIndex,
+      selectedServers,
+    });
+
+    const newTSSCommits = [tssPubKey, ecPoint(newTSSServerPub).add(ecPoint(tssPubKey).neg())];
+
+    const factorEncs: {
+      [factorPubID: string]: FactorEnc;
+    } = {};
+    for (let i = 0; i < refreshResponses.length; i++) {
+      const refreshResponse = refreshResponses[i];
+      factorEncs[refreshResponse.factorPub.x.padStart(64, "0")] = {
+        type: "hierarchical",
+        tssIndex: refreshResponse.targetIndex,
+        userEnc: refreshResponse.userFactorEnc,
+        serverEncs: refreshResponse.serverFactorEncs,
+      };
+    }
+    this.metadata.addTSSData(tssTag, tssNonce + 1, newTSSCommits, factorPubs, factorEncs);
+  }
+
   async _refreshShares(threshold: number, newShareIndexes: Array<string>, previousPolyID: PolynomialID): Promise<RefreshSharesResult> {
     if (!this.metadata) {
       throw CoreError.metadataUndefined();
@@ -714,7 +840,7 @@ class ThresholdKey implements ITKey {
     let tssPolyCommits: Point[];
     let factorPubs: Point[];
     let factorEncs: {
-      [factorPubID: string]: EncryptedMessage[];
+      [factorPubID: string]: FactorEnc;
     };
     if (useTSS) {
       tss2 = new BN(generatePrivate());
@@ -739,12 +865,15 @@ class ThresholdKey implements ITKey {
       for (let i = 0; i < factorPubs.length; i++) {
         const f = factorPubs[i];
         const factorPubID = f.x.toString(16, 64);
-        factorEncs[factorPubID] = [
-          await encrypt(
+        factorEncs[factorPubID] = {
+          tssIndex: 2,
+          type: "direct",
+          userEnc: await encrypt(
             Buffer.concat([Buffer.from("04", "hex"), Buffer.from(f.x.toString(16, 64), "hex"), Buffer.from(f.y.toString(16, 64), "hex")]),
             Buffer.from(tss2.toString(16, 64), "hex")
           ),
-        ];
+          serverEncs: [],
+        };
       }
     }
 
@@ -752,7 +881,7 @@ class ThresholdKey implements ITKey {
     const metadata = new Metadata(getPubKeyPoint(this.privKey));
     metadata.addFromPolynomialAndShares(poly, shares);
     if (useTSS) {
-      metadata.addTSSData(this.tssTag, tssPolyCommits, factorPubs, factorEncs);
+      metadata.addTSSData(this.tssTag, 0, tssPolyCommits, factorPubs, factorEncs);
     }
 
     const serviceProviderShare = shares[shareIndexes[0].toString("hex")];

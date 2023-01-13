@@ -19,6 +19,18 @@ export interface EncryptedMessage {
   iv: string;
   mac: string;
 }
+
+// if "direct", no serverEncs (empty array), and the tssShare is just the decryption of userEnc
+// if "hierarchical", there are serverEncs, and the tssShare is hierarchically stored
+// and requires userEnc and threshold number of serverEncs to recover the tssShare
+export type FactorEncType = "direct" | "hierarchical";
+
+export type FactorEnc = {
+  tssIndex: number;
+  type: FactorEncType;
+  userEnc: EncryptedMessage;
+  serverEncs: EncryptedMessage[];
+};
 export interface ServiceProviderArgs {
   enableLogging?: boolean;
   postboxKey?: string;
@@ -54,7 +66,9 @@ export interface IServiceProvider extends ISerializable {
   decrypt(msg: EncryptedMessage): Promise<Buffer>;
   retrievePubKey(type: PubKeyType): Buffer;
   retrievePubKeyPoint(): curve.base.BasePoint;
-  retrieveTSSPubKey(): Point;
+  setCurrentTSSTag(tssTag: string): void;
+  retrieveCurrentTSSTag(): string;
+  retrieveTSSPubKey(tssTag?: string): Point;
   sign(msg: BNString): string;
 }
 export type TorusStorageLayerAPIParams = {
