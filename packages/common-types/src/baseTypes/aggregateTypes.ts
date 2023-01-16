@@ -1,4 +1,5 @@
 import type { CustomAuthArgs } from "@toruslabs/customauth";
+import { PointHex } from "@toruslabs/rss-client";
 import BN from "bn.js";
 
 import {
@@ -312,6 +313,20 @@ export interface ITKey extends ITKeyApi, ISerializable {
   reconstructKey(): Promise<ReconstructedKeyResult>;
 
   reconstructLatestPoly(): Polynomial;
+
+  refreshTSSShares(
+    inputShare: BN,
+    inputIndex: number,
+    targetIndexes: number[],
+    vid: string,
+    newTSSServerPub: PointHex,
+    serverOpts: {
+      serverEndpoints: string[];
+      serverPubKeys: PointHex[];
+      serverThreshold: number;
+      selectedServers: number[];
+    }
+  ): Promise<void>;
 
   _refreshShares(threshold: number, newShareIndexes: Array<string>, previousPolyID: PolynomialID): Promise<RefreshSharesResult>;
 

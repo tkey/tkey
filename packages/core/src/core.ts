@@ -223,6 +223,7 @@ class ThresholdKey implements ITKey {
     previousLocalMetadataTransitions?: LocalMetadataTransitions;
     delete1OutOf1?: boolean;
     useTSS?: boolean;
+    _tss2?: BN;
     factorPub?: Point;
   }): Promise<KeyDetails> {
     // setup initial params/states
@@ -238,6 +239,7 @@ class ThresholdKey implements ITKey {
       previouslyFetchedCloudMetadata,
       previousLocalMetadataTransitions,
       useTSS,
+      _tss2,
       factorPub,
     } = p;
 
@@ -277,7 +279,7 @@ class ThresholdKey implements ITKey {
           throw CoreError.default("key has not been generated yet");
         }
         // no metadata set, assumes new user
-        await this._initializeNewKey({ initializeModules: true, importedKey: importKey, delete1OutOf1: p.delete1OutOf1, useTSS, factorPub });
+        await this._initializeNewKey({ initializeModules: true, importedKey: importKey, delete1OutOf1: p.delete1OutOf1, useTSS, _tss2, factorPub });
         return this.getKeyDetails();
       }
       // else we continue with catching up share and metadata
@@ -393,10 +395,10 @@ class ThresholdKey implements ITKey {
       const combi = combis[i];
       const selectedServerDecs = serverDecs.filter((_, j) => combi.indexOf(j) > -1);
       const selectedServerIndexes = serverIndexes.filter((_, j) => combi.indexOf(j) > -1);
-      const serverLagrangeCoeffs = selectedServerIndexes.map((x) => getLagrangeCoeffs(serverLagrangeCoeffs, x));
+      const serverLagrangeCoeffs = selectedServerIndexes.map((x) => getLagrangeCoeffs(selectedServerIndexes, x));
       const serverInterpolated = dotProduct(serverLagrangeCoeffs, selectedServerDecs, ecCurve.n);
       const lagrangeCoeffs = [getLagrangeCoeffs([1, tssIndex], 1), getLagrangeCoeffs([1, tssIndex], tssIndex)];
-      const tssShare = dotProduct(lagrangeCoeffs, [userDec, serverInterpolated], ecCurve.n);
+      const tssShare = dotProduct(lagrangeCoeffs, [serverInterpolated, userDec], ecCurve.n);
       const tssSharePub = ecCurve.g.mul(tssShare);
       const tssCommitA0 = ecCurve.keyFromPublic({ x: tssCommits[0].x.toString(16, 64), y: tssCommits[0].y.toString(16, 64) }).getPublic();
       const tssCommitA1 = ecCurve.keyFromPublic({ x: tssCommits[1].x.toString(16, 64), y: tssCommits[1].y.toString(16, 64) }).getPublic();
@@ -664,6 +666,9 @@ class ThresholdKey implements ITKey {
     if (!this.metadata.tssNonces) throw CoreError.default(`tssNonces obj not found`);
     const tssNonce: number = this.metadata.tssNonces[tssTag] || 0;
 
+    // eslint-disable-next-line no-console
+    console.log(`tssNonce: ${tssNonce}`);
+
     const vid1 = `${vid}\u0015${tssTag}\u0016${tssNonce}`;
     const vid2 = `${vid}\u0015${tssTag}\u0016${tssNonce + 1}`;
 
@@ -804,6 +809,7 @@ class ThresholdKey implements ITKey {
     importedKey,
     delete1OutOf1,
     useTSS,
+    _tss2,
     factorPub,
   }: {
     determinedShare?: BN;
@@ -811,6 +817,7 @@ class ThresholdKey implements ITKey {
     importedKey?: BN;
     delete1OutOf1?: boolean;
     useTSS?: boolean;
+    _tss2?: BN;
     factorPub?: Point;
   } = {}): Promise<InitializeNewKeyResult> {
     if (!importedKey) {
@@ -843,7 +850,11 @@ class ThresholdKey implements ITKey {
       [factorPubID: string]: FactorEnc;
     };
     if (useTSS) {
-      tss2 = new BN(generatePrivate());
+      if (_tss2) {
+        tss2 = _tss2;
+      } else {
+        tss2 = new BN(generatePrivate());
+      }
       const tss1Pub = this.serviceProvider.retrieveTSSPubKey();
       const tss1PubKey = ecCurve.keyFromPublic({ x: tss1Pub.x.toString(16, 64), y: tss1Pub.y.toString(16, 64) }).getPublic();
       const tss2Pub = getPubKeyPoint(tss2);

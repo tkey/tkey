@@ -70,6 +70,7 @@ class Metadata implements IMetadata {
 
   constructor(input: Point) {
     this.tssPolyCommits = {};
+    this.tssNonces = {};
     this.factorPubs = {};
     this.factorEncs = {};
     this.publicPolynomials = {};

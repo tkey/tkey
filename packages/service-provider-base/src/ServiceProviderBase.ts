@@ -37,6 +37,7 @@ class ServiceProviderBase implements IServiceProvider {
     this.enableLogging = enableLogging;
     this.postboxKey = new BN(postboxKey, "hex");
     this.currentTSSTag = "default";
+    this.tssPubKey = {};
     if (tssPubKey) {
       this.tssPubKey[this.currentTSSTag] = tssPubKey;
     }
