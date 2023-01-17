@@ -3,7 +3,7 @@
 /* eslint-disable mocha/no-exports */
 /* eslint-disable import/no-extraneous-dependencies */
 
-import { ecCurve, getPubKeyPoint  } from "@tkey/common-types";
+import { ecCurve, getPubKeyPoint } from "@tkey/common-types";
 import { AuthMetadata, Metadata } from "@tkey/core";
 import PrivateKeyModule, { ED25519Format, SECP256K1Format } from "@tkey/private-keys";
 import SecurityQuestionsModule from "@tkey/security-questions";
@@ -31,7 +31,7 @@ import {
 } from "./wasm-nodejs/tkey";
 
 const newSP = (privateKey) => {
-  return new ServiceProviderTorus({
+  return new TorusServiceProvider({
     postboxKey: privateKey,
     customAuthArgs: {
       // this url has no effect as postbox key is passed
@@ -375,7 +375,6 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         tkey = tkey_after_generate3;
       }
     });
-
   });
 
   describe("SecurityQuestionsModule", function () {
