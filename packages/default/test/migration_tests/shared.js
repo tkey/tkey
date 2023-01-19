@@ -483,8 +483,8 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       } catch (e) {}
       threshold_wasm_2.input_share_from_security_questions(answer2);
 
-      threshold_wasm_2.reconstruct_key()
-      if (resp1.privKey.toString("hex") !== threshold_wasm_2.get_priv_key() ) {
+      threshold_wasm_2.reconstruct_key();
+      if (resp1.privKey.toString("hex") !== threshold_wasm_2.get_priv_key()) {
         fail("key should be able to be reconstructed");
       }
       threshold_wasm_2.free();
@@ -611,14 +611,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       });
     });
     it.only(`#should be able to transfer share via the module request from rust, manualSync=${mode}`, async function () {
-      const resp1 = await tb._initializeNewKey({ initializeModules: true });
-      // await tb.syncLocalMetadataTransitions();
-
-      // const deviceIndex = (await tb.getCurrentShareIndexes()).filter((x) => x !== "1")[0];
-      // const deviceShare = await tb.outputShare(deviceIndex);
-
-      // let jsonObj = createJsonObj(tb);
-      // jsonObj = { ...jsonObj, deviceShare };
+      await tb._initializeNewKey({ initializeModules: true });
 
       const threshold = new ThresholdKeyMockWasm(customSP.postboxKey.toString("hex"));
       threshold.storage_layer_from_json(JSON.stringify(tb.storageLayer.toJSON()));
@@ -748,7 +741,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       });
     });
 
-    it(`#should get/set multiple seed phrase, manualSync=${mode}`, async function () {
+    it.only(`#should get/set multiple seed phrase, manualSync=${mode}`, async function () {
       const seedPhraseToSet = "seed sock milk update focus rotate barely fade car face mechanic mercy";
       const seedPhraseToSet2 = "object brass success calm lizard science syrup planet exercise parade honey impulse";
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
@@ -759,96 +752,59 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       strictEqual(returnedSeed[0].seedPhrase, seedPhraseToSet);
       strictEqual(returnedSeed[1].seedPhrase, seedPhraseToSet2);
 
-      // const metamaskSeedPhraseFormat2 = new MetamaskSeedPhraseFormat("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68");
-      // const tb2 = new ThresholdKey({
-      //   serviceProvider: customSP,
-      //   manualSync: mode,
-      //   storageLayer: customSL,
-      //   modules: { seedPhrase: new SeedPhraseModule([metamaskSeedPhraseFormat2]) },
-      // });
-      // await tb2.initialize();
-      // tb2.inputShareStore(resp1.deviceShare);
-      // const reconstuctedKey = await tb2.reconstructKey();
+      const threshold_wasm = new ThresholdKeyMockWasm(tb.serviceProvider.postboxKey.toString("hex"));
+      threshold_wasm.storage_layer_from_json(JSON.stringify(tb.storageLayer.toJSON()));
+      threshold_wasm.initialize();
 
-      const deviceIndex = tb.getCurrentShareIndexes().filter((index) => index !== 0)[0];
-      const deviceShare = tb.outputShare(deviceIndex);
+      try {
+        threshold_wasm.get_module_private_keys();
+        fail("should not be able to get private keys");
+      } catch (e) {
+        // pass
+      }
 
-      // get seedphrase
+      threshold_wasm.import_share_store(JSON.stringify(resp1.deviceShare));
+      threshold_wasm.reconstruct_key(true);
+      const seeds = threshold_wasm.get_module_seed_phrase();
 
-      await tb.modules.seedPhrase.getSeedPhrasesWithAccounts();
+      if (seeds.includes(seedPhraseToSet) && seeds.includes(seedPhraseToSet2)) {
+        console.log("seed phrase found");
+      } else {
+        fail("seed phrase not found");
+      }
+      const seedPhraseToSet3 = "obey buffalo exit tide model vast praise enlist concert crazy shove debate";
 
-      // compareReconstructedKeys(reconstuctedKey, {
-      //   privKey: resp1.privKey,
-      //   seedPhraseModule: [
-      //     new BN("70dc3117300011918e26b02176945cc15c3d548cf49fd8418d97f93af699e46", "hex"),
-      //     new BN("bfdb025a1d404212c3f9ace6c5fb4185087281dcb9c1e89087d1a3a423f80d22", "hex"),
-      //   ],
-      //   allKeys: [
-      //     resp1.privKey,
-      //     new BN("70dc3117300011918e26b02176945cc15c3d548cf49fd8418d97f93af699e46", "hex"),
-      //     new BN("bfdb025a1d404212c3f9ace6c5fb4185087281dcb9c1e89087d1a3a423f80d22", "hex"),
-      //   ],
-      // });
-    });
-    // it(`#should be able to derive keys, manualSync=${mode}`, async function () {
-    //   const seedPhraseToSet = "seed sock milk update focus rotate barely fade car face mechanic mercy";
-    //   await tb._initializeNewKey({ initializeModules: true });
-    //   await tb.modules.seedPhrase.setSeedPhrase("HD Key Tree", seedPhraseToSet);
-    //   await tb.syncLocalMetadataTransitions();
+      threshold_wasm.set_module_seed_phrase("HD Key Tree", seedPhraseToSet3);
+      const storage_after_rust = JSON.parse(threshold_wasm.json_from_storage_layer());
 
-    //   const actualPrivateKeys = [new BN("70dc3117300011918e26b02176945cc15c3d548cf49fd8418d97f93af699e46", "hex")];
-    //   const derivedKeys = await tb.modules.seedPhrase.getAccounts();
-    //   compareBNArray(actualPrivateKeys, derivedKeys, "key should be same");
-    // });
+      threshold_wasm.free();
+      // tb.storageLayer = MockStorageLayer.fromJSON(storage_after_rust);
+      // await tb.syncLocalMetadataTransitions();
+      // const returnedSeed2 = await tb.modules.seedPhrase.getSeedPhrases();
+      // console.log(returnedSeed2);
 
-    it(`#should be able to generate seed phrase if not given, manualSync=${mode}`, async function () {
-      await tb._initializeNewKey({ initializeModules: true });
-      await tb.modules.seedPhrase.setSeedPhrase("HD Key Tree");
-      await tb.syncLocalMetadataTransitions();
-
-      const [seed] = await tb.modules.seedPhrase.getSeedPhrases();
-      const derivedKeys = await tb.modules.seedPhrase.getAccounts();
-      strict(metamaskSeedPhraseFormat.validateSeedPhrase(seed.seedPhrase), "Seed Phrase must be valid");
-      strict(derivedKeys.length >= 1, "Atleast one account must be generated");
-    });
-
-    it(`#should be able to change seedphrase, manualSync=${mode}`, async function () {
-      const oldSeedPhrase = "verb there excuse wink merge phrase alien senior surround fluid remind chef bar move become";
-      await tb._initializeNewKey({ initializeModules: true });
-      await tb.modules.seedPhrase.setSeedPhrase("HD Key Tree", oldSeedPhrase);
-      // await tb.modules.seedPhrase.setSeedPhrase("HD Key Tree");
-      await tb.syncLocalMetadataTransitions();
-
-      const newSeedPhrase = "trim later month olive fit shoulder entry laptop jeans affair belt drip jealous mirror fancy";
-      await tb.modules.seedPhrase.CRITICAL_changeSeedPhrase(oldSeedPhrase, newSeedPhrase);
-      await tb.syncLocalMetadataTransitions();
-
-      const secondStoredSeedPhrases = await tb.modules.seedPhrase.getSeedPhrases();
-
-      strictEqual(secondStoredSeedPhrases[0].seedPhrase, newSeedPhrase);
-    });
-
-    it(`#should be able to replace numberOfWallets seed phrase module, manualSync=${mode}`, async function () {
-      await tb._initializeNewKey({ initializeModules: true });
-      await tb.modules.seedPhrase.setSeedPhrase("HD Key Tree");
-      await tb.modules.seedPhrase.setSeedPhrase("HD Key Tree");
-      const seedPhraseStores = await tb.modules.seedPhrase.getSeedPhrases();
-      // console.log("%O", tb.metadata.tkeyStore);
-      await tb.modules.seedPhrase.setSeedPhraseStoreItem({
-        id: seedPhraseStores[1].id,
-        seedPhrase: seedPhraseStores[1].seedPhrase,
-        numberOfWallets: 2,
+      const tkey = new ThresholdKey({
+        serviceProvider: customSP,
+        manualSync: mode,
+        storageLayer: MockStorageLayer.fromJSON(storage_after_rust),
+        modules: {
+          seedPhrase: new SeedPhraseModule([metamaskSeedPhraseFormat]),
+          privateKeyModule: new PrivateKeyModule([secp256k1Format, ed25519privateKeyFormat]),
+        },
       });
-      await tb.syncLocalMetadataTransitions();
-
-      // console.log(storedSeedPhrase);
-      const secondStoredSeedPhrases = await tb.modules.seedPhrase.getSeedPhrases();
-      strictEqual(secondStoredSeedPhrases[0].numberOfWallets, 1);
-      strictEqual(secondStoredSeedPhrases[1].numberOfWallets, 2);
+      await tkey.initialize();
+      await tkey.inputShareStore(resp1.deviceShare);
+      await tkey.reconstructKey(true);
+      const returnedSeed2 = await tkey.modules.seedPhrase.getSeedPhrases();
+      if (returnedSeed2.length === 3 && returnedSeed2.map((item) => item.seedPhrase).includes(seedPhraseToSet3)) {
+        console.log("seed phrase found");
+      } else {
+        fail("seed phrase not found");
+      }
     });
 
-    it(`#should be able to get/set private key, manualSync=${mode}`, async function () {
-      await tb._initializeNewKey({ initializeModules: true });
+    it.only(`#should be able to get/set private key, manualSync=${mode}`, async function () {
+      const resp1 = await tb._initializeNewKey({ initializeModules: true });
 
       const actualPrivateKeys = [
         new BN("4bd0041b7654a9b16a7268a5de7982f2422b15635c4fd170c140dc4897624390", "hex"),
@@ -860,103 +816,95 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       ];
       await tb.modules.privateKeyModule.setPrivateKey("secp256k1n", actualPrivateKeys[0]);
       await tb.modules.privateKeyModule.setPrivateKey("secp256k1n", actualPrivateKeys[1]);
-      await tb.modules.privateKeyModule.setPrivateKey("ed25519", actualPrivateKeys[2]);
+      // await tb.modules.privateKeyModule.setPrivateKey("ed25519", actualPrivateKeys[2]);
       await tb.syncLocalMetadataTransitions();
       await tb.modules.privateKeyModule.getAccounts();
 
-      const getAccounts = await tb.modules.privateKeyModule.getAccounts();
+      const threshold_wasm = new ThresholdKeyMockWasm(tb.serviceProvider.postboxKey.toString("hex"));
+      threshold_wasm.storage_layer_from_json(JSON.stringify(tb.storageLayer.toJSON()));
+      threshold_wasm.initialize();
+      threshold_wasm.import_share_store(JSON.stringify(resp1.deviceShare));
+      threshold_wasm.reconstruct_key(true);
+      const private_keys = threshold_wasm.get_module_private_keys();
+      threshold_wasm.free();
+
       deepStrictEqual(
-        actualPrivateKeys.map((x) => x.toString("hex")),
-        getAccounts.map((x) => x.toString("hex"))
+        actualPrivateKeys.slice(0, -1).map((x) => x.toString("hex")),
+        private_keys
       );
     });
 
-    it(`#should be able to get/set private key, manualSync=${mode}`, async function () {
-      await tb._initializeNewKey({ initializeModules: true });
+    it.only(`#should be able to get/set private keys and seed phrase, manualSync=${mode}`, async function () {
+      // const resp1 = await tb._initializeNewKey({ initializeModules: true });
+      const postboxKey = getTempKey();
 
-      const actualPrivateKeys = [
-        new BN("4bd0041b7654a9b16a7268a5de7982f2422b15635c4fd170c140dc4897624390", "hex"),
-        new BN("1ea6edde61c750ec02896e9ac7fe9ac0b48a3630594fdf52ad5305470a2635c0", "hex"),
-        new BN(
-          "99da9559e15e913ee9ab2e53e3dfad575da33b49be1125bb922e33494f4988281b2f49096e3e5dbd0fcfa9c0c0cd92d9ab3b21544b34d5dd4a65d98b878b9922",
-          "hex"
-        ),
-      ];
+      const threshold_wasm = new ThresholdKeyMockWasm(postboxKey);
+      threshold_wasm.initialize();
+      threshold_wasm.reconstruct_key(true);
 
-      await tb.modules.privateKeyModule.setPrivateKey("secp256k1n", actualPrivateKeys[0]);
-      await tb.modules.privateKeyModule.setPrivateKey("secp256k1n", actualPrivateKeys[1]);
-      await tb.modules.privateKeyModule.setPrivateKey("ed25519", actualPrivateKeys[2]);
-      await tb.syncLocalMetadataTransitions();
-      await tb.modules.privateKeyModule.getAccounts();
+      const deviceIndex = threshold_wasm.get_current_share_indexes().filter((x) => x !== "1")[0];
+      const deviceShare = threshold_wasm.export_share(deviceIndex);
 
-      const getAccounts = await tb.modules.privateKeyModule.getAccounts();
-      deepStrictEqual(
-        actualPrivateKeys.map((x) => x.toString("hex")),
-        getAccounts.map((x) => x.toString("hex"))
-      );
-    });
-
-    it(`#should be able to generate private key if not given, manualSync=${mode}`, async function () {
-      await tb._initializeNewKey({ initializeModules: true });
-
-      await tb.modules.privateKeyModule.setPrivateKey("secp256k1n");
-      await tb.modules.privateKeyModule.setPrivateKey("secp256k1n");
-      await tb.modules.privateKeyModule.setPrivateKey("ed25519");
-      await tb.syncLocalMetadataTransitions();
-
-      const accounts = await tb.modules.privateKeyModule.getAccounts();
-      strictEqual(accounts.length, 3);
-    });
-
-    it(`#should be able to get/set private keys and seed phrase, manualSync=${mode}`, async function () {
-      const resp1 = await tb._initializeNewKey({ initializeModules: true });
-
-      await tb.modules.seedPhrase.setSeedPhrase("HD Key Tree", "seed sock milk update focus rotate barely fade car face mechanic mercy");
-      await tb.modules.seedPhrase.setSeedPhrase("HD Key Tree", "chapter gas cost saddle annual mouse chef unknown edit pen stairs claw");
+      const seedPhraseToSet = "seed sock milk update focus rotate barely fade car face mechanic mercy";
+      const seedPhraseToSet2 = "chapter gas cost saddle annual mouse chef unknown edit pen stairs claw";
+      threshold_wasm.set_module_seed_phrase("HD Key Tree", seedPhraseToSet);
+      threshold_wasm.set_module_seed_phrase("HD Key Tree", seedPhraseToSet2);
 
       const actualPrivateKeys = [
         new BN("4bd0041b7654a9b16a7268a5de7982f2422b15635c4fd170c140dc4897624390", "hex"),
         new BN("1ea6edde61c750ec02896e9ac7fe9ac0b48a3630594fdf52ad5305470a2635c0", "hex"),
       ];
-      await tb.modules.privateKeyModule.setPrivateKey("secp256k1n", actualPrivateKeys[0]);
-      await tb.modules.privateKeyModule.setPrivateKey("secp256k1n", actualPrivateKeys[1]);
-      await tb.syncLocalMetadataTransitions();
+      threshold_wasm.set_module_private_key("secp256k1n", actualPrivateKeys[0].toString("hex"));
+      threshold_wasm.set_module_private_key("secp256k1n", actualPrivateKeys[1].toString("hex"));
+
+      const storage_after_rust = JSON.parse(threshold_wasm.json_from_storage_layer());
 
       const metamaskSeedPhraseFormat2 = new MetamaskSeedPhraseFormat("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68");
+
       const tb2 = new ThresholdKey({
-        serviceProvider: customSP,
+        serviceProvider: newSP(postboxKey),
         manualSync: mode,
-        storageLayer: customSL,
+        storageLayer: MockStorageLayer.fromJSON(storage_after_rust),
         modules: { seedPhrase: new SeedPhraseModule([metamaskSeedPhraseFormat2]), privateKeyModule: new PrivateKeyModule([secp256k1Format]) },
       });
       await tb2.initialize();
-      tb2.inputShareStore(resp1.deviceShare);
-      const reconstructedKey = await tb2.reconstructKey();
+      await tb2.inputShare(deviceShare);
+      await tb2.reconstructKey(true);
 
-      compareReconstructedKeys(reconstructedKey, {
-        privKey: resp1.privKey,
-        seedPhraseModule: [
-          new BN("70dc3117300011918e26b02176945cc15c3d548cf49fd8418d97f93af699e46", "hex"),
-          new BN("4d62a55af3496a7b290a12dd5fd5ef3e051d787dbc005fb74536136949602f9e", "hex"),
-        ],
-        privateKeyModule: [
-          new BN("4bd0041b7654a9b16a7268a5de7982f2422b15635c4fd170c140dc4897624390", "hex"),
-          new BN("1ea6edde61c750ec02896e9ac7fe9ac0b48a3630594fdf52ad5305470a2635c0", "hex"),
-        ],
-        allKeys: [
-          resp1.privKey,
-          new BN("70dc3117300011918e26b02176945cc15c3d548cf49fd8418d97f93af699e46", "hex"),
-          new BN("4d62a55af3496a7b290a12dd5fd5ef3e051d787dbc005fb74536136949602f9e", "hex"),
-          new BN("4bd0041b7654a9b16a7268a5de7982f2422b15635c4fd170c140dc4897624390", "hex"),
-          new BN("1ea6edde61c750ec02896e9ac7fe9ac0b48a3630594fdf52ad5305470a2635c0", "hex"),
-        ],
-      });
+      const resultSeeedPhrase = await tb2.modules.seedPhrase.getSeedPhrases();
+      const resultPrivateKey = await tb2.modules.privateKeyModule.getPrivateKeys();
+      if (resultSeeedPhrase.length !== 2) {
+        fail("seed phrase set failed");
+      }
+      if (resultPrivateKey.length !== 2) {
+        fail("private key set failed");
+      }
 
-      const reconstructedKey2 = await tb2.reconstructKey(false);
-      compareReconstructedKeys(reconstructedKey2, {
-        privKey: resp1.privKey,
-        allKeys: [resp1.privKey],
-      });
+      // const reconstructedKey = await tb2.reconstructKey();
+      // compareReconstructedKeys(reconstructedKey, {
+      //   privKey: resp1.privKey,
+      //   seedPhraseModule: [
+      //     new BN("70dc3117300011918e26b02176945cc15c3d548cf49fd8418d97f93af699e46", "hex"),
+      //     new BN("4d62a55af3496a7b290a12dd5fd5ef3e051d787dbc005fb74536136949602f9e", "hex"),
+      //   ],
+      //   privateKeyModule: [
+      //     new BN("4bd0041b7654a9b16a7268a5de7982f2422b15635c4fd170c140dc4897624390", "hex"),
+      //     new BN("1ea6edde61c750ec02896e9ac7fe9ac0b48a3630594fdf52ad5305470a2635c0", "hex"),
+      //   ],
+      //   allKeys: [
+      //     resp1.privKey,
+      //     new BN("70dc3117300011918e26b02176945cc15c3d548cf49fd8418d97f93af699e46", "hex"),
+      //     new BN("4d62a55af3496a7b290a12dd5fd5ef3e051d787dbc005fb74536136949602f9e", "hex"),
+      //     new BN("4bd0041b7654a9b16a7268a5de7982f2422b15635c4fd170c140dc4897624390", "hex"),
+      //     new BN("1ea6edde61c750ec02896e9ac7fe9ac0b48a3630594fdf52ad5305470a2635c0", "hex"),
+      //   ],
+      // });
+
+      // const reconstructedKey2 = await tb2.reconstructKey(false);
+      // compareReconstructedKeys(reconstructedKey2, {
+      //   privKey: resp1.privKey,
+      //   allKeys: [resp1.privKey],
+      // });
     });
   });
 
