@@ -87,6 +87,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     return new ThresholdKeyWasm(postboxKey);
   };
 
+
   describe("tkey rust", function () {
     let tb;
     beforeEach("Setup ThresholdKey", async function () {
@@ -428,7 +429,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       // const jsonObj_wrong = { ...jsonObj, securityQuestions: { answer: "blublu-wrong", question, action } };
       // const jsonObj_correct = { ...jsonObj, securityQuestions: { answer, question, action } };
 
-      const threshold_wasm = createThresholdWasm (tb.serviceProvider.postboxKey.toString("hex"), tb.storageLayer.toJSON());
+      const threshold_wasm = createThresholdWasm(tb.serviceProvider.postboxKey.toString("hex"), tb.storageLayer.toJSON());
       threshold_wasm.initialize();
       try {
         threshold_wasm.input_share_from_security_questions("blublu-wrong");
@@ -691,7 +692,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       strictEqual(returnedSeed[0].seedPhrase, seedPhraseToSet);
       strictEqual(returnedSeed[1].seedPhrase, seedPhraseToSet2);
 
-      const threshold_wasm = createThresholdWasm (tb.serviceProvider.postboxKey.toString("hex"), tb.storageLayer.toJSON() );
+      const threshold_wasm = createThresholdWasm(tb.serviceProvider.postboxKey.toString("hex"), tb.storageLayer.toJSON());
       threshold_wasm.initialize();
 
       try {
@@ -758,7 +759,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       await tb.syncLocalMetadataTransitions();
       await tb.modules.privateKeyModule.getAccounts();
 
-      const threshold_wasm = createThresholdWasm(tb.serviceProvider.postboxKey.toString("hex"), tb.storageLayer.toJSON() );
+      const threshold_wasm = createThresholdWasm(tb.serviceProvider.postboxKey.toString("hex"), tb.storageLayer.toJSON());
       threshold_wasm.initialize();
       threshold_wasm.import_share_store(JSON.stringify(resp1.deviceShare));
       threshold_wasm.reconstruct_key(true);
