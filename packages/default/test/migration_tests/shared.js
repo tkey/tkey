@@ -14,11 +14,12 @@ import { MockStorageLayer } from "@tkey/storage-layer-torus";
 import { generatePrivate } from "@toruslabs/eccrypto";
 import { deepStrictEqual, fail, strictEqual, throws } from "assert";
 import BN from "bn.js";
+import { randomInt } from "crypto";
 import { keccak256 } from "web3-utils";
 
 import ThresholdKey from "../../src/index";
 import { getMetadataUrl, initStorageLayer, isMocked } from "../helpers";
-import { ThresholdKeyMockWasm, ThresholdKeyWasm } from "./wasm-nodejs/tkey";
+import { ThresholdKeyMockWasm } from "./wasm-nodejs/tkey";
 
 const newSP = (privateKey) => {
   return new TorusServiceProvider({
@@ -84,9 +85,9 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       return threshold_wasm;
     }
     // else return cloud storage Threshold
-    return new ThresholdKeyWasm(postboxKey);
+    // return new ThresholdKeyWasm(postboxKey);
+    return new ThresholdKeyMockWasm(postboxKey);
   };
-
 
   describe("tkey rust", function () {
     let tb;
@@ -94,7 +95,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       tb = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
     });
 
-    it.only("#should be able to create Tkey in TS and reconstruct it in Tkey Rust", async function () {
+    it("#should be able to create Tkey in TS and reconstruct it in Tkey Rust", async function () {
       const postboxKey = getTempKey();
       const storageLayer = initStorageLayer({ hostUrl: metadataURL });
       const tkey = new ThresholdKey({ serviceProvider: newSP(postboxKey), storageLayer, manualSync: mode });
@@ -123,7 +124,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       threshold_wasm.free();
     });
 
-    it.only(`#should be able to reconstruct key after TKey created in tkey-rust, manualSync=${mode}`, async function () {
+    it(`#should be able to reconstruct key after TKey created in tkey-rust, manualSync=${mode}`, async function () {
       // wasm initialize key
       const postboxKey = getTempKey();
       const threshold_wasm = createThresholdWasm(postboxKey);
@@ -156,7 +157,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       threshold_wasm.free();
     });
 
-    it.only(`#should be able to reconstruct key when initializing with user input in TS and reconstruct in Tkey Rust, manualSync=${mode}`, async function () {
+    it(`#should be able to reconstruct key when initializing with user input in TS and reconstruct in Tkey Rust, manualSync=${mode}`, async function () {
       let determinedShare = new BN(keccak256("user answer blublu").slice(2), "hex");
       determinedShare = determinedShare.umod(ecCurve.curve.n);
       const resp1 = await tb._initializeNewKey({ determinedShare, initializeModules: true });
@@ -178,7 +179,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       threshold_wasm.free();
     });
 
-    it.only(`#should be able to generate and delete share and delete Tkey, manualSync=${mode}`, async function () {
+    it(`#should be able to generate and delete share and delete Tkey, manualSync=${mode}`, async function () {
       // long scenario
       // create 2/2 in rust
       // wasm initialize key
@@ -277,7 +278,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       threshold_wasm_4.free();
     });
 
-    it.only(`#should be able to generate and delete share up to 20 shares, manualSync=${mode}`, async function () {
+    it(`#should be able to generate and delete share up to 20 shares, manualSync=${mode}`, async function () {
       // long scenario
       // create 2/2 in rust
       // wasm initialize key
@@ -301,7 +302,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       await tb3.reconstructKey(true);
 
       let tkey = tb3;
-      for (let i = 0; i < 1; i++) {
+      for (let i = 0; i < 5; i++) {
         console.log("loop", i);
         // generate new share in ts
         const new_share_result = await tkey.generateNewShare();
@@ -410,7 +411,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         manualSync: mode,
       });
     });
-    it.only(`#should be able to reconstruct key and initialize a key with security questions, manualSync=${mode}`, async function () {
+    it(`#should be able to reconstruct key and initialize a key with security questions, manualSync=${mode}`, async function () {
       await tb._initializeNewKey({ initializeModules: true });
       await rejects(async function () {
         await tb.modules.securityQuestions.inputShareFromSecurityQuestions("blublu");
@@ -446,7 +447,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       //   fail("key should be able to be reconstructed");
       // }
     });
-    it.only(`#should be able to delete and add security questions, manualSync=${mode}`, async function () {
+    it(`#should be able to delete and add security questions, manualSync=${mode}`, async function () {
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
 
       const answer1 = "blublu";
@@ -493,7 +494,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       threshold_wasm_2.free();
     });
 
-    it(`#should be able to reconstruct key and initialize a key with security questions after refresh, manualSync=${mode}`, async function () {
+    it.skip(`#should be able to reconstruct key and initialize a key with security questions after refresh, manualSync=${mode}`, async function () {
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
       await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
       const tb2 = new ThresholdKey({
@@ -513,7 +514,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         fail("key should be able to be reconstructed");
       }
     });
-    it(`#should be able to change password, manualSync=${mode}`, async function () {
+    it.skip(`#should be able to change password, manualSync=${mode}`, async function () {
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
 
       // should throw
@@ -539,7 +540,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         fail("key should be able to be reconstructed");
       }
     });
-    it(`#should be able to change password and serialize, manualSync=${mode}`, async function () {
+    it.skip(`#should be able to change password and serialize, manualSync=${mode}`, async function () {
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
       await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
       await tb.modules.securityQuestions.changeSecurityQuestionAndAnswer("dodo", "who is your cat?");
@@ -564,7 +565,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const finalKeyPostSerialization = await tb3.reconstructKey();
       strictEqual(finalKeyPostSerialization.toString("hex"), reconstructedKey.toString("hex"), "Incorrect serialization");
     });
-    it(`#should be able to get answers, even when they change, manualSync=${mode}`, async function () {
+    it.skip(`#should be able to get answers, even when they change, manualSync=${mode}`, async function () {
       tb = new ThresholdKey({
         serviceProvider: customSP,
         storageLayer: customSL,
@@ -613,7 +614,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         modules: { shareTransfer: new ShareTransferModule() },
       });
     });
-    it.only(`#should be able to transfer share via the module request from rust, manualSync=${mode}`, async function () {
+    it(`#should be able to transfer share via the module request from rust, manualSync=${mode}`, async function () {
       await tb._initializeNewKey({ initializeModules: true });
 
       const threshold = createThresholdWasm(customSP.postboxKey.toString("hex"), tb.storageLayer.toJSON());
@@ -636,7 +637,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       threshold.free();
     });
 
-    it.only(`#should be able to transfer share via the module request from rust, manualSync=${mode}`, async function () {
+    it(`#should be able to transfer share via the module request from rust, manualSync=${mode}`, async function () {
       const threshold = createThresholdWasm(customSP.postboxKey.toString("hex"));
       threshold.initialize();
       threshold.reconstruct_key(false);
@@ -681,7 +682,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       });
     });
 
-    it.only(`#should get/set multiple seed phrase, manualSync=${mode}`, async function () {
+    it(`#should get/set multiple seed phrase, manualSync=${mode}`, async function () {
       const seedPhraseToSet = "seed sock milk update focus rotate barely fade car face mechanic mercy";
       const seedPhraseToSet2 = "object brass success calm lizard science syrup planet exercise parade honey impulse";
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
@@ -742,7 +743,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       }
     });
 
-    it.only(`#should be able to get/set private key, manualSync=${mode}`, async function () {
+    it(`#should be able to get/set private key, manualSync=${mode}`, async function () {
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
 
       const actualPrivateKeys = [
@@ -772,7 +773,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       );
     });
 
-    it.only(`#should be able to get/set private keys and seed phrase, manualSync=${mode}`, async function () {
+    it(`#should be able to get/set private keys and seed phrase, manualSync=${mode}`, async function () {
       // const resp1 = await tb._initializeNewKey({ initializeModules: true });
       const postboxKey = getTempKey();
 
@@ -847,7 +848,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
   });
 
   describe("Lock", function () {
-    it.only(`#locks should fail when tkey/nonce is updated, manualSync=${mode}`, async function () {
+    it(`#locks should fail when tkey/nonce is updated, manualSync=${mode}`, async function () {
       const tb = new ThresholdKey({ serviceProvider: customSP, manualSync: mode, storageLayer: customSL });
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
       await tb.syncLocalMetadataTransitions();
@@ -893,43 +894,162 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
   // }
 
   describe("Stress", function () {
-    let tkey;
     beforeEach("Setup Stress Test", async function () {
-      const postboxKey = getTempKey();
-      tkey = new ThresholdKey({ serviceProvider: newSP(postboxKey), storageLayer: initStorageLayer(), manualSync: mode });
-      await tkey._initializeNewKey({ initializeModules: true });
-      await tkey.syncLocalMetadataTransitions();
+      // const postboxKey = getTempKey();
+      // tkey = new ThresholdKey({ serviceProvider: newSP(postboxKey), storageLayer: initStorageLayer(), manualSync: mode });
+      // await tkey._initializeNewKey({ initializeModules: true });
+      // await tkey.syncLocalMetadataTransitions();
     });
-    it.only(`#stress test, manualSync=${mode}`, async function () {
-      // reconstruct back in rust
-      // generate in rust
-      // reconstruct back in ts
-      // generate share in ts
-      // delete share in ts
-      // add share description in ts
-      // add module private key in ts
-      // add module seed phrase in ts
-      // reconsturct in rust
-      // check share description in rust
-      // check module private key in rust
-      // check module seed phrase in rust
-      // add share description in rust
-      // add module private key in rust
-      // add module seed phrase in rust
-      // reconstruct in ts
-      // check share description in ts
-      // check module private key in ts
-      // check module seed phrase in ts
-      // delete share description in ts
-      // delete module private key in ts
-      // delete module seed phrase in ts
-      // reconstruct in rust
-      // check share description in rust
-      // check module private key in rust
-      // check module seed phrase in rust
-      // delete share description in rust
-      // delete module private key in rust
-      // delete module seed phrase in rust
+    const randomBool = () => Math.random() >= 0.5;
+
+    const randomInPool = (pool) => randomInt(pool) === 0;
+
+    const randomIndex = (pool) => Math.floor(Math.random() * pool);
+
+    it(`#stress test, manualSync=${mode}`, async function () {
+      // initialize in rust
+      const postboxKey = getTempKey();
+      const threshold_wasm_initial = createThresholdWasm(postboxKey);
+      threshold_wasm_initial.initialize();
+      threshold_wasm_initial.reconstruct_key(true);
+      const deviceIndex = threshold_wasm_initial.get_current_share_indexes().filter((x) => x !== "1");
+      const deviceShare = threshold_wasm_initial.export_share(deviceIndex[0]);
+
+      const newShareIndexAccumulated = [];
+      const newShareIndexAvailable = [];
+
+      const privateKeyModuleAccumulated = [];
+      const privateKeyModuleAvailable = [];
+
+      // const seedPhraseModuleAccumulated = [];
+      // const seedPhraseModuleAvailable = [];
+
+      //
+      let threshold_wasm = threshold_wasm_initial;
+      for (let j = 0; j < 10; j++) {
+        // generate in rust
+        if (randomBool()) {
+          const newShareIndex = threshold_wasm.generate_new_share();
+          newShareIndexAccumulated.push(newShareIndex);
+          newShareIndexAvailable.push(newShareIndex);
+        }
+
+        // delete in rust
+        if (randomInPool(3)) {
+          const targetIndex = randomIndex(newShareIndexAccumulated);
+          const target = newShareIndexAccumulated[targetIndex];
+          const indexOf = newShareIndexAvailable.indexOf(target);
+          try {
+            threshold_wasm.delete_share(target);
+            if (indexOf > -1) {
+              newShareIndexAvailable.splice(indexOf, 1);
+            } else {
+              fail("target should be in available");
+            }
+          } catch (err) {
+            if (indexOf < -1) {
+              fail("delete share in rust should not fail");
+            }
+          }
+        }
+
+        // security question in rust
+        if (randomBool()) {
+          try {
+            const question = threshold_wasm.get_security_questions();
+            console.log(question);
+            // get question and try answer
+            threshold_wasm.change_security_question_and_answer("new_answer", "new_question");
+          } catch (err) {
+            threshold_wasm.generate_new_share_with_security_question("answer", "question");
+          }
+        }
+
+        // check share description in rust
+        // add share description in rust
+        // add module private key in rust
+        // add module seed phrase in rust
+
+        const storage_after_rust = JSON.parse(threshold_wasm.json_from_storage_layer());
+        threshold_wasm.free();
+
+        // reconstruct back in ts
+        const tkey = new ThresholdKey({
+          serviceProvider: newSP(postboxKey),
+          storageLayer: initStorageLayer({ storage: storage_after_rust }),
+          manualSync: mode,
+          modules: {
+            securityQuestions: new SecurityQuestionsModule(),
+            privateKeyModule: new PrivateKeyModule([new SECP256K1Format()]),
+            seedPhrase: new SeedPhraseModule([new MetamaskSeedPhraseFormat()]),
+          },
+        });
+        await tkey.initialize();
+        await tkey.inputShare(deviceShare);
+        await tkey.reconstructKey(true);
+
+        // generate share in ts
+        if (randomBool()) {
+          const newShareIndex = (await tkey.generateNewShare()).newShareIndex.toString("hex");
+          newShareIndexAccumulated.push(newShareIndex);
+          newShareIndexAvailable.push(newShareIndex);
+        }
+
+        // delete share in ts
+        if (randomInPool(3)) {
+          const targetIndex = randomIndex(newShareIndexAccumulated);
+          const target = newShareIndexAccumulated[targetIndex];
+          const indexOf = newShareIndexAvailable.indexOf(target);
+          try {
+            threshold_wasm.delete_share(newShareIndexAccumulated[target]);
+            if (indexOf > -1) {
+              await tkey.deleteShare(target);
+              newShareIndexAvailable.splice(indexOf, 1);
+            } else {
+              fail("target should be in available");
+            }
+          } catch (err) {
+            if (indexOf > -1) {
+              fail("should not fail");
+            }
+          }
+        }
+
+        // add security question in ts
+        if (randomBool()) {
+          try {
+            const question = await tkey.modules.securityQuestions.getSecurityQuestions();
+            // check question
+            console.log(question);
+            await tkey.modules.securityQuestions.changeSecurityQuestionAndAnswer("answer", "question");
+          } catch (e) {
+            await tkey.modules.securityQuestions.generateNewShareWithSecurityQuestions("answer", "question");
+          }
+        }
+
+        // add module private key in ts
+        if (randomBool()) {
+          const temp = getTempKey();
+          const p1 = new BN(temp, "hex");
+          await tkey.modules.privateKeyModule.setPrivateKey("secp256k1n", p1);
+
+          privateKeyModuleAccumulated.push(temp);
+          privateKeyModuleAvailable.push(temp);
+        }
+
+        // add module seed phrase in ts
+        // add share description in ts
+        const storage_after_ts = tkey.storageLayer.toJSON();
+        // reconsturct in rust
+        const threshold_wasm_2 = createThresholdWasm(postboxKey, storage_after_ts);
+        threshold_wasm_2.initialize();
+        threshold_wasm_2.import_share(deviceShare);
+        threshold_wasm_2.reconstruct_key(true);
+
+        threshold_wasm = threshold_wasm_2;
+      }
+
+      threshold_wasm.free();
     });
   });
 };

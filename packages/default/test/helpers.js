@@ -1,6 +1,7 @@
 import ServiceProviderBase from "@tkey/service-provider-base";
 import ServiceProviderTorus from "@tkey/service-provider-torus";
 import TorusStorageLayer, { MockStorageLayer } from "@tkey/storage-layer-torus";
+// eslint-disable-next-line import/no-extraneous-dependencies
 import { generatePrivate } from "@toruslabs/eccrypto";
 
 let mocked;
@@ -24,7 +25,11 @@ export function getMetadataUrl() {
 }
 
 export function initStorageLayer(extraParams) {
-  return mocked === "true" ? new MockStorageLayer() : new TorusStorageLayer(extraParams);
+  if (mocked) {
+    if (extraParams?.storage) return MockStorageLayer.fromJSON(extraParams.storage);
+    return new MockStorageLayer();
+  }
+  return new TorusStorageLayer(extraParams);
 }
 
 export function getServiceProvider(params) {
