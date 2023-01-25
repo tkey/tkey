@@ -2558,6 +2558,21 @@
     web3-eth-contract "^1.8.1"
     web3-utils "^1.8.1"
 
+"@toruslabs/rss-client@^1.2.2":
+  version "1.2.2"
+  resolved "https://registry.yarnpkg.com/@toruslabs/rss-client/-/rss-client-1.2.2.tgz#7edbab0eeed4ac9412053dbb9638341cd536e9ca"
+  integrity sha512-aAymCt5twcE8YeE5hulV3fpdsEyPHesuLPsyIwbpJnLOnn1ZB+GZ/U/8Ll6SzIls9IN9HVScKz9LhekL4Ifoag==
+  dependencies:
+    "@toruslabs/eccrypto" "^1.1.8"
+    "@toruslabs/http-helpers" "^3.2.0"
+    bn.js "^5.2.1"
+    elliptic "^6.5.4"
+    fetch "^1.1.0"
+    loglevel "^1.8.1"
+    node-fetch "^2.0.0"
+    web3-eth-contract "^1.8.1"
+    web3-utils "^1.8.1"
+
 "@toruslabs/torus-scripts@^1.0.6":
   version "1.0.6"
   resolved "https://registry.npmjs.org/@toruslabs/torus-scripts/-/torus-scripts-1.0.6.tgz"

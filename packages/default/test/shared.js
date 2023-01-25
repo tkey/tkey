@@ -14,7 +14,6 @@ import { generatePrivate } from "@toruslabs/eccrypto";
 import { post } from "@toruslabs/http-helpers";
 import { deepEqual, deepStrictEqual, equal, fail, notEqual, notStrictEqual, strict, strictEqual, throws } from "assert";
 import BN from "bn.js";
-import { assert } from "console";
 import { createSandbox } from "sinon";
 import { keccak256 } from "web3-utils";
 

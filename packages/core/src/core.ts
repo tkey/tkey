@@ -355,7 +355,7 @@ class ThresholdKey implements ITKey {
    * getTSSShare accepts a factorKey and returns the TSS share based on the factor encrypted TSS shares in the metadata
    * @param factorKey - factor key
    */
-  async getTSSShare(factorKey: BN, opts?: { threshold: number }): Promise<BN> {
+  async getTSSShare(factorKey: BN, opts?: { threshold: number }): Promise<{ tssIndex: number; tssShare: BN }> {
     if (!this.privKey) throw CoreError.default("tss share cannot be returned until you've reconstructed tkey");
     const factorPub = getPubKeyPoint(factorKey);
     const factorEncs = this.getFactorEncs(factorPub);
@@ -380,7 +380,7 @@ class ThresholdKey implements ITKey {
         _tssSharePub = _tssSharePub.add(tssCommitA1);
       }
       if (tssSharePub.getX().cmp(_tssSharePub.getX()) === 0 && tssSharePub.getY().cmp(_tssSharePub.getY()) === 0) {
-        return userDec;
+        return { tssIndex, tssShare: userDec };
       }
       throw new Error("user decryption does not match tss commitments...");
     }
@@ -407,7 +407,7 @@ class ThresholdKey implements ITKey {
         _tssSharePub = _tssSharePub.add(tssCommitA1);
       }
       if (tssSharePub.getX().cmp(_tssSharePub.getX()) === 0 && tssSharePub.getY().cmp(_tssSharePub.getY()) === 0) {
-        return tssShare;
+        return { tssIndex, tssShare };
       }
     }
     throw new Error("could not find any combination of server decryptions that match tss commitments...");
@@ -669,15 +669,15 @@ class ThresholdKey implements ITKey {
     // eslint-disable-next-line no-console
     console.log(`tssNonce: ${tssNonce}`);
 
-    const vid1 = `${vid}\u0015${tssTag}\u0016${tssNonce}`;
-    const vid2 = `${vid}\u0015${tssTag}\u0016${tssNonce + 1}`;
+    const oldLabel = `${vid}\u0015${tssTag}\u0016${tssNonce}`;
+    const newLabel = `${vid}\u0015${tssTag}\u0016${tssNonce + 1}`;
 
     const refreshResponses = await rssClient.refresh({
       factorPubs: factorPubs.map((f) => hexPoint(f)),
       targetIndexes,
-      vid1,
-      vid2,
-      vidSigs: [], // TODO: add auth data
+      oldLabel,
+      newLabel,
+      sigs: [], // TODO: add auth data
       dkgNewPub: newTSSServerPub,
       inputShare,
       inputIndex,
