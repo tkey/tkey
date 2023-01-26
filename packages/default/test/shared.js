@@ -3,7 +3,6 @@
 /* eslint-disable import/no-extraneous-dependencies */
 
 import { ecCurve, getPubKeyPoint } from "@tkey/common-types";
-import { getLagrangeCoeffs } from "@tkey/core";
 import PrivateKeyModule, { ED25519Format, SECP256K1Format } from "@tkey/private-keys";
 import SecurityQuestionsModule from "@tkey/security-questions";
 import SeedPhraseModule, { MetamaskSeedPhraseFormat } from "@tkey/seed-phrase";
@@ -12,6 +11,7 @@ import ShareTransferModule from "@tkey/share-transfer";
 import TorusStorageLayer from "@tkey/storage-layer-torus";
 import { generatePrivate } from "@toruslabs/eccrypto";
 import { post } from "@toruslabs/http-helpers";
+import { generatePolynomial, getLagrangeCoeffs, getShare, hexPoint, MockServer, pointHex, postEndpoint } from "@toruslabs/rss-client";
 import { deepEqual, deepStrictEqual, equal, fail, notEqual, notStrictEqual, strict, strictEqual, throws } from "assert";
 import BN from "bn.js";
 import { createSandbox } from "sinon";
@@ -83,9 +83,10 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     });
     it.only("#should be able to refresh tss shares", async function () {
       const sp = customSP;
+      const testId = "test@test.com\u001cgoogle";
       if (!sp.tssVerifier) return;
 
-      const tss1 = new BN("87038c6134375c98ace8e93452a24948c90dd1c3ce29a85582db2cea9b5ce4f1", "hex");
+      const tss1 = new BN(generatePrivate());
       sp.setTSSPubKey(getPubKeyPoint(tss1));
       sp.postboxKey = new BN(getTempKey(), "hex");
       const storageLayer = initStorageLayer({ hostUrl: metadataURL });
@@ -95,7 +96,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const factorKey = new BN(generatePrivate());
       const factorPub = getPubKeyPoint(factorKey);
 
-      await tb1.initialize({ useTSS: true, factorPub, _tss2: new BN("efccfeb19342ae194e815fda00f27a17ba09a03a9ec792992e55aeb45e86030b", "hex") });
+      await tb1.initialize({ useTSS: true, factorPub, _tss2: new BN(generatePrivate()) });
       const newShare = await tb1.generateNewShare();
       const reconstructedKey = await tb1.reconstructKey();
       await tb1.syncLocalMetadataTransitions();
@@ -118,49 +119,54 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const tssPubKey = getPubKeyPoint(tssPrivKey);
       strictEqual(tssPubKey.x.toString(16, 64), tssCommits[0].x.toString(16, 64));
       strictEqual(tssPubKey.y.toString(16, 64), tssCommits[0].y.toString(16, 64));
-      await tb2.refreshTSSShares(
-        tss2,
-        2,
-        [2],
-        "test",
-        {
-          x: "e8a2c9333b0aa038c50e8fb045e224a6de027402ac39a691eff6ec0108ca8957",
-          y: "836aa0a2cca52f9da119d755a02171d6fc1a76346c7b152f97cf6506deb07053",
-        },
-        {
-          serverThreshold: 3,
-          selectedServers: [1, 2, 3],
-          serverEndpoints: [
-            "http://localhost:7071",
-            "http://localhost:7072",
-            "http://localhost:7073",
-            "http://localhost:7074",
-            "http://localhost:7075",
-          ],
-          serverPubKeys: [
-            {
-              x: "0a00f8dc2efe441f92cee2312c5d12307c8d3c047577d12c3df50c6ce046e727",
-              y: "cf1729737fd42bde25ed0d1d3ef2104b884d5c6985abb7e70886d23de4dc2436",
-            },
-            {
-              x: "4ab43cd17b9c2271d8eacc675474c78600b3731822137cdc88bdcf2d7df3aa5e",
-              y: "336f637086fd5bcd4d36d1dc116fe8f5cfc7fbc27f252e1a1efa578ebca10e17",
-            },
-            {
-              x: "0f0f4d719db36e799b4ba817532ad6a40080b7fbed832b3950f51d807c8dfdf9",
-              y: "d62c16ecc39646317464543862ad78a923832808b1aa965cc6c93fdea6fe173b",
-            },
-            {
-              x: "f7ccef09b03b064774971779fe0f10ee10dec5acd6cf113bd72aac5ccea2dc87",
-              y: "2b8480afe0db431fdb05d05d843e90b0412a2370760c328613ff8744706cb375",
-            },
-            {
-              x: "080268e7427aecaafc667bf2f44ef241eaa5dfdfc8d64976a050d3b688d0ab52",
-              y: "d24a0a2bce3bf80a32bc5f620022c028e60c0ffb03b664d340c422e6eaf924ef",
-            },
-          ],
-        }
+      const serverEndpoints = [new MockServer(), new MockServer(), new MockServer(), new MockServer(), new MockServer()];
+      const serverCount = serverEndpoints.length;
+
+      const serverPrivKeys = [];
+      for (let i = 0; i < serverCount; i++) {
+        serverPrivKeys.push(new BN(generatePrivate()));
+      }
+      const serverPubKeys = serverPrivKeys.map((privKey) => hexPoint(ecCurve.g.mul(privKey)));
+      await Promise.all(
+        serverEndpoints.map((endpoint, i) => {
+          return postEndpoint(endpoint, "/private_key", { private_key: serverPrivKeys[i].toString(16, 64) });
+        })
       );
+      const serverThreshold = 3;
+      const inputIndex = 2;
+      const serverPoly = generatePolynomial(serverThreshold - 1, tss1);
+
+      // set tssShares on servers
+      await Promise.all(
+        serverEndpoints.map((endpoint, i) => {
+          return postEndpoint(endpoint, "/tss_share", {
+            label: `${testId}\u0015default\u00160`,
+            tss_share_hex: getShare(serverPoly, i + 1).toString(16, 64),
+          });
+        })
+      );
+
+      // simulate new key assign
+      const dkg2Priv = new BN(generatePrivate());
+      const dkg2Pub = ecCurve.g.mul(dkg2Priv);
+      const serverPoly2 = generatePolynomial(serverThreshold - 1, dkg2Priv);
+      await Promise.all(
+        serverEndpoints.map((endpoint, i) => {
+          const shareHex = getShare(serverPoly2, i + 1).toString(16, 64);
+
+          return postEndpoint(endpoint, "/tss_share", {
+            label: `${testId}\u0015default\u00161`,
+            tss_share_hex: shareHex,
+          });
+        })
+      );
+
+      await tb2.refreshTSSShares(tss2, inputIndex, [2], testId, pointHex(dkg2Pub), {
+        serverThreshold: 3,
+        selectedServers: [1, 2, 3],
+        serverEndpoints,
+        serverPubKeys,
+      });
       const newTSS2 = await tb2.getTSSShare(factorKey);
       const newTSSPrivKey = getLagrangeCoeffs([1, 2], 1)
         .mul(new BN("97ff6f90e4dfcb44bdd27d01b4fadfe63d88eaabbb85716173c454dbc398798b", "hex"))
