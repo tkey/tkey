@@ -11,7 +11,7 @@ import ShareTransferModule from "@tkey/share-transfer";
 import TorusStorageLayer from "@tkey/storage-layer-torus";
 import { generatePrivate } from "@toruslabs/eccrypto";
 import { post } from "@toruslabs/http-helpers";
-import { ecPoint, generatePolynomial, getLagrangeCoeffs, getShare, hexPoint, MockServer, postEndpoint } from "@toruslabs/rss-client";
+import { generatePolynomial, getLagrangeCoeffs, getShare, hexPoint, MockServer, postEndpoint } from "@toruslabs/rss-client";
 import { deepEqual, deepStrictEqual, equal, fail, notEqual, notStrictEqual, strict, strictEqual, throws } from "assert";
 import BN from "bn.js";
 import { createSandbox } from "sinon";
@@ -119,6 +119,10 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const tssPubKey = getPubKeyPoint(tssPrivKey);
       strictEqual(tssPubKey.x.toString(16, 64), tssCommits[0].x.toString(16, 64));
       strictEqual(tssPubKey.y.toString(16, 64), tssCommits[0].y.toString(16, 64));
+
+      // test tss refresh
+
+      // setup mock servers
       const serverEndpoints = [new MockServer(), new MockServer(), new MockServer(), new MockServer(), new MockServer()];
       const serverCount = serverEndpoints.length;
 
@@ -161,7 +165,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         })
       );
 
-      await tb2.refreshTSSShares(tss2, inputIndex, [2], testId, ecPoint(dkg2Pub), {
+      await tb2.refreshTSSShares(tss2, inputIndex, [2], testId, hexPoint(dkg2Pub), {
         serverThreshold: 3,
         selectedServers: [1, 2, 3],
         serverEndpoints,
@@ -169,7 +173,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       });
       const { tssShare: newTSS2 } = await tb2.getTSSShare(factorKey);
       const newTSSPrivKey = getLagrangeCoeffs([1, 2], 1)
-        .mul(new BN("97ff6f90e4dfcb44bdd27d01b4fadfe63d88eaabbb85716173c454dbc398798b", "hex"))
+        .mul(new BN(dkg2Priv, "hex"))
         .add(getLagrangeCoeffs([1, 2], 2).mul(newTSS2))
         .umod(ecCurve.n);
       strictEqual(tssPrivKey.toString(16, 64), newTSSPrivKey.toString(16, 64));
