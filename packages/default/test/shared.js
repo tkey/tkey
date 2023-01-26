@@ -11,7 +11,7 @@ import ShareTransferModule from "@tkey/share-transfer";
 import TorusStorageLayer from "@tkey/storage-layer-torus";
 import { generatePrivate } from "@toruslabs/eccrypto";
 import { post } from "@toruslabs/http-helpers";
-import { generatePolynomial, getLagrangeCoeffs, getShare, hexPoint, MockServer, pointHex, postEndpoint } from "@toruslabs/rss-client";
+import { ecPoint, generatePolynomial, getLagrangeCoeffs, getShare, hexPoint, MockServer, postEndpoint } from "@toruslabs/rss-client";
 import { deepEqual, deepStrictEqual, equal, fail, notEqual, notStrictEqual, strict, strictEqual, throws } from "assert";
 import BN from "bn.js";
 import { createSandbox } from "sinon";
@@ -108,7 +108,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       await tb2.initialize({ useTSS: true, factorPub });
       await tb2.inputShareStore(newShare.newShareStores[newShare.newShareIndex.toString("hex")]);
       await tb2.reconstructKey();
-      const tss2 = await tb2.getTSSShare(factorKey);
+      const { tssShare: tss2 } = await tb2.getTSSShare(factorKey);
       const tssCommits = tb2.getTSSCommits();
 
       const tssPrivKey = getLagrangeCoeffs([1, 2], 1)
@@ -161,13 +161,13 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         })
       );
 
-      await tb2.refreshTSSShares(tss2, inputIndex, [2], testId, pointHex(dkg2Pub), {
+      await tb2.refreshTSSShares(tss2, inputIndex, [2], testId, ecPoint(dkg2Pub), {
         serverThreshold: 3,
         selectedServers: [1, 2, 3],
         serverEndpoints,
         serverPubKeys,
       });
-      const newTSS2 = await tb2.getTSSShare(factorKey);
+      const { tssShare: newTSS2 } = await tb2.getTSSShare(factorKey);
       const newTSSPrivKey = getLagrangeCoeffs([1, 2], 1)
         .mul(new BN("97ff6f90e4dfcb44bdd27d01b4fadfe63d88eaabbb85716173c454dbc398798b", "hex"))
         .add(getLagrangeCoeffs([1, 2], 2).mul(newTSS2))
@@ -200,7 +200,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       await tb2.initialize({ useTSS: true, factorPub });
       await tb2.inputShareStore(newShare.newShareStores[newShare.newShareIndex.toString("hex")]);
       await tb2.reconstructKey();
-      const tss2 = await tb2.getTSSShare(factorKey);
+      const { tssShare: tss2 } = await tb2.getTSSShare(factorKey);
 
       const tssCommits = tb2.getTSSCommits();
       const tss2Pub = ecCurve.g.mul(tss2);
@@ -236,7 +236,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       await tb2.initialize({ useTSS: true, factorPub });
       await tb2.inputShareStore(newShare.newShareStores[newShare.newShareIndex.toString("hex")]);
       await tb2.reconstructKey();
-      const tss2 = await tb2.getTSSShare(factorKey);
+      const { tssShare: tss2 } = await tb2.getTSSShare(factorKey);
       const tssCommits = tb2.getTSSCommits();
 
       const tssPrivKey = getLagrangeCoeffs([1, 2], 1)
@@ -274,7 +274,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       await tb2.initialize({ useTSS: true, factorPub });
       await tb2.inputShareStore(newShare.newShareStores[newShare.newShareIndex.toString("hex")]);
       await tb2.reconstructKey();
-      const tss2 = await tb2.getTSSShare(factorKey);
+      const { tssShare: tss2 } = await tb2.getTSSShare(factorKey);
       const tssCommits = tb2.getTSSCommits();
 
       const tssPrivKey = getLagrangeCoeffs([1, 2], 1)

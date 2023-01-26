@@ -2543,21 +2543,6 @@
     json-stable-stringify "^1.0.1"
     keccak "^3.0.2"
 
-"@toruslabs/rss-client@^1.2.1":
-  version "1.2.1"
-  resolved "https://registry.yarnpkg.com/@toruslabs/rss-client/-/rss-client-1.2.1.tgz#b4b619c1f40b44d5ee151e3a58a5931f1ade069c"
-  integrity sha512-iq9ZyqOUMrQA2HtTRg1r8MH7WcwinruBJhY7ZfOfOwfFzNTysDe1XU9ChPZeewutijCn/mOMarj8iPxgvy2O2Q==
-  dependencies:
-    "@toruslabs/eccrypto" "^1.1.8"
-    "@toruslabs/http-helpers" "^3.2.0"
-    bn.js "^5.2.1"
-    elliptic "^6.5.4"
-    fetch "^1.1.0"
-    loglevel "^1.8.1"
-    node-fetch "^2.0.0"
-    web3-eth-contract "^1.8.1"
-    web3-utils "^1.8.1"
-
 "@toruslabs/rss-client@^1.2.2":
   version "1.2.2"
   resolved "https://registry.yarnpkg.com/@toruslabs/rss-client/-/rss-client-1.2.2.tgz#7edbab0eeed4ac9412053dbb9638341cd536e9ca"
