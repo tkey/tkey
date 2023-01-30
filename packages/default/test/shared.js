@@ -2,7 +2,7 @@
 /* eslint-disable mocha/no-exports */
 /* eslint-disable import/no-extraneous-dependencies */
 
-import { ecCurve, getPubKeyPoint } from "@tkey/common-types";
+import { ecCurve, getPubKeyPoint, KEY_NOT_FOUND, SHARE_DELETED } from "@tkey/common-types";
 import PrivateKeyModule, { ED25519Format, SECP256K1Format } from "@tkey/private-keys";
 import SecurityQuestionsModule from "@tkey/security-questions";
 import SeedPhraseModule, { MetamaskSeedPhraseFormat } from "@tkey/seed-phrase";
@@ -485,6 +485,57 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       await rejects(async () => {
         await tb2.inputShare(deletedShareStores[deletedShareIndex.toString("hex")].share.share);
       }, Error);
+    });
+    it(`#should be able to delete a user, manualSync=${mode}`, async function () {
+      // create 2/4
+      await tb._initializeNewKey({ initializeModules: true });
+      await tb.generateNewShare();
+      const shareStoresAtEpoch2 = tb.getAllShareStoresForLatestPolynomial();
+
+      await tb.generateNewShare();
+      await tb.syncLocalMetadataTransitions();
+      const sharesStoresAtEpoch3 = tb.getAllShareStoresForLatestPolynomial();
+      await tb.CRITICAL_deleteTkey();
+
+      const spData = await customSL.getMetadata({ serviceProvider: customSP });
+      const data2 = await Promise.allSettled(shareStoresAtEpoch2.map((x) => tb.catchupToLatestShare({ shareStore: x })));
+      const data3 = await Promise.all(sharesStoresAtEpoch3.map((x) => customSL.getMetadata({ privKey: x.share.share })));
+
+      deepStrictEqual(spData.message, KEY_NOT_FOUND);
+
+      data2.forEach((x) => {
+        deepStrictEqual(x.status, "rejected");
+        deepStrictEqual(x.reason.code, 1308);
+      });
+
+      data3.forEach((x) => {
+        deepStrictEqual(x.message, SHARE_DELETED);
+      });
+    });
+    it(`#should be able to reinitialize after wipe, manualSync=${mode}`, async function () {
+      // create 2/4
+      const resp1 = await tb._initializeNewKey({ initializeModules: true });
+      await tb.generateNewShare();
+      if (mode) {
+        await tb.syncLocalMetadataTransitions();
+      }
+      await tb.CRITICAL_deleteTkey();
+
+      const tb2 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
+      await tb2.initialize();
+      await tb2.generateNewShare();
+      if (mode) {
+        await tb2.syncLocalMetadataTransitions();
+      }
+
+      const data3 = await customSL.getMetadata({ serviceProvider: customSP });
+      notEqual(data3.message, KEY_NOT_FOUND);
+      deepStrictEqual(tb2.metadata.nonce, 1);
+
+      const reconstructedKey = await tb2.reconstructKey();
+      if (resp1.privKey.cmp(reconstructedKey.privKey) === 0) {
+        fail("key should be different");
+      }
     });
   });
 
