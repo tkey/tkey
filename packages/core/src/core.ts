@@ -385,6 +385,7 @@ class ThresholdKey implements ITKey {
       throw new Error("user decryption does not match tss commitments...");
     }
 
+    // if type === "hierarchical"
     const serverDecs = tssShareBNs.slice(1); // 5 elems
     const serverIndexes = new Array(serverDecs.length).fill(null).map((_, i) => i + 1);
 

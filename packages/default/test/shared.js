@@ -81,7 +81,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         fail("key should be able to be reconstructed");
       }
     });
-    it.only("#should be able to refresh tss shares", async function () {
+    it("#should be able to refresh tss shares", async function () {
       const sp = customSP;
       const testId = "test@test.com\u001cgoogle";
       if (!sp.tssVerifier) return;
@@ -252,7 +252,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       strictEqual(tssPubKey.x.toString(16, 64), tssCommits[0].x.toString(16, 64));
       strictEqual(tssPubKey.y.toString(16, 64), tssCommits[0].y.toString(16, 64));
     });
-    it.only(`#should be able to recover tssShare from hierarchical encryption`, async function () {
+    it(`#should be able to recover tssShare from hierarchical encryption`, async function () {
       const sp = customSP;
       if (!sp.tssVerifier) return;
 
