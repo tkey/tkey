@@ -200,7 +200,8 @@ export const kCombinations = (s: number | number[], k: number): number[][] => {
   return combs;
 };
 
-// Evaluate the lagrange formula at f(_target) and return particular index.
+// Evaluate the lagrange formula at f(_target) and return coefficient of particular index.
+// returns product(target-x_i)/product(x_target-x_i)
 export function getLagrangeCoeffs(_allIndexes, _myIndex, _target = 0) {
   const allIndexes = _allIndexes.map((i) => new BN(i));
   const myIndex = new BN(_myIndex);

@@ -1,5 +1,6 @@
 import { Polynomial } from "@tkey/common-types";
 import { generatePrivate } from "@toruslabs/eccrypto";
+import { getLagrangeCoeffs } from "@toruslabs/rss-client";
 import { fail } from "assert";
 import BN from "bn.js";
 
@@ -29,6 +30,16 @@ describe("lagrange interpolate", function () {
     const key = lagrangeInterpolation(shares, indexes);
     if (key.cmp(secret) !== 0) {
       fail("lagranged scalar should equal secret");
+    }
+  });
+  it("#should calculate coefficients correctly", async function () {
+    const L1_0 = getLagrangeCoeffs([1, 2], 1, 0);
+    const L2_0 = getLagrangeCoeffs([1, 2], 2, 0);
+    if (L1_0.cmp(new BN(2)) !== 0) {
+      fail("Incorrect coefficient");
+    }
+    if (L2_0.cmp(new BN("fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364140", 16)) !== 0) {
+      fail("Incorrect coefficient");
     }
   });
 });
