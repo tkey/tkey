@@ -73,13 +73,14 @@ function getTempKey() {
 //   }
 // }
 
-export const sharedTestCases = (mode, torusSP, storageLayer) => {
+export const sharedTestCases = (manualSync, torusSP, storageLayer) => {
   const customSP = torusSP;
   const customSL = storageLayer;
 
   const createThresholdWasm = (postboxKey, storage) => {
     if (isMocked) {
-      const threshold_wasm = new ThresholdKeyMockWasm(postboxKey);
+      const curve_n = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141";
+      const threshold_wasm = new ThresholdKeyMockWasm(postboxKey, manualSync, curve_n);
       // update storage if provided ( initialize key if storage not provided)
       if (storage) threshold_wasm.storage_layer_from_json(JSON.stringify(storage));
       return threshold_wasm;
@@ -92,13 +93,13 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
   describe("tkey rust", function () {
     let tb;
     beforeEach("Setup ThresholdKey", async function () {
-      tb = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
+      tb = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync });
     });
 
     it("#should be able to create Tkey in TS and reconstruct it in Tkey Rust", async function () {
       const postboxKey = getTempKey();
       const storageLayer = initStorageLayer({ hostUrl: metadataURL });
-      const tkey = new ThresholdKey({ serviceProvider: newSP(postboxKey), storageLayer, manualSync: mode });
+      const tkey = new ThresholdKey({ serviceProvider: newSP(postboxKey), storageLayer, manualSync });
       await tkey.initialize();
       const reconstructedKey = await tkey.reconstructKey();
       await tkey.syncLocalMetadataTransitions();
@@ -124,7 +125,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       threshold_wasm.free();
     });
 
-    it(`#should be able to reconstruct key after TKey created in tkey-rust, manualSync=${mode}`, async function () {
+    it(`#should be able to reconstruct key after TKey created in tkey-rust, manualSync=${manualSync}`, async function () {
       // wasm initialize key
       const postboxKey = getTempKey();
       const threshold_wasm = createThresholdWasm(postboxKey);
@@ -133,12 +134,14 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
 
       const deviceIndex = threshold_wasm.get_current_share_indexes().filter((el) => el !== "1");
       const deviceShare = threshold_wasm.export_share(deviceIndex[0]);
-      const storage_after_rust = JSON.parse(threshold_wasm.json_from_storage_layer());
+
+      if (manualSync) threshold_wasm.sync_local_metadata_transitions();
+      const storage_after_rust = JSON.parse(threshold_wasm.storage_layer_to_json());
 
       const tkey = new ThresholdKey({
         serviceProvider: newSP(postboxKey),
         storageLayer: MockStorageLayer.fromJSON(storage_after_rust),
-        manualSync: mode,
+        manualSync,
       });
       await tkey.initialize();
 
@@ -157,7 +160,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       threshold_wasm.free();
     });
 
-    it(`#should be able to reconstruct key when initializing with user input in TS and reconstruct in Tkey Rust, manualSync=${mode}`, async function () {
+    it(`#should be able to reconstruct key when initializing with user input in TS and reconstruct in Tkey Rust, manualSync=${manualSync}`, async function () {
       let determinedShare = new BN(keccak256("user answer blublu").slice(2), "hex");
       determinedShare = determinedShare.umod(ecCurve.curve.n);
       const resp1 = await tb._initializeNewKey({ determinedShare, initializeModules: true });
@@ -179,7 +182,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       threshold_wasm.free();
     });
 
-    it(`#should be able to generate and delete share and delete Tkey, manualSync=${mode}`, async function () {
+    it(`#should be able to generate and delete share and delete Tkey, manualSync=${manualSync}`, async function () {
       // long scenario
       // create 2/2 in rust
       // wasm initialize key
@@ -188,41 +191,49 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       threshold_wasm.initialize();
       threshold_wasm.reconstruct_key(false);
 
+      if (manualSync) threshold_wasm.sync_local_metadata_transitions();
+
       const deviceIndex = threshold_wasm.get_current_share_indexes().filter((el) => el !== "1");
       const deviceShare = threshold_wasm.export_share(deviceIndex[0]);
 
-      const storage_after_rust = JSON.parse(threshold_wasm.json_from_storage_layer());
+      console.log("deviceShare", deviceShare);
+      const storage_after_rust = JSON.parse(threshold_wasm.storage_layer_to_json());
       threshold_wasm.free();
 
       // reconstruct in TS and generate new share
       const tkey = new ThresholdKey({
         serviceProvider: newSP(postboxKey),
         storageLayer: MockStorageLayer.fromJSON(storage_after_rust),
-        manualSync: mode,
+        manualSync,
       });
       await tkey.initialize();
       await tkey.inputShare(deviceShare);
       await tkey.reconstructKey(true);
       const new_share_result = await tkey.generateNewShare();
-      // await tb3.syncLocalMetadataTransitions();
+      // manual sync
+      if (manualSync) await tkey.syncLocalMetadataTransitions();
       await tkey.outputShare(new_share_result.newShareIndex.toString("hex"));
 
       // delete share in rust
       const threshold_wasm_2 = createThresholdWasm(postboxKey, tkey.storageLayer.toJSON());
 
       threshold_wasm_2.initialize();
+      console.log("initalize");
       threshold_wasm_2.import_share(deviceShare);
       threshold_wasm_2.reconstruct_key(false);
+      console.log("reconstruct");
       threshold_wasm_2.delete_share(new_share_result.newShareIndex.toString("hex"));
+      console.log("delete");
 
-      const storage_after_rust_2 = JSON.parse(threshold_wasm_2.json_from_storage_layer());
+      if (manualSync) threshold_wasm_2.sync_local_metadata_transitions();
+      const storage_after_rust_2 = JSON.parse(threshold_wasm_2.storage_layer_to_json());
       threshold_wasm_2.free();
 
       // reconstruct in TS and delete share
       const tkey_2 = new ThresholdKey({
         serviceProvider: newSP(postboxKey),
         storageLayer: MockStorageLayer.fromJSON(storage_after_rust_2),
-        manualSync: mode,
+        manualSync,
       });
       await tkey_2.initialize();
 
@@ -244,14 +255,16 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       threshold_wasm_3.import_share(deviceShare);
       threshold_wasm_3.reconstruct_key(false);
       const rust_generated_share_index = threshold_wasm_3.generate_new_share(new_share_result.newShareIndex.toString("hex"));
-      const storage_after_rust_3 = JSON.parse(threshold_wasm_3.json_from_storage_layer());
+
+      if (manualSync) threshold_wasm_3.sync_local_metadata_transitions();
+      const storage_after_rust_3 = JSON.parse(threshold_wasm_3.storage_layer_to_json());
       threshold_wasm_3.free();
 
       // reconsturct in TS
       const tkey_3 = new ThresholdKey({
         serviceProvider: newSP(postboxKey),
         storageLayer: MockStorageLayer.fromJSON(storage_after_rust_3),
-        manualSync: mode,
+        manualSync,
       });
       await tkey_3.initialize();
 
@@ -263,7 +276,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       }
       // able to delete new share generated from rust
       await tkey_3.deleteShare(rust_generated_share_index);
-      await tkey_3.syncLocalMetadataTransitions();
+      if (manualSync) await tkey_3.syncLocalMetadataTransitions();
 
       // delete tkey in ts
       await tkey_3.CRITICAL_deleteTkey();
@@ -278,7 +291,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       threshold_wasm_4.free();
     });
 
-    it(`#should be able to generate and delete share up to 20 shares, manualSync=${mode}`, async function () {
+    it(`#should be able to generate and delete share up to 20 shares, manualSync=${manualSync}`, async function () {
       // long scenario
       // create 2/2 in rust
       // wasm initialize key
@@ -288,14 +301,15 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       threshold_wasm.reconstruct_key(false);
       const deviceIndex = threshold_wasm.get_current_share_indexes().filter((el) => el !== "1");
       const deviceShare = threshold_wasm.export_share(deviceIndex[0]);
-      const storage_after_rust = JSON.parse(threshold_wasm.json_from_storage_layer());
+      if (manualSync) threshold_wasm.sync_local_metadata_transitions();
+      const storage_after_rust = JSON.parse(threshold_wasm.storage_layer_to_json());
       threshold_wasm.free();
 
       // reconstruct in ts
       const tb3 = new ThresholdKey({
         serviceProvider: newSP(postboxKey),
         storageLayer: MockStorageLayer.fromJSON(storage_after_rust),
-        manualSync: mode,
+        manualSync,
       });
       await tb3.initialize();
       await tb3.inputShare(deviceShare);
@@ -306,24 +320,24 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         console.log("loop", i);
         // generate new share in ts
         const new_share_result = await tkey.generateNewShare();
-        // await tb3.syncLocalMetadataTransitions();
+        if (manualSync) await tkey.syncLocalMetadataTransitions();
         await tkey.outputShare(new_share_result.newShareIndex.toString("hex"));
 
         // delete share in rust
-
         const threshold_wasm_2 = createThresholdWasm(postboxKey, tkey.storageLayer.toJSON());
         threshold_wasm_2.initialize();
         threshold_wasm_2.import_share(deviceShare);
-        threshold_wasm_2.reconstruct_key(false);
+        threshold_wasm_2.reconstruct_key(true);
         threshold_wasm_2.delete_share(new_share_result.newShareIndex.toString("hex"));
-        const storage_after_rust_2 = JSON.parse(threshold_wasm_2.json_from_storage_layer());
+        if (manualSync) threshold_wasm_2.sync_local_metadata_transitions();
+        const storage_after_rust_2 = JSON.parse(threshold_wasm_2.storage_layer_to_json());
         threshold_wasm_2.free();
 
         // reconstruct in ts
         const tkey_2 = new ThresholdKey({
           serviceProvider: newSP(postboxKey),
           storageLayer: MockStorageLayer.fromJSON(storage_after_rust_2),
-          manualSync: mode,
+          manualSync,
         });
         await tkey_2.initialize();
 
@@ -348,13 +362,15 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         threshold_wasm_3.import_share(deviceShare);
         threshold_wasm_3.reconstruct_key(false);
         const newShareIndexWasm = threshold_wasm_3.generate_new_share();
-        const storage_after_rust_3 = JSON.parse(threshold_wasm_3.json_from_storage_layer());
+        if (manualSync) threshold_wasm_3.sync_local_metadata_transitions();
+        const storage_after_rust_3 = JSON.parse(threshold_wasm_3.storage_layer_to_json());
         threshold_wasm_3.free();
+        console.log("generate share wasm");
 
         const tkey_3 = new ThresholdKey({
           serviceProvider: newSP(postboxKey),
           storageLayer: MockStorageLayer.fromJSON(storage_after_rust_3),
-          manualSync: mode,
+          manualSync,
         });
         await tkey_3.initialize();
 
@@ -368,7 +384,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         // delete share in TS
         // able to delete new share generated from rust
         await tkey_3.deleteShare(newShareIndexWasm);
-        await tkey_3.syncLocalMetadataTransitions();
+        if (manualSync) await tkey_3.syncLocalMetadataTransitions();
 
         const threshold_wasm_4 = createThresholdWasm(postboxKey, tkey_3.storageLayer.toJSON());
         threshold_wasm_4.initialize();
@@ -378,13 +394,14 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         threshold_wasm_4.generate_new_share();
         threshold_wasm_4.generate_new_share();
 
-        const storage_after_rust_4 = JSON.parse(threshold_wasm_4.json_from_storage_layer());
+        if (manualSync) threshold_wasm_4.sync_local_metadata_transitions();
+        const storage_after_rust_4 = JSON.parse(threshold_wasm_4.storage_layer_to_json());
         threshold_wasm_4.free();
 
         const tkey_4 = new ThresholdKey({
           serviceProvider: newSP(postboxKey),
           storageLayer: MockStorageLayer.fromJSON(storage_after_rust_4),
-          manualSync: mode,
+          manualSync,
         });
         await tkey_4.initialize();
 
@@ -408,10 +425,10 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         serviceProvider: customSP,
         storageLayer: customSL,
         modules: { securityQuestions: new SecurityQuestionsModule() },
-        manualSync: mode,
+        manualSync,
       });
     });
-    it(`#should be able to reconstruct key and initialize a key with security questions, manualSync=${mode}`, async function () {
+    it(`#should be able to reconstruct key and initialize a key with security questions, manualSync=${manualSync}`, async function () {
       await tb._initializeNewKey({ initializeModules: true });
       await rejects(async function () {
         await tb.modules.securityQuestions.inputShareFromSecurityQuestions("blublu");
@@ -447,7 +464,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       //   fail("key should be able to be reconstructed");
       // }
     });
-    it(`#should be able to delete and add security questions, manualSync=${mode}`, async function () {
+    it(`#should be able to delete and add security questions, manualSync=${manualSync}`, async function () {
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
 
       const answer1 = "blublu";
@@ -494,7 +511,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       threshold_wasm_2.free();
     });
 
-    it.skip(`#should be able to reconstruct key and initialize a key with security questions after refresh, manualSync=${mode}`, async function () {
+    it.skip(`#should be able to reconstruct key and initialize a key with security questions after refresh, manualSync=${manualSync}`, async function () {
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
       await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
       const tb2 = new ThresholdKey({
@@ -514,7 +531,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         fail("key should be able to be reconstructed");
       }
     });
-    it.skip(`#should be able to change password, manualSync=${mode}`, async function () {
+    it.skip(`#should be able to change password, manualSync=${manualSync}`, async function () {
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
 
       // should throw
@@ -540,7 +557,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         fail("key should be able to be reconstructed");
       }
     });
-    it.skip(`#should be able to change password and serialize, manualSync=${mode}`, async function () {
+    it.skip(`#should be able to change password and serialize, manualSync=${manualSync}`, async function () {
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
       await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
       await tb.modules.securityQuestions.changeSecurityQuestionAndAnswer("dodo", "who is your cat?");
@@ -565,7 +582,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const finalKeyPostSerialization = await tb3.reconstructKey();
       strictEqual(finalKeyPostSerialization.toString("hex"), reconstructedKey.toString("hex"), "Incorrect serialization");
     });
-    it.skip(`#should be able to get answers, even when they change, manualSync=${mode}`, async function () {
+    it.skip(`#should be able to get answers, even when they change, manualSync=${manualSync}`, async function () {
       tb = new ThresholdKey({
         serviceProvider: customSP,
         storageLayer: customSL,
@@ -609,56 +626,67 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     beforeEach("Setup ThresholdKey", async function () {
       tb = new ThresholdKey({
         serviceProvider: customSP,
-        manualSync: mode,
+        manualSync,
         storageLayer: customSL,
         modules: { shareTransfer: new ShareTransferModule() },
       });
     });
-    it(`#should be able to transfer share via the module request from rust, manualSync=${mode}`, async function () {
+    it(`#should be able to transfer share via the module request from rust, manualSync=${manualSync}`, async function () {
       await tb._initializeNewKey({ initializeModules: true });
+      if (manualSync) await tb.syncLocalMetadataTransitions();
 
-      const threshold = createThresholdWasm(customSP.postboxKey.toString("hex"), tb.storageLayer.toJSON());
-      threshold.initialize();
+      const threshold_wasm = createThresholdWasm(customSP.postboxKey.toString("hex"), tb.storageLayer.toJSON());
+      threshold_wasm.initialize();
 
-      const encPubX = threshold.request_share_transfer("agent", []);
+      const encPubX = threshold_wasm.request_share_transfer("agent", []);
 
-      const storage_after_rust = threshold.json_from_storage_layer();
+      if (manualSync) threshold_wasm.sync_local_metadata_transitions();
+      const storage_after_rust = threshold_wasm.storage_layer_to_json();
       tb.storageLayer = MockStorageLayer.fromJSON(JSON.parse(storage_after_rust));
 
       const req = await tb.modules.shareTransfer.lookForRequests();
       const newShare = await tb.generateNewShare();
       await tb.modules.shareTransfer.approveRequestWithShareIndex(req[0], newShare.newShareIndex.toString("hex"));
 
-      if (isMocked) threshold.storage_layer_from_json(JSON.stringify(tb.storageLayer.toJSON()));
-      threshold.request_status_check_approval(encPubX);
+      if (manualSync) await tb.syncLocalMetadataTransitions();
+      if (isMocked) threshold_wasm.storage_layer_from_json(JSON.stringify(tb.storageLayer.toJSON()));
+      threshold_wasm.request_status_check_approval(encPubX);
 
-      threshold.reconstruct_key(false);
+      threshold_wasm.reconstruct_key(false);
 
-      threshold.free();
+      threshold_wasm.free();
     });
 
-    it(`#should be able to transfer share via the module request from rust, manualSync=${mode}`, async function () {
-      const threshold = createThresholdWasm(customSP.postboxKey.toString("hex"));
-      threshold.initialize();
-      threshold.reconstruct_key(false);
+    it(`#should be able to transfer share via the module request from rust, manualSync=${manualSync}`, async function () {
+      const threshold_wasm = createThresholdWasm(customSP.postboxKey.toString("hex"));
+      threshold_wasm.initialize();
+      threshold_wasm.reconstruct_key(false);
+      if (manualSync) threshold_wasm.sync_local_metadata_transitions();
 
-      const storage_after_rust = JSON.parse(threshold.json_from_storage_layer());
-      const tkey = new ThresholdKey({ serviceProvider: customSP, storageLayer: MockStorageLayer.fromJSON(storage_after_rust), manualSync: mode });
+      const storage_after_rust = JSON.parse(threshold_wasm.storage_layer_to_json());
+      const tkey = new ThresholdKey({
+        serviceProvider: customSP,
+        storageLayer: MockStorageLayer.fromJSON(storage_after_rust),
+        manualSync,
+      });
       await tkey.initialize();
       const encPubX_ts = await tkey.modules.shareTransfer.requestNewShare("Tkey From TS", []);
+      if (manualSync) await tkey.syncLocalMetadataTransitions();
+
       const storage_after_ts = tkey.storageLayer.toJSON();
 
-      if (isMocked) threshold.storage_layer_from_json(JSON.stringify(storage_after_ts));
-      const encPubX = threshold.look_for_request();
-      const newShareIndex = threshold.generate_new_share();
-      threshold.approve_request_with_share_index(encPubX[0], newShareIndex);
+      if (isMocked) threshold_wasm.storage_layer_from_json(JSON.stringify(storage_after_ts));
+      const encPubX = threshold_wasm.look_for_request();
+      const newShareIndex = threshold_wasm.generate_new_share();
+      threshold_wasm.approve_request_with_share_index(encPubX[0], newShareIndex);
+      if (manualSync) threshold_wasm.sync_local_metadata_transitions();
 
-      const storage_after_rust_2 = threshold.json_from_storage_layer();
+      const storage_after_rust_2 = threshold_wasm.storage_layer_to_json();
       tkey.storageLayer = MockStorageLayer.fromJSON(JSON.parse(storage_after_rust_2));
       await tkey.modules.shareTransfer.startRequestStatusCheck(encPubX_ts, true);
 
       tkey.reconstructKey(false);
-      threshold.free();
+      threshold_wasm.free();
     });
   });
 
@@ -673,7 +701,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       ed25519privateKeyFormat = new ED25519Format();
       tb = new ThresholdKey({
         serviceProvider: customSP,
-        manualSync: mode,
+        manualSync,
         storageLayer: customSL,
         modules: {
           seedPhrase: new SeedPhraseModule([metamaskSeedPhraseFormat]),
@@ -682,7 +710,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       });
     });
 
-    it(`#should get/set multiple seed phrase, manualSync=${mode}`, async function () {
+    it(`#should get/set multiple seed phrase, manualSync=${manualSync}`, async function () {
       const seedPhraseToSet = "seed sock milk update focus rotate barely fade car face mechanic mercy";
       const seedPhraseToSet2 = "object brass success calm lizard science syrup planet exercise parade honey impulse";
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
@@ -715,7 +743,9 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const seedPhraseToSet3 = "obey buffalo exit tide model vast praise enlist concert crazy shove debate";
 
       threshold_wasm.set_module_seed_phrase("HD Key Tree", seedPhraseToSet3);
-      const storage_after_rust = JSON.parse(threshold_wasm.json_from_storage_layer());
+
+      if (manualSync) threshold_wasm.sync_local_metadata_transitions();
+      const storage_after_rust = JSON.parse(threshold_wasm.storage_layer_to_json());
 
       threshold_wasm.free();
       // tb.storageLayer = MockStorageLayer.fromJSON(storage_after_rust);
@@ -725,7 +755,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
 
       const tkey = new ThresholdKey({
         serviceProvider: customSP,
-        manualSync: mode,
+        manualSync,
         storageLayer: MockStorageLayer.fromJSON(storage_after_rust),
         modules: {
           seedPhrase: new SeedPhraseModule([metamaskSeedPhraseFormat]),
@@ -743,7 +773,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       }
     });
 
-    it(`#should be able to get/set private key, manualSync=${mode}`, async function () {
+    it(`#should be able to get/set private key, manualSync=${manualSync}`, async function () {
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
 
       const actualPrivateKeys = [
@@ -757,7 +787,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       await tb.modules.privateKeyModule.setPrivateKey("secp256k1n", actualPrivateKeys[0]);
       await tb.modules.privateKeyModule.setPrivateKey("secp256k1n", actualPrivateKeys[1]);
       // await tb.modules.privateKeyModule.setPrivateKey("ed25519", actualPrivateKeys[2]);
-      await tb.syncLocalMetadataTransitions();
+      if (manualSync) await tb.syncLocalMetadataTransitions();
       await tb.modules.privateKeyModule.getAccounts();
 
       const threshold_wasm = createThresholdWasm(tb.serviceProvider.postboxKey.toString("hex"), tb.storageLayer.toJSON());
@@ -773,7 +803,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       );
     });
 
-    it(`#should be able to get/set private keys and seed phrase, manualSync=${mode}`, async function () {
+    it(`#should be able to get/set private keys and seed phrase, manualSync=${manualSync}`, async function () {
       // const resp1 = await tb._initializeNewKey({ initializeModules: true });
       const postboxKey = getTempKey();
 
@@ -796,13 +826,14 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       threshold_wasm.set_module_private_key("secp256k1n", actualPrivateKeys[0].toString("hex"));
       threshold_wasm.set_module_private_key("secp256k1n", actualPrivateKeys[1].toString("hex"));
 
-      const storage_after_rust = JSON.parse(threshold_wasm.json_from_storage_layer());
+      if (manualSync) threshold_wasm.sync_local_metadata_transitions();
+      const storage_after_rust = JSON.parse(threshold_wasm.storage_layer_to_json());
 
       const metamaskSeedPhraseFormat2 = new MetamaskSeedPhraseFormat("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68");
 
       const tb2 = new ThresholdKey({
         serviceProvider: newSP(postboxKey),
-        manualSync: mode,
+        manualSync,
         storageLayer: MockStorageLayer.fromJSON(storage_after_rust),
         modules: { seedPhrase: new SeedPhraseModule([metamaskSeedPhraseFormat2]), privateKeyModule: new PrivateKeyModule([secp256k1Format]) },
       });
@@ -848,8 +879,8 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
   });
 
   describe("Lock", function () {
-    it(`#locks should fail when tkey/nonce is updated, manualSync=${mode}`, async function () {
-      const tb = new ThresholdKey({ serviceProvider: customSP, manualSync: mode, storageLayer: customSL });
+    it(`#locks should fail when tkey/nonce is updated, manualSync=${manualSync}`, async function () {
+      const tb = new ThresholdKey({ serviceProvider: customSP, manualSync, storageLayer: customSL });
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
       await tb.syncLocalMetadataTransitions();
 
@@ -864,8 +895,9 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       threshold_wasm.import_share(deviceShare);
       threshold_wasm.reconstruct_key(false);
       threshold_wasm.generate_new_share();
+      if (manualSync) threshold_wasm.sync_local_metadata_transitions();
 
-      const sl_after_rust = JSON.parse(threshold_wasm.json_from_storage_layer());
+      const sl_after_rust = JSON.parse(threshold_wasm.storage_layer_to_json());
       // check for mock of cloud storage
       tb.storageLayer = MockStorageLayer.fromJSON(sl_after_rust);
 
@@ -906,7 +938,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
 
     const randomIndex = (pool) => Math.floor(Math.random() * pool);
 
-    it(`#stress test, manualSync=${mode}`, async function () {
+    it(`#stress test, manualSync=${manualSync}`, async function () {
       // initialize in rust
       const postboxKey = getTempKey();
       const threshold_wasm_initial = createThresholdWasm(postboxKey);
@@ -970,14 +1002,15 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         // add module private key in rust
         // add module seed phrase in rust
 
-        const storage_after_rust = JSON.parse(threshold_wasm.json_from_storage_layer());
+        if (manualSync) threshold_wasm.sync_local_metadata_transitions();
+        const storage_after_rust = JSON.parse(threshold_wasm.storage_layer_to_json());
         threshold_wasm.free();
 
         // reconstruct back in ts
         const tkey = new ThresholdKey({
           serviceProvider: newSP(postboxKey),
           storageLayer: initStorageLayer({ storage: storage_after_rust }),
-          manualSync: mode,
+          manualSync,
           modules: {
             securityQuestions: new SecurityQuestionsModule(),
             privateKeyModule: new PrivateKeyModule([new SECP256K1Format()]),
@@ -1001,7 +1034,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
           const target = newShareIndexAccumulated[targetIndex];
           const indexOf = newShareIndexAvailable.indexOf(target);
           try {
-            threshold_wasm.delete_share(newShareIndexAccumulated[target]);
+            // threshold_wasm.delete_share(newShareIndexAccumulated[target]);
             if (indexOf > -1) {
               await tkey.deleteShare(target);
               newShareIndexAvailable.splice(indexOf, 1);
@@ -1039,6 +1072,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
 
         // add module seed phrase in ts
         // add share description in ts
+        if (manualSync) await tkey.syncLocalMetadataTransitions();
         const storage_after_ts = tkey.storageLayer.toJSON();
         // reconsturct in rust
         const threshold_wasm_2 = createThresholdWasm(postboxKey, storage_after_ts);
