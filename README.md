@@ -101,3 +101,6 @@ unpkg
 ### Tips for NUXT
 
 This is a plugin that works [only on the client side](https://nuxtjs.org/guide/plugins/#client-side-only). So please register it as a ssr-free plugin.
+
+### TSS terminology
+

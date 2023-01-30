@@ -635,6 +635,7 @@ class ThresholdKey implements ITKey {
     return { newShareStores, newShareIndex };
   }
 
+  // Call this function after new TSS share has been created.
   async refreshTSSShares(
     inputShare: BN,
     inputIndex: number,
@@ -648,6 +649,7 @@ class ThresholdKey implements ITKey {
       selectedServers: number[];
     }
   ): Promise<void> {
+    // TODO: Add sanity checks
     const tssTag = this.serviceProvider.retrieveCurrentTSSTag();
 
     if (!this.metadata) throw CoreError.metadataUndefined();
@@ -658,7 +660,7 @@ class ThresholdKey implements ITKey {
     const tssPubKeyPoint = tssCommits[0];
     const tssPubKey = hexPoint(tssPubKeyPoint);
     const { serverEndpoints, serverPubKeys, serverThreshold, selectedServers } = serverOpts;
-    this.serviceProvider.retrieveTSSPubKey();
+    this.serviceProvider.retrieveTSSPubKey(); // result unused ?
 
     const rssClient = new RSSClient({
       serverEndpoints,
@@ -673,7 +675,7 @@ class ThresholdKey implements ITKey {
     if (factorPubs.length === 0) throw CoreError.default(`factorPubs is empty`);
 
     if (!this.metadata.tssNonces) throw CoreError.default(`tssNonces obj not found`);
-    const tssNonce: number = this.metadata.tssNonces[tssTag] || 0;
+    const tssNonce: number = this.metadata.tssNonces[tssTag] || 0; // Should we ever default to 0 ??
 
     // eslint-disable-next-line no-console
     console.log(`tssNonce: ${tssNonce}`);
@@ -710,6 +712,7 @@ class ThresholdKey implements ITKey {
     this.metadata.addTSSData(tssTag, tssNonce + 1, newTSSCommits, factorPubs, factorEncs);
   }
 
+  // If they goes from 2/3 -> 2/4, what's the tss setup expectation ??
   async _refreshShares(threshold: number, newShareIndexes: string[], previousPolyID: PolynomialID): Promise<RefreshSharesResult> {
     if (!this.metadata) {
       throw CoreError.metadataUndefined();
