@@ -25,7 +25,7 @@ export function getMetadataUrl() {
 }
 
 export function initStorageLayer(extraParams) {
-  if (mocked) {
+  if (isMocked) {
     if (extraParams?.storage) return MockStorageLayer.fromJSON(extraParams.storage);
     return new MockStorageLayer();
   }

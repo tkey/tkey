@@ -1,3 +1,5 @@
+import "./migration_tests/function";
+
 import ServiceProviderTorus from "@tkey/service-provider-torus";
 import { generatePrivate } from "@toruslabs/eccrypto";
 
@@ -24,5 +26,5 @@ console.log(torusSL.toJSON());
 const MANUAL_SYNC = true;
 describe.only(`TorusServiceProvider Wasm with manualSync: true`, function () {
   // eslint-disable-next-line mocha/no-setup-in-describe
-  sharedTestCases(MANUAL_SYNC, torusSP, torusSL);
+  sharedTestCases(MANUAL_SYNC, torusSP, true);
 });
