@@ -6,15 +6,6 @@ import { generatePrivate } from "@toruslabs/eccrypto";
 import { getMetadataUrl, initStorageLayer } from "./helpers";
 import { sharedTestCases } from "./migration_tests/shared";
 
-
-js_post("https://api.tor.us/v1/torus/verify", "")
-  .then((res) => {
-    console.log(res);
-    return res;
-  })
-  .catch((err) => {
-    console.log(err);
-  });
 const metadataURL = getMetadataUrl();
 // eslint-disable-next-line no-console
 console.log(metadataURL);

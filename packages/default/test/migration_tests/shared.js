@@ -97,9 +97,9 @@ export const sharedTestCases = (manualSync, torusSP) => {
       // wasm reconstruct the key
       const threshold_wasm = createThresholdWasm(postboxKey, storage_after_ts);
 
-      threshold_wasm.initialize();
-      threshold_wasm.import_share(deviceShare.toString("hex"));
-      threshold_wasm.reconstruct_key(false);
+      await threshold_wasm.initialize();
+      await threshold_wasm.import_share(deviceShare.toString("hex"));
+      await threshold_wasm.reconstruct_key(false);
 
       if (tkey.privKey.toString("hex") !== threshold_wasm.get_priv_key()) {
         fail("key should be able to be reconstructed");
