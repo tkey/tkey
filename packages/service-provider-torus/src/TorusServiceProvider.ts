@@ -1,4 +1,4 @@
-import { Point, StringifiedType, TorusServiceProviderArgs } from "@tkey/common-types";
+import { hexPoint, Point, PointHex, StringifiedType, TorusServiceProviderArgs } from "@tkey/common-types";
 import { ServiceProviderBase } from "@tkey/service-provider-base";
 import CustomAuth, {
   AggregateLoginParams,
@@ -20,7 +20,15 @@ class TorusServiceProvider extends ServiceProviderBase {
 
   customAuthArgs: CustomAuthArgs;
 
+  // tss verifier
   tssVerifier?: string;
+
+  // normal verifier
+  verifierName?: string;
+
+  verifierId?: string;
+
+  verifierType?: "normal" | "aggregate" | "hybrid";
 
   constructor({ enableLogging = false, postboxKey, customAuthArgs, tssVerifier }: TorusServiceProviderArgs) {
     super({ enableLogging, postboxKey });
@@ -45,43 +53,94 @@ class TorusServiceProvider extends ServiceProviderBase {
     return this.directWeb.init(params);
   }
 
-  async triggerLogin(params: SubVerifierDetails): Promise<TorusLoginResponse> {
-    const obj = await this.directWeb.triggerLogin(params);
-    this.postboxKey = new BN(obj.privateKey, "hex");
-    if (this.tssVerifier) {
-      const { verifier, verifierId } = obj.userInfo;
-      const nodeDetails = await this.directWeb.nodeDetailManager.getNodeDetails({ verifier: this.tssVerifier, verifierId });
+  // override base methods
+  _setTSSPubKey(tssTag: string, tssNonce: number, tssPubKey: Point): void {
+    throw new Error(`this method has been overriden and should not be called with ${tssTag}, ${tssNonce}, ${tssPubKey}`);
+  }
+
+  retrieveVerifierId(): string {
+    if (!this.verifierId) throw new Error("no verifierId, not logged in");
+    return this.verifierId;
+  }
+
+  _setTSSNodeDetails(serverEndpoints: string[], serverPubKeys: PointHex[], serverThreshold: number): void {
+    throw new Error(`this method has been overriden and should not be called with ${serverEndpoints}, ${serverPubKeys}, ${serverThreshold}`);
+  }
+
+  async getTSSNodeDetails(): Promise<{ serverEndpoints: string[]; serverPubKeys: PointHex[]; serverThreshold: number }> {
+    const nodeDetails = await this.directWeb.nodeDetailManager.getNodeDetails({ verifier: this.tssVerifier, verifierId: this.verifierId });
+    const { torusNodeEndpoints, torusNodePub } = nodeDetails;
+    return {
+      serverEndpoints: torusNodeEndpoints,
+      serverPubKeys: torusNodePub.map((nodePub) => hexPoint(new Point(nodePub.X, nodePub.Y))),
+      serverThreshold: Math.ceil(torusNodeEndpoints.length / 2),
+    };
+  }
+
+  async retrieveTSSPubKey(tssTag: string, tssNonce: number): Promise<Point> {
+    if (!this.tssVerifier) throw new Error("tssVerifier not specified");
+    if (!this.verifierName || !this.verifierId || !this.verifierType) throw new Error("verifier userinfo not found, not logged in yet");
+    if (this.verifierType === "normal") {
+      const nodeDetails = await this.directWeb.nodeDetailManager.getNodeDetails({ verifier: this.tssVerifier, verifierId: this.verifierId });
       const tssServerPub = (await this.directWeb.torus.getPublicAddress(
         nodeDetails.torusNodeEndpoints,
         nodeDetails.torusNodePub,
         {
-          verifier,
-          verifierId,
+          verifier: this.tssVerifier,
+          verifierId: `${this.verifierId}\u0015${tssTag || "default"}\u0016${tssNonce || 0}`,
         },
         true
       )) as TorusPublicKey;
-      this.setTSSPubKey(new Point(tssServerPub.X, tssServerPub.Y));
+
+      return new Point(tssServerPub.X, tssServerPub.Y);
     }
+    if (this.verifierType === "aggregate") {
+      const nodeDetails = await this.directWeb.nodeDetailManager.getNodeDetails({ verifier: this.tssVerifier, verifierId: this.verifierId });
+      const tssServerPub = (await this.directWeb.torus.getPublicAddress(
+        nodeDetails.torusNodeEndpoints,
+        nodeDetails.torusNodePub,
+        {
+          verifier: this.tssVerifier,
+          verifierId: `${this.verifierId}\u0015${tssTag || "default"}\u0016${tssNonce || 0}`,
+        },
+        true
+      )) as TorusPublicKey;
+
+      return new Point(tssServerPub.X, tssServerPub.Y);
+    }
+    if (this.verifierType === "hybrid") {
+      const nodeDetails = await this.directWeb.nodeDetailManager.getNodeDetails({ verifier: this.tssVerifier, verifierId: this.verifierId });
+      const tssServerPub = (await this.directWeb.torus.getPublicAddress(
+        nodeDetails.torusNodeEndpoints,
+        nodeDetails.torusNodePub,
+        {
+          verifier: this.tssVerifier,
+          verifierId: `${this.verifierId}\u0015${tssTag || "default"}\u0016${tssNonce || 0}`,
+        },
+        true
+      )) as TorusPublicKey;
+
+      return new Point(tssServerPub.X, tssServerPub.Y);
+    }
+  }
+
+  async triggerLogin(params: SubVerifierDetails): Promise<TorusLoginResponse> {
+    const obj = await this.directWeb.triggerLogin(params);
+    this.postboxKey = new BN(obj.privateKey, "hex");
+    const { verifier, verifierId } = obj.userInfo;
+    this.verifierName = verifier;
+    this.verifierId = verifierId;
+    this.verifierType = "normal";
     return obj;
   }
 
   async triggerAggregateLogin(params: AggregateLoginParams): Promise<TorusAggregateLoginResponse> {
     const obj = await this.directWeb.triggerAggregateLogin(params);
     this.postboxKey = new BN(obj.privateKey, "hex");
-    if (this.tssVerifier) {
-      const { verifier, verifierId } = obj.userInfo[0];
-      const nodeDetails = await this.directWeb.nodeDetailManager.getNodeDetails({ verifier: this.tssVerifier, verifierId });
-      const tssServerPub = (await this.directWeb.torus.getPublicAddress(
-        nodeDetails.torusNodeEndpoints,
-        nodeDetails.torusNodePub,
-        {
-          verifier,
-          verifierId,
-        },
-        true
-      )) as TorusPublicKey;
-      this.setTSSPubKey(new Point(tssServerPub.X, tssServerPub.Y));
-    }
+    const { verifier, verifierId } = obj.userInfo[0];
+    this.verifierName = verifier;
+    this.verifierId = verifierId;
+    this.verifierType = "aggregate";
     return obj;
   }
 
@@ -90,20 +149,10 @@ class TorusServiceProvider extends ServiceProviderBase {
     const aggregateLoginKey = obj.aggregateLogins[0].privateKey;
     this.postboxKey = new BN(aggregateLoginKey, "hex");
     this.singleLoginKey = new BN(obj.singleLogin.privateKey, "hex");
-    if (this.tssVerifier) {
-      const { verifier, verifierId } = obj.singleLogin.userInfo;
-      const nodeDetails = await this.directWeb.nodeDetailManager.getNodeDetails({ verifier: this.tssVerifier, verifierId });
-      const tssServerPub = (await this.directWeb.torus.getPublicAddress(
-        nodeDetails.torusNodeEndpoints,
-        nodeDetails.torusNodePub,
-        {
-          verifier,
-          verifierId,
-        },
-        true
-      )) as TorusPublicKey;
-      this.setTSSPubKey(new Point(tssServerPub.X, tssServerPub.Y));
-    }
+    const { verifier, verifierId } = obj.singleLogin.userInfo;
+    this.verifierName = verifier;
+    this.verifierId = verifierId;
+    this.verifierType = "hybrid";
     return obj;
   }
 

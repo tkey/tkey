@@ -1,8 +1,10 @@
 import type { CustomAuthArgs } from "@toruslabs/customauth";
+import { PointHex } from "@toruslabs/rss-client";
 import BN from "bn.js";
 import type { curve } from "elliptic";
 
 import Point from "../base/Point";
+export { ecPoint, hexPoint, PointHex, randomSelection, RSSClient } from "@toruslabs/rss-client";
 
 export type PubKeyType = "ecc";
 
@@ -66,9 +68,13 @@ export interface IServiceProvider extends ISerializable {
   decrypt(msg: EncryptedMessage): Promise<Buffer>;
   retrievePubKey(type: PubKeyType): Buffer;
   retrievePubKeyPoint(): curve.base.BasePoint;
-  setCurrentTSSTag(tssTag: string): void;
-  retrieveCurrentTSSTag(): string;
-  retrieveTSSPubKey(tssTag?: string): Point;
+  retrieveVerifierId(): string;
+  getTSSNodeDetails(): Promise<{
+    serverEndpoints: string[];
+    serverPubKeys: PointHex[];
+    serverThreshold: number;
+  }>;
+  getTSSPubKey(tssTag: string, tssNonce: number): Promise<Point>;
   sign(msg: BNString): string;
 }
 export type TorusStorageLayerAPIParams = {
@@ -114,3 +120,12 @@ export type FromJSONConstructor = {
 };
 
 export type DeviceShareDescription = { module: string; userAgent: string; dateAdded: number; customDeviceInfo?: string };
+
+export type InitializeNewTSSKeyResult = {
+  tss2: BN;
+  tssPolyCommits: Point[];
+  factorPubs: Point[];
+  factorEncs: {
+    [factorPubID: string]: FactorEnc;
+  };
+};

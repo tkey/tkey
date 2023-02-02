@@ -4,6 +4,7 @@ import {
   decrypt,
   DeleteShareResult,
   ecCurve,
+  ecPoint,
   encrypt,
   EncryptedMessage,
   FactorEnc,
@@ -12,9 +13,11 @@ import {
   generatePrivateExcludingIndexes,
   getPubKeyECC,
   getPubKeyPoint,
+  hexPoint,
   IMessageMetadata,
   IMetadata,
   InitializeNewKeyResult,
+  InitializeNewTSSKeyResult,
   IServiceProvider,
   IStorageLayer,
   ITKey,
@@ -27,13 +30,16 @@ import {
   ModuleMap,
   ONE_KEY_DELETE_NONCE,
   Point,
+  PointHex,
   Polynomial,
   PolynomialID,
   prettyPrintError,
+  randomSelection,
   ReconstructedKeyResult,
   ReconstructKeyMiddlewareMap,
   RefreshMiddlewareMap,
   RefreshSharesResult,
+  RSSClient,
   Share,
   SHARE_DELETED,
   ShareSerializationMiddleware,
@@ -46,7 +52,6 @@ import {
   toPrivKeyECC,
 } from "@tkey/common-types";
 import { generatePrivate } from "@toruslabs/eccrypto";
-import { ecPoint, hexPoint, PointHex, RSSClient } from "@toruslabs/rss-client";
 import BN from "bn.js";
 import stringify from "json-stable-stringify";
 
@@ -223,8 +228,9 @@ class ThresholdKey implements ITKey {
     previousLocalMetadataTransitions?: LocalMetadataTransitions;
     delete1OutOf1?: boolean;
     useTSS?: boolean;
-    _tss2?: BN;
+    inputShare?: BN;
     factorPub?: Point;
+    tssIndex?: number;
   }): Promise<KeyDetails> {
     // setup initial params/states
     const p = params || {};
@@ -239,8 +245,9 @@ class ThresholdKey implements ITKey {
       previouslyFetchedCloudMetadata,
       previousLocalMetadataTransitions,
       useTSS,
-      _tss2,
+      inputShare,
       factorPub,
+      tssIndex,
     } = p;
 
     if (useTSS && !factorPub) {
@@ -279,7 +286,15 @@ class ThresholdKey implements ITKey {
           throw CoreError.default("key has not been generated yet");
         }
         // no metadata set, assumes new user
-        await this._initializeNewKey({ initializeModules: true, importedKey: importKey, delete1OutOf1: p.delete1OutOf1, useTSS, _tss2, factorPub });
+        await this._initializeNewKey({
+          initializeModules: true,
+          importedKey: importKey,
+          delete1OutOf1: p.delete1OutOf1,
+        });
+        if (useTSS) {
+          const { factorEncs, factorPubs, tssPolyCommits } = await this._initializeNewTSSKey(this.tssTag, inputShare, factorPub, tssIndex);
+          this.metadata.addTSSData(this.tssTag, 0, tssPolyCommits, factorPubs, factorEncs);
+        }
         return this.getKeyDetails();
       }
       // else we continue with catching up share and metadata
@@ -334,6 +349,13 @@ class ThresholdKey implements ITKey {
 
     // initialize modules
     await this.initializeModules();
+
+    if (useTSS) {
+      if (!this.metadata.tssPolyCommits[this.tssTag]) {
+        // if tss shares have not been created for this tssTag, create new tss sharing
+        await this._initializeNewTSSKey(this.tssTag, inputShare, factorPub);
+      }
+    }
 
     return this.getKeyDetails();
   }
@@ -616,13 +638,56 @@ class ThresholdKey implements ITKey {
     return { newShareStores };
   }
 
-  async generateNewShare(): Promise<GenerateNewShareResult> {
+  async _getTSSNodeDetails(): Promise<{ serverEndpoints: string[]; serverPubKeys: PointHex[]; serverThreshold: number }> {
+    return this.serviceProvider.getTSSNodeDetails();
+  }
+
+  async generateNewShare(
+    useTSS?: boolean,
+    tssOptions?: {
+      inputTSSShare: BN;
+      inputTSSIndex: number;
+      newFactorPub: Point;
+      newTSSIndex: number;
+      selectedServers?: number[];
+    }
+  ): Promise<GenerateNewShareResult> {
     if (!this.metadata) {
       throw CoreError.metadataUndefined();
     }
     if (!this.privKey) {
       throw CoreError.privateKeyUnavailable();
     }
+    if (useTSS) {
+      if (!tssOptions) throw CoreError.default("must provide tss options when calling generateNewShare with useTSS true");
+      if (!this.metadata.tssPolyCommits[this.tssTag]) throw new Error(`tss key has not been initialized for tssTag ${this.tssTag}`);
+      const { newFactorPub, inputTSSIndex, inputTSSShare, newTSSIndex, selectedServers } = tssOptions;
+
+      const existingFactorPubs = this.metadata.factorPubs[this.tssTag];
+      const updatedFactorPubs = existingFactorPubs.concat([newFactorPub]);
+
+      // only modify factorPubs
+      this.metadata.addTSSData(
+        this.tssTag,
+        this.metadata.tssNonces[this.tssTag],
+        this.metadata.tssPolyCommits[this.tssTag],
+        updatedFactorPubs,
+        this.metadata.factorEncs[this.tssTag]
+      );
+
+      const verifierId = this.serviceProvider.retrieveVerifierId();
+      const tssNodeDetails = await this._getTSSNodeDetails();
+      const randomSelectedServers = randomSelection(
+        new Array(tssNodeDetails.serverEndpoints.length).fill(null).map((_, i) => i + 1),
+        Math.ceil(tssNodeDetails.serverEndpoints.length / 2)
+      );
+
+      await this.refreshTSSShares(inputTSSShare, inputTSSIndex, [newTSSIndex], verifierId, {
+        ...tssNodeDetails,
+        selectedServers: selectedServers || randomSelectedServers,
+      });
+    }
+
     const pubPoly = this.metadata.getLatestPublicPolynomial();
     const previousPolyID = pubPoly.getPolynomialID();
     const existingShareIndexes = this.metadata.getShareIndexesForPolynomial(previousPolyID);
@@ -639,8 +704,7 @@ class ThresholdKey implements ITKey {
     inputShare: BN,
     inputIndex: number,
     targetIndexes: number[],
-    vid: string,
-    newTSSServerPub: PointHex,
+    verifierId: string,
     serverOpts: {
       serverEndpoints: string[];
       serverPubKeys: PointHex[];
@@ -648,17 +712,14 @@ class ThresholdKey implements ITKey {
       selectedServers: number[];
     }
   ): Promise<void> {
-    const tssTag = this.serviceProvider.retrieveCurrentTSSTag();
-
     if (!this.metadata) throw CoreError.metadataUndefined();
     if (!this.metadata.tssPolyCommits) throw CoreError.default(`tss poly commits obj not found`);
-    const tssCommits = this.metadata.tssPolyCommits[tssTag];
-    if (!tssCommits) throw CoreError.default(`tss commits not found for tssTag ${tssTag}`);
+    const tssCommits = this.metadata.tssPolyCommits[this.tssTag];
+    if (!tssCommits) throw CoreError.default(`tss commits not found for tssTag ${this.tssTag}`);
     if (tssCommits.length === 0) throw CoreError.default(`tssCommits is empty`);
     const tssPubKeyPoint = tssCommits[0];
     const tssPubKey = hexPoint(tssPubKeyPoint);
     const { serverEndpoints, serverPubKeys, serverThreshold, selectedServers } = serverOpts;
-    this.serviceProvider.retrieveTSSPubKey();
 
     const rssClient = new RSSClient({
       serverEndpoints,
@@ -668,18 +729,20 @@ class ThresholdKey implements ITKey {
     });
 
     if (!this.metadata.factorPubs) throw CoreError.default(`factorPubs obj not found`);
-    const factorPubs = this.metadata.factorPubs[tssTag];
-    if (!factorPubs) throw CoreError.default(`factorPubs not found for tssTag ${tssTag}`);
+    const factorPubs = this.metadata.factorPubs[this.tssTag];
+    if (!factorPubs) throw CoreError.default(`factorPubs not found for tssTag ${this.tssTag}`);
     if (factorPubs.length === 0) throw CoreError.default(`factorPubs is empty`);
 
     if (!this.metadata.tssNonces) throw CoreError.default(`tssNonces obj not found`);
-    const tssNonce: number = this.metadata.tssNonces[tssTag] || 0;
+    const tssNonce: number = this.metadata.tssNonces[this.tssTag] || 0;
 
     // eslint-disable-next-line no-console
     console.log(`tssNonce: ${tssNonce}`);
 
-    const oldLabel = `${vid}\u0015${tssTag}\u0016${tssNonce}`;
-    const newLabel = `${vid}\u0015${tssTag}\u0016${tssNonce + 1}`;
+    const oldLabel = `${verifierId}\u0015${this.tssTag}\u0016${tssNonce}`;
+    const newLabel = `${verifierId}\u0015${this.tssTag}\u0016${tssNonce + 1}`;
+
+    const newTSSServerPub = await this.serviceProvider.getTSSPubKey(this.tssTag, tssNonce + 1);
 
     const refreshResponses = await rssClient.refresh({
       factorPubs: factorPubs.map((f) => hexPoint(f)),
@@ -687,13 +750,13 @@ class ThresholdKey implements ITKey {
       oldLabel,
       newLabel,
       sigs: [], // TODO: add auth data
-      dkgNewPub: newTSSServerPub,
+      dkgNewPub: hexPoint(newTSSServerPub),
       inputShare,
       inputIndex,
       selectedServers,
     });
 
-    const newTSSCommits = [tssPubKey, ecPoint(newTSSServerPub).add(ecPoint(tssPubKey).neg())];
+    const newTSSCommits = [tssPubKey, ecPoint(hexPoint(newTSSServerPub)).add(ecPoint(tssPubKey).neg())];
 
     const factorEncs: {
       [factorPubID: string]: FactorEnc;
@@ -707,10 +770,22 @@ class ThresholdKey implements ITKey {
         serverEncs: refreshResponse.serverFactorEncs,
       };
     }
-    this.metadata.addTSSData(tssTag, tssNonce + 1, newTSSCommits, factorPubs, factorEncs);
+    this.metadata.addTSSData(this.tssTag, tssNonce + 1, newTSSCommits, factorPubs, factorEncs);
   }
 
-  async _refreshShares(threshold: number, newShareIndexes: string[], previousPolyID: PolynomialID): Promise<RefreshSharesResult> {
+  async _refreshShares(
+    threshold: number,
+    newShareIndexes: string[],
+    previousPolyID: PolynomialID,
+    useTSS?: boolean,
+    tssIndex?: number,
+    factorPub?: Point
+  ): Promise<RefreshSharesResult> {
+    if (useTSS) {
+      if (!tssIndex) throw CoreError.default("useTSS is true but tssIndex is not specified / invalid");
+      if (!factorPub) throw CoreError.default("useTSS is true but factorPub is not specified");
+    }
+
     if (!this.metadata) {
       throw CoreError.metadataUndefined();
     }
@@ -808,8 +883,57 @@ class ThresholdKey implements ITKey {
       const shareIndex = newShareIndexes[index];
       this.inputShareStore(newShareStores[shareIndex]);
     }
+
     // await this.releaseWriteMetadataLock();
     return { shareStores: newShareStores };
+  }
+
+  async _initializeNewTSSKey(tssTag, inputShare, factorPub, tssIndex?): Promise<InitializeNewTSSKeyResult> {
+    let tss2: BN;
+    const _tssIndex = tssIndex || 2;
+    if (inputShare) {
+      tss2 = inputShare;
+    } else {
+      tss2 = new BN(generatePrivate());
+    }
+    const tss1Pub = await this.serviceProvider.getTSSPubKey(tssTag, 0);
+    const tss1PubKey = ecCurve.keyFromPublic({ x: tss1Pub.x.toString(16, 64), y: tss1Pub.y.toString(16, 64) }).getPublic();
+    const tss2Pub = getPubKeyPoint(tss2);
+    const tss2PubKey = ecCurve.keyFromPublic({ x: tss2Pub.x.toString(16, 64), y: tss2Pub.y.toString(16, 64) }).getPublic();
+
+    const L1_0 = getLagrangeCoeffs([1, 2], 1, 0);
+    const L2_0 = getLagrangeCoeffs([1, 2], 2, 0);
+
+    const a0Pub = tss1PubKey.mul(L1_0).add(tss2PubKey.mul(L2_0));
+    const a1Pub = tss1PubKey.add(a0Pub.neg());
+
+    const tssPolyCommits = [
+      new Point(a0Pub.getX().toString(16, 64), a0Pub.getY().toString(16, 64)),
+      new Point(a1Pub.getX().toString(16, 64), a1Pub.getY().toString(16, 64)),
+    ];
+    const factorPubs = [factorPub];
+    const factorEncs: { [factorPubID: string]: FactorEnc } = {};
+
+    for (let i = 0; i < factorPubs.length; i++) {
+      const f = factorPubs[i];
+      const factorPubID = f.x.toString(16, 64);
+      factorEncs[factorPubID] = {
+        tssIndex: _tssIndex,
+        type: "direct",
+        userEnc: await encrypt(
+          Buffer.concat([Buffer.from("04", "hex"), Buffer.from(f.x.toString(16, 64), "hex"), Buffer.from(f.y.toString(16, 64), "hex")]),
+          Buffer.from(tss2.toString(16, 64), "hex")
+        ),
+        serverEncs: [],
+      };
+    }
+
+    return {
+      tss2,
+      factorEncs,
+      factorPubs,
+      tssPolyCommits,
+    };
   }
 
   async _initializeNewKey({
@@ -817,17 +941,11 @@ class ThresholdKey implements ITKey {
     initializeModules,
     importedKey,
     delete1OutOf1,
-    useTSS,
-    _tss2,
-    factorPub,
   }: {
     determinedShare?: BN;
     initializeModules?: boolean;
     importedKey?: BN;
     delete1OutOf1?: boolean;
-    useTSS?: boolean;
-    _tss2?: BN;
-    factorPub?: Point;
   } = {}): Promise<InitializeNewKeyResult> {
     if (!importedKey) {
       const tmpPriv = generatePrivate();
@@ -852,57 +970,9 @@ class ThresholdKey implements ITKey {
     }
     const shares = poly.generateShares(shareIndexes);
 
-    let tss2: BN;
-    let tssPolyCommits: Point[];
-    let factorPubs: Point[];
-    let factorEncs: {
-      [factorPubID: string]: FactorEnc;
-    };
-    if (useTSS) {
-      if (_tss2) {
-        tss2 = _tss2;
-      } else {
-        tss2 = new BN(generatePrivate());
-      }
-      const tss1Pub = this.serviceProvider.retrieveTSSPubKey();
-      const tss1PubKey = ecCurve.keyFromPublic({ x: tss1Pub.x.toString(16, 64), y: tss1Pub.y.toString(16, 64) }).getPublic();
-      const tss2Pub = getPubKeyPoint(tss2);
-      const tss2PubKey = ecCurve.keyFromPublic({ x: tss2Pub.x.toString(16, 64), y: tss2Pub.y.toString(16, 64) }).getPublic();
-
-      const L1_0 = getLagrangeCoeffs([1, 2], 1, 0);
-      const L2_0 = getLagrangeCoeffs([1, 2], 2, 0);
-
-      const a0Pub = tss1PubKey.mul(L1_0).add(tss2PubKey.mul(L2_0));
-      const a1Pub = tss1PubKey.add(a0Pub.neg());
-
-      tssPolyCommits = [
-        new Point(a0Pub.getX().toString(16, 64), a0Pub.getY().toString(16, 64)),
-        new Point(a1Pub.getX().toString(16, 64), a1Pub.getY().toString(16, 64)),
-      ];
-      factorPubs = [factorPub];
-      factorEncs = {};
-
-      for (let i = 0; i < factorPubs.length; i++) {
-        const f = factorPubs[i];
-        const factorPubID = f.x.toString(16, 64);
-        factorEncs[factorPubID] = {
-          tssIndex: 2,
-          type: "direct",
-          userEnc: await encrypt(
-            Buffer.concat([Buffer.from("04", "hex"), Buffer.from(f.x.toString(16, 64), "hex"), Buffer.from(f.y.toString(16, 64), "hex")]),
-            Buffer.from(tss2.toString(16, 64), "hex")
-          ),
-          serverEncs: [],
-        };
-      }
-    }
-
     // create metadata to be stored
     const metadata = new Metadata(getPubKeyPoint(this.privKey));
     metadata.addFromPolynomialAndShares(poly, shares);
-    if (useTSS) {
-      metadata.addTSSData(this.tssTag, 0, tssPolyCommits, factorPubs, factorEncs);
-    }
 
     const serviceProviderShare = shares[shareIndexes[0].toString("hex")];
     const shareStore = new ShareStore(serviceProviderShare, poly.getPolynomialID());
@@ -941,7 +1011,6 @@ class ThresholdKey implements ITKey {
 
     const result = {
       privKey: this.privKey,
-      ...(useTSS && { tssShare: tss2 }),
       deviceShare: new ShareStore(shares[shareIndexes[1].toString("hex")], poly.getPolynomialID()),
       userShare: undefined,
     };
@@ -1137,6 +1206,7 @@ class ThresholdKey implements ITKey {
 
     return {
       pubKey: this.metadata.pubKey,
+      tssPubKey: this.metadata.tssPolyCommits[this.tssTag][0],
       requiredShares,
       threshold: poly.getThreshold(),
       totalShares: this.metadata.getShareIndexesForPolynomial(previousPolyID).length,

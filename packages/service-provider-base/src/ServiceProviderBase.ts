@@ -6,6 +6,7 @@ import {
   getPubKeyECC,
   IServiceProvider,
   Point,
+  PointHex,
   PubKeyType,
   ServiceProviderArgs,
   StringifiedType,
@@ -18,30 +19,29 @@ import { curve } from "elliptic";
 class ServiceProviderBase implements IServiceProvider {
   enableLogging: boolean;
 
+  tssPubKeys: Record<string, Point>;
+
   // For easy serialization
   postboxKey: BN;
 
-  currentTSSTag?: string;
-
-  tssPubKey?: {
-    [tssTag: string]: Point;
-  };
-
-  tssNonce?: {
-    [tssTag: string]: number;
-  };
-
   serviceProviderName: string;
 
-  constructor({ enableLogging = false, postboxKey, tssPubKey = undefined }: ServiceProviderArgs) {
+  tssNodeDetails: {
+    serverEndpoints: string[];
+    serverPubKeys: PointHex[];
+    serverThreshold: number;
+  };
+
+  constructor({ enableLogging = false, postboxKey }: ServiceProviderArgs) {
     this.enableLogging = enableLogging;
     this.postboxKey = new BN(postboxKey, "hex");
-    this.currentTSSTag = "default";
-    this.tssPubKey = {};
-    if (tssPubKey) {
-      this.tssPubKey[this.currentTSSTag] = tssPubKey;
-    }
     this.serviceProviderName = "ServiceProviderBase";
+    this.tssPubKeys = {};
+    this.tssNodeDetails = {
+      serverEndpoints: [],
+      serverPubKeys: [],
+      serverThreshold: -1,
+    };
   }
 
   static fromJSON(value: StringifiedType): IServiceProvider {
@@ -60,24 +60,6 @@ class ServiceProviderBase implements IServiceProvider {
     return decryptUtils(toPrivKeyECC(this.postboxKey), msg);
   }
 
-  setCurrentTSSTag(tssTag: string): void {
-    this.currentTSSTag = tssTag;
-  }
-
-  retrieveCurrentTSSTag(): string {
-    return this.currentTSSTag;
-  }
-
-  setTSSPubKey(tssPubKey: Point, tssTag = this.currentTSSTag) {
-    this.tssPubKey[tssTag] = tssPubKey;
-  }
-
-  retrieveTSSPubKey(tssTag = this.currentTSSTag): Point {
-    const pubkey = this.tssPubKey[tssTag];
-    if (!pubkey) throw new Error("tssPubKey not found");
-    return pubkey;
-  }
-
   retrievePubKeyPoint(): curve.base.BasePoint {
     return toPrivKeyEC(this.postboxKey).getPublic();
   }
@@ -87,6 +69,38 @@ class ServiceProviderBase implements IServiceProvider {
       return getPubKeyECC(this.postboxKey);
     }
     throw new Error("Unsupported pub key type");
+  }
+
+  retrieveVerifierId(): string {
+    return "test-user";
+  }
+
+  _setTSSNodeDetails(serverEndpoints: string[], serverPubKeys: PointHex[], serverThreshold: number): void {
+    this.tssNodeDetails = {
+      serverEndpoints,
+      serverPubKeys,
+      serverThreshold,
+    };
+  }
+
+  async getTSSNodeDetails(): Promise<{
+    serverEndpoints: string[];
+    serverPubKeys: PointHex[];
+    serverThreshold: number;
+  }> {
+    return this.tssNodeDetails;
+  }
+
+  _setTSSPubKey(tssTag: string, tssNonce: number, tssPubKey: Point) {
+    this.tssPubKeys[`test-tss-verifier\u001ctest-user\u0015${tssTag}\u0016${tssNonce}`] = tssPubKey;
+  }
+
+  async getTSSPubKey(tssTag: string, tssNonce: number): Promise<Point> {
+    const tssPubKey = this.tssPubKeys[`test-tss-verifier\u001ctest-user\u0015${tssTag}\u0016${tssNonce}`];
+    if (!tssPubKey) {
+      throw new Error("tss pub key could not be found");
+    }
+    return tssPubKey;
   }
 
   sign(msg: BNString): string {

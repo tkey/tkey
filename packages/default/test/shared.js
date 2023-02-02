@@ -83,7 +83,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     });
     it("#should be able to refresh tss shares", async function () {
       const sp = customSP;
-      const testId = "test@test.com\u001cgoogle";
+      const testId = "google\u001ctest@test.com";
       if (!sp.tssVerifier) return;
 
       const tss1 = new BN(generatePrivate());
