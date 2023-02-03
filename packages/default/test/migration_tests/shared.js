@@ -70,6 +70,12 @@ export const sharedTestCases = (manualSync, torusSP) => {
       serviceProvider: newSP(postboxKey),
       storageLayer: initStorageLayer({ hostUrl: metadataURL, storage }),
       manualSync,
+      modules: {
+        privateKey: new PrivateKeyModule(),
+        seedPhrase: new SeedPhraseModule(),
+        securityQuestions: new SecurityQuestionsModule(),
+        shareTransfer: new ShareTransferModule(),
+      },
     });
     return tkey;
   };
@@ -431,16 +437,19 @@ export const sharedTestCases = (manualSync, torusSP) => {
     });
     // security question do not have effect on manual sync
     it(`#should be able to reconstruct key and initialize a key with security questions, manualSync=${manualSync}`, async function () {
-      await tb._initializeNewKey({ initializeModules: true });
+      const postboxKey = getTempKey();
+      const tkey = createThresholdTS(postboxKey);
+      await tkey.initialize();
+
       await rejects(async function () {
-        await tb.modules.securityQuestions.inputShareFromSecurityQuestions("blublu");
+        await tkey.modules.securityQuestions.inputShareFromSecurityQuestions("blublu");
       }, Error);
 
       const answer = "blublu";
 
-      await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions(answer, "who is your cat?");
-      await tb.syncLocalMetadataTransitions();
-      const question = tb.modules.securityQuestions.getSecurityQuestions();
+      await tkey.modules.securityQuestions.generateNewShareWithSecurityQuestions(answer, "who is your cat?");
+      await tkey.syncLocalMetadataTransitions();
+      const question = tkey.modules.securityQuestions.getSecurityQuestions();
       strictEqual(question, "who is your cat?");
 
       // const jsonObj = createJsonObj(tb);
@@ -449,8 +458,8 @@ export const sharedTestCases = (manualSync, torusSP) => {
       // const jsonObj_wrong = { ...jsonObj, securityQuestions: { answer: "blublu-wrong", question, action } };
       // const jsonObj_correct = { ...jsonObj, securityQuestions: { answer, question, action } };
 
-      const storage_after_ts = isMocked ? tb.storageLayer.toJSON() : undefined;
-      const threshold_wasm = createThresholdWasm(tb.serviceProvider.postboxKey.toString("hex"), storage_after_ts);
+      const storage_after_ts = isMocked ? tkey.storageLayer.toJSON() : undefined;
+      const threshold_wasm = createThresholdWasm(tkey.serviceProvider.postboxKey.toString("hex"), storage_after_ts);
       await threshold_wasm.initialize();
       try {
         await threshold_wasm.input_share_from_security_questions("blublu-wrong");
@@ -468,21 +477,25 @@ export const sharedTestCases = (manualSync, torusSP) => {
       // }
     });
     it(`#should be able to delete and add security questions, manualSync=${manualSync}`, async function () {
-      const resp1 = await tb._initializeNewKey({ initializeModules: true });
+      const postboxKey = getTempKey();
+      const tkey = createThresholdTS(postboxKey);
+      // const resp1 = await tkey._initializeNewKey({ initializeModules: true });
+      await tkey.initialize();
+      const resp1 = await tkey.reconstructKey(true);
 
       const answer1 = "blublu";
       const answer2 = "blubluss";
       const question = "who is your cat?";
-      await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions(answer1, question);
-      await tb.generateNewShare();
+      await tkey.modules.securityQuestions.generateNewShareWithSecurityQuestions(answer1, question);
+      await tkey.generateNewShare();
 
       // delete sq
-      const sqIndex = tb.metadata.generalStore.securityQuestions.shareIndex;
-      await tb.deleteShare(sqIndex);
+      const sqIndex = tkey.metadata.generalStore.securityQuestions.shareIndex;
+      await tkey.deleteShare(sqIndex);
 
-      if (manualSync) await tb.syncLocalMetadataTransitions();
+      if (manualSync) await tkey.syncLocalMetadataTransitions();
 
-      const threshold_wasm = createThresholdWasm(tb.serviceProvider.postboxKey.toString("hex"), tb.storageLayer.toJSON());
+      const threshold_wasm = createThresholdWasm(tkey.serviceProvider.postboxKey.toString("hex"), tkey.storageLayer.toJSON());
       await threshold_wasm.initialize();
       try {
         await threshold_wasm.input_share_from_security_questions(answer1);
@@ -496,10 +509,10 @@ export const sharedTestCases = (manualSync, torusSP) => {
       threshold_wasm.free();
 
       // add sq again
-      await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions(answer2, "who is your cat?");
-      await tb.syncLocalMetadataTransitions();
+      await tkey.modules.securityQuestions.generateNewShareWithSecurityQuestions(answer2, "who is your cat?");
+      await tkey.syncLocalMetadataTransitions();
 
-      const threshold_wasm_2 = createThresholdWasm(tb.serviceProvider.postboxKey.toString("hex"), tb.storageLayer.toJSON());
+      const threshold_wasm_2 = createThresholdWasm(tkey.serviceProvider.postboxKey.toString("hex"), tkey.storageLayer.toJSON());
       await threshold_wasm_2.initialize();
 
       try {
@@ -515,27 +528,48 @@ export const sharedTestCases = (manualSync, torusSP) => {
       threshold_wasm_2.free();
     });
 
-    it.skip(`#should be able to reconstruct key and initialize a key with security questions after refresh, manualSync=${manualSync}`, async function () {
+    it(`#should be able to reconstruct key and initialize a key with security questions from rust, manualSync=${manualSync}`, async function () {
+      const postboxKey = getTempKey();
+      const threshold_wasm = createThresholdWasm(postboxKey.toString("hex"));
+      await threshold_wasm.initialize();
+      await threshold_wasm.reconstruct_key();
+
+      const question = "who is your cat?";
+      const answer = "blublu";
+      await threshold_wasm.generate_new_share_with_security_question(answer, question);
+      if (manualSync) await threshold_wasm.sync_local_metadata_transitions();
+
+      const storage_after_rust = isMocked ? threshold_wasm.storage_layer_to_json() : undefined;
+
+      const tkey = createThresholdTS(postboxKey, storage_after_rust);
+      await tkey.initialize();
+      await tkey.modules.securityQuestions.inputShareFromSecurityQuestions(answer);
+      const reconstructedKey = await tkey.reconstructKey();
+      if (reconstructedKey.privKey.toString("hex") !== threshold_wasm.get_priv_key()) {
+        fail("key should be able to be reconstructed");
+      }
+      threshold_wasm.free();
+    });
+
+    it(`#should be able to reconstruct key and initialize a key with security questions after refresh, manualSync=${manualSync}`, async function () {
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
       await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
-      const tb2 = new ThresholdKey({
-        serviceProvider: customSP,
-        storageLayer: customSL,
-        modules: { securityQuestions: new SecurityQuestionsModule() },
-      });
       await tb.generateNewShare();
-      await tb.syncLocalMetadataTransitions();
+      if (manualSync) await tb.syncLocalMetadataTransitions();
 
-      await tb2.initialize();
+      const storage_after_ts = isMocked ? tb.storageLayer.toJSON() : undefined;
+      const threshold_wasm = createThresholdWasm(tb.serviceProvider.postboxKey.toString("hex"), storage_after_ts);
+      await threshold_wasm.initialize();
 
-      await tb2.modules.securityQuestions.inputShareFromSecurityQuestions("blublu");
-      const reconstructedKey = await tb2.reconstructKey();
-      // compareBNArray(resp1.privKey, reconstructedKey, "key should be able to be reconstructed");
-      if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
+      await threshold_wasm.input_share_from_security_questions("blublu");
+      await threshold_wasm.reconstruct_key();
+
+      if (resp1.privKey.toString("hex") !== threshold_wasm.get_priv_key()) {
         fail("key should be able to be reconstructed");
       }
     });
-    it.skip(`#should be able to change password, manualSync=${manualSync}`, async function () {
+
+    it.only(`#should be able to change password, manualSync=${manualSync}`, async function () {
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
 
       // should throw
@@ -545,48 +579,21 @@ export const sharedTestCases = (manualSync, torusSP) => {
 
       await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
       await tb.modules.securityQuestions.changeSecurityQuestionAndAnswer("dodo", "who is your cat?");
-      await tb.syncLocalMetadataTransitions();
+      if (manualSync) await tb.syncLocalMetadataTransitions();
+      const storage_after_ts = isMocked ? tb.storageLayer.toJSON() : undefined;
 
-      const tb2 = new ThresholdKey({
-        serviceProvider: customSP,
-        storageLayer: customSL,
-        modules: { securityQuestions: new SecurityQuestionsModule() },
-      });
-      await tb2.initialize();
+      const threshold_wasm = createThresholdWasm(tb.serviceProvider.postboxKey.toString("hex"), storage_after_ts);
+      await threshold_wasm.initialize();
 
-      await tb2.modules.securityQuestions.inputShareFromSecurityQuestions("dodo");
-      const reconstructedKey = await tb2.reconstructKey();
+      await threshold_wasm.input_share_from_security_questions("dodo");
+      await threshold_wasm.reconstruct_key(true);
       // compareBNArray(resp1.privKey, reconstructedKey, "key should be able to be reconstructed");
-      if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
+      if (resp1.privKey.toString("hex") !== threshold_wasm.get_priv_key()) {
         fail("key should be able to be reconstructed");
       }
     });
-    it.skip(`#should be able to change password and serialize, manualSync=${manualSync}`, async function () {
-      const resp1 = await tb._initializeNewKey({ initializeModules: true });
-      await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
-      await tb.modules.securityQuestions.changeSecurityQuestionAndAnswer("dodo", "who is your cat?");
-      await tb.syncLocalMetadataTransitions();
 
-      const tb2 = new ThresholdKey({
-        serviceProvider: customSP,
-        storageLayer: customSL,
-        modules: { securityQuestions: new SecurityQuestionsModule() },
-      });
-      await tb2.initialize();
-
-      await tb2.modules.securityQuestions.inputShareFromSecurityQuestions("dodo");
-      const reconstructedKey = await tb2.reconstructKey();
-      // compareBNArray(resp1.privKey, reconstructedKey, "key should be able to be reconstructed");
-      if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
-        fail("key should be able to be reconstructed");
-      }
-
-      const stringified = JSON.stringify(tb2);
-      const tb3 = await ThresholdKey.fromJSON(JSON.parse(stringified), { serviceProvider: customSP, storageLayer: customSL });
-      const finalKeyPostSerialization = await tb3.reconstructKey();
-      strictEqual(finalKeyPostSerialization.toString("hex"), reconstructedKey.toString("hex"), "Incorrect serialization");
-    });
-    it.skip(`#should be able to get answers, even when they change, manualSync=${manualSync}`, async function () {
+    it(`#should be able to get answers, even when they change, manualSync=${manualSync}`, async function () {
       tb = new ThresholdKey({
         serviceProvider: customSP,
         storageLayer: customSL,
@@ -602,23 +609,21 @@ export const sharedTestCases = (manualSync, torusSP) => {
         fail("answers should be the same");
       }
       await tb.modules.securityQuestions.changeSecurityQuestionAndAnswer(ans2, qn);
-      await tb.syncLocalMetadataTransitions();
+      if (manualSync) await tb.syncLocalMetadataTransitions();
 
-      const tb2 = new ThresholdKey({
-        serviceProvider: customSP,
-        storageLayer: customSL,
-        modules: { securityQuestions: new SecurityQuestionsModule(true) },
-      });
-      await tb2.initialize();
+      const storage_after_ts = isMocked ? tb.storageLayer.toJSON() : undefined;
 
-      await tb2.modules.securityQuestions.inputShareFromSecurityQuestions("dodo");
-      const reconstructedKey = await tb2.reconstructKey();
+      const threshold_wasm = createThresholdWasm(tb.serviceProvider.postboxKey.toString("hex"), storage_after_ts);
+      await threshold_wasm.initialize();
+      await threshold_wasm.input_share_from_security_questions(ans2);
+      await threshold_wasm.reconstruct_key(true);
+
       // compareBNArray(resp1.privKey, reconstructedKey, "key should be able to be reconstructed");
-      if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
+      if (resp1.privKey.toString("hex") !== threshold_wasm.get_priv_key()) {
         fail("key should be able to be reconstructed");
       }
 
-      gotAnswer = await tb2.modules.securityQuestions.getAnswer();
+      gotAnswer = await threshold_wasm.get_answer();
       if (gotAnswer !== ans2) {
         fail("answers should be the same");
       }
