@@ -60,7 +60,7 @@ export const sharedTestCases = (manualSync, torusSP) => {
       return threshold_wasm;
     }
     // else return cloud storage Threshold
-    return new ThresholdKeyWasm(postboxKey, manualSync, curve_n);
+    return new ThresholdKeyWasm(postboxKey, getMetadataUrl(), BigInt(0), manualSync, curve_n);
     // return new ThresholdKeyMockWasm(postboxKey);
   };
 
