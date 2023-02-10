@@ -86,6 +86,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const testId = "test@test.com\u001cgoogle";
       if (!sp.tssVerifier) return;
 
+      // initialization with SP
       const tss1 = new BN(generatePrivate());
       sp.setTSSPubKey(getPubKeyPoint(tss1));
       sp.postboxKey = new BN(getTempKey(), "hex");
@@ -96,8 +97,9 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const factorKey = new BN(generatePrivate());
       const factorPub = getPubKeyPoint(factorKey);
 
+      // tss and factor key are passed externally
       await tb1.initialize({ useTSS: true, factorPub, _tss2: new BN(generatePrivate()) });
-      const newShare = await tb1.generateNewShare();
+      const newShare = await tb1.generateNewShare(); // 2/3 tkey generation
       const reconstructedKey = await tb1.reconstructKey();
       await tb1.syncLocalMetadataTransitions();
       if (tb1.privKey.cmp(reconstructedKey.privKey) !== 0) {
@@ -111,6 +113,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const { tssShare: tss2 } = await tb2.getTSSShare(factorKey);
       const tssCommits = tb2.getTSSCommits();
 
+      // Only for verification
       const tssPrivKey = getLagrangeCoeffs([1, 2], 1)
         .mul(tss1)
         .add(getLagrangeCoeffs([1, 2], 2).mul(tss2))

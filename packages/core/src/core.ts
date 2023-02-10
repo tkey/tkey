@@ -372,20 +372,21 @@ class ThresholdKey implements ITKey {
     const userDec = tssShareBNs[0];
 
     if (type === "direct") {
-      const tssSharePub = ecCurve.g.mul(userDec);
+      const tssSharePub = ecCurve.g.mul(userDec); // tss2 pub key
       const tssCommitA0 = ecCurve.keyFromPublic({ x: tssCommits[0].x.toString(16, 64), y: tssCommits[0].y.toString(16, 64) }).getPublic();
       const tssCommitA1 = ecCurve.keyFromPublic({ x: tssCommits[1].x.toString(16, 64), y: tssCommits[1].y.toString(16, 64) }).getPublic();
-      let _tssSharePub = tssCommitA0;
+      let _tssSharePub = tssCommitA0; // tss pubkey
       for (let j = 0; j < tssIndex; j++) {
         _tssSharePub = _tssSharePub.add(tssCommitA1);
       }
       if (tssSharePub.getX().cmp(_tssSharePub.getX()) === 0 && tssSharePub.getY().cmp(_tssSharePub.getY()) === 0) {
-        return { tssIndex, tssShare: userDec };
+        return { tssIndex, tssShare: userDec }; // how could this be same ?? one is tss1 and another is tss
       }
       throw new Error("user decryption does not match tss commitments...");
     }
 
     // if type === "hierarchical"
+    // This is in case a new share is kept for this share via refresh
     const serverDecs = tssShareBNs.slice(1); // 5 elems
     const serverIndexes = new Array(serverDecs.length).fill(null).map((_, i) => i + 1);
 
@@ -649,7 +650,7 @@ class ThresholdKey implements ITKey {
       selectedServers: number[];
     }
   ): Promise<void> {
-    // TODO: Add sanity checks
+    // TODO: Add sanity checks for tkey<>tss
     const tssTag = this.serviceProvider.retrieveCurrentTSSTag();
 
     if (!this.metadata) throw CoreError.metadataUndefined();
@@ -875,6 +876,8 @@ class ThresholdKey implements ITKey {
       const L1_0 = getLagrangeCoeffs([1, 2], 1, 0);
       const L2_0 = getLagrangeCoeffs([1, 2], 2, 0);
 
+      // Why this specific commitment strategy ?
+      // Can there be another strategy ?
       const a0Pub = tss1PubKey.mul(L1_0).add(tss2PubKey.mul(L2_0));
       const a1Pub = tss1PubKey.add(a0Pub.neg());
 
@@ -885,6 +888,7 @@ class ThresholdKey implements ITKey {
       factorPubs = [factorPub];
       factorEncs = {};
 
+      // This it to allow 2/5 tkey with 2/3 tss. Multiple tkey shares will have different factors keys with tss share.
       for (let i = 0; i < factorPubs.length; i++) {
         const f = factorPubs[i];
         const factorPubID = f.x.toString(16, 64);
