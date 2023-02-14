@@ -318,6 +318,7 @@ export interface ITKey extends ITKeyApi, ISerializable {
     inputShare: BN,
     inputIndex: number,
     targetIndexes: number[],
+    targetFactorsPubs: PointHex[],
     vid: string,
     newTSSServerPub: PointHex,
     serverOpts: {

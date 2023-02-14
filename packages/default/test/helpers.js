@@ -1,7 +1,12 @@
+import { getPubKeyPoint } from "@tkey/common-types";
 import ServiceProviderBase from "@tkey/service-provider-base";
 import ServiceProviderTorus from "@tkey/service-provider-torus";
 import TorusStorageLayer, { MockStorageLayer } from "@tkey/storage-layer-torus";
 import { generatePrivate } from "@toruslabs/eccrypto";
+import { fail } from "assert";
+import { BN } from "bn.js";
+
+import ThresholdKey from "../src";
 
 let mocked;
 const isNode = process.release;
@@ -42,3 +47,33 @@ export function getServiceProvider(params) {
   }
   return new ServiceProviderBase({ postboxKey: isEmptyProvider ? null : PRIVATE_KEY });
 }
+
+export function getTempKey() {
+  return generatePrivate().toString("hex");
+}
+
+// export async function createBasicTSSSetup() {
+//   const sp = customSP;
+//   const testId = "test@test.com\u001cgoogle";
+//   if (!sp.tssVerifier) return;
+
+//   // initialization with SP
+//   const tss1 = new BN(generatePrivate());
+//   sp.setTSSPubKey(getPubKeyPoint(tss1));
+//   sp.postboxKey = new BN(getTempKey(), "hex");
+//   const storageLayer = initStorageLayer({ hostUrl: metadataURL });
+//   const tb1 = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync: mode });
+
+//   // factor key needs to passed from outside of tKey
+//   const factorKey = new BN(generatePrivate());
+//   const factorPub = getPubKeyPoint(factorKey);
+
+//   // tss and factor key are passed externally
+//   await tb1.initialize({ useTSS: true, factorPub, _tss2: new BN(generatePrivate()) });
+//   // const newShare = await tb1.generateNewShare(); // 2/3 tkey generation
+//   const reconstructedKey = await tb1.reconstructKey();
+//   await tb1.syncLocalMetadataTransitions();
+//   if (tb1.privKey.cmp(reconstructedKey.privKey) !== 0) {
+//     fail("key should be able to be reconstructed");
+//   }
+// }

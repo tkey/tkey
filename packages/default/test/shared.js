@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-shadow */
 /* eslint-disable mocha/no-exports */
 /* eslint-disable import/no-extraneous-dependencies */
@@ -18,7 +19,14 @@ import { createSandbox } from "sinon";
 import { keccak256 } from "web3-utils";
 
 import ThresholdKey from "../src/index";
-import { getMetadataUrl, getServiceProvider, initStorageLayer, isMocked } from "./helpers";
+import { getMetadataUrl, getServiceProvider, getTempKey, initStorageLayer, isMocked } from "./helpers";
+
+function pbcopy(data) {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const proc = require("child_process").spawn("pbcopy");
+  proc.stdin.write(data);
+  proc.stdin.end();
+}
 
 const rejects = async (fn, error, msg) => {
   let f = () => {};
@@ -35,9 +43,6 @@ const rejects = async (fn, error, msg) => {
 
 const metadataURL = getMetadataUrl();
 
-function getTempKey() {
-  return generatePrivate().toString("hex");
-}
 function compareBNArray(a, b, message) {
   if (a.length !== b.length) throw new Error(message);
   return a.map((el) => {
@@ -181,6 +186,112 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         .umod(ecCurve.n);
       strictEqual(tssPrivKey.toString(16, 64), newTSSPrivKey.toString(16, 64));
     });
+    it.only("#should be able to create 2/3 TSS share", async function () {
+      const sp = customSP;
+      const testId = "test@test.com\u001cgoogle";
+      if (!sp.tssVerifier) return;
+
+      // initialization with SP
+      const tss1 = new BN(generatePrivate());
+      sp.setTSSPubKey(getPubKeyPoint(tss1));
+      sp.postboxKey = new BN(getTempKey(), "hex");
+      const storageLayer = initStorageLayer({ hostUrl: metadataURL });
+      const tb1 = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync: mode });
+
+      // factor key needs to passed from outside of tKey
+      const factorKey = new BN(generatePrivate());
+      const factorPub = getPubKeyPoint(factorKey);
+
+      // tss and factor key are passed externally
+      await tb1.initialize({ useTSS: true, factorPub, _tss2: new BN(generatePrivate()) });
+      const newShare = await tb1.generateNewShare(); // 2/3 tkey generation
+      const reconstructedKey = await tb1.reconstructKey();
+      await tb1.syncLocalMetadataTransitions();
+      if (tb1.privKey.cmp(reconstructedKey.privKey) !== 0) {
+        fail("key should be able to be reconstructed");
+      }
+
+      const tb2 = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync: mode });
+      await tb2.initialize({ useTSS: true, factorPub });
+      await tb2.inputShareStore(newShare.newShareStores[newShare.newShareIndex.toString("hex")]);
+      await tb2.reconstructKey();
+      const { tssShare: tss2 } = await tb2.getTSSShare(factorKey);
+      const tssCommits = tb2.getTSSCommits();
+
+      // Only for verification
+      const tssPrivKey = getLagrangeCoeffs([1, 2], 1)
+        .mul(tss1)
+        .add(getLagrangeCoeffs([1, 2], 2).mul(tss2))
+        .umod(ecCurve.n);
+
+      // Create 2/3 sahres
+      const serverEndpoints = [new MockServer(), new MockServer(), new MockServer(), new MockServer(), new MockServer()];
+      const serverCount = serverEndpoints.length;
+
+      const serverPrivKeys = [];
+      for (let i = 0; i < serverCount; i++) {
+        serverPrivKeys.push(new BN(generatePrivate()));
+      }
+      const serverPubKeys = serverPrivKeys.map((privKey) => hexPoint(ecCurve.g.mul(privKey)));
+      await Promise.all(
+        serverEndpoints.map((endpoint, i) => {
+          return postEndpoint(endpoint, "/private_key", { private_key: serverPrivKeys[i].toString(16, 64) });
+        })
+      );
+      const serverThreshold = 3;
+      const inputIndex = 2;
+      const serverPoly = generatePolynomial(serverThreshold - 1, tss1);
+
+      // set tssShares on servers
+      await Promise.all(
+        serverEndpoints.map((endpoint, i) => {
+          return postEndpoint(endpoint, "/tss_share", {
+            label: `${testId}\u0015default\u00160`,
+            tss_share_hex: getShare(serverPoly, i + 1).toString(16, 64),
+          });
+        })
+      );
+
+      // simulate new key assign
+      const dkg2Priv = new BN(generatePrivate());
+      const dkg2Pub = ecCurve.g.mul(dkg2Priv);
+      const serverPoly2 = generatePolynomial(serverThreshold - 1, dkg2Priv);
+      await Promise.all(
+        serverEndpoints.map((endpoint, i) => {
+          const shareHex = getShare(serverPoly2, i + 1).toString(16, 64);
+
+          return postEndpoint(endpoint, "/tss_share", {
+            label: `${testId}\u0015default\u00161`,
+            tss_share_hex: shareHex,
+          });
+        })
+      );
+
+      const tssTag = tb2.serviceProvider.retrieveCurrentTSSTag();
+      const factorPubs = tb2.metadata.factorPubs[tssTag].map((x) => hexPoint(x));
+
+      // factor key needs to passed from outside of tKey
+      const factorKey3 = new BN(generatePrivate());
+      const factorPub3 = getPubKeyPoint(factorKey3);
+      factorPubs.push(factorPub3.toJSON());
+
+      await tb2.refreshTSSShares(tss2, inputIndex, [2, 3], factorPubs, testId, hexPoint(dkg2Pub), {
+        serverThreshold: 3,
+        selectedServers: [1, 2, 3],
+        serverEndpoints,
+        serverPubKeys,
+      });
+      const { tssShare: newTSS2 } = await tb2.getTSSShare(factorKey);
+      const newTSSPrivKey = getLagrangeCoeffs([1, 2], 1)
+        .mul(new BN(dkg2Priv, "hex"))
+        .add(getLagrangeCoeffs([1, 2], 2).mul(newTSS2))
+        .umod(ecCurve.n);
+      strictEqual(tssPrivKey.toString(16, 64), newTSSPrivKey.toString(16, 64));
+
+      pbcopy(JSON.stringify(tb2.metadata));
+      // delete TSS share
+    });
+
     it("#should be able to reconstruct tssShare from factor key (tss2) when initializing a key with useTSS true", async function () {
       const sp = customSP;
       if (!sp.tssVerifier) return;

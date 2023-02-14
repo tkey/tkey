@@ -641,6 +641,7 @@ class ThresholdKey implements ITKey {
     inputShare: BN,
     inputIndex: number,
     targetIndexes: number[],
+    targetFactorsPubs: PointHex[],
     vid: string,
     newTSSServerPub: PointHex,
     serverOpts: {
@@ -686,7 +687,7 @@ class ThresholdKey implements ITKey {
 
     // n api calls
     const refreshResponses = await rssClient.refresh({
-      factorPubs: factorPubs.map((f) => hexPoint(f)),
+      factorPubs: targetFactorsPubs,
       targetIndexes,
       oldLabel,
       newLabel,
@@ -697,7 +698,8 @@ class ThresholdKey implements ITKey {
       selectedServers,
     });
 
-    const newTSSCommits = [tssPubKey, ecPoint(newTSSServerPub).add(ecPoint(tssPubKey).neg())];
+    const secondCommit = ecPoint(newTSSServerPub).add(ecPoint(tssPubKey).neg());
+    const newTSSCommits = [Point.fromJSON(tssPubKey), Point.fromJSON({ x: secondCommit.getX(), y: secondCommit.getY() })];
 
     const factorEncs: {
       [factorPubID: string]: FactorEnc;
@@ -711,7 +713,13 @@ class ThresholdKey implements ITKey {
         serverEncs: refreshResponse.serverFactorEncs,
       };
     }
-    this.metadata.addTSSData(tssTag, tssNonce + 1, newTSSCommits, factorPubs, factorEncs);
+    this.metadata.addTSSData(
+      tssTag,
+      tssNonce + 1,
+      newTSSCommits,
+      targetFactorsPubs.map((x) => Point.fromJSON(x)),
+      factorEncs
+    );
   }
 
   // If they goes from 2/3 -> 2/4, what's the tss setup expectation ??
