@@ -282,13 +282,23 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         serverPubKeys,
       });
       const { tssShare: newTSS2 } = await tb2.getTSSShare(factorKey);
-      const newTSSPrivKey = getLagrangeCoeffs([1, 2], 1)
-        .mul(new BN(dkg2Priv, "hex"))
-        .add(getLagrangeCoeffs([1, 2], 2).mul(newTSS2))
-        .umod(ecCurve.n);
-      strictEqual(tssPrivKey.toString(16, 64), newTSSPrivKey.toString(16, 64));
+      const { tssShare: newTSS3 } = await tb2.getTSSShare(factorKey3);
+      {
+        const newTSSPrivKey = getLagrangeCoeffs([1, 2], 1)
+          .mul(new BN(dkg2Priv, "hex"))
+          .add(getLagrangeCoeffs([1, 2], 2).mul(newTSS2))
+          .umod(ecCurve.n);
+        strictEqual(tssPrivKey.toString(16, 64), newTSSPrivKey.toString(16, 64));
+      }
+      {
+        const newTSSPrivKey = getLagrangeCoeffs([1, 3], 1)
+          .mul(new BN(dkg2Priv, "hex"))
+          .add(getLagrangeCoeffs([1, 3], 3).mul(newTSS3))
+          .umod(ecCurve.n);
+        strictEqual(tssPrivKey.toString(16, 64), newTSSPrivKey.toString(16, 64));
+      }
 
-      pbcopy(JSON.stringify(tb2.metadata));
+      // pbcopy(JSON.stringify(tb2.metadata));
       // delete TSS share
     });
 
