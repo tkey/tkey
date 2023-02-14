@@ -218,6 +218,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       strictEqual(tss2Pub.y.toString(16, 64), _tss2Pub.y.toString(16, 64));
     });
     it("#should be able to reconstruct tss key from factor key (tss2) when initializing a key with useTSS true", async function () {
+      // This is not possible IRL because tss1 isn't suppose to be exposed
       const sp = customSP;
       if (!sp.tssVerifier) return;
 
@@ -256,6 +257,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       strictEqual(tssPubKey.y.toString(16, 64), tssCommits[0].y.toString(16, 64));
     });
     it(`#should be able to recover tssShare from hierarchical encryption`, async function () {
+      // Where is the hierarchical encryption here? looks like test is incomplete
       const sp = customSP;
       if (!sp.tssVerifier) return;
 

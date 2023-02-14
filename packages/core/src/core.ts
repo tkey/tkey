@@ -684,6 +684,7 @@ class ThresholdKey implements ITKey {
     const oldLabel = `${vid}\u0015${tssTag}\u0016${tssNonce}`;
     const newLabel = `${vid}\u0015${tssTag}\u0016${tssNonce + 1}`;
 
+    // n api calls
     const refreshResponses = await rssClient.refresh({
       factorPubs: factorPubs.map((f) => hexPoint(f)),
       targetIndexes,
