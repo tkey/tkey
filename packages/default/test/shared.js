@@ -230,6 +230,8 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         .umod(ecCurve.n);
 
       // Create 2/3 sahres
+
+      // Basic server setup
       const serverEndpoints = [new MockServer(), new MockServer(), new MockServer(), new MockServer(), new MockServer()];
       const serverCount = serverEndpoints.length;
 
@@ -243,6 +245,8 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
           return postEndpoint(endpoint, "/private_key", { private_key: serverPrivKeys[i].toString(16, 64) });
         })
       );
+      // Setup done
+
       const serverThreshold = 3;
       const inputIndex = 2;
       const serverPoly = generatePolynomial(serverThreshold - 1, tss1);
@@ -287,6 +291,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         serverPubKeys,
       });
       // pbcopy(JSON.stringify(tb2.metadata));
+
       const { tssShare: newTSS2 } = await tb2.getTSSShare(factorKey);
       const { tssShare: newTSS3 } = await tb2.getTSSShare(factorKey3);
       {
@@ -304,7 +309,36 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         strictEqual(tssPrivKey.toString(16, 64), newTSSPrivKey.toString(16, 64));
       }
 
-      // delete TSS share
+      // delete 3rd TSS share
+      const dkg3Priv = new BN(generatePrivate());
+      const dkg3Pub = ecCurve.g.mul(dkg3Priv);
+      const serverPoly3 = generatePolynomial(serverThreshold - 1, dkg3Priv);
+      await Promise.all(
+        serverEndpoints.map((endpoint, i) => {
+          const shareHex = getShare(serverPoly3, i + 1).toString(16, 64);
+          return postEndpoint(endpoint, "/tss_share", {
+            label: `${testId}\u0015default\u00162`,
+            tss_share_hex: shareHex,
+          });
+        })
+      );
+
+      const factorPubs2 = [tb2.metadata.factorPubs[tssTag].map((x) => hexPoint(x))[0]];
+      await tb2.refreshTSSShares(newTSS2, inputIndex, [2], factorPubs2, testId, hexPoint(dkg3Pub), {
+        serverThreshold: 3,
+        selectedServers: [1, 2, 3],
+        serverEndpoints,
+        serverPubKeys,
+      });
+      const { tssShare: newTSS2Delta } = await tb2.getTSSShare(factorKey);
+
+      {
+        const newTSSPrivKey = getLagrangeCoeffs([1, 2], 1)
+          .mul(new BN(dkg3Priv, "hex"))
+          .add(getLagrangeCoeffs([1, 2], 2).mul(newTSS2Delta))
+          .umod(ecCurve.n);
+        strictEqual(tssPrivKey.toString(16, 64), newTSSPrivKey.toString(16, 64));
+      }
     });
 
     it("#should be able to reconstruct tssShare from factor key (tss2) when initializing a key with useTSS true", async function () {
