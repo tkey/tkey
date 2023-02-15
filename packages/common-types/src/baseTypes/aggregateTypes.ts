@@ -138,6 +138,7 @@ export type RefreshSharesResult = {
 
 export type KeyDetails = {
   pubKey: Point;
+  tssPubKey: Point;
   requiredShares: number;
   threshold: number;
   totalShares: number;
@@ -272,7 +273,16 @@ export interface ITKeyApi {
     serialize: (share: BN, type: string) => Promise<unknown>,
     deserialize: (serializedShare: unknown, type: string) => Promise<BN>
   ): void;
-  generateNewShare(): Promise<GenerateNewShareResult>;
+  generateNewShare(
+    useTSS?: boolean,
+    tssOptions?: {
+      inputTSSShare: BN;
+      inputTSSIndex: number;
+      newFactorPub: Point;
+      newTSSIndex: number;
+      selectedServers?: number[];
+    }
+  ): Promise<GenerateNewShareResult>;
   outputShareStore(shareIndex: BNString, polyID?: string): ShareStore;
   inputShare(share: unknown, type?: string): Promise<void>;
   outputShare(shareIndex: BNString, type?: string): Promise<unknown>;
@@ -314,13 +324,14 @@ export interface ITKey extends ITKeyApi, ISerializable {
 
   reconstructLatestPoly(): Polynomial;
 
+  _getTSSNodeDetails(): Promise<{ serverEndpoints: string[]; serverPubKeys: PointHex[]; serverThreshold: number }>;
+
   refreshTSSShares(
     inputShare: BN,
     inputIndex: number,
     targetIndexes: number[],
     targetFactorsPubs: PointHex[],
     vid: string,
-    newTSSServerPub: PointHex,
     serverOpts: {
       serverEndpoints: string[];
       serverPubKeys: PointHex[];

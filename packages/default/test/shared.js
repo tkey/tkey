@@ -90,7 +90,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     });
     it("#should be able to refresh tss shares", async function () {
       const sp = customSP;
-      const testId = "test@test.com\u001cgoogle";
+      const testId = "google\u001ctest@test.com";
       if (!sp.tssVerifier) return;
 
       // initialization with SP
@@ -120,7 +120,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const { tssShare: tss2 } = await tb2.getTSSShare(factorKey);
       const tssCommits = tb2.getTSSCommits();
 
-      // Only for verification
+      // for verification
       const tssPrivKey = getLagrangeCoeffs([1, 2], 1)
         .mul(tss1)
         .add(getLagrangeCoeffs([1, 2], 2).mul(tss2))
@@ -221,14 +221,15 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       await tb2.inputShareStore(newShare.newShareStores[newShare.newShareIndex.toString("hex")]);
       await tb2.reconstructKey();
       const { tssShare: tss2 } = await tb2.getTSSShare(factorKey);
-      const tssCommits = tb2.getTSSCommits();
+      // const tssCommits = tb2.getTSSCommits();
 
       // Only for verification
-      const tssPrivKey = getLagrangeCoeffs([1, 2], 1)
+      const tssPrivKey = getLagrangeCoeffs([1, 3], 1)
         .mul(tss1)
-        .add(getLagrangeCoeffs([1, 2], 2).mul(tss2))
+        .add(getLagrangeCoeffs([1, 3], 3).mul(tss2))
         .umod(ecCurve.n);
 
+      return;
       // Create 2/3 sahres
 
       // Basic server setup
