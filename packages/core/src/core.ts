@@ -360,7 +360,6 @@ class ThresholdKey implements ITKey {
     const factorPub = getPubKeyPoint(factorKey);
     const factorEncs = this.getFactorEncs(factorPub);
     const { userEnc, serverEncs, tssIndex, type } = factorEncs;
-    console.log(tssIndex);
     const tssShareBufs = await Promise.all(
       [decrypt(Buffer.from(factorKey.toString(16, 64), "hex"), userEnc)].concat(
         serverEncs.map((factorEnc) => decrypt(Buffer.from(factorKey.toString(16, 64), "hex"), factorEnc))
@@ -373,14 +372,14 @@ class ThresholdKey implements ITKey {
     const userDec = tssShareBNs[0];
 
     if (type === "direct") {
-      const tssSharePub = ecCurve.g.mul(userDec); // tss2 pub key
+      const tssUserSharePub = ecCurve.g.mul(userDec); // tss2 pub key
       const tssCommitA0 = ecCurve.keyFromPublic({ x: tssCommits[0].x.toString(16, 64), y: tssCommits[0].y.toString(16, 64) }).getPublic();
       const tssCommitA1 = ecCurve.keyFromPublic({ x: tssCommits[1].x.toString(16, 64), y: tssCommits[1].y.toString(16, 64) }).getPublic();
       let _tssSharePub = tssCommitA0; // tss pubkey
       for (let j = 0; j < tssIndex; j++) {
         _tssSharePub = _tssSharePub.add(tssCommitA1);
       }
-      if (tssSharePub.getX().cmp(_tssSharePub.getX()) === 0 && tssSharePub.getY().cmp(_tssSharePub.getY()) === 0) {
+      if (tssUserSharePub.getX().cmp(_tssSharePub.getX()) === 0 && tssUserSharePub.getY().cmp(_tssSharePub.getY()) === 0) {
         return { tssIndex, tssShare: userDec }; // how could this be same ?? one is tss1 and another is tss
       }
       throw new Error("user decryption does not match tss commitments...");
@@ -400,17 +399,17 @@ class ThresholdKey implements ITKey {
       const selectedServerIndexes = serverIndexes.filter((_, j) => combi.indexOf(j) > -1);
       const serverLagrangeCoeffs = selectedServerIndexes.map((x) => getLagrangeCoeffs(selectedServerIndexes, x));
       const serverInterpolated = dotProduct(serverLagrangeCoeffs, selectedServerDecs, ecCurve.n);
-      const lagrangeCoeffs = [getLagrangeCoeffs([1, tssIndex], 1), getLagrangeCoeffs([1, tssIndex], tssIndex)];
-      const tssShare = dotProduct(lagrangeCoeffs, [serverInterpolated, userDec], ecCurve.n);
-      const tssSharePub = ecCurve.g.mul(tssShare);
+      const lagrangeCoeffs = [getLagrangeCoeffs([1, 2], 1), getLagrangeCoeffs([1, 2], 2)];
+      const tssUserShare = dotProduct(lagrangeCoeffs, [serverInterpolated, userDec], ecCurve.n);
+      const tssUserSharePub = ecCurve.g.mul(tssUserShare);
       const tssCommitA0 = ecCurve.keyFromPublic({ x: tssCommits[0].x.toString(16, 64), y: tssCommits[0].y.toString(16, 64) }).getPublic();
       const tssCommitA1 = ecCurve.keyFromPublic({ x: tssCommits[1].x.toString(16, 64), y: tssCommits[1].y.toString(16, 64) }).getPublic();
       let _tssSharePub = tssCommitA0;
       for (let j = 0; j < tssIndex; j++) {
         _tssSharePub = _tssSharePub.add(tssCommitA1);
       }
-      if (tssSharePub.getX().cmp(_tssSharePub.getX()) === 0 && tssSharePub.getY().cmp(_tssSharePub.getY()) === 0) {
-        return { tssIndex, tssShare };
+      if (tssUserSharePub.getX().cmp(_tssSharePub.getX()) === 0 && tssUserSharePub.getY().cmp(_tssSharePub.getY()) === 0) {
+        return { tssIndex, tssShare: tssUserShare };
       }
     }
     throw new Error("could not find any combination of server decryptions that match tss commitments...");
@@ -882,13 +881,12 @@ class ThresholdKey implements ITKey {
       const tss1PubKey = ecCurve.keyFromPublic({ x: tss1Pub.x.toString(16, 64), y: tss1Pub.y.toString(16, 64) }).getPublic();
       const tss2Pub = getPubKeyPoint(tss2);
       const tss2PubKey = ecCurve.keyFromPublic({ x: tss2Pub.x.toString(16, 64), y: tss2Pub.y.toString(16, 64) }).getPublic();
-
-      const L1_0 = getLagrangeCoeffs([1, 3], 1, 0);
-      const L2_0 = getLagrangeCoeffs([1, 3], 3, 0);
+      const tss2Index = 2;
+      const L1_0 = getLagrangeCoeffs([1, tss2Index], 1, 0);
+      const L2_0 = getLagrangeCoeffs([1, tss2Index], tss2Index, 0);
 
       // Why this specific commitment strategy ?
       // Can there be another strategy ?
-
       const a0Pub = tss1PubKey.mul(L1_0).add(tss2PubKey.mul(L2_0));
       const a1Pub = tss1PubKey.add(a0Pub.neg());
 
@@ -904,7 +902,7 @@ class ThresholdKey implements ITKey {
         const f = factorPubs[i];
         const factorPubID = f.x.toString(16, 64);
         factorEncs[factorPubID] = {
-          tssIndex: 3,
+          tssIndex: tss2Index,
           type: "direct",
           userEnc: await encrypt(
             Buffer.concat([Buffer.from("04", "hex"), Buffer.from(f.x.toString(16, 64), "hex"), Buffer.from(f.y.toString(16, 64), "hex")]),
