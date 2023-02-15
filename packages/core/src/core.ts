@@ -360,6 +360,7 @@ class ThresholdKey implements ITKey {
     const factorPub = getPubKeyPoint(factorKey);
     const factorEncs = this.getFactorEncs(factorPub);
     const { userEnc, serverEncs, tssIndex, type } = factorEncs;
+    console.log(tssIndex);
     const tssShareBufs = await Promise.all(
       [decrypt(Buffer.from(factorKey.toString(16, 64), "hex"), userEnc)].concat(
         serverEncs.map((factorEnc) => decrypt(Buffer.from(factorKey.toString(16, 64), "hex"), factorEnc))
@@ -882,11 +883,12 @@ class ThresholdKey implements ITKey {
       const tss2Pub = getPubKeyPoint(tss2);
       const tss2PubKey = ecCurve.keyFromPublic({ x: tss2Pub.x.toString(16, 64), y: tss2Pub.y.toString(16, 64) }).getPublic();
 
-      const L1_0 = getLagrangeCoeffs([1, 2], 1, 0);
-      const L2_0 = getLagrangeCoeffs([1, 2], 2, 0);
+      const L1_0 = getLagrangeCoeffs([1, 3], 1, 0);
+      const L2_0 = getLagrangeCoeffs([1, 3], 3, 0);
 
       // Why this specific commitment strategy ?
       // Can there be another strategy ?
+
       const a0Pub = tss1PubKey.mul(L1_0).add(tss2PubKey.mul(L2_0));
       const a1Pub = tss1PubKey.add(a0Pub.neg());
 
@@ -902,7 +904,7 @@ class ThresholdKey implements ITKey {
         const f = factorPubs[i];
         const factorPubID = f.x.toString(16, 64);
         factorEncs[factorPubID] = {
-          tssIndex: 2,
+          tssIndex: 3,
           type: "direct",
           userEnc: await encrypt(
             Buffer.concat([Buffer.from("04", "hex"), Buffer.from(f.x.toString(16, 64), "hex"), Buffer.from(f.y.toString(16, 64), "hex")]),

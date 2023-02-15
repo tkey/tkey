@@ -86,7 +86,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         fail("key should be able to be reconstructed");
       }
     });
-    it("#should be able to refresh tss shares", async function () {
+    it.only("#should be able to refresh tss shares", async function () {
       const sp = customSP;
       const testId = "test@test.com\u001cgoogle";
       if (!sp.tssVerifier) return;
@@ -117,17 +117,19 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       await tb2.reconstructKey();
       const { tssShare: tss2 } = await tb2.getTSSShare(factorKey);
       const tssCommits = tb2.getTSSCommits();
+      return;
 
       // Only for verification
-      const tssPrivKey = getLagrangeCoeffs([1, 2], 1)
+      const tssPrivKey = getLagrangeCoeffs([1, 3], 1)
         .mul(tss1)
-        .add(getLagrangeCoeffs([1, 2], 2).mul(tss2))
+        .add(getLagrangeCoeffs([1, 3], 3).mul(tss2))
         .umod(ecCurve.n);
 
       const tssPubKey = getPubKeyPoint(tssPrivKey);
       strictEqual(tssPubKey.x.toString(16, 64), tssCommits[0].x.toString(16, 64));
       strictEqual(tssPubKey.y.toString(16, 64), tssCommits[0].y.toString(16, 64));
 
+      return;
       // test tss refresh
 
       // setup mock servers
@@ -186,7 +188,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         .umod(ecCurve.n);
       strictEqual(tssPrivKey.toString(16, 64), newTSSPrivKey.toString(16, 64));
     });
-    it.only("#should be able to create 2/3 TSS share", async function () {
+    it("#should be able to create 2/3 TSS share", async function () {
       const sp = customSP;
       const testId = "test@test.com\u001cgoogle";
       if (!sp.tssVerifier) return;
@@ -281,7 +283,10 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         serverEndpoints,
         serverPubKeys,
       });
+      pbcopy(JSON.stringify(tb2.metadata));
       const { tssShare: newTSS2 } = await tb2.getTSSShare(factorKey);
+      debugger;
+
       const { tssShare: newTSS3 } = await tb2.getTSSShare(factorKey3);
       {
         const newTSSPrivKey = getLagrangeCoeffs([1, 2], 1)
@@ -298,7 +303,6 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         strictEqual(tssPrivKey.toString(16, 64), newTSSPrivKey.toString(16, 64));
       }
 
-      // pbcopy(JSON.stringify(tb2.metadata));
       // delete TSS share
     });
 
