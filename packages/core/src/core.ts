@@ -605,7 +605,10 @@ class ThresholdKey implements ITKey {
     shareIndex: BNString,
     useTSS?: boolean,
     tssOptions?: {
+      inputShare: BN;
+      inputIndex: number;
       factorPub: Point;
+      selectedServers?: number[];
     }
   ): Promise<DeleteShareResult> {
     if (!this.metadata) {
@@ -643,13 +646,25 @@ class ThresholdKey implements ITKey {
     }
 
     if (useTSS) {
-      const { factorPub } = tssOptions;
+      const { factorPub, inputIndex, inputShare, selectedServers } = tssOptions;
       const existingFactorPubs = this.metadata.factorPubs[this.tssTag];
       const found = existingFactorPubs.filter((f) => f.x.eq(factorPub.x) && f.y.eq(factorPub.y));
       if (found.length === 0) throw CoreError.default("could not find factorPub to delete");
       if (found.length > 1) throw CoreError.default("found two or more factorPubs that match, error in metadata");
       const updatedFactorPubs = existingFactorPubs.filter((f) => !f.x.eq(factorPub.x) || !f.y.eq(factorPub.y));
       this.metadata.addTSSData({ factorPubs: updatedFactorPubs });
+      const tssNodeDetails = await this._getTSSNodeDetails();
+      const randomSelectedServers = randomSelection(
+        new Array(tssNodeDetails.serverEndpoints.length).fill(null).map((_, i) => i + 1),
+        Math.ceil(tssNodeDetails.serverEndpoints.length / 2)
+      );
+
+      const updatedTSSIndexes = updatedFactorPubs.map((fb) => this.getFactorEncs(fb).tssIndex);
+
+      this.refreshTSSShares(inputShare, inputIndex, updatedTSSIndexes, this.serviceProvider.retrieveVerifierId(), {
+        ...tssNodeDetails,
+        selectedServers: selectedServers || randomSelectedServers,
+      });
     }
 
     const results = await this._refreshShares(pubPoly.getThreshold(), [...newShareIndexes], previousPolyID);
@@ -702,7 +717,10 @@ class ThresholdKey implements ITKey {
         Math.ceil(tssNodeDetails.serverEndpoints.length / 2)
       );
 
-      await this.refreshTSSShares(inputTSSShare, inputTSSIndex, [newTSSIndex], verifierId, {
+      const existingTSSIndexes = existingFactorPubs.map((fb) => this.getFactorEncs(fb).tssIndex);
+      const updatedTSSIndexes = existingTSSIndexes.concat([newTSSIndex]);
+
+      await this.refreshTSSShares(inputTSSShare, inputTSSIndex, updatedTSSIndexes, verifierId, {
         ...tssNodeDetails,
         selectedServers: selectedServers || randomSelectedServers,
       });
