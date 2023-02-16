@@ -87,7 +87,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       if (!sp.tssVerifier) return;
 
       const tss1 = new BN(generatePrivate());
-      sp.setTSSPubKey(getPubKeyPoint(tss1));
+      sp._setTSSPubKey(getPubKeyPoint(tss1));
       sp.postboxKey = new BN(getTempKey(), "hex");
       const storageLayer = initStorageLayer({ hostUrl: metadataURL });
       const tb1 = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync: mode });
