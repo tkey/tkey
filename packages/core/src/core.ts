@@ -928,7 +928,7 @@ class ThresholdKey implements ITKey {
 
   async _initializeNewTSSKey(tssTag, inputShare, factorPub, tssIndex?): Promise<InitializeNewTSSKeyResult> {
     let tss2: BN;
-    const _tssIndex = tssIndex || 2;
+    const _tssIndex = tssIndex || 3; // TODO: fix
     if (inputShare) {
       tss2 = inputShare;
     } else {
@@ -939,10 +939,11 @@ class ThresholdKey implements ITKey {
     const tss2Pub = getPubKeyPoint(tss2);
     const tss2PubKey = ecCurve.keyFromPublic({ x: tss2Pub.x.toString(16, 64), y: tss2Pub.y.toString(16, 64) }).getPublic();
 
-    const L1_0 = getLagrangeCoeffs([1, 2], 1, 0);
-    const L2_0 = getLagrangeCoeffs([1, 2], 2, 0);
+    const L1_0 = getLagrangeCoeffs([1, _tssIndex], 1, 0);
+    // eslint-disable-next-line camelcase
+    const LIndex_0 = getLagrangeCoeffs([1, _tssIndex], _tssIndex, 0);
 
-    const a0Pub = tss1PubKey.mul(L1_0).add(tss2PubKey.mul(L2_0));
+    const a0Pub = tss1PubKey.mul(L1_0).add(tss2PubKey.mul(LIndex_0));
     const a1Pub = tss1PubKey.add(a0Pub.neg());
 
     const tssPolyCommits = [
