@@ -80,15 +80,15 @@ export interface IMetadata extends ISerializable {
 
   getShareIndexesForPolynomial(polyID: PolynomialID): string[];
   getLatestPublicPolynomial(): PublicPolynomial;
-  addTSSData(
-    tssTag: string,
-    tssNonce: number,
-    tssPolyCommits: Point[],
-    factorPubs: Point[],
-    factorEncs: {
+  addTSSData(tssData: {
+    tssTag?: string;
+    tssNonce?: number;
+    tssPolyCommits?: Point[];
+    factorPubs?: Point[];
+    factorEncs?: {
       [factorPubID: string]: FactorEnc;
-    }
-  ): void;
+    };
+  }): void;
   addPublicShare(polynomialID: PolynomialID, publicShare: PublicShare): void;
   setGeneralStoreDomain(key: string, obj: unknown): void;
   getGeneralStoreDomain(key: string): unknown;
@@ -287,7 +287,7 @@ export interface ITKeyApi {
   inputShare(share: unknown, type?: string): Promise<void>;
   outputShare(shareIndex: BNString, type?: string): Promise<unknown>;
   inputShareStore(shareStore: ShareStore): void;
-  deleteShare(shareIndex: BNString): Promise<DeleteShareResult>;
+  deleteShare(shareIndex: BNString, useTSS?: boolean): Promise<DeleteShareResult>;
   encrypt(data: Buffer): Promise<EncryptedMessage>;
   decrypt(encryptedMesage: EncryptedMessage): Promise<Buffer>;
 

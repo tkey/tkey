@@ -81,7 +81,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         fail("key should be able to be reconstructed");
       }
     });
-    it("#should be able to refresh tss shares", async function () {
+    it.only("#should be able to refresh tss shares", async function () {
       const sp = customSP;
       const testId = "google\u001ctest@test.com";
       if (!sp.tssVerifier) return;

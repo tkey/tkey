@@ -293,7 +293,7 @@ class ThresholdKey implements ITKey {
         });
         if (useTSS) {
           const { factorEncs, factorPubs, tssPolyCommits } = await this._initializeNewTSSKey(this.tssTag, inputShare, factorPub, tssIndex);
-          this.metadata.addTSSData(this.tssTag, 0, tssPolyCommits, factorPubs, factorEncs);
+          this.metadata.addTSSData({ tssTag: this.tssTag, tssNonce: 0, tssPolyCommits, factorPubs, factorEncs });
         }
         return this.getKeyDetails();
       }
@@ -601,12 +601,21 @@ class ThresholdKey implements ITKey {
     return lagrangeInterpolatePolynomial(pointsArr);
   }
 
-  async deleteShare(shareIndex: BNString): Promise<DeleteShareResult> {
+  async deleteShare(
+    shareIndex: BNString,
+    useTSS?: boolean,
+    tssOptions?: {
+      factorPub: Point;
+    }
+  ): Promise<DeleteShareResult> {
     if (!this.metadata) {
       throw CoreError.metadataUndefined();
     }
     if (!this.privKey) {
       throw CoreError.privateKeyUnavailable();
+    }
+    if (useTSS && !tssOptions) {
+      throw CoreError.default("cannot useTSS if tssOptions is empty");
     }
     const shareIndexToDelete = new BN(shareIndex, "hex");
     const shareToDelete = this.outputShareStore(shareIndexToDelete);
@@ -632,6 +641,17 @@ class ThresholdKey implements ITKey {
     } else if (newShareIndexes.length < pubPoly.getThreshold()) {
       throw CoreError.default(`Minimum ${pubPoly.getThreshold()} shares are required for tkey. Unable to delete share`);
     }
+
+    if (useTSS) {
+      const { factorPub } = tssOptions;
+      const existingFactorPubs = this.metadata.factorPubs[this.tssTag];
+      const found = existingFactorPubs.filter((f) => f.x.eq(factorPub.x) && f.y.eq(factorPub.y));
+      if (found.length === 0) throw CoreError.default("could not find factorPub to delete");
+      if (found.length > 1) throw CoreError.default("found two or more factorPubs that match, error in metadata");
+      const updatedFactorPubs = existingFactorPubs.filter((f) => !f.x.eq(factorPub.x) || !f.y.eq(factorPub.y));
+      this.metadata.addTSSData({ factorPubs: updatedFactorPubs });
+    }
+
     const results = await this._refreshShares(pubPoly.getThreshold(), [...newShareIndexes], previousPolyID);
     const newShareStores = results.shareStores;
     await this.addLocalMetadataTransitions({ input: [{ message: SHARE_DELETED, dateAdded: Date.now() }], privKey: [shareToDelete.share.share] });
@@ -667,13 +687,13 @@ class ThresholdKey implements ITKey {
       const updatedFactorPubs = existingFactorPubs.concat([newFactorPub]);
 
       // only modify factorPubs
-      this.metadata.addTSSData(
-        this.tssTag,
-        this.metadata.tssNonces[this.tssTag],
-        this.metadata.tssPolyCommits[this.tssTag],
-        updatedFactorPubs,
-        this.metadata.factorEncs[this.tssTag]
-      );
+      this.metadata.addTSSData({
+        tssTag: this.tssTag,
+        tssNonce: this.metadata.tssNonces[this.tssTag],
+        tssPolyCommits: this.metadata.tssPolyCommits[this.tssTag],
+        factorPubs: updatedFactorPubs,
+        factorEncs: this.metadata.factorEncs[this.tssTag],
+      });
 
       const verifierId = this.serviceProvider.retrieveVerifierId();
       const tssNodeDetails = await this._getTSSNodeDetails();
@@ -770,7 +790,7 @@ class ThresholdKey implements ITKey {
         serverEncs: refreshResponse.serverFactorEncs,
       };
     }
-    this.metadata.addTSSData(this.tssTag, tssNonce + 1, newTSSCommits, factorPubs, factorEncs);
+    this.metadata.addTSSData({ tssTag: this.tssTag, tssNonce: tssNonce + 1, tssPolyCommits: newTSSCommits, factorPubs, factorEncs });
   }
 
   async _refreshShares(

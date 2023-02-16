@@ -175,19 +175,20 @@ class Metadata implements IMetadata {
     return this.tkeyStore[key];
   }
 
-  addTSSData(
-    tssTag: string,
-    tssNonce: number,
-    tssPolyCommits: Point[],
-    factorPubs: Point[],
-    factorEncs: {
+  addTSSData(tssData: {
+    tssTag?: string;
+    tssNonce?: number;
+    tssPolyCommits?: Point[];
+    factorPubs?: Point[];
+    factorEncs?: {
       [factorPubID: string]: FactorEnc;
-    }
-  ): void {
-    this.tssNonces[tssTag] = tssNonce;
-    this.tssPolyCommits[tssTag] = tssPolyCommits;
-    this.factorPubs[tssTag] = factorPubs;
-    this.factorEncs[tssTag] = factorEncs;
+    };
+  }): void {
+    const { tssTag, tssNonce, tssPolyCommits, factorPubs, factorEncs } = tssData;
+    if (tssNonce !== undefined) this.tssNonces[tssTag] = tssNonce;
+    if (tssPolyCommits) this.tssPolyCommits[tssTag] = tssPolyCommits;
+    if (factorPubs) this.factorPubs[tssTag] = factorPubs;
+    if (factorEncs) this.factorEncs[tssTag] = factorEncs;
   }
 
   // appends shares and public polynomial to metadata.
