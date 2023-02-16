@@ -1619,6 +1619,7 @@ class ThresholdKey implements ITKey {
   }
 
   /// Destructive method. All data will be wiped!
+  // TODO: tssTag should be different from the user if they decide to delete and recreate tkey
   async CRITICAL_deleteTkey(): Promise<void> {
     if (!this.metadata) {
       throw CoreError.metadataUndefined();
