@@ -327,8 +327,9 @@ export interface ITKey extends ITKeyApi, ISerializable {
   _getTSSNodeDetails(): Promise<{ serverEndpoints: string[]; serverPubKeys: PointHex[]; serverThreshold: number }>;
 
   refreshTSSShares(
-    inputShare: BN,
-    inputIndex: number,
+    deviceTSSShare: BN,
+    deviceTSSIndex: number,
+    factorPubs: Point[],
     targetIndexes: number[],
     vid: string,
     serverOpts: {

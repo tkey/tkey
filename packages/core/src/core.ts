@@ -228,9 +228,9 @@ class ThresholdKey implements ITKey {
     previousLocalMetadataTransitions?: LocalMetadataTransitions;
     delete1OutOf1?: boolean;
     useTSS?: boolean;
-    inputShare?: BN;
+    deviceTSSShare?: BN;
+    deviceTSSIndex?: number;
     factorPub?: Point;
-    tssIndex?: number;
   }): Promise<KeyDetails> {
     // setup initial params/states
     const p = params || {};
@@ -245,9 +245,9 @@ class ThresholdKey implements ITKey {
       previouslyFetchedCloudMetadata,
       previousLocalMetadataTransitions,
       useTSS,
-      inputShare,
+      deviceTSSShare,
       factorPub,
-      tssIndex,
+      deviceTSSIndex,
     } = p;
 
     if (useTSS && !factorPub) {
@@ -292,7 +292,7 @@ class ThresholdKey implements ITKey {
           delete1OutOf1: p.delete1OutOf1,
         });
         if (useTSS) {
-          const { factorEncs, factorPubs, tssPolyCommits } = await this._initializeNewTSSKey(this.tssTag, inputShare, factorPub, tssIndex);
+          const { factorEncs, factorPubs, tssPolyCommits } = await this._initializeNewTSSKey(this.tssTag, deviceTSSShare, factorPub, deviceTSSIndex);
           this.metadata.addTSSData({ tssTag: this.tssTag, tssNonce: 0, tssPolyCommits, factorPubs, factorEncs });
         }
         return this.getKeyDetails();
@@ -353,7 +353,7 @@ class ThresholdKey implements ITKey {
     if (useTSS) {
       if (!this.metadata.tssPolyCommits[this.tssTag]) {
         // if tss shares have not been created for this tssTag, create new tss sharing
-        await this._initializeNewTSSKey(this.tssTag, inputShare, factorPub);
+        await this._initializeNewTSSKey(this.tssTag, deviceTSSShare, factorPub);
       }
     }
 
@@ -420,7 +420,7 @@ class ThresholdKey implements ITKey {
       const selectedServerIndexes = serverIndexes.filter((_, j) => combi.indexOf(j) > -1);
       const serverLagrangeCoeffs = selectedServerIndexes.map((x) => getLagrangeCoeffs(selectedServerIndexes, x));
       const serverInterpolated = dotProduct(serverLagrangeCoeffs, selectedServerDecs, ecCurve.n);
-      const lagrangeCoeffs = [getLagrangeCoeffs([1, tssIndex], 1), getLagrangeCoeffs([1, tssIndex], tssIndex)];
+      const lagrangeCoeffs = [getLagrangeCoeffs([1, 99], 1), getLagrangeCoeffs([1, 99], 99)];
       const tssShare = dotProduct(lagrangeCoeffs, [serverInterpolated, userDec], ecCurve.n);
       const tssSharePub = ecCurve.g.mul(tssShare);
       const tssCommitA0 = ecCurve.keyFromPublic({ x: tssCommits[0].x.toString(16, 64), y: tssCommits[0].y.toString(16, 64) }).getPublic();
@@ -605,8 +605,8 @@ class ThresholdKey implements ITKey {
     shareIndex: BNString,
     useTSS?: boolean,
     tssOptions?: {
-      inputShare: BN;
-      inputIndex: number;
+      deviceTSSShare: BN;
+      deviceTSSIndex: number;
       factorPub: Point;
       selectedServers?: number[];
     }
@@ -646,7 +646,7 @@ class ThresholdKey implements ITKey {
     }
 
     if (useTSS) {
-      const { factorPub, inputIndex, inputShare, selectedServers } = tssOptions;
+      const { factorPub, deviceTSSIndex, deviceTSSShare, selectedServers } = tssOptions;
       const existingFactorPubs = this.metadata.factorPubs[this.tssTag];
       const found = existingFactorPubs.filter((f) => f.x.eq(factorPub.x) && f.y.eq(factorPub.y));
       if (found.length === 0) throw CoreError.default("could not find factorPub to delete");
@@ -661,7 +661,7 @@ class ThresholdKey implements ITKey {
 
       const updatedTSSIndexes = updatedFactorPubs.map((fb) => this.getFactorEncs(fb).tssIndex);
 
-      this.refreshTSSShares(inputShare, inputIndex, updatedTSSIndexes, this.serviceProvider.retrieveVerifierId(), {
+      this.refreshTSSShares(deviceTSSShare, deviceTSSIndex, updatedFactorPubs, updatedTSSIndexes, this.serviceProvider.retrieveVerifierId(), {
         ...tssNodeDetails,
         selectedServers: selectedServers || randomSelectedServers,
       });
@@ -720,7 +720,7 @@ class ThresholdKey implements ITKey {
       const existingTSSIndexes = existingFactorPubs.map((fb) => this.getFactorEncs(fb).tssIndex);
       const updatedTSSIndexes = existingTSSIndexes.concat([newTSSIndex]);
 
-      await this.refreshTSSShares(inputTSSShare, inputTSSIndex, updatedTSSIndexes, verifierId, {
+      await this.refreshTSSShares(inputTSSShare, inputTSSIndex, updatedFactorPubs, updatedTSSIndexes, verifierId, {
         ...tssNodeDetails,
         selectedServers: selectedServers || randomSelectedServers,
       });
@@ -741,6 +741,7 @@ class ThresholdKey implements ITKey {
   async refreshTSSShares(
     inputShare: BN,
     inputIndex: number,
+    factorPubs: Point[],
     targetIndexes: number[],
     verifierId: string,
     serverOpts: {
@@ -767,7 +768,6 @@ class ThresholdKey implements ITKey {
     });
 
     if (!this.metadata.factorPubs) throw CoreError.default(`factorPubs obj not found`);
-    const factorPubs = this.metadata.factorPubs[this.tssTag];
     if (!factorPubs) throw CoreError.default(`factorPubs not found for tssTag ${this.tssTag}`);
     if (factorPubs.length === 0) throw CoreError.default(`factorPubs is empty`);
 
@@ -794,7 +794,8 @@ class ThresholdKey implements ITKey {
       selectedServers,
     });
 
-    const newTSSCommits = [tssPubKey, ecPoint(hexPoint(newTSSServerPub)).add(ecPoint(tssPubKey).neg())];
+    const secondCommit = ecPoint(hexPoint(newTSSServerPub)).add(ecPoint(tssPubKey).neg());
+    const newTSSCommits = [Point.fromJSON(tssPubKey), Point.fromJSON({ x: secondCommit.getX(), y: secondCommit.getY() })];
 
     const factorEncs: {
       [factorPubID: string]: FactorEnc;
@@ -926,11 +927,11 @@ class ThresholdKey implements ITKey {
     return { shareStores: newShareStores };
   }
 
-  async _initializeNewTSSKey(tssTag, inputShare, factorPub, tssIndex?): Promise<InitializeNewTSSKeyResult> {
+  async _initializeNewTSSKey(tssTag, deviceTSSShare, factorPub, deviceTSSIndex?): Promise<InitializeNewTSSKeyResult> {
     let tss2: BN;
-    const _tssIndex = tssIndex || 3; // TODO: fix
-    if (inputShare) {
-      tss2 = inputShare;
+    const _tssIndex = deviceTSSIndex || 2; // TODO: fix
+    if (deviceTSSShare) {
+      tss2 = deviceTSSShare;
     } else {
       tss2 = new BN(generatePrivate());
     }

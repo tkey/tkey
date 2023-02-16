@@ -19,7 +19,10 @@ const PRIVATE_KEY = generatePrivate().toString("hex");
 //     baseUrl: "http://localhost:3000",
 //   },
 // });
-const torusSp = new ServiceProviderBase();
+const torusSp = new ServiceProviderBase({
+  postboxKey: PRIVATE_KEY,
+  useTSS: true,
+});
 const metadataURL = getMetadataUrl();
 
 const torusSL = initStorageLayer({ hostUrl: metadataURL });

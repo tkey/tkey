@@ -36,6 +36,7 @@ export type FactorEnc = {
 export interface ServiceProviderArgs {
   enableLogging?: boolean;
   postboxKey?: string;
+  useTSS?: boolean;
 }
 
 export interface TorusServiceProviderArgs extends ServiceProviderArgs {

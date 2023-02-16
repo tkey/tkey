@@ -19,6 +19,8 @@ import { curve } from "elliptic";
 class ServiceProviderBase implements IServiceProvider {
   enableLogging: boolean;
 
+  useTSS: boolean;
+
   tssPubKeys: Record<string, Point>;
 
   // For easy serialization
@@ -32,7 +34,8 @@ class ServiceProviderBase implements IServiceProvider {
     serverThreshold: number;
   };
 
-  constructor({ enableLogging = false, postboxKey }: ServiceProviderArgs) {
+  constructor({ enableLogging = false, postboxKey, useTSS = false }: ServiceProviderArgs) {
+    this.useTSS = useTSS;
     this.enableLogging = enableLogging;
     this.postboxKey = new BN(postboxKey, "hex");
     this.serviceProviderName = "ServiceProviderBase";
@@ -97,7 +100,10 @@ class ServiceProviderBase implements IServiceProvider {
 
   async getTSSPubKey(tssTag: string, tssNonce: number): Promise<Point> {
     const tssPubKey = this.tssPubKeys[`test-tss-verifier\u001ctest-user\u0015${tssTag}\u0016${tssNonce}`];
+
     if (!tssPubKey) {
+      // eslint-disable-next-line no-console
+      console.log(`looking for test-tss-verifier\u001ctest-user\u0015${tssTag}\u0016${tssNonce}`);
       throw new Error("tss pub key could not be found");
     }
     return tssPubKey;
