@@ -1246,7 +1246,6 @@ class ThresholdKey implements ITKey {
 
     return {
       pubKey: this.metadata.pubKey,
-      tssPubKey: this.metadata.tssPolyCommits[this.tssTag][0],
       requiredShares,
       threshold: poly.getThreshold(),
       totalShares: this.metadata.getShareIndexesForPolynomial(previousPolyID).length,

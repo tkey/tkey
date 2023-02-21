@@ -138,7 +138,6 @@ export type RefreshSharesResult = {
 
 export type KeyDetails = {
   pubKey: Point;
-  tssPubKey: Point;
   requiredShares: number;
   threshold: number;
   totalShares: number;
