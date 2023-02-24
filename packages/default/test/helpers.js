@@ -79,11 +79,14 @@ export async function setupTSSMocks(opts) {
     })
   );
 
+  const serverDKGPrivKeys = [serverPoly[0]];
+
   for (let j = 0; j < maxTSSNonceToSimulate; j++) {
     // simulate new key assign
     const dkg2Priv = new BN(generatePrivate());
     const dkg2Pub = ecCurve.g.mul(dkg2Priv);
     const serverPoly2 = generatePolynomial(serverThreshold - 1, dkg2Priv);
+    serverDKGPrivKeys.push(serverPoly2[0]);
     await Promise.all(
       serverEndpoints.map((endpoint, i) => {
         const shareHex = getShare(serverPoly2, i + 1).toString(16, 64);
@@ -102,5 +105,7 @@ export async function setupTSSMocks(opts) {
     deviceTSSIndex,
     serverEndpoints,
     serverPubKeys,
+    tss1,
+    serverDKGPrivKeys,
   };
 }

@@ -19,7 +19,7 @@ import { createSandbox } from "sinon";
 import { keccak256 } from "web3-utils";
 
 import ThresholdKey from "../src/index";
-import { getMetadataUrl, getServiceProvider, initStorageLayer, isMocked } from "./helpers";
+import { getMetadataUrl, getServiceProvider, initStorageLayer, isMocked, setupTSSMocks } from "./helpers";
 
 const rejects = async (fn, error, msg) => {
   let f = () => {};
@@ -71,9 +71,13 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const testId = "google\u001ctest@test.com";
       if (!sp.useTSS) return;
 
-      const tss1 = new BN(generatePrivate());
-      const deviceTSSShare = new BN(generatePrivate());
-      const deviceTSSIndex = 3;
+      const { deviceTSSIndex, deviceTSSShare, serverEndpoints, serverPubKeys, tss1, serverDKGPrivKeys } = await setupTSSMocks({
+        serviceProvider: sp,
+        deviceTSSShare: new BN(generatePrivate()),
+        deviceTSSIndex: 3,
+        testId,
+        maxTSSNonceToSimulate: 1,
+      });
 
       sp._setTSSPubKey("default", 0, getPubKeyPoint(tss1));
       sp.postboxKey = new BN(getTempKey(), "hex");
@@ -110,50 +114,6 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
 
       // test tss refresh
 
-      // setup mock servers
-      const serverEndpoints = [new MockServer(), new MockServer(), new MockServer(), new MockServer(), new MockServer()];
-      const serverCount = serverEndpoints.length;
-
-      const serverPrivKeys = [];
-      for (let i = 0; i < serverCount; i++) {
-        serverPrivKeys.push(new BN(generatePrivate()));
-      }
-      const serverPubKeys = serverPrivKeys.map((privKey) => hexPoint(ecCurve.g.mul(privKey)));
-      await Promise.all(
-        serverEndpoints.map((endpoint, i) => {
-          return postEndpoint(endpoint, "/private_key", { private_key: serverPrivKeys[i].toString(16, 64) });
-        })
-      );
-      const serverThreshold = 3;
-      const serverPoly = generatePolynomial(serverThreshold - 1, tss1);
-
-      // set tssShares on servers
-      await Promise.all(
-        serverEndpoints.map((endpoint, i) => {
-          return postEndpoint(endpoint, "/tss_share", {
-            label: `${testId}\u0015default\u00160`,
-            tss_share_hex: getShare(serverPoly, i + 1).toString(16, 64),
-          });
-        })
-      );
-
-      // simulate new key assign
-      const dkg2Priv = new BN(generatePrivate());
-      const dkg2Pub = ecCurve.g.mul(dkg2Priv);
-      const serverPoly2 = generatePolynomial(serverThreshold - 1, dkg2Priv);
-      await Promise.all(
-        serverEndpoints.map((endpoint, i) => {
-          const shareHex = getShare(serverPoly2, i + 1).toString(16, 64);
-
-          return postEndpoint(endpoint, "/tss_share", {
-            label: `${testId}\u0015default\u00161`,
-            tss_share_hex: shareHex,
-          });
-        })
-      );
-
-      sp._setTSSPubKey("default", 1, new Point(dkg2Pub.x, dkg2Pub.y));
-
       const factorKey2 = new BN(generatePrivate());
       const factorPub2 = ecCurve.g.mul(factorKey2);
 
@@ -169,7 +129,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       {
         const { tssShare: newTSS2 } = await tb2.getTSSShare(factorKey);
         const newTSSPrivKey = getLagrangeCoeffs([1, 2], 1)
-          .mul(new BN(dkg2Priv, "hex"))
+          .mul(new BN(serverDKGPrivKeys[1], "hex"))
           .add(getLagrangeCoeffs([1, 2], 2).mul(newTSS2))
           .umod(ecCurve.n);
         strictEqual(tssPrivKey.toString(16, 64), newTSSPrivKey.toString(16, 64));
@@ -178,7 +138,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       {
         const { tssShare: newTSS2 } = await tb2.getTSSShare(factorKey2);
         const newTSSPrivKey = getLagrangeCoeffs([1, 3], 1)
-          .mul(new BN(dkg2Priv, "hex"))
+          .mul(new BN(serverDKGPrivKeys[1], "hex"))
           .add(getLagrangeCoeffs([1, 3], 3).mul(newTSS2))
           .umod(ecCurve.n);
         strictEqual(tssPrivKey.toString(16, 64), newTSSPrivKey.toString(16, 64));
