@@ -1,7 +1,10 @@
+import { ecCurve, getPubKeyPoint, Point } from "@tkey/common-types";
 import ServiceProviderBase from "@tkey/service-provider-base";
 import ServiceProviderTorus from "@tkey/service-provider-torus";
 import TorusStorageLayer, { MockStorageLayer } from "@tkey/storage-layer-torus";
 import { generatePrivate } from "@toruslabs/eccrypto";
+import { generatePolynomial, getShare, hexPoint, MockServer, postEndpoint } from "@toruslabs/rss-client";
+import BN from "bn.js";
 
 let mocked;
 const isNode = process.release;
@@ -41,4 +44,63 @@ export function getServiceProvider(params) {
     });
   }
   return new ServiceProviderBase({ postboxKey: isEmptyProvider ? null : PRIVATE_KEY });
+}
+
+export async function setupTSSMocks(opts) {
+  let { serviceProvider, deviceTSSShare, deviceTSSIndex, testId, maxTSSNonceToSimulate } = opts;
+  maxTSSNonceToSimulate = maxTSSNonceToSimulate || 1;
+  const tss1 = new BN(generatePrivate());
+  const mockServersDKGPub = getPubKeyPoint(tss1);
+  deviceTSSShare = deviceTSSShare || new BN(generatePrivate());
+  deviceTSSIndex = deviceTSSIndex || 2;
+  serviceProvider._setTSSPubKey("default", 0, mockServersDKGPub);
+  const serverEndpoints = [new MockServer(), new MockServer(), new MockServer(), new MockServer(), new MockServer()];
+  const serverCount = serverEndpoints.length;
+  const serverPrivKeys = [];
+  for (let i = 0; i < serverCount; i++) {
+    serverPrivKeys.push(new BN(generatePrivate()));
+  }
+  const serverPubKeys = serverPrivKeys.map((privKey) => hexPoint(ecCurve.g.mul(privKey)));
+  await Promise.all(
+    serverEndpoints.map((endpoint, i) => {
+      return postEndpoint(endpoint, "/private_key", { private_key: serverPrivKeys[i].toString(16, 64) });
+    })
+  );
+  const serverThreshold = 3;
+  const serverPoly = generatePolynomial(serverThreshold - 1, tss1);
+
+  // set tssShares on servers
+  await Promise.all(
+    serverEndpoints.map((endpoint, i) => {
+      return postEndpoint(endpoint, "/tss_share", {
+        label: `${testId}\u0015default\u00160`,
+        tss_share_hex: getShare(serverPoly, i + 1).toString(16, 64),
+      });
+    })
+  );
+
+  for (let j = 0; j < maxTSSNonceToSimulate; j++) {
+    // simulate new key assign
+    const dkg2Priv = new BN(generatePrivate());
+    const dkg2Pub = ecCurve.g.mul(dkg2Priv);
+    const serverPoly2 = generatePolynomial(serverThreshold - 1, dkg2Priv);
+    await Promise.all(
+      serverEndpoints.map((endpoint, i) => {
+        const shareHex = getShare(serverPoly2, i + 1).toString(16, 64);
+
+        return postEndpoint(endpoint, "/tss_share", {
+          label: `${testId}\u0015default\u00161`,
+          tss_share_hex: shareHex,
+        });
+      })
+    );
+    serviceProvider._setTSSPubKey("default", 1, new Point(dkg2Pub.x, dkg2Pub.y));
+  }
+
+  return {
+    deviceTSSShare,
+    deviceTSSIndex,
+    serverEndpoints,
+    serverPubKeys,
+  };
 }

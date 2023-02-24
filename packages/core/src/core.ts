@@ -122,10 +122,11 @@ class ThresholdKey implements ITKey {
   }
 
   static async fromJSON(value: StringifiedType, args: TKeyArgs): Promise<ThresholdKey> {
-    const { enableLogging, privKey, metadata, shares, _localMetadataTransitions, manualSync, lastFetchedCloudMetadata } = value;
+    const { enableLogging, privKey, metadata, shares, _localMetadataTransitions, manualSync, lastFetchedCloudMetadata, tssTag } = value;
     const { storageLayer, serviceProvider, modules } = args;
 
     const tb = new ThresholdKey({
+      tssTag,
       enableLogging,
       storageLayer,
       serviceProvider,
@@ -661,7 +662,7 @@ class ThresholdKey implements ITKey {
 
       const updatedTSSIndexes = updatedFactorPubs.map((fb) => this.getFactorEncs(fb).tssIndex);
 
-      this.refreshTSSShares(deviceTSSShare, deviceTSSIndex, updatedFactorPubs, updatedTSSIndexes, this.serviceProvider.retrieveVerifierId(), {
+      this._refreshTSSShares(false, deviceTSSShare, deviceTSSIndex, updatedFactorPubs, updatedTSSIndexes, this.serviceProvider.retrieveVerifierId(), {
         ...tssNodeDetails,
         selectedServers: selectedServers || randomSelectedServers,
       });
@@ -720,7 +721,7 @@ class ThresholdKey implements ITKey {
       const existingTSSIndexes = existingFactorPubs.map((fb) => this.getFactorEncs(fb).tssIndex);
       const updatedTSSIndexes = existingTSSIndexes.concat([newTSSIndex]);
 
-      await this.refreshTSSShares(inputTSSShare, inputTSSIndex, updatedFactorPubs, updatedTSSIndexes, verifierId, {
+      await this._refreshTSSShares(false, inputTSSShare, inputTSSIndex, updatedFactorPubs, updatedTSSIndexes, verifierId, {
         ...tssNodeDetails,
         selectedServers: selectedServers || randomSelectedServers,
       });
@@ -738,7 +739,8 @@ class ThresholdKey implements ITKey {
     return { newShareStores, newShareIndex };
   }
 
-  async refreshTSSShares(
+  async _refreshTSSShares(
+    updateMetadata: boolean,
     inputShare: BN,
     inputIndex: number,
     factorPubs: Point[],
@@ -774,9 +776,6 @@ class ThresholdKey implements ITKey {
     if (!this.metadata.tssNonces) throw CoreError.default(`tssNonces obj not found`);
     const tssNonce: number = this.metadata.tssNonces[this.tssTag] || 0;
 
-    // eslint-disable-next-line no-console
-    console.log(`tssNonce: ${tssNonce}`);
-
     const oldLabel = `${verifierId}\u0015${this.tssTag}\u0016${tssNonce}`;
     const newLabel = `${verifierId}\u0015${this.tssTag}\u0016${tssNonce + 1}`;
 
@@ -810,6 +809,7 @@ class ThresholdKey implements ITKey {
       };
     }
     this.metadata.addTSSData({ tssTag: this.tssTag, tssNonce: tssNonce + 1, tssPolyCommits: newTSSCommits, factorPubs, factorEncs });
+    if (updateMetadata) await this._syncShareMetadata();
   }
 
   async _refreshShares(
@@ -1584,6 +1584,7 @@ class ThresholdKey implements ITKey {
   toJSON(): StringifiedType {
     return {
       shares: this.shares,
+      tssTag: this.tssTag,
       enableLogging: this.enableLogging,
       privKey: this.privKey ? this.privKey.toString("hex") : undefined,
       metadata: this.metadata,

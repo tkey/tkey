@@ -53,7 +53,6 @@ class TorusServiceProvider extends ServiceProviderBase {
     return this.directWeb.init(params);
   }
 
-  // override base methods
   _setTSSPubKey(tssTag: string, tssNonce: number, tssPubKey: Point): void {
     throw new Error(`this method has been overriden and should not be called with ${tssTag}, ${tssNonce}, ${tssPubKey}`);
   }

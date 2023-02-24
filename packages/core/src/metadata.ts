@@ -84,7 +84,7 @@ class Metadata implements IMetadata {
   }
 
   static fromJSON(value: StringifiedType): Metadata {
-    const { pubKey, polyIDList, generalStore, tkeyStore, scopedStore, nonce, tssPolyCommits, factorPubs, factorEncs } = value;
+    const { pubKey, polyIDList, generalStore, tkeyStore, scopedStore, nonce, tssNonces, tssPolyCommits, factorPubs, factorEncs } = value;
     const point = Point.fromCompressedPub(pubKey);
     const metadata = new Metadata(point);
     const unserializedPolyIDList: PolyIDAndShares[] = [];
@@ -97,6 +97,12 @@ class Metadata implements IMetadata {
       metadata.tssPolyCommits = {};
       for (const key in tssPolyCommits) {
         metadata.tssPolyCommits[key] = tssPolyCommits[key].map((obj) => new Point(obj.x, obj.y));
+      }
+    }
+    if (tssNonces) {
+      metadata.tssNonces = {};
+      for (const key in tssNonces) {
+        metadata.tssNonces[key] = tssNonces[key];
       }
     }
     if (factorPubs) {
