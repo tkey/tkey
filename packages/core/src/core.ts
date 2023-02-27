@@ -823,6 +823,7 @@ class ThresholdKey implements ITKey {
         serverEncs: refreshResponse.serverFactorEncs,
       };
     }
+
     this.metadata.addTSSData({ tssTag: this.tssTag, tssNonce: tssNonce + 1, tssPolyCommits: newTSSCommits, factorPubs, factorEncs });
     if (updateMetadata) await this._syncShareMetadata();
   }

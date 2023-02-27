@@ -42,7 +42,6 @@ function getTempKey() {
 function compareBNArray(a, b, message) {
   if (a.length !== b.length) throw new Error(message);
   return a.map((el) => {
-    // console.log(el, b[index], el.cmp(b[index]));
     const found = b.find((pl) => pl.cmp(el) === 0);
     if (!found) throw new Error(message);
     return 0;
@@ -318,7 +317,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         strictEqual(tssPrivKey.toString(16, 64), newTSSPrivKey.toString(16, 64));
       }
     });
-    describe(`with tss, tkey share deletion`, function () {
+    describe("with tss, tkey share deletion", function () {
       let deletedShareIndex;
       let deletedShareStores;
       let shareStoreAfterDelete;
@@ -329,10 +328,10 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       let newFactorKey;
       before(`#should be able to generate and delete a share, manualSync=${mode}`, async function () {
         if (!customSP.useTSS) this.skip();
-        const testId = "google\u001ctest@test.com";
         await setupTSSMocks({
           serviceProvider: customSP,
-          testId,
+          verifierName: "google",
+          verifierId: "test@test.com",
           maxTSSNonceToSimulate: 4,
         });
 
@@ -449,6 +448,211 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         if (resp1.privKey.cmp(reconstructedKey.privKey) === 0) {
           fail("key should be different");
         }
+      });
+    });
+    describe("with tss, tkey serialization/deserialization", function () {
+      let tb;
+      beforeEach("Setup ThresholdKey", async function () {
+        if (!customSP.useTSS) this.skip();
+        tb = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
+      });
+      it(`#should serialize and deserialize correctly without tkeyArgs, manualSync=${mode}`, async function () {
+        if (!customSP.useTSS) this.skip();
+        let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
+        userInput = userInput.umod(ecCurve.curve.n);
+        const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
+
+        const { serverDKGPrivKeys } = await setupTSSMocks({
+          serviceProvider: customSP,
+          verifierName: "google",
+          verifierId: "test@test.com",
+          maxTSSNonceToSimulate: 4,
+        });
+        const deviceTSSShare = new BN(generatePrivate());
+        const deviceTSSIndex = 2;
+        const factorKey = new BN(generatePrivate());
+        const factorPub = getPubKeyPoint(factorKey);
+        const { factorEncs, factorPubs, tssPolyCommits } = await tb._initializeNewTSSKey("default", deviceTSSShare, factorPub, deviceTSSIndex);
+        tb.metadata.addTSSData({ tssTag: tb.tssTag, tssNonce: 0, tssPolyCommits, factorPubs, factorEncs });
+        const { tssShare, tssIndex } = await tb.getTSSShare(factorKey);
+
+        const tssPrivKey = getLagrangeCoeffs([1, tssIndex], 1)
+          .mul(serverDKGPrivKeys[0])
+          .add(getLagrangeCoeffs([1, tssIndex], tssIndex).mul(tssShare))
+          .umod(ecCurve.n);
+
+        const newFactorKey = new BN(generatePrivate());
+        const newFactorPub = getPubKeyPoint(newFactorKey);
+
+        await tb.generateNewShare(true, {
+          inputTSSShare: tssShare,
+          inputTSSIndex: tssIndex,
+          newFactorPub,
+          newTSSIndex: 3,
+        });
+        await tb.syncLocalMetadataTransitions();
+
+        const stringified = JSON.stringify(tb);
+        const tb3 = await ThresholdKey.fromJSON(JSON.parse(stringified));
+        const finalKey = await tb3.reconstructKey();
+        strictEqual(finalKey.privKey.toString("hex"), resp1.privKey.toString("hex"), "Incorrect serialization");
+
+        const { tssShare: tssShare2, tssIndex: tssIndex2 } = await tb.getTSSShare(newFactorKey);
+        const tssPrivKey2 = getLagrangeCoeffs([1, tssIndex2], 1)
+          .mul(serverDKGPrivKeys[1])
+          .add(getLagrangeCoeffs([1, tssIndex2], tssIndex2).mul(tssShare2))
+          .umod(ecCurve.n);
+        strictEqual(tssPrivKey.toString("hex"), tssPrivKey2.toString("hex"), "Incorrect tss key");
+      });
+      it(`#should serialize and deserialize correctly with tkeyArgs, manualSync=${mode}`, async function () {
+        if (!customSP.useTSS) this.skip();
+        let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
+        userInput = userInput.umod(ecCurve.curve.n);
+        const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
+
+        const { serverDKGPrivKeys } = await setupTSSMocks({
+          serviceProvider: customSP,
+          verifierName: "google",
+          verifierId: "test@test.com",
+          maxTSSNonceToSimulate: 4,
+        });
+        const deviceTSSShare = new BN(generatePrivate());
+        const deviceTSSIndex = 2;
+        const factorKey = new BN(generatePrivate());
+        const factorPub = getPubKeyPoint(factorKey);
+        const { factorEncs, factorPubs, tssPolyCommits } = await tb._initializeNewTSSKey("default", deviceTSSShare, factorPub, deviceTSSIndex);
+        tb.metadata.addTSSData({ tssTag: tb.tssTag, tssNonce: 0, tssPolyCommits, factorPubs, factorEncs });
+        const { tssShare, tssIndex } = await tb.getTSSShare(factorKey);
+        const tssPrivKey = getLagrangeCoeffs([1, tssIndex], 1)
+          .mul(serverDKGPrivKeys[0])
+          .add(getLagrangeCoeffs([1, tssIndex], tssIndex).mul(tssShare))
+          .umod(ecCurve.n);
+
+        const newFactorKey = new BN(generatePrivate());
+        const newFactorPub = getPubKeyPoint(newFactorKey);
+
+        await tb.generateNewShare(true, {
+          inputTSSShare: tssShare,
+          inputTSSIndex: tssIndex,
+          newFactorPub,
+          newTSSIndex: 3,
+        });
+
+        await tb.syncLocalMetadataTransitions();
+
+        const stringified = JSON.stringify(tb);
+        const tb3 = await ThresholdKey.fromJSON(JSON.parse(stringified), { serviceProvider: customSP, storageLayer: customSL });
+        const finalKey = await tb3.reconstructKey();
+        strictEqual(finalKey.privKey.toString("hex"), resp1.privKey.toString("hex"), "Incorrect serialization");
+
+        const { tssShare: tssShare2, tssIndex: tssIndex2 } = await tb.getTSSShare(newFactorKey);
+        const tssPrivKey2 = getLagrangeCoeffs([1, tssIndex2], 1)
+          .mul(serverDKGPrivKeys[1])
+          .add(getLagrangeCoeffs([1, tssIndex2], tssIndex2).mul(tssShare2))
+          .umod(ecCurve.n);
+        strictEqual(tssPrivKey.toString("hex"), tssPrivKey2.toString("hex"), "Incorrect tss key");
+      });
+      it(`#should serialize and deserialize correctly, keeping localTransitions consistent before syncing NewKeyAssign, manualSync=${mode}`, async function () {
+        if (!customSP.useTSS) this.skip();
+        let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
+        userInput = userInput.umod(ecCurve.curve.n);
+        const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
+
+        // generate and delete
+        const { newShareIndex: shareIndex1 } = await tb.generateNewShare();
+        await tb.deleteShare(shareIndex1);
+
+        const { newShareStores: shareStores, newShareIndex: shareIndex } = await tb.generateNewShare();
+
+        const stringified = JSON.stringify(tb);
+        const tb2 = await ThresholdKey.fromJSON(JSON.parse(stringified), { serviceProvider: customSP, storageLayer: customSL });
+        if (tb2.manualSync !== mode) {
+          fail(`manualSync should be ${mode}`);
+        }
+        const finalKey = await tb2.reconstructKey();
+        const shareToVerify = tb2.outputShareStore(shareIndex);
+        strictEqual(shareStores[shareIndex.toString("hex")].share.share.toString("hex"), shareToVerify.share.share.toString("hex"));
+        await tb2.syncLocalMetadataTransitions();
+        strictEqual(finalKey.privKey.toString("hex"), resp1.privKey.toString("hex"), "Incorrect serialization");
+
+        const reconstructedKey2 = await tb2.reconstructKey();
+        if (resp1.privKey.cmp(reconstructedKey2.privKey) !== 0) {
+          fail("key should be able to be reconstructed");
+        }
+      });
+      it(`#should serialize and deserialize correctly keeping localTransitions afterNewKeyAssign, manualSync=${mode}`, async function () {
+        if (!customSP.useTSS) this.skip();
+        let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
+        userInput = userInput.umod(ecCurve.curve.n);
+        const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
+        await tb.syncLocalMetadataTransitions();
+        const reconstructedKey = await tb.reconstructKey();
+        const { newShareStores: shareStores, newShareIndex: shareIndex } = await tb.generateNewShare();
+
+        const stringified = JSON.stringify(tb);
+        const tb2 = await ThresholdKey.fromJSON(JSON.parse(stringified), { serviceProvider: customSP, storageLayer: customSL });
+        const finalKey = await tb2.reconstructKey();
+        const shareToVerify = tb2.outputShareStore(shareIndex);
+        strictEqual(shareStores[shareIndex.toString("hex")].share.share.toString("hex"), shareToVerify.share.share.toString("hex"));
+        await tb2.syncLocalMetadataTransitions();
+        strictEqual(finalKey.privKey.toString("hex"), reconstructedKey.privKey.toString("hex"), "Incorrect serialization");
+
+        const reconstructedKey2 = await tb2.reconstructKey();
+        if (resp1.privKey.cmp(reconstructedKey2.privKey) !== 0) {
+          fail("key should be able to be reconstructed");
+        }
+      });
+
+      it(`#should be able to reshare a key and retrieve from service provider serialization, manualSync=${mode}`, async function () {
+        const resp1 = await tb._initializeNewKey({ initializeModules: true });
+        const { newShareStores, newShareIndex } = await tb.generateNewShare();
+        await tb.syncLocalMetadataTransitions();
+        const tb3 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
+        await tb3.initialize();
+        tb3.inputShareStore(newShareStores[newShareIndex.toString("hex")]);
+
+        const stringified = JSON.stringify(tb3);
+        const tb4 = await ThresholdKey.fromJSON(JSON.parse(stringified), { serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
+        const finalKeyPostSerialization = await tb4.reconstructKey();
+        strictEqual(finalKeyPostSerialization.privKey.toString("hex"), resp1.privKey.toString("hex"), "Incorrect serialization");
+      });
+      it(`#should be able to serialize and deserialize without service provider share or the postbox key, manualSync=${mode}`, async function () {
+        const customSP2 = getServiceProvider({ type: torusSP.serviceProviderName });
+        const customSL2 = initStorageLayer({ hostUrl: metadataURL });
+        const tb = new ThresholdKey({ serviceProvider: customSP2, storageLayer: customSL2, manualSync: mode });
+        const resp1 = await tb._initializeNewKey({ initializeModules: true });
+        const { newShareStores: newShareStores1, newShareIndex: newShareIndex1 } = await tb.generateNewShare();
+        await tb.syncLocalMetadataTransitions();
+
+        const customSP3 = getServiceProvider({ type: torusSP.serviceProviderName, isEmptyProvider: true });
+        customSL2.serviceProvider = customSP3;
+        const tb2 = new ThresholdKey({ serviceProvider: customSP2, storageLayer: customSL2, manualSync: mode });
+        await tb2.initialize({ withShare: resp1.deviceShare });
+        tb2.inputShareStore(newShareStores1[newShareIndex1.toString("hex")]);
+        await tb2.reconstructKey();
+        const stringified = JSON.stringify(tb2);
+
+        const tb3 = await ThresholdKey.fromJSON(JSON.parse(stringified));
+        const tb3Key = await tb3.reconstructKey();
+        strictEqual(tb3Key.privKey.toString("hex"), resp1.privKey.toString("hex"), "Incorrect serialization");
+      });
+      it(`#should not be able to updateSDK with newKeyAssign transitions unsynced, manualSync=${mode}`, async function () {
+        await tb._initializeNewKey({ initializeModules: true });
+        const stringified = JSON.stringify(tb);
+        const tb2 = await ThresholdKey.fromJSON(JSON.parse(stringified), {});
+
+        if (mode) {
+          // Can't updateSDK, please do key assign.
+          await rejects(async function () {
+            await tb2.updateSDK();
+          }, Error);
+        }
+
+        // create new key because the state might have changed after updateSDK()
+        const tb3 = await ThresholdKey.fromJSON(JSON.parse(stringified), {});
+        await tb3.generateNewShare();
+        await tb3.syncLocalMetadataTransitions();
+        await tb3.updateSDK();
       });
     });
   });
@@ -1159,7 +1363,6 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const encKey2 = await tb2.modules.shareTransfer.requestNewShare();
       await tb.modules.shareTransfer.deleteShareTransferStore(encKey2); // delete 1st request from 2nd
       const newRequests = await tb2.modules.shareTransfer.getShareTransferStore();
-      // console.log(newRequests)
       if (encKey2 in newRequests) {
         fail("Unable to delete share transfer request");
       }
@@ -1341,7 +1544,6 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       await tb.modules.seedPhrase.setSeedPhrase("HD Key Tree");
       await tb.modules.seedPhrase.setSeedPhrase("HD Key Tree");
       const seedPhraseStores = await tb.modules.seedPhrase.getSeedPhrases();
-      // console.log("%O", tb.metadata.tkeyStore);
       await tb.modules.seedPhrase.setSeedPhraseStoreItem({
         id: seedPhraseStores[1].id,
         seedPhrase: seedPhraseStores[1].seedPhrase,
@@ -1349,7 +1551,6 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       });
       await tb.syncLocalMetadataTransitions();
 
-      // console.log(storedSeedPhrase);
       const secondStoredSeedPhrases = await tb.modules.seedPhrase.getSeedPhrases();
       strictEqual(secondStoredSeedPhrases[0].numberOfWallets, 1);
       strictEqual(secondStoredSeedPhrases[1].numberOfWallets, 2);

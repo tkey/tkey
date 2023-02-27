@@ -52,9 +52,6 @@ export async function setupTSSMocks(opts) {
   serviceProvider._setVerifierNameVerifierId(verifierName, verifierId);
   const vid = serviceProvider.getVerifierNameVerifierId();
   maxTSSNonceToSimulate = maxTSSNonceToSimulate || 1;
-  const tss1 = new BN(generatePrivate());
-  const mockServersDKGPub = getPubKeyPoint(tss1);
-  serviceProvider._setTSSPubKey("default", 0, mockServersDKGPub);
   const serverEndpoints = [new MockServer(), new MockServer(), new MockServer(), new MockServer(), new MockServer()];
   const serverCount = serverEndpoints.length;
   const serverPrivKeys = [];
@@ -68,39 +65,29 @@ export async function setupTSSMocks(opts) {
       return postEndpoint(endpoint, "/private_key", { private_key: serverPrivKeys[i].toString(16, 64) });
     })
   );
-  const serverPoly = generatePolynomial(serverThreshold - 1, tss1);
 
   // set tssShares on servers
-  await Promise.all(
-    serverEndpoints.map((endpoint, i) => {
-      return postEndpoint(endpoint, "/tss_share", {
-        label: `${vid}\u0015${tssTag}\u00160`,
-        tss_share_hex: getShare(serverPoly, i + 1).toString(16, 64),
-      });
-    })
-  );
-
-  const serverDKGPrivKeys = [serverPoly[0]];
-  const serverDKGPubKeys = [getPubKeyPoint(serverPoly[0])];
+  const serverDKGPrivKeys = [];
+  const serverDKGPubKeys = [];
 
   for (let j = 0; j < maxTSSNonceToSimulate; j++) {
     // simulate new key assign
     const dkg2Priv = new BN(generatePrivate());
     const dkg2Pub = ecCurve.g.mul(dkg2Priv);
-    const serverPoly2 = generatePolynomial(serverThreshold - 1, dkg2Priv);
-    serverDKGPrivKeys.push(serverPoly2[0]);
+    const serverPoly = generatePolynomial(serverThreshold - 1, dkg2Priv);
+    serverDKGPrivKeys.push(serverPoly[0]);
     serverDKGPubKeys.push(getPubKeyPoint(serverPoly[0]));
     await Promise.all(
       serverEndpoints.map((endpoint, i) => {
-        const shareHex = getShare(serverPoly2, i + 1).toString(16, 64);
+        const shareHex = getShare(serverPoly, i + 1).toString(16, 64);
 
         return postEndpoint(endpoint, "/tss_share", {
-          label: `${vid}\u0015${tssTag}\u00161`,
+          label: `${vid}\u0015${tssTag}\u0016${j}`,
           tss_share_hex: shareHex,
         });
       })
     );
-    serviceProvider._setTSSPubKey("default", 1, new Point(dkg2Pub.x, dkg2Pub.y));
+    serviceProvider._setTSSPubKey("default", j, new Point(dkg2Pub.x, dkg2Pub.y));
   }
 
   serviceProvider._setTSSNodeDetails(serverEndpoints, serverPubKeys, serverThreshold);
@@ -108,7 +95,6 @@ export async function setupTSSMocks(opts) {
   return {
     serverEndpoints,
     serverPubKeys,
-    tss1,
     serverDKGPrivKeys,
     serverDKGPubKeys,
   };
