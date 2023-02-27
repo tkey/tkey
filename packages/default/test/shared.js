@@ -64,7 +64,7 @@ function compareReconstructedKeys(a, b, message) {
 export const sharedTestCases = (mode, torusSP, storageLayer) => {
   const customSP = torusSP;
   const customSL = storageLayer;
-  describe.only("TSS tests", function () {
+  describe("TSS tests", function () {
     it("#should be able to refresh tss shares", async function () {
       const sp = customSP;
 
