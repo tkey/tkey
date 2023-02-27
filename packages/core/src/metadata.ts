@@ -182,7 +182,7 @@ class Metadata implements IMetadata {
   }
 
   addTSSData(tssData: {
-    tssTag?: string;
+    tssTag: string;
     tssNonce?: number;
     tssPolyCommits?: Point[];
     factorPubs?: Point[];

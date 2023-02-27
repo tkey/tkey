@@ -111,8 +111,6 @@ class ServiceProviderBase implements IServiceProvider {
     const tssPubKey = this.tssPubKeys[`test-tss-verifier\u001ctest-user\u0015${tssTag}\u0016${tssNonce}`];
 
     if (!tssPubKey) {
-      // eslint-disable-next-line no-console
-      console.log(`looking for test-tss-verifier\u001ctest-user\u0015${tssTag}\u0016${tssNonce}`);
       throw new Error("tss pub key could not be found");
     }
     return tssPubKey;

@@ -649,11 +649,12 @@ class ThresholdKey implements ITKey {
     if (useTSS) {
       const { factorPub, deviceTSSIndex, deviceTSSShare, selectedServers } = tssOptions;
       const existingFactorPubs = this.metadata.factorPubs[this.tssTag];
+
       const found = existingFactorPubs.filter((f) => f.x.eq(factorPub.x) && f.y.eq(factorPub.y));
       if (found.length === 0) throw CoreError.default("could not find factorPub to delete");
       if (found.length > 1) throw CoreError.default("found two or more factorPubs that match, error in metadata");
       const updatedFactorPubs = existingFactorPubs.filter((f) => !f.x.eq(factorPub.x) || !f.y.eq(factorPub.y));
-      this.metadata.addTSSData({ factorPubs: updatedFactorPubs });
+      this.metadata.addTSSData({ tssTag: this.tssTag, factorPubs: updatedFactorPubs });
       const tssNodeDetails = await this._getTSSNodeDetails();
       const randomSelectedServers = randomSelection(
         new Array(tssNodeDetails.serverEndpoints.length).fill(null).map((_, i) => i + 1),
@@ -810,7 +811,6 @@ class ThresholdKey implements ITKey {
 
     const secondCommit = ecPoint(hexPoint(newTSSServerPub)).add(ecPoint(tssPubKey).neg());
     const newTSSCommits = [Point.fromJSON(tssPubKey), Point.fromJSON({ x: secondCommit.getX(), y: secondCommit.getY() })];
-
     const factorEncs: {
       [factorPubID: string]: FactorEnc;
     } = {};

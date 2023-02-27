@@ -68,20 +68,23 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
   describe("TSS tests", function () {
     it("#should be able to refresh tss shares", async function () {
       const sp = customSP;
-      const testId = "google\u001ctest@test.com";
-      if (!sp.useTSS) return;
+
+      if (!sp.useTSS) this.skip();
 
       const deviceTSSShare = new BN(generatePrivate());
       const deviceTSSIndex = 2;
 
       const { serverEndpoints, serverPubKeys, tss1, serverDKGPrivKeys } = await setupTSSMocks({
         serviceProvider: sp,
-        testId,
+        verifierName: "google",
+        verifierId: "test@test.com",
         maxTSSNonceToSimulate: 1,
       });
 
+      const testId = sp.getVerifierNameVerifierId();
+
       sp._setTSSPubKey("default", 0, getPubKeyPoint(tss1));
-      sp.postboxKey = new BN(getTempKey(), "hex");
+      sp.postboxKey = new BN(generatePrivate(), "hex");
       const storageLayer = initStorageLayer({ hostUrl: metadataURL });
       const tb1 = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync: mode });
 
@@ -101,12 +104,12 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       await tb2.initialize({ useTSS: true, factorPub });
       await tb2.inputShareStore(newShare.newShareStores[newShare.newShareIndex.toString("hex")]);
       await tb2.reconstructKey();
-      const { tssShare: retrievedTSS, tssIndex } = await tb2.getTSSShare(factorKey);
+      const { tssShare: retrievedTSS, tssIndex: retrievedTSSIndex } = await tb2.getTSSShare(factorKey);
       const tssCommits = tb2.getTSSCommits();
 
-      const tssPrivKey = getLagrangeCoeffs([1, tssIndex], 1)
+      const tssPrivKey = getLagrangeCoeffs([1, retrievedTSSIndex], 1)
         .mul(tss1)
-        .add(getLagrangeCoeffs([1, tssIndex], tssIndex).mul(retrievedTSS))
+        .add(getLagrangeCoeffs([1, retrievedTSSIndex], retrievedTSSIndex).mul(retrievedTSS))
         .umod(ecCurve.n);
 
       const tssPubKey = getPubKeyPoint(tssPrivKey);
@@ -116,11 +119,10 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       // test tss refresh
 
       const factorKey2 = new BN(generatePrivate());
-      const factorPub2 = ecCurve.g.mul(factorKey2);
+      const factorPub2 = getPubKeyPoint(factorKey2);
 
       const factorPubs = [factorPub, factorPub2];
-
-      await tb2._refreshTSSShares(true, retrievedTSS, deviceTSSIndex, factorPubs, [2, 3], testId, {
+      await tb2._refreshTSSShares(true, retrievedTSS, retrievedTSSIndex, factorPubs, [2, 3], testId, {
         serverThreshold: 3,
         selectedServers: [1, 2, 3],
         serverEndpoints,
@@ -147,7 +149,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     });
     it("#should be able to reconstruct tssShare from factor key (tss2) when initializing a key with useTSS true", async function () {
       const sp = customSP;
-      if (!sp.useTSS) return;
+      if (!sp.useTSS) this.skip();
 
       const tss1 = new BN(generatePrivate());
       const deviceTSSShare = new BN(generatePrivate());
@@ -182,7 +184,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     it("#should be able to reconstruct tss key from factor key (tss2) when initializing a key with useTSS true", async function () {
       const sp = customSP;
 
-      if (!sp.useTSS) return;
+      if (!sp.useTSS) this.skip();
 
       const tss1 = new BN(generatePrivate());
       const deviceTSSShare = new BN(generatePrivate());
@@ -219,7 +221,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     it("#should be able to serialize and deserialize with tss even with rss", async function () {
       const sp = customSP;
       const testId = "google\u001ctest@test.com";
-      if (!sp.useTSS) return;
+      if (!sp.useTSS) this.skip();
 
       const { deviceTSSIndex, deviceTSSShare, serverEndpoints, serverPubKeys, tss1, serverDKGPrivKeys } = await setupTSSMocks({
         serviceProvider: sp,
@@ -320,12 +322,12 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       let tb;
       let tbInitResp;
       let tbTssInitResp;
-      let factorKey;
+      let oldFactorKey;
       let newFactorKey;
       before(`#should be able to generate and delete a share, manualSync=${mode}`, async function () {
-        if (!customSP.useTSS) return;
+        if (!customSP.useTSS) this.skip();
         const testId = "google\u001ctest@test.com";
-        const tssMockResponse = await setupTSSMocks({
+        await setupTSSMocks({
           serviceProvider: customSP,
           testId,
           maxTSSNonceToSimulate: 4,
@@ -333,28 +335,25 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
 
         const deviceTSSShare = new BN(generatePrivate());
         const deviceTSSIndex = 3;
-        const { serverEndpoints } = tssMockResponse;
         tb = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
         tbInitResp = await tb._initializeNewKey({ initializeModules: true });
-        factorKey = new BN(generatePrivate());
-        const factorPub = getPubKeyPoint(factorKey);
-        const initialDeviceShare = deviceTSSShare;
-        tbTssInitResp = await tb._initializeNewTSSKey("default", initialDeviceShare, factorPub);
+        oldFactorKey = new BN(generatePrivate());
+        const oldFactorPub = getPubKeyPoint(oldFactorKey);
+        tbTssInitResp = await tb._initializeNewTSSKey("default", deviceTSSShare, oldFactorPub, deviceTSSIndex);
         const { factorEncs, factorPubs, tssPolyCommits } = tbTssInitResp;
         tb.metadata.addTSSData({ tssTag: tb.tssTag, tssNonce: 0, tssPolyCommits, factorPubs, factorEncs });
         newFactorKey = new BN(generatePrivate());
         const newFactorPub = getPubKeyPoint(newFactorKey);
         const newShare = await tb.generateNewShare(true, {
           newFactorPub,
-          inputTSSIndex: 2,
-          inputTSSShare: initialDeviceShare,
-          newTSSIndex: 3,
+          inputTSSIndex: 3,
+          inputTSSShare: deviceTSSShare,
+          newTSSIndex: 2,
         });
         const updatedShareStore = await tb.deleteShare(newShare.newShareIndex, true, {
           deviceTSSIndex,
           deviceTSSShare,
-          factorPub,
-          selectedServers: serverEndpoints,
+          factorPub: oldFactorPub,
         });
         deletedShareIndex = newShare.newShareIndex;
         deletedShareStores = newShare.newShareStores;
@@ -362,14 +361,17 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         await tb.syncLocalMetadataTransitions();
       });
       it(`#should be not be able to lookup delete share, manualSync=${mode}`, async function () {
-        if (!customSP.useTSS) return;
+        if (!customSP.useTSS) this.skip();
         const newKeys = Object.keys(shareStoreAfterDelete);
         if (newKeys.find((el) => el === deletedShareIndex.toString("hex"))) {
           fail("Unable to delete share index");
         }
+        rejects(async () => {
+          await tb.getTSSShare(oldFactorKey);
+        });
       });
       it(`#should not be able to delete more than threshold number of shares, manualSync=${mode}`, async function () {
-        if (!customSP.useTSS) return;
+        if (!customSP.useTSS) this.skip();
         const { newShareIndex: newShareIndex1 } = await tb.generateNewShare();
         await tb.deleteShare(newShareIndex1);
         await tb.syncLocalMetadataTransitions();
@@ -378,14 +380,14 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         }, Error);
       });
       it(`#should not be able to initialize with a deleted share, manualSync=${mode}`, async function () {
-        if (!customSP.useTSS) return;
+        if (!customSP.useTSS) this.skip();
         const tb2 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
         await rejects(async function () {
           await tb2.initialize({ withShare: deletedShareStores[deletedShareIndex.toString("hex")] });
         });
       });
       it(`#should not be able to add share post deletion, manualSync=${mode}`, async function () {
-        if (!customSP.useTSS) return;
+        if (!customSP.useTSS) this.skip();
         const tb2 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
         await tb2.initialize();
         await rejects(async () => {
@@ -393,7 +395,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         }, Error);
       });
       it(`#should be able to delete a user, manualSync=${mode}`, async function () {
-        if (!customSP.useTSS) return;
+        if (!customSP.useTSS) this.skip();
         // create 2/4
         await tb._initializeNewKey({ initializeModules: true });
         await tb.generateNewShare();
@@ -420,7 +422,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         });
       });
       it(`#should be able to reinitialize after wipe, manualSync=${mode}`, async function () {
-        if (!customSP.useTSS) return;
+        if (!customSP.useTSS) this.skip();
         // create 2/4
         const resp1 = await tb._initializeNewKey({ initializeModules: true });
         await tb.generateNewShare();
