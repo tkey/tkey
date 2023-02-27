@@ -662,10 +662,18 @@ class ThresholdKey implements ITKey {
 
       const updatedTSSIndexes = updatedFactorPubs.map((fb) => this.getFactorEncs(fb).tssIndex);
 
-      this._refreshTSSShares(false, deviceTSSShare, deviceTSSIndex, updatedFactorPubs, updatedTSSIndexes, this.serviceProvider.retrieveVerifierId(), {
-        ...tssNodeDetails,
-        selectedServers: selectedServers || randomSelectedServers,
-      });
+      this._refreshTSSShares(
+        false,
+        deviceTSSShare,
+        deviceTSSIndex,
+        updatedFactorPubs,
+        updatedTSSIndexes,
+        this.serviceProvider.getVerifierNameVerifierId(),
+        {
+          ...tssNodeDetails,
+          selectedServers: selectedServers || randomSelectedServers,
+        }
+      );
     }
 
     const results = await this._refreshShares(pubPoly.getThreshold(), [...newShareIndexes], previousPolyID);
@@ -675,7 +683,14 @@ class ThresholdKey implements ITKey {
   }
 
   async _getTSSNodeDetails(): Promise<{ serverEndpoints: string[]; serverPubKeys: PointHex[]; serverThreshold: number }> {
-    return this.serviceProvider.getTSSNodeDetails();
+    const { serverEndpoints, serverPubKeys, serverThreshold } = await this.serviceProvider.getTSSNodeDetails();
+    if (!Array.isArray(serverEndpoints) || serverEndpoints.length === 0) throw new Error("service provider tss server endpoints are missing");
+    if (!Array.isArray(serverPubKeys) || serverPubKeys.length === 0) throw new Error("service provider pub keys are missing");
+    return {
+      serverEndpoints,
+      serverPubKeys,
+      serverThreshold: serverThreshold || Math.floor(serverEndpoints.length / 2) + 1,
+    };
   }
 
   async generateNewShare(
@@ -711,7 +726,7 @@ class ThresholdKey implements ITKey {
         factorEncs: this.metadata.factorEncs[this.tssTag],
       });
 
-      const verifierId = this.serviceProvider.retrieveVerifierId();
+      const verifierId = this.serviceProvider.getVerifierNameVerifierId();
       const tssNodeDetails = await this._getTSSNodeDetails();
       const randomSelectedServers = randomSelection(
         new Array(tssNodeDetails.serverEndpoints.length).fill(null).map((_, i) => i + 1),
@@ -745,7 +760,7 @@ class ThresholdKey implements ITKey {
     inputIndex: number,
     factorPubs: Point[],
     targetIndexes: number[],
-    verifierId: string,
+    verifierNameVerifierId: string,
     serverOpts: {
       serverEndpoints: string[];
       serverPubKeys: PointHex[];
@@ -776,8 +791,8 @@ class ThresholdKey implements ITKey {
     if (!this.metadata.tssNonces) throw CoreError.default(`tssNonces obj not found`);
     const tssNonce: number = this.metadata.tssNonces[this.tssTag] || 0;
 
-    const oldLabel = `${verifierId}\u0015${this.tssTag}\u0016${tssNonce}`;
-    const newLabel = `${verifierId}\u0015${this.tssTag}\u0016${tssNonce + 1}`;
+    const oldLabel = `${verifierNameVerifierId}\u0015${this.tssTag}\u0016${tssNonce}`;
+    const newLabel = `${verifierNameVerifierId}\u0015${this.tssTag}\u0016${tssNonce + 1}`;
 
     const newTSSServerPub = await this.serviceProvider.getTSSPubKey(this.tssTag, tssNonce + 1);
 

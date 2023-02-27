@@ -2,7 +2,7 @@
 /* eslint-disable mocha/no-exports */
 /* eslint-disable import/no-extraneous-dependencies */
 
-import { ecCurve, getPubKeyPoint, KEY_NOT_FOUND, Point, SHARE_DELETED } from "@tkey/common-types";
+import { ecCurve, getPubKeyPoint, KEY_NOT_FOUND, SHARE_DELETED } from "@tkey/common-types";
 import PrivateKeyModule, { ED25519Format, SECP256K1Format } from "@tkey/private-keys";
 import SecurityQuestionsModule from "@tkey/security-questions";
 import SeedPhraseModule, { MetamaskSeedPhraseFormat } from "@tkey/seed-phrase";
@@ -11,7 +11,7 @@ import ShareTransferModule from "@tkey/share-transfer";
 import TorusStorageLayer from "@tkey/storage-layer-torus";
 import { generatePrivate } from "@toruslabs/eccrypto";
 import { post } from "@toruslabs/http-helpers";
-import { generatePolynomial, getLagrangeCoeffs, getShare, hexPoint, MockServer, postEndpoint } from "@toruslabs/rss-client";
+import { getLagrangeCoeffs } from "@toruslabs/rss-client";
 import { deepEqual, deepStrictEqual, equal, fail, notEqual, notStrictEqual, strict, strictEqual, throws } from "assert";
 import BN from "bn.js";
 import stringify from "json-stable-stringify";
@@ -71,10 +71,11 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const testId = "google\u001ctest@test.com";
       if (!sp.useTSS) return;
 
-      const { deviceTSSIndex, deviceTSSShare, serverEndpoints, serverPubKeys, tss1, serverDKGPrivKeys } = await setupTSSMocks({
+      const deviceTSSShare = new BN(generatePrivate());
+      const deviceTSSIndex = 2;
+
+      const { serverEndpoints, serverPubKeys, tss1, serverDKGPrivKeys } = await setupTSSMocks({
         serviceProvider: sp,
-        deviceTSSShare: new BN(generatePrivate()),
-        deviceTSSIndex: 3,
         testId,
         maxTSSNonceToSimulate: 1,
       });
@@ -220,11 +221,14 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const testId = "google\u001ctest@test.com";
       if (!sp.useTSS) return;
 
-      const tss1 = new BN(generatePrivate());
-      const deviceTSSShare = new BN(generatePrivate());
-      const deviceTSSIndex = 3;
+      const { deviceTSSIndex, deviceTSSShare, serverEndpoints, serverPubKeys, tss1, serverDKGPrivKeys } = await setupTSSMocks({
+        serviceProvider: sp,
+        deviceTSSShare: new BN(generatePrivate()),
+        deviceTSSIndex: 3,
+        testId,
+        maxTSSNonceToSimulate: 1,
+      });
 
-      sp._setTSSPubKey("default", 0, getPubKeyPoint(tss1));
       sp.postboxKey = new BN(getTempKey(), "hex");
       const storageLayer = initStorageLayer({ hostUrl: metadataURL });
       const tb1 = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync: mode });
@@ -253,50 +257,6 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
 
       // test tss refresh
 
-      // setup mock servers
-      const serverEndpoints = [new MockServer(), new MockServer(), new MockServer(), new MockServer(), new MockServer()];
-      const serverCount = serverEndpoints.length;
-
-      const serverPrivKeys = [];
-      for (let i = 0; i < serverCount; i++) {
-        serverPrivKeys.push(new BN(generatePrivate()));
-      }
-      const serverPubKeys = serverPrivKeys.map((privKey) => hexPoint(ecCurve.g.mul(privKey)));
-      await Promise.all(
-        serverEndpoints.map((endpoint, i) => {
-          return postEndpoint(endpoint, "/private_key", { private_key: serverPrivKeys[i].toString(16, 64) });
-        })
-      );
-      const serverThreshold = 3;
-      const serverPoly = generatePolynomial(serverThreshold - 1, tss1);
-
-      // set tssShares on servers
-      await Promise.all(
-        serverEndpoints.map((endpoint, i) => {
-          return postEndpoint(endpoint, "/tss_share", {
-            label: `${testId}\u0015default\u00160`,
-            tss_share_hex: getShare(serverPoly, i + 1).toString(16, 64),
-          });
-        })
-      );
-
-      // simulate new key assign
-      const dkg2Priv = new BN(generatePrivate());
-      const dkg2Pub = ecCurve.g.mul(dkg2Priv);
-      const serverPoly2 = generatePolynomial(serverThreshold - 1, dkg2Priv);
-      await Promise.all(
-        serverEndpoints.map((endpoint, i) => {
-          const shareHex = getShare(serverPoly2, i + 1).toString(16, 64);
-
-          return postEndpoint(endpoint, "/tss_share", {
-            label: `${testId}\u0015default\u00161`,
-            tss_share_hex: shareHex,
-          });
-        })
-      );
-
-      sp._setTSSPubKey("default", 1, new Point(dkg2Pub.x, dkg2Pub.y));
-
       const factorKey2 = new BN(generatePrivate());
       const factorPub2 = getPubKeyPoint(factorKey2);
 
@@ -312,7 +272,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       {
         const { tssShare: newTSS2 } = await tb1.getTSSShare(factorKey);
         const newTSSPrivKey = getLagrangeCoeffs([1, 2], 1)
-          .mul(new BN(dkg2Priv, "hex"))
+          .mul(new BN(serverDKGPrivKeys[1], "hex"))
           .add(getLagrangeCoeffs([1, 2], 2).mul(newTSS2))
           .umod(ecCurve.n);
         strictEqual(tssPrivKey.toString(16, 64), newTSSPrivKey.toString(16, 64));
@@ -321,7 +281,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       {
         const { tssShare: newTSS2 } = await tb1.getTSSShare(factorKey2);
         const newTSSPrivKey = getLagrangeCoeffs([1, 3], 1)
-          .mul(new BN(dkg2Priv, "hex"))
+          .mul(new BN(serverDKGPrivKeys[1], "hex"))
           .add(getLagrangeCoeffs([1, 3], 3).mul(newTSS2))
           .umod(ecCurve.n);
         strictEqual(tssPrivKey.toString(16, 64), newTSSPrivKey.toString(16, 64));
@@ -331,13 +291,14 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
 
       const deserialized = await ThresholdKey.fromJSON(JSON.parse(serialized), { serviceProvider: sp, storageLayer, manualSync: mode });
       const serialized2 = stringify(deserialized);
+
       strictEqual(serialized, serialized2);
 
       const tb2 = await ThresholdKey.fromJSON(JSON.parse(serialized2), { serviceProvider: sp, storageLayer, manualSync: mode });
       {
         const { tssShare: newTSS2 } = await tb2.getTSSShare(factorKey);
         const newTSSPrivKey = getLagrangeCoeffs([1, 2], 1)
-          .mul(new BN(dkg2Priv, "hex"))
+          .mul(new BN(serverDKGPrivKeys[1], "hex"))
           .add(getLagrangeCoeffs([1, 2], 2).mul(newTSS2))
           .umod(ecCurve.n);
         strictEqual(tssPrivKey.toString(16, 64), newTSSPrivKey.toString(16, 64));
@@ -346,11 +307,144 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       {
         const { tssShare: newTSS2 } = await tb2.getTSSShare(factorKey2);
         const newTSSPrivKey = getLagrangeCoeffs([1, 3], 1)
-          .mul(new BN(dkg2Priv, "hex"))
+          .mul(new BN(serverDKGPrivKeys[1], "hex"))
           .add(getLagrangeCoeffs([1, 3], 3).mul(newTSS2))
           .umod(ecCurve.n);
         strictEqual(tssPrivKey.toString(16, 64), newTSSPrivKey.toString(16, 64));
       }
+    });
+    describe(`with tss, tkey share deletion`, function () {
+      let deletedShareIndex;
+      let deletedShareStores;
+      let shareStoreAfterDelete;
+      let tb;
+      let tbInitResp;
+      let tbTssInitResp;
+      let factorKey;
+      let newFactorKey;
+      before(`#should be able to generate and delete a share, manualSync=${mode}`, async function () {
+        if (!customSP.useTSS) return;
+        const testId = "google\u001ctest@test.com";
+        const tssMockResponse = await setupTSSMocks({
+          serviceProvider: customSP,
+          testId,
+          maxTSSNonceToSimulate: 4,
+        });
+
+        const deviceTSSShare = new BN(generatePrivate());
+        const deviceTSSIndex = 3;
+        const { serverEndpoints } = tssMockResponse;
+        tb = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
+        tbInitResp = await tb._initializeNewKey({ initializeModules: true });
+        factorKey = new BN(generatePrivate());
+        const factorPub = getPubKeyPoint(factorKey);
+        const initialDeviceShare = deviceTSSShare;
+        tbTssInitResp = await tb._initializeNewTSSKey("default", initialDeviceShare, factorPub);
+        const { factorEncs, factorPubs, tssPolyCommits } = tbTssInitResp;
+        tb.metadata.addTSSData({ tssTag: tb.tssTag, tssNonce: 0, tssPolyCommits, factorPubs, factorEncs });
+        newFactorKey = new BN(generatePrivate());
+        const newFactorPub = getPubKeyPoint(newFactorKey);
+        const newShare = await tb.generateNewShare(true, {
+          newFactorPub,
+          inputTSSIndex: 2,
+          inputTSSShare: initialDeviceShare,
+          newTSSIndex: 3,
+        });
+        const updatedShareStore = await tb.deleteShare(newShare.newShareIndex, true, {
+          deviceTSSIndex,
+          deviceTSSShare,
+          factorPub,
+          selectedServers: serverEndpoints,
+        });
+        deletedShareIndex = newShare.newShareIndex;
+        deletedShareStores = newShare.newShareStores;
+        shareStoreAfterDelete = updatedShareStore.newShareStores;
+        await tb.syncLocalMetadataTransitions();
+      });
+      it(`#should be not be able to lookup delete share, manualSync=${mode}`, async function () {
+        if (!customSP.useTSS) return;
+        const newKeys = Object.keys(shareStoreAfterDelete);
+        if (newKeys.find((el) => el === deletedShareIndex.toString("hex"))) {
+          fail("Unable to delete share index");
+        }
+      });
+      it(`#should not be able to delete more than threshold number of shares, manualSync=${mode}`, async function () {
+        if (!customSP.useTSS) return;
+        const { newShareIndex: newShareIndex1 } = await tb.generateNewShare();
+        await tb.deleteShare(newShareIndex1);
+        await tb.syncLocalMetadataTransitions();
+        await rejects(async () => {
+          await tb.deleteShare(tbInitResp.deviceShare.share.shareIndex);
+        }, Error);
+      });
+      it(`#should not be able to initialize with a deleted share, manualSync=${mode}`, async function () {
+        if (!customSP.useTSS) return;
+        const tb2 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
+        await rejects(async function () {
+          await tb2.initialize({ withShare: deletedShareStores[deletedShareIndex.toString("hex")] });
+        });
+      });
+      it(`#should not be able to add share post deletion, manualSync=${mode}`, async function () {
+        if (!customSP.useTSS) return;
+        const tb2 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
+        await tb2.initialize();
+        await rejects(async () => {
+          await tb2.inputShare(deletedShareStores[deletedShareIndex.toString("hex")].share.share);
+        }, Error);
+      });
+      it(`#should be able to delete a user, manualSync=${mode}`, async function () {
+        if (!customSP.useTSS) return;
+        // create 2/4
+        await tb._initializeNewKey({ initializeModules: true });
+        await tb.generateNewShare();
+        const shareStoresAtEpoch2 = tb.getAllShareStoresForLatestPolynomial();
+
+        await tb.generateNewShare();
+        await tb.syncLocalMetadataTransitions();
+        const sharesStoresAtEpoch3 = tb.getAllShareStoresForLatestPolynomial();
+        await tb.CRITICAL_deleteTkey();
+
+        const spData = await customSL.getMetadata({ serviceProvider: customSP });
+        const data2 = await Promise.allSettled(shareStoresAtEpoch2.map((x) => tb.catchupToLatestShare({ shareStore: x })));
+        const data3 = await Promise.all(sharesStoresAtEpoch3.map((x) => customSL.getMetadata({ privKey: x.share.share })));
+
+        deepStrictEqual(spData.message, KEY_NOT_FOUND);
+
+        data2.forEach((x) => {
+          deepStrictEqual(x.status, "rejected");
+          deepStrictEqual(x.reason.code, 1308);
+        });
+
+        data3.forEach((x) => {
+          deepStrictEqual(x.message, SHARE_DELETED);
+        });
+      });
+      it(`#should be able to reinitialize after wipe, manualSync=${mode}`, async function () {
+        if (!customSP.useTSS) return;
+        // create 2/4
+        const resp1 = await tb._initializeNewKey({ initializeModules: true });
+        await tb.generateNewShare();
+        if (mode) {
+          await tb.syncLocalMetadataTransitions();
+        }
+        await tb.CRITICAL_deleteTkey();
+
+        const tb2 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
+        await tb2.initialize();
+        await tb2.generateNewShare();
+        if (mode) {
+          await tb2.syncLocalMetadataTransitions();
+        }
+
+        const data3 = await customSL.getMetadata({ serviceProvider: customSP });
+        notEqual(data3.message, KEY_NOT_FOUND);
+        deepStrictEqual(tb2.metadata.nonce, 1);
+
+        const reconstructedKey = await tb2.reconstructKey();
+        if (resp1.privKey.cmp(reconstructedKey.privKey) === 0) {
+          fail("key should be different");
+        }
+      });
     });
   });
   describe("tkey", function () {
@@ -618,114 +712,6 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       }
     });
   });
-
-  // describe(`with tss, tkey share deletion`, function () {
-  //   let deletedShareIndex;
-  //   let deletedShareStores;
-  //   let shareStoreAfterDelete;
-  //   let tb;
-  //   let tbInitResp;
-  //   let tbTssInitResp;
-  //   before(`#should be able to generate and delete a share, manualSync=${mode}`, async function () {
-  //     if (!customSP.useTSS) return;
-  //     tb = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
-  //     tbInitResp = await tb._initializeNewKey({ initializeModules: true });
-  //     const factorKey = new BN(generatePrivate());
-  //     const factorPub = getPubKeyPoint(factorKey);
-  //     const initialDeviceShare = new BN(generatePrivate());
-  //     tbTssInitResp = await tb._initializeNewTSSKey("default", initialDeviceShare, factorPub);
-  //     const newShare = await tb.generateNewShare(true, {
-  //       newFactorPub: factorPub,
-  //       inputTSSIndex: 2,
-  //       inputTSSShare: initialDeviceShare,
-  //     });
-  //     const updatedShareStore = await tb.deleteShare(newShare.newShareIndex, true, {
-
-  //     });
-  //     deletedShareIndex = newShare.newShareIndex;
-  //     deletedShareStores = newShare.newShareStores;
-  //     shareStoreAfterDelete = updatedShareStore.newShareStores;
-  //     await tb.syncLocalMetadataTransitions();
-  //   });
-  //   it(`#should be not be able to lookup delete share, manualSync=${mode}`, async function () {
-  //     const newKeys = Object.keys(shareStoreAfterDelete);
-  //     if (newKeys.find((el) => el === deletedShareIndex.toString("hex"))) {
-  //       fail("Unable to delete share index");
-  //     }
-  //   });
-  //   it(`#should not be able to delete more than threshold number of shares, manualSync=${mode}`, async function () {
-  //     const { newShareIndex: newShareIndex1 } = await tb.generateNewShare();
-  //     await tb.deleteShare(newShareIndex1);
-  //     await tb.syncLocalMetadataTransitions();
-  //     await rejects(async () => {
-  //       await tb.deleteShare(tbInitResp.deviceShare.share.shareIndex);
-  //     }, Error);
-  //   });
-  //   it(`#should not be able to initialize with a deleted share, manualSync=${mode}`, async function () {
-  //     const tb2 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
-  //     await rejects(async function () {
-  //       await tb2.initialize({ withShare: deletedShareStores[deletedShareIndex.toString("hex")] });
-  //     });
-  //   });
-  //   it(`#should not be able to add share post deletion, manualSync=${mode}`, async function () {
-  //     const tb2 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
-  //     await tb2.initialize();
-  //     await rejects(async () => {
-  //       await tb2.inputShare(deletedShareStores[deletedShareIndex.toString("hex")].share.share);
-  //     }, Error);
-  //   });
-  //   it(`#should be able to delete a user, manualSync=${mode}`, async function () {
-  //     // create 2/4
-  //     await tb._initializeNewKey({ initializeModules: true });
-  //     await tb.generateNewShare();
-  //     const shareStoresAtEpoch2 = tb.getAllShareStoresForLatestPolynomial();
-
-  //     await tb.generateNewShare();
-  //     await tb.syncLocalMetadataTransitions();
-  //     const sharesStoresAtEpoch3 = tb.getAllShareStoresForLatestPolynomial();
-  //     await tb.CRITICAL_deleteTkey();
-
-  //     const spData = await customSL.getMetadata({ serviceProvider: customSP });
-  //     const data2 = await Promise.allSettled(shareStoresAtEpoch2.map((x) => tb.catchupToLatestShare({ shareStore: x })));
-  //     const data3 = await Promise.all(sharesStoresAtEpoch3.map((x) => customSL.getMetadata({ privKey: x.share.share })));
-
-  //     deepStrictEqual(spData.message, KEY_NOT_FOUND);
-
-  //     data2.forEach((x) => {
-  //       deepStrictEqual(x.status, "rejected");
-  //       deepStrictEqual(x.reason.code, 1308);
-  //     });
-
-  //     data3.forEach((x) => {
-  //       deepStrictEqual(x.message, SHARE_DELETED);
-  //     });
-  //   });
-  //   it(`#should be able to reinitialize after wipe, manualSync=${mode}`, async function () {
-  //     // create 2/4
-  //     const resp1 = await tb._initializeNewKey({ initializeModules: true });
-  //     await tb.generateNewShare();
-  //     if (mode) {
-  //       await tb.syncLocalMetadataTransitions();
-  //     }
-  //     await tb.CRITICAL_deleteTkey();
-
-  //     const tb2 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
-  //     await tb2.initialize();
-  //     await tb2.generateNewShare();
-  //     if (mode) {
-  //       await tb2.syncLocalMetadataTransitions();
-  //     }
-
-  //     const data3 = await customSL.getMetadata({ serviceProvider: customSP });
-  //     notEqual(data3.message, KEY_NOT_FOUND);
-  //     deepStrictEqual(tb2.metadata.nonce, 1);
-
-  //     const reconstructedKey = await tb2.reconstructKey();
-  //     if (resp1.privKey.cmp(reconstructedKey.privKey) === 0) {
-  //       fail("key should be different");
-  //     }
-  //   });
-  // });
 
   describe("tkey serialization/deserialization", function () {
     let tb;

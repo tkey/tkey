@@ -28,6 +28,10 @@ class ServiceProviderBase implements IServiceProvider {
 
   serviceProviderName: string;
 
+  verifierName?: string;
+
+  verifierId?: string;
+
   tssNodeDetails: {
     serverEndpoints: string[];
     serverPubKeys: PointHex[];
@@ -74,8 +78,13 @@ class ServiceProviderBase implements IServiceProvider {
     throw new Error("Unsupported pub key type");
   }
 
-  retrieveVerifierId(): string {
-    return "test-user";
+  _setVerifierNameVerifierId(verifierName: string, verifierId: string) {
+    this.verifierName = verifierName;
+    this.verifierId = verifierId;
+  }
+
+  getVerifierNameVerifierId(): string {
+    return `${this.verifierName}\u001c${this.verifierId}`;
   }
 
   _setTSSNodeDetails(serverEndpoints: string[], serverPubKeys: PointHex[], serverThreshold: number): void {

@@ -41,7 +41,6 @@ export interface ServiceProviderArgs {
 
 export interface TorusServiceProviderArgs extends ServiceProviderArgs {
   customAuthArgs: CustomAuthArgs;
-  tssVerifier?: string;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -68,7 +67,7 @@ export interface IServiceProvider extends ISerializable {
   decrypt(msg: EncryptedMessage): Promise<Buffer>;
   retrievePubKey(type: PubKeyType): Buffer;
   retrievePubKeyPoint(): curve.base.BasePoint;
-  retrieveVerifierId(): string;
+  getVerifierNameVerifierId(): string;
   getTSSNodeDetails(): Promise<{
     serverEndpoints: string[];
     serverPubKeys: PointHex[];

@@ -20,22 +20,17 @@ class TorusServiceProvider extends ServiceProviderBase {
 
   customAuthArgs: CustomAuthArgs;
 
-  // tss verifier
-  tssVerifier?: string;
-
-  // normal verifier
   verifierName?: string;
 
   verifierId?: string;
 
   verifierType?: "normal" | "aggregate" | "hybrid";
 
-  constructor({ enableLogging = false, postboxKey, customAuthArgs, tssVerifier }: TorusServiceProviderArgs) {
+  constructor({ enableLogging = false, postboxKey, customAuthArgs }: TorusServiceProviderArgs) {
     super({ enableLogging, postboxKey });
     this.customAuthArgs = customAuthArgs;
     this.directWeb = new CustomAuth(customAuthArgs);
     this.serviceProviderName = "TorusServiceProvider";
-    this.tssVerifier = tssVerifier;
   }
 
   static fromJSON(value: StringifiedType): TorusServiceProvider {
@@ -67,7 +62,7 @@ class TorusServiceProvider extends ServiceProviderBase {
   }
 
   async getTSSNodeDetails(): Promise<{ serverEndpoints: string[]; serverPubKeys: PointHex[]; serverThreshold: number }> {
-    const nodeDetails = await this.directWeb.nodeDetailManager.getNodeDetails({ verifier: this.tssVerifier, verifierId: this.verifierId });
+    const nodeDetails = await this.directWeb.nodeDetailManager.getNodeDetails({ verifier: this.verifierName, verifierId: this.verifierId });
     const { torusNodeEndpoints, torusNodePub } = nodeDetails;
     return {
       serverEndpoints: torusNodeEndpoints,
@@ -77,15 +72,14 @@ class TorusServiceProvider extends ServiceProviderBase {
   }
 
   async retrieveTSSPubKey(tssTag: string, tssNonce: number): Promise<Point> {
-    if (!this.tssVerifier) throw new Error("tssVerifier not specified");
     if (!this.verifierName || !this.verifierId || !this.verifierType) throw new Error("verifier userinfo not found, not logged in yet");
     if (this.verifierType === "normal") {
-      const nodeDetails = await this.directWeb.nodeDetailManager.getNodeDetails({ verifier: this.tssVerifier, verifierId: this.verifierId });
+      const nodeDetails = await this.directWeb.nodeDetailManager.getNodeDetails({ verifier: this.verifierName, verifierId: this.verifierId });
       const tssServerPub = (await this.directWeb.torus.getPublicAddress(
         nodeDetails.torusNodeEndpoints,
         nodeDetails.torusNodePub,
         {
-          verifier: this.tssVerifier,
+          verifier: this.verifierName,
           verifierId: `${this.verifierId}\u0015${tssTag || "default"}\u0016${tssNonce || 0}`,
         },
         true
@@ -94,12 +88,12 @@ class TorusServiceProvider extends ServiceProviderBase {
       return new Point(tssServerPub.X, tssServerPub.Y);
     }
     if (this.verifierType === "aggregate") {
-      const nodeDetails = await this.directWeb.nodeDetailManager.getNodeDetails({ verifier: this.tssVerifier, verifierId: this.verifierId });
+      const nodeDetails = await this.directWeb.nodeDetailManager.getNodeDetails({ verifier: this.verifierName, verifierId: this.verifierId });
       const tssServerPub = (await this.directWeb.torus.getPublicAddress(
         nodeDetails.torusNodeEndpoints,
         nodeDetails.torusNodePub,
         {
-          verifier: this.tssVerifier,
+          verifier: this.verifierName,
           verifierId: `${this.verifierId}\u0015${tssTag || "default"}\u0016${tssNonce || 0}`,
         },
         true
@@ -108,12 +102,12 @@ class TorusServiceProvider extends ServiceProviderBase {
       return new Point(tssServerPub.X, tssServerPub.Y);
     }
     if (this.verifierType === "hybrid") {
-      const nodeDetails = await this.directWeb.nodeDetailManager.getNodeDetails({ verifier: this.tssVerifier, verifierId: this.verifierId });
+      const nodeDetails = await this.directWeb.nodeDetailManager.getNodeDetails({ verifier: this.verifierName, verifierId: this.verifierId });
       const tssServerPub = (await this.directWeb.torus.getPublicAddress(
         nodeDetails.torusNodeEndpoints,
         nodeDetails.torusNodePub,
         {
-          verifier: this.tssVerifier,
+          verifier: this.verifierName,
           verifierId: `${this.verifierId}\u0015${tssTag || "default"}\u0016${tssNonce || 0}`,
         },
         true
