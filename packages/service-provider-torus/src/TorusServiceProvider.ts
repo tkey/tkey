@@ -20,10 +20,6 @@ class TorusServiceProvider extends ServiceProviderBase {
 
   customAuthArgs: CustomAuthArgs;
 
-  verifierName?: string;
-
-  verifierId?: string;
-
   verifierType?: "normal" | "aggregate" | "hybrid";
 
   constructor({ enableLogging = false, postboxKey, customAuthArgs }: TorusServiceProviderArgs) {
