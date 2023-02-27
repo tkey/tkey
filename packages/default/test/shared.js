@@ -64,7 +64,7 @@ function compareReconstructedKeys(a, b, message) {
 export const sharedTestCases = (mode, torusSP, storageLayer) => {
   const customSP = torusSP;
   const customSL = storageLayer;
-  describe("TSS tests", function () {
+  describe.only("TSS tests", function () {
     it("#should be able to refresh tss shares", async function () {
       const sp = customSP;
 
@@ -73,16 +73,15 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const deviceTSSShare = new BN(generatePrivate());
       const deviceTSSIndex = 2;
 
-      const { serverEndpoints, serverPubKeys, tss1, serverDKGPrivKeys } = await setupTSSMocks({
+      const { serverEndpoints, serverPubKeys, serverDKGPrivKeys } = await setupTSSMocks({
         serviceProvider: sp,
         verifierName: "google",
         verifierId: "test@test.com",
-        maxTSSNonceToSimulate: 1,
+        maxTSSNonceToSimulate: 2,
       });
 
       const testId = sp.getVerifierNameVerifierId();
 
-      sp._setTSSPubKey("default", 0, getPubKeyPoint(tss1));
       sp.postboxKey = new BN(generatePrivate(), "hex");
       const storageLayer = initStorageLayer({ hostUrl: metadataURL });
       const tb1 = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync: mode });
@@ -107,7 +106,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const tssCommits = tb2.getTSSCommits();
 
       const tssPrivKey = getLagrangeCoeffs([1, retrievedTSSIndex], 1)
-        .mul(tss1)
+        .mul(serverDKGPrivKeys[0])
         .add(getLagrangeCoeffs([1, retrievedTSSIndex], retrievedTSSIndex).mul(retrievedTSS))
         .umod(ecCurve.n);
 
@@ -222,11 +221,11 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const testId = "google\u001ctest@test.com";
       if (!sp.useTSS) this.skip();
 
-      const { serverEndpoints, serverPubKeys, tss1, serverDKGPrivKeys } = await setupTSSMocks({
+      const { serverEndpoints, serverPubKeys, serverDKGPrivKeys } = await setupTSSMocks({
         serviceProvider: sp,
         verifierName: "google",
         verifierId: "test@test.com",
-        maxTSSNonceToSimulate: 1,
+        maxTSSNonceToSimulate: 2,
       });
 
       const deviceTSSShare = new BN(generatePrivate());
@@ -247,12 +246,12 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         fail("key should be able to be reconstructed");
       }
 
-      const { tssShare: retrievedTSS } = await tb1.getTSSShare(factorKey);
+      const { tssShare: retrievedTSS, tssIndex: retrievedTSSIndex } = await tb1.getTSSShare(factorKey);
       const tssCommits = tb1.getTSSCommits();
 
-      const tssPrivKey = getLagrangeCoeffs([1, deviceTSSIndex], 1)
-        .mul(tss1)
-        .add(getLagrangeCoeffs([1, deviceTSSIndex], deviceTSSIndex).mul(retrievedTSS))
+      const tssPrivKey = getLagrangeCoeffs([1, retrievedTSSIndex], 1)
+        .mul(serverDKGPrivKeys[0])
+        .add(getLagrangeCoeffs([1, retrievedTSSIndex], retrievedTSSIndex).mul(retrievedTSS))
         .umod(ecCurve.n);
 
       const tssPubKey = getPubKeyPoint(tssPrivKey);
@@ -266,7 +265,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
 
       const factorPubs = [factorPub, factorPub2];
 
-      await tb1._refreshTSSShares(true, retrievedTSS, deviceTSSIndex, factorPubs, [2, 3], testId, {
+      await tb1._refreshTSSShares(true, retrievedTSS, retrievedTSSIndex, factorPubs, [2, 3], testId, {
         serverThreshold: 3,
         selectedServers: [1, 2, 3],
         serverEndpoints,
