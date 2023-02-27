@@ -223,13 +223,15 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const testId = "google\u001ctest@test.com";
       if (!sp.useTSS) this.skip();
 
-      const { deviceTSSIndex, deviceTSSShare, serverEndpoints, serverPubKeys, tss1, serverDKGPrivKeys } = await setupTSSMocks({
+      const { serverEndpoints, serverPubKeys, tss1, serverDKGPrivKeys } = await setupTSSMocks({
         serviceProvider: sp,
-        deviceTSSShare: new BN(generatePrivate()),
-        deviceTSSIndex: 3,
-        testId,
+        verifierName: "google",
+        verifierId: "test@test.com",
         maxTSSNonceToSimulate: 1,
       });
+
+      const deviceTSSShare = new BN(generatePrivate());
+      const deviceTSSIndex = 3;
 
       sp.postboxKey = new BN(getTempKey(), "hex");
       const storageLayer = initStorageLayer({ hostUrl: metadataURL });
@@ -245,6 +247,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       if (tb1.privKey.cmp(reconstructedKey.privKey) !== 0) {
         fail("key should be able to be reconstructed");
       }
+
       const { tssShare: retrievedTSS } = await tb1.getTSSShare(factorKey);
       const tssCommits = tb1.getTSSCommits();
 
