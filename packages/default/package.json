@@ -8,7 +8,7 @@
   "jsdelivr": "dist/default.umd.min.js",
   "types": "dist/types/index.d.ts",
   "scripts": {
-    "test": "cross-env MOCKED=true mocha --config ../../.mocharc.json ",
+    "test": "cross-env MOCKED=true mocha --config ../../.mocharc.json",
     "coverage": "nyc yarn test",
     "coverage-production": "nyc yarn test-production",
     "test-development": "cross-env MOCKED=false METADATA=http://localhost:5051 mocha ./test/*.test.js --config ../../.mocharc.json",
@@ -50,7 +50,8 @@
     "@tkey/private-keys": "^7.2.0",
     "@tkey/seed-phrase": "^7.2.0",
     "@toruslabs/http-helpers": "^3.2.0",
-    "web3-utils": "^1.8.1"
+    "web3-utils": "^1.8.1",
+    "jsrsasign": "^10.6.1"
   },
   "peerDependencies": {
     "@babel/runtime": "7.x"

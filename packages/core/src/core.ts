@@ -609,6 +609,7 @@ class ThresholdKey implements ITKey {
       deviceTSSShare: BN;
       deviceTSSIndex: number;
       factorPub: Point;
+      authSignatures: string[];
       selectedServers?: number[];
     }
   ): Promise<DeleteShareResult> {
@@ -647,7 +648,7 @@ class ThresholdKey implements ITKey {
     }
 
     if (useTSS) {
-      const { factorPub, deviceTSSIndex, deviceTSSShare, selectedServers } = tssOptions;
+      const { factorPub, deviceTSSIndex, deviceTSSShare, selectedServers, authSignatures } = tssOptions;
       const existingFactorPubs = this.metadata.factorPubs[this.tssTag];
 
       const found = existingFactorPubs.filter((f) => f.x.eq(factorPub.x) && f.y.eq(factorPub.y));
@@ -673,6 +674,7 @@ class ThresholdKey implements ITKey {
         {
           ...tssNodeDetails,
           selectedServers: selectedServers || randomSelectedServers,
+          authSignatures,
         }
       );
     }
@@ -701,6 +703,7 @@ class ThresholdKey implements ITKey {
       inputTSSIndex: number;
       newFactorPub: Point;
       newTSSIndex: number;
+      authSignatures?: string[];
       selectedServers?: number[];
     }
   ): Promise<GenerateNewShareResult> {
@@ -713,7 +716,7 @@ class ThresholdKey implements ITKey {
     if (useTSS) {
       if (!tssOptions) throw CoreError.default("must provide tss options when calling generateNewShare with useTSS true");
       if (!this.metadata.tssPolyCommits[this.tssTag]) throw new Error(`tss key has not been initialized for tssTag ${this.tssTag}`);
-      const { newFactorPub, inputTSSIndex, inputTSSShare, newTSSIndex, selectedServers } = tssOptions;
+      const { newFactorPub, inputTSSIndex, inputTSSShare, newTSSIndex, selectedServers, authSignatures } = tssOptions;
 
       const existingFactorPubs = this.metadata.factorPubs[this.tssTag];
       const updatedFactorPubs = existingFactorPubs.concat([newFactorPub]);
@@ -740,6 +743,7 @@ class ThresholdKey implements ITKey {
       await this._refreshTSSShares(false, inputTSSShare, inputTSSIndex, updatedFactorPubs, updatedTSSIndexes, verifierId, {
         ...tssNodeDetails,
         selectedServers: selectedServers || randomSelectedServers,
+        authSignatures,
       });
     }
 
@@ -767,8 +771,11 @@ class ThresholdKey implements ITKey {
       serverPubKeys: PointHex[];
       serverThreshold: number;
       selectedServers: number[];
+      authSignatures: string[];
     }
   ): Promise<void> {
+    // eslint-disable-next-line no-debugger
+    debugger;
     if (!this.metadata) throw CoreError.metadataUndefined();
     if (!this.metadata.tssPolyCommits) throw CoreError.default(`tss poly commits obj not found`);
     const tssCommits = this.metadata.tssPolyCommits[this.tssTag];
@@ -776,7 +783,7 @@ class ThresholdKey implements ITKey {
     if (tssCommits.length === 0) throw CoreError.default(`tssCommits is empty`);
     const tssPubKeyPoint = tssCommits[0];
     const tssPubKey = hexPoint(tssPubKeyPoint);
-    const { serverEndpoints, serverPubKeys, serverThreshold, selectedServers } = serverOpts;
+    const { serverEndpoints, serverPubKeys, serverThreshold, selectedServers, authSignatures } = serverOpts;
 
     const rssClient = new RSSClient({
       serverEndpoints,
@@ -796,13 +803,14 @@ class ThresholdKey implements ITKey {
     const newLabel = `${verifierNameVerifierId}\u0015${this.tssTag}\u0016${tssNonce + 1}`;
 
     const newTSSServerPub = await this.serviceProvider.getTSSPubKey(this.tssTag, tssNonce + 1);
-
+    // eslint-disable-next-line no-console
+    console.log("newTSSServerPub", newTSSServerPub, hexPoint(newTSSServerPub));
     const refreshResponses = await rssClient.refresh({
       factorPubs: factorPubs.map((f) => hexPoint(f)),
       targetIndexes,
       oldLabel,
       newLabel,
-      sigs: [], // TODO: add auth data
+      sigs: authSignatures,
       dkgNewPub: hexPoint(newTSSServerPub),
       inputShare,
       inputIndex,
@@ -943,7 +951,7 @@ class ThresholdKey implements ITKey {
     return { shareStores: newShareStores };
   }
 
-  async _initializeNewTSSKey(tssTag, deviceTSSShare, factorPub, deviceTSSIndex?): Promise<InitializeNewTSSKeyResult> {
+  async _initializeNewTSSKey(tssTag: string, deviceTSSShare, factorPub, deviceTSSIndex?): Promise<InitializeNewTSSKeyResult> {
     let tss2: BN;
     const _tssIndex = deviceTSSIndex || 2; // TODO: fix
     if (deviceTSSShare) {

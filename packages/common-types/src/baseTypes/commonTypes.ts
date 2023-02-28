@@ -41,6 +41,8 @@ export interface ServiceProviderArgs {
 
 export interface TorusServiceProviderArgs extends ServiceProviderArgs {
   customAuthArgs: CustomAuthArgs;
+  nodeEndpoints?: string[];
+  nodePubKeys?: PointHex[];
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

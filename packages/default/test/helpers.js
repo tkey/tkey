@@ -5,6 +5,8 @@ import TorusStorageLayer, { MockStorageLayer } from "@tkey/storage-layer-torus";
 import { generatePrivate } from "@toruslabs/eccrypto";
 import { generatePolynomial, getShare, hexPoint, MockServer, postEndpoint } from "@toruslabs/rss-client";
 import BN from "bn.js";
+// eslint-disable-next-line import/no-extraneous-dependencies
+import KJUR from "jsrsasign";
 
 let mocked;
 const isNode = process.release;
@@ -97,5 +99,89 @@ export async function setupTSSMocks(opts) {
     serverPubKeys,
     serverDKGPrivKeys,
     serverDKGPubKeys,
+  };
+}
+
+const jwtPrivateKey = `-----BEGIN PRIVATE KEY-----\nMEECAQAwEwYHKoZIzj0CAQYIKoZIzj0DAQcEJzAlAgEBBCCD7oLrcKae+jVZPGx52Cb/lKhdKxpXjl9eGNa1MlY57A==\n-----END PRIVATE KEY-----`;
+export const generateIdToken = (email) => {
+  const alg = "ES256";
+  const iat = Math.floor(Date.now() / 1000);
+  const payload = {
+    iss: "torus-key-test",
+    aud: "torus-key-test",
+    name: email,
+    email,
+    scope: "email",
+    iat,
+    eat: iat + 120,
+  };
+
+  const options = {
+    expiresIn: 120,
+    algorithm: alg,
+  };
+
+  const header = { alg, typ: "JWT" };
+
+  const token = KJUR.jws.JWS.sign(alg, header, payload, jwtPrivateKey, options);
+
+  return token;
+};
+
+export async function fetchPostboxKeyAndSigs(opts) {
+  const { serviceProvider, verifierName, verifierId } = opts;
+  const { serverEndpoints: sssEndpoints } = await serviceProvider.getSSSNodeDetails();
+  const token = generateIdToken(verifierId);
+
+  // eslint-disable-next-line no-console
+  console.log("sssEndpoints", sssEndpoints, token, verifierName, verifierId);
+  const retrieveSharesResponse = await serviceProvider.directWeb.torus.retrieveShares(sssEndpoints, verifierName, { verifier_id: verifierId }, token);
+
+  const signatures = [];
+  retrieveSharesResponse.sessionTokensData.filter((session) => {
+    if (session) {
+      signatures.push(
+        JSON.stringify({
+          data: session.token,
+          sig: session.signature,
+        })
+      );
+    }
+    return null;
+  });
+
+  return {
+    signatures,
+    postboxkey: retrieveSharesResponse.privKey.toString(),
+  };
+}
+// this function is only for testing and will return tss shares only for test verifiers.
+export async function fetchTssDkgKeys(opts) {
+  let { serviceProvider, verifierName, verifierId, maxTSSNonceToSimulate, tssTag } = opts;
+  tssTag = tssTag || "default";
+  maxTSSNonceToSimulate = maxTSSNonceToSimulate || 1;
+  // set tssShares on servers
+  const serverDKGPrivKeys = [];
+  // const serverDKGPubKeys = [];
+
+  for (let j = 0; j < maxTSSNonceToSimulate; j++) {
+    const token = generateIdToken(verifierId);
+    const extendedVerifierId = `${verifierId}\u0015${tssTag}\u0016${j}`;
+    const { serverEndpoints: sssEndpoints } = await serviceProvider.getSSSNodeDetails();
+    const retrieveSharesResponse = await serviceProvider.directWeb.torus.retrieveShares(
+      sssEndpoints,
+      verifierName,
+      { verifier_id: verifierId, extended_verifier_id: extendedVerifierId },
+      token
+    );
+    // eslint-disable-next-line no-console
+    // console.log("retrieveSharesResponse", retrieveSharesResponse);
+    serverDKGPrivKeys.push(new BN(retrieveSharesResponse.privKey, "hex"));
+    // serverDKGPubKeys.push(retrieveSharesResponse.privKey);
+  }
+
+  return {
+    serverDKGPrivKeys,
+    // serverDKGPubKeys,
   };
 }
