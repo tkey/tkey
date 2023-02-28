@@ -162,7 +162,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
 
       sp.verifierName = "torus-test-health";
       sp.verifierId = "test@example.com";
-      const { signatures, postboxkey } = await fetchPostboxKeyAndSigs({
+      const { postboxkey } = await fetchPostboxKeyAndSigs({
         serviceProvider: sp,
         verifierName: sp.verifierName,
         verifierId: sp.verifierId,
@@ -198,12 +198,19 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
 
       if (!sp.useTSS) this.skip();
 
-      const tss1 = new BN(generatePrivate());
-      const deviceTSSShare = new BN(generatePrivate());
-      const deviceTSSIndex = 2;
       sp.verifierName = "torus-test-health";
       sp.verifierId = "test18@example.com";
-      const { signatures, postboxkey } = await fetchPostboxKeyAndSigs({
+      const { serverDKGPrivKeys } = await fetchTssDkgKeys({
+        serviceProvider: sp,
+        verifierName: sp.verifierName,
+        verifierId: sp.verifierId,
+        maxTSSNonceToSimulate: 2,
+      });
+
+      const tss1 = new BN(serverDKGPrivKeys[0], "hex");
+      const deviceTSSShare = new BN(generatePrivate());
+      const deviceTSSIndex = 2;
+      const { postboxkey } = await fetchPostboxKeyAndSigs({
         serviceProvider: sp,
         verifierName: sp.verifierName,
         verifierId: sp.verifierId,
@@ -237,20 +244,28 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     });
     it("#should be able to serialize and deserialize with tss even with rss", async function () {
       const sp = customSP;
-      const testId = "google\u001ctest@test.com";
       if (!sp.useTSS) this.skip();
-
-      const { serverEndpoints, serverPubKeys, serverDKGPrivKeys } = await setupTSSMocks({
-        serviceProvider: sp,
-        verifierName: "google",
-        verifierId: "test@test.com",
-        maxTSSNonceToSimulate: 2,
-      });
 
       const deviceTSSShare = new BN(generatePrivate());
       const deviceTSSIndex = 3;
 
-      sp.postboxKey = new BN(getTempKey(), "hex");
+      sp.verifierName = "torus-test-health";
+      sp.verifierId = "test18@example.com";
+      const { signatures, postboxkey } = await fetchPostboxKeyAndSigs({
+        serviceProvider: sp,
+        verifierName: sp.verifierName,
+        verifierId: sp.verifierId,
+      });
+
+      const testId = sp.getVerifierNameVerifierId();
+
+      sp.postboxKey = postboxkey;
+      const { serverDKGPrivKeys } = await fetchTssDkgKeys({
+        serviceProvider: sp,
+        verifierName: sp.verifierName,
+        verifierId: sp.verifierId,
+        maxTSSNonceToSimulate: 2,
+      });
       const storageLayer = initStorageLayer({ hostUrl: metadataURL });
       const tb1 = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync: mode });
 
@@ -283,6 +298,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const factorPub2 = getPubKeyPoint(factorKey2);
 
       const factorPubs = [factorPub, factorPub2];
+      const { serverEndpoints, serverPubKeys } = await sp.getRSSNodeDetails();
 
       await tb1._refreshTSSShares(true, retrievedTSS, retrievedTSSIndex, factorPubs, [2, 3], testId, {
         serverThreshold: 3,
