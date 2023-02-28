@@ -74,7 +74,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const deviceTSSIndex = 2;
 
       sp.verifierName = "torus-test-health";
-      sp.verifierId = "test@example.com";
+      sp.verifierId = "test18@example.com";
       const { signatures, postboxkey } = await fetchPostboxKeyAndSigs({
         serviceProvider: sp,
         verifierName: sp.verifierName,
@@ -83,11 +83,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
 
       const testId = sp.getVerifierNameVerifierId();
 
-      // eslint-disable-next-line no-console
-      console.log("postboxy key", postboxkey);
       sp.postboxKey = postboxkey;
-      sp.verifierName = "torus-test-health";
-      sp.verifierId = "test@example.com";
       const storageLayer = initStorageLayer({ hostUrl: metadataURL });
       const tb1 = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync: mode });
 
@@ -97,9 +93,6 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         verifierId: sp.verifierId,
         maxTSSNonceToSimulate: 2,
       });
-
-      // eslint-disable-next-line no-console
-      console.log("serverDKGPrivKeys", serverDKGPrivKeys);
       // factor key needs to passed from outside of tKey
       const factorKey = new BN(generatePrivate());
       const factorPub = getPubKeyPoint(factorKey);
@@ -118,9 +111,6 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       await tb2.reconstructKey();
       const { tssShare: retrievedTSS, tssIndex: retrievedTSSIndex } = await tb2.getTSSShare(factorKey);
       const tssCommits = tb2.getTSSCommits();
-
-      // eslint-disable-next-line no-console
-      console.log("serverDKGPrivKeys[0]", serverDKGPrivKeys[0]);
       const tssPrivKey = getLagrangeCoeffs([1, retrievedTSSIndex], 1)
         .mul(serverDKGPrivKeys[0])
         .add(getLagrangeCoeffs([1, retrievedTSSIndex], retrievedTSSIndex).mul(retrievedTSS))
@@ -145,32 +135,40 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         authSignatures: signatures,
       });
 
-      // {
-      //   const { tssShare: newTSS2 } = await tb2.getTSSShare(factorKey);
-      //   const newTSSPrivKey = getLagrangeCoeffs([1, 2], 1)
-      //     .mul(new BN(serverDKGPrivKeys[1], "hex"))
-      //     .add(getLagrangeCoeffs([1, 2], 2).mul(newTSS2))
-      //     .umod(ecCurve.n);
-      //   strictEqual(tssPrivKey.toString(16, 64), newTSSPrivKey.toString(16, 64));
-      // }
+      {
+        const { tssShare: newTSS2 } = await tb2.getTSSShare(factorKey);
+        const newTSSPrivKey = getLagrangeCoeffs([1, 2], 1)
+          .mul(new BN(serverDKGPrivKeys[1], "hex"))
+          .add(getLagrangeCoeffs([1, 2], 2).mul(newTSS2))
+          .umod(ecCurve.n);
+        strictEqual(tssPrivKey.toString(16, 64), newTSSPrivKey.toString(16, 64));
+      }
 
-      // {
-      //   const { tssShare: newTSS2 } = await tb2.getTSSShare(factorKey2);
-      //   const newTSSPrivKey = getLagrangeCoeffs([1, 3], 1)
-      //     .mul(new BN(serverDKGPrivKeys[1], "hex"))
-      //     .add(getLagrangeCoeffs([1, 3], 3).mul(newTSS2))
-      //     .umod(ecCurve.n);
-      //   strictEqual(tssPrivKey.toString(16, 64), newTSSPrivKey.toString(16, 64));
-      // }
+      {
+        const { tssShare: newTSS2 } = await tb2.getTSSShare(factorKey2);
+        const newTSSPrivKey = getLagrangeCoeffs([1, 3], 1)
+          .mul(new BN(serverDKGPrivKeys[1], "hex"))
+          .add(getLagrangeCoeffs([1, 3], 3).mul(newTSS2))
+          .umod(ecCurve.n);
+        strictEqual(tssPrivKey.toString(16, 64), newTSSPrivKey.toString(16, 64));
+      }
     });
-    it.only("#should be able to reconstruct tssShare from factor key (tss2) when initializing a key with useTSS true", async function () {
+    it("#should be able to reconstruct tssShare from factor key (tss2) when initializing a key with useTSS true", async function () {
       const sp = customSP;
       if (!sp.useTSS) this.skip();
 
       const deviceTSSShare = new BN(generatePrivate());
       const deviceTSSIndex = 3;
 
-      sp.postboxKey = new BN(getTempKey(), "hex");
+      sp.verifierName = "torus-test-health";
+      sp.verifierId = "test@example.com";
+      const { signatures, postboxkey } = await fetchPostboxKeyAndSigs({
+        serviceProvider: sp,
+        verifierName: sp.verifierName,
+        verifierId: sp.verifierId,
+      });
+      sp.postboxKey = postboxkey;
+
       const storageLayer = initStorageLayer({ hostUrl: metadataURL });
       const tb1 = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync: mode });
 
@@ -203,9 +201,14 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const tss1 = new BN(generatePrivate());
       const deviceTSSShare = new BN(generatePrivate());
       const deviceTSSIndex = 2;
-      sp._setTSSPubKey("default", 0, getPubKeyPoint(tss1));
-
-      sp.postboxKey = new BN(getTempKey(), "hex");
+      sp.verifierName = "torus-test-health";
+      sp.verifierId = "test18@example.com";
+      const { signatures, postboxkey } = await fetchPostboxKeyAndSigs({
+        serviceProvider: sp,
+        verifierName: sp.verifierName,
+        verifierId: sp.verifierId,
+      });
+      sp.postboxKey = postboxkey;
       const storageLayer = initStorageLayer({ hostUrl: metadataURL });
       const tb1 = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync: mode });
 

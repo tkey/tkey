@@ -803,8 +803,6 @@ class ThresholdKey implements ITKey {
     const newLabel = `${verifierNameVerifierId}\u0015${this.tssTag}\u0016${tssNonce + 1}`;
 
     const newTSSServerPub = await this.serviceProvider.getTSSPubKey(this.tssTag, tssNonce + 1);
-    // eslint-disable-next-line no-console
-    console.log("newTSSServerPub", newTSSServerPub, hexPoint(newTSSServerPub));
     const refreshResponses = await rssClient.refresh({
       factorPubs: factorPubs.map((f) => hexPoint(f)),
       targetIndexes,

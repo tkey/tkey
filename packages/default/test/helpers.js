@@ -132,9 +132,6 @@ export async function fetchPostboxKeyAndSigs(opts) {
   const { serviceProvider, verifierName, verifierId } = opts;
   const { serverEndpoints: sssEndpoints } = await serviceProvider.getSSSNodeDetails();
   const token = generateIdToken(verifierId);
-
-  // eslint-disable-next-line no-console
-  console.log("sssEndpoints", sssEndpoints, token, verifierName, verifierId);
   const retrieveSharesResponse = await serviceProvider.directWeb.torus.retrieveShares(sssEndpoints, verifierName, { verifier_id: verifierId }, token);
 
   const signatures = [];
@@ -174,10 +171,7 @@ export async function fetchTssDkgKeys(opts) {
       { verifier_id: verifierId, extended_verifier_id: extendedVerifierId },
       token
     );
-    // eslint-disable-next-line no-console
-    // console.log("retrieveSharesResponse", retrieveSharesResponse);
     serverDKGPrivKeys.push(new BN(retrieveSharesResponse.privKey, "hex"));
-    // serverDKGPubKeys.push(retrieveSharesResponse.privKey);
   }
 
   return {

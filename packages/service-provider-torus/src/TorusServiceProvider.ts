@@ -86,14 +86,8 @@ class TorusServiceProvider extends ServiceProviderBase {
 
   async getRSSNodeDetails(): Promise<{ serverEndpoints: string[]; serverPubKeys: PointHex[]; serverThreshold: number }> {
     const { torusPubKeys } = CustomAuth;
-    // const rssNodeEndpoints = CustomAuth.getRSSEndpoints();
-    const rssNodeEndpoints = [
-      "http://localhost:7071",
-      "http://localhost:7072",
-      "http://localhost:7073",
-      "http://localhost:7074",
-      "http://localhost:7075",
-    ];
+    const rssNodeEndpoints = CustomAuth.getRSSEndpoints();
+
     return {
       serverEndpoints: rssNodeEndpoints,
       serverPubKeys: torusPubKeys,
