@@ -774,8 +774,6 @@ class ThresholdKey implements ITKey {
       authSignatures: string[];
     }
   ): Promise<void> {
-    // eslint-disable-next-line no-debugger
-    debugger;
     if (!this.metadata) throw CoreError.metadataUndefined();
     if (!this.metadata.tssPolyCommits) throw CoreError.default(`tss poly commits obj not found`);
     const tssCommits = this.metadata.tssPolyCommits[this.tssTag];
