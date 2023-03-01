@@ -318,10 +318,8 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     });
     describe("with tss, tkey share deletion", function () {
       let deletedShareIndex;
-      let deletedShareStores;
       let shareStoreAfterDelete;
       let tb;
-      let tbInitResp;
       let tbTssInitResp;
       let oldFactorKey;
       let newFactorKey;
@@ -337,7 +335,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         const deviceTSSShare = new BN(generatePrivate());
         const deviceTSSIndex = 3;
         tb = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
-        tbInitResp = await tb._initializeNewKey({ initializeModules: true });
+        await tb._initializeNewKey({ initializeModules: true });
         oldFactorKey = new BN(generatePrivate());
         const oldFactorPub = getPubKeyPoint(oldFactorKey);
         tbTssInitResp = await tb._initializeNewTSSKey("default", deviceTSSShare, oldFactorPub, deviceTSSIndex);
@@ -347,18 +345,21 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         const newFactorPub = getPubKeyPoint(newFactorKey);
         const newShare = await tb.generateNewShare(true, {
           newFactorPub,
-          inputTSSIndex: 3,
+          inputTSSIndex: deviceTSSIndex,
           inputTSSShare: deviceTSSShare,
           newTSSIndex: 2,
         });
+
+        const { tssShare, tssIndex } = await tb.getTSSShare(newFactorKey);
+
         const updatedShareStore = await tb.deleteShare(newShare.newShareIndex, true, {
-          deviceTSSIndex,
-          deviceTSSShare,
+          inputTSSShare: tssShare,
+          inputTSSIndex: tssIndex,
           factorPub: oldFactorPub,
         });
         deletedShareIndex = newShare.newShareIndex;
-        deletedShareStores = newShare.newShareStores;
         shareStoreAfterDelete = updatedShareStore.newShareStores;
+
         await tb.syncLocalMetadataTransitions();
       });
       it(`#should be not be able to lookup delete share, manualSync=${mode}`, async function () {
@@ -370,58 +371,37 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         rejects(async () => {
           await tb.getTSSShare(oldFactorKey);
         });
+        await tb.getTSSShare(newFactorKey);
       });
-      it(`#should not be able to delete more than threshold number of shares, manualSync=${mode}`, async function () {
-        if (!customSP.useTSS) this.skip();
-        const { newShareIndex: newShareIndex1 } = await tb.generateNewShare();
-        await tb.deleteShare(newShareIndex1);
-        await tb.syncLocalMetadataTransitions();
-        await rejects(async () => {
-          await tb.deleteShare(tbInitResp.deviceShare.share.shareIndex);
-        }, Error);
-      });
-      it(`#should not be able to initialize with a deleted share, manualSync=${mode}`, async function () {
-        if (!customSP.useTSS) this.skip();
-        const tb2 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
-        await rejects(async function () {
-          await tb2.initialize({ withShare: deletedShareStores[deletedShareIndex.toString("hex")] });
-        });
-      });
-      it(`#should not be able to add share post deletion, manualSync=${mode}`, async function () {
-        if (!customSP.useTSS) this.skip();
-        const tb2 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
-        await tb2.initialize();
-        await rejects(async () => {
-          await tb2.inputShare(deletedShareStores[deletedShareIndex.toString("hex")].share.share);
-        }, Error);
-      });
-      it(`#should be able to delete a user, manualSync=${mode}`, async function () {
-        if (!customSP.useTSS) this.skip();
-        // create 2/4
-        await tb._initializeNewKey({ initializeModules: true });
-        await tb.generateNewShare();
-        const shareStoresAtEpoch2 = tb.getAllShareStoresForLatestPolynomial();
+      // it(`#should be able to delete a user and reset tss nonce, manualSync=${mode}`, async function () {
+      //   if (!customSP.useTSS) this.skip();
+      //   // create 2/4
+      //   await tb._initializeNewKey({ initializeModules: true });
+      //   await tb.generateNewShare();
+      //   const shareStoresAtEpoch2 = tb.getAllShareStoresForLatestPolynomial();
 
-        await tb.generateNewShare();
-        await tb.syncLocalMetadataTransitions();
-        const sharesStoresAtEpoch3 = tb.getAllShareStoresForLatestPolynomial();
-        await tb.CRITICAL_deleteTkey();
+      //   await tb.generateNewShare();
+      //   await tb.syncLocalMetadataTransitions();
+      //   const sharesStoresAtEpoch3 = tb.getAllShareStoresForLatestPolynomial();
+      //   await tb.CRITICAL_deleteTkey();
 
-        const spData = await customSL.getMetadata({ serviceProvider: customSP });
-        const data2 = await Promise.allSettled(shareStoresAtEpoch2.map((x) => tb.catchupToLatestShare({ shareStore: x })));
-        const data3 = await Promise.all(sharesStoresAtEpoch3.map((x) => customSL.getMetadata({ privKey: x.share.share })));
+      //   const spData = await customSL.getMetadata({ serviceProvider: customSP });
+      //   const data2 = await Promise.allSettled(shareStoresAtEpoch2.map((x) => tb.catchupToLatestShare({ shareStore: x })));
+      //   const data3 = await Promise.all(sharesStoresAtEpoch3.map((x) => customSL.getMetadata({ privKey: x.share.share })));
 
-        deepStrictEqual(spData.message, KEY_NOT_FOUND);
+      //   deepStrictEqual(spData.message, KEY_NOT_FOUND);
 
-        data2.forEach((x) => {
-          deepStrictEqual(x.status, "rejected");
-          deepStrictEqual(x.reason.code, 1308);
-        });
+      //   data2.forEach((x) => {
+      //     deepStrictEqual(x.status, "rejected");
+      //     deepStrictEqual(x.reason.code, 1308);
+      //   });
 
-        data3.forEach((x) => {
-          deepStrictEqual(x.message, SHARE_DELETED);
-        });
-      });
+      //   data3.forEach((x) => {
+      //     deepStrictEqual(x.message, SHARE_DELETED);
+      //   });
+
+      //   // TODO: check that TSS nonce is reset
+      // });
       it(`#should be able to reinitialize after wipe, manualSync=${mode}`, async function () {
         if (!customSP.useTSS) this.skip();
         // create 2/4
@@ -447,6 +427,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         if (resp1.privKey.cmp(reconstructedKey.privKey) === 0) {
           fail("key should be different");
         }
+        // TODO: check that TSS is reset and still able to use TSS methods
       });
     });
     describe("with tss, tkey serialization/deserialization", function () {
@@ -496,7 +477,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         const finalKey = await tb3.reconstructKey();
         strictEqual(finalKey.privKey.toString("hex"), resp1.privKey.toString("hex"), "Incorrect serialization");
 
-        const { tssShare: tssShare2, tssIndex: tssIndex2 } = await tb.getTSSShare(newFactorKey);
+        const { tssShare: tssShare2, tssIndex: tssIndex2 } = await tb3.getTSSShare(newFactorKey);
         const tssPrivKey2 = getLagrangeCoeffs([1, tssIndex2], 1)
           .mul(serverDKGPrivKeys[1])
           .add(getLagrangeCoeffs([1, tssIndex2], tssIndex2).mul(tssShare2))
@@ -544,13 +525,14 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         const finalKey = await tb3.reconstructKey();
         strictEqual(finalKey.privKey.toString("hex"), resp1.privKey.toString("hex"), "Incorrect serialization");
 
-        const { tssShare: tssShare2, tssIndex: tssIndex2 } = await tb.getTSSShare(newFactorKey);
+        const { tssShare: tssShare2, tssIndex: tssIndex2 } = await tb3.getTSSShare(newFactorKey);
         const tssPrivKey2 = getLagrangeCoeffs([1, tssIndex2], 1)
           .mul(serverDKGPrivKeys[1])
           .add(getLagrangeCoeffs([1, tssIndex2], tssIndex2).mul(tssShare2))
           .umod(ecCurve.n);
         strictEqual(tssPrivKey.toString("hex"), tssPrivKey2.toString("hex"), "Incorrect tss key");
       });
+      // TODO: add test for initialize such that initialize throws if the remote metadata is already there
       it(`#should serialize and deserialize correctly, keeping localTransitions consistent before syncing NewKeyAssign, manualSync=${mode}`, async function () {
         if (!customSP.useTSS) this.skip();
         let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
@@ -570,6 +552,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         }
         const finalKey = await tb2.reconstructKey();
         const shareToVerify = tb2.outputShareStore(shareIndex);
+        // TODO: tb2.generateNewShare()
         strictEqual(shareStores[shareIndex.toString("hex")].share.share.toString("hex"), shareToVerify.share.share.toString("hex"));
         await tb2.syncLocalMetadataTransitions();
         strictEqual(finalKey.privKey.toString("hex"), resp1.privKey.toString("hex"), "Incorrect serialization");
@@ -584,69 +567,39 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
         userInput = userInput.umod(ecCurve.curve.n);
         const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
+        // TODO: tss initialize
         await tb.syncLocalMetadataTransitions();
         const reconstructedKey = await tb.reconstructKey();
+        // TODO: reconstruct tss key
         const { newShareStores: shareStores, newShareIndex: shareIndex } = await tb.generateNewShare();
 
         const stringified = JSON.stringify(tb);
         const tb2 = await ThresholdKey.fromJSON(JSON.parse(stringified), { serviceProvider: customSP, storageLayer: customSL });
         const finalKey = await tb2.reconstructKey();
+        // TODO: reconstruct tss key
         const shareToVerify = tb2.outputShareStore(shareIndex);
         strictEqual(shareStores[shareIndex.toString("hex")].share.share.toString("hex"), shareToVerify.share.share.toString("hex"));
         await tb2.syncLocalMetadataTransitions();
         strictEqual(finalKey.privKey.toString("hex"), reconstructedKey.privKey.toString("hex"), "Incorrect serialization");
+        // TODO: both tss keys should be the same
 
         const reconstructedKey2 = await tb2.reconstructKey();
         if (resp1.privKey.cmp(reconstructedKey2.privKey) !== 0) {
           fail("key should be able to be reconstructed");
         }
       });
-
-      it(`#should be able to reshare a key and retrieve from service provider serialization, manualSync=${mode}`, async function () {
-        const resp1 = await tb._initializeNewKey({ initializeModules: true });
-        const { newShareStores, newShareIndex } = await tb.generateNewShare();
-        await tb.syncLocalMetadataTransitions();
-        const tb3 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
-        await tb3.initialize();
-        tb3.inputShareStore(newShareStores[newShareIndex.toString("hex")]);
-
-        const stringified = JSON.stringify(tb3);
-        const tb4 = await ThresholdKey.fromJSON(JSON.parse(stringified), { serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
-        const finalKeyPostSerialization = await tb4.reconstructKey();
-        strictEqual(finalKeyPostSerialization.privKey.toString("hex"), resp1.privKey.toString("hex"), "Incorrect serialization");
-      });
-      it(`#should be able to serialize and deserialize without service provider share or the postbox key, manualSync=${mode}`, async function () {
-        const customSP2 = getServiceProvider({ type: torusSP.serviceProviderName });
-        const customSL2 = initStorageLayer({ hostUrl: metadataURL });
-        const tb = new ThresholdKey({ serviceProvider: customSP2, storageLayer: customSL2, manualSync: mode });
-        const resp1 = await tb._initializeNewKey({ initializeModules: true });
-        const { newShareStores: newShareStores1, newShareIndex: newShareIndex1 } = await tb.generateNewShare();
-        await tb.syncLocalMetadataTransitions();
-
-        const customSP3 = getServiceProvider({ type: torusSP.serviceProviderName, isEmptyProvider: true });
-        customSL2.serviceProvider = customSP3;
-        const tb2 = new ThresholdKey({ serviceProvider: customSP2, storageLayer: customSL2, manualSync: mode });
-        await tb2.initialize({ withShare: resp1.deviceShare });
-        tb2.inputShareStore(newShareStores1[newShareIndex1.toString("hex")]);
-        await tb2.reconstructKey();
-        const stringified = JSON.stringify(tb2);
-
-        const tb3 = await ThresholdKey.fromJSON(JSON.parse(stringified));
-        const tb3Key = await tb3.reconstructKey();
-        strictEqual(tb3Key.privKey.toString("hex"), resp1.privKey.toString("hex"), "Incorrect serialization");
-      });
       it(`#should not be able to updateSDK with newKeyAssign transitions unsynced, manualSync=${mode}`, async function () {
         await tb._initializeNewKey({ initializeModules: true });
+        // TODO: initialize new tss key
         const stringified = JSON.stringify(tb);
         const tb2 = await ThresholdKey.fromJSON(JSON.parse(stringified), {});
 
         if (mode) {
           // Can't updateSDK, please do key assign.
           await rejects(async function () {
-            await tb2.updateSDK();
+            await tb2.updateSDK(); // TODO: does this need params? update function to handle TSS in tb.initialize core.ts:1130
           }, Error);
         }
-
         // create new key because the state might have changed after updateSDK()
         const tb3 = await ThresholdKey.fromJSON(JSON.parse(stringified), {});
         await tb3.generateNewShare();

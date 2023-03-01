@@ -69,6 +69,7 @@ class SecurityQuestionsModule implements IModule {
 
   async generateNewShareWithSecurityQuestions(answerString: string, questions: string): Promise<GenerateNewShareResult> {
     const metadata = this.tbSDK.getMetadata();
+    // TODO: throw in case of TSS
     const rawSqStore = metadata.getGeneralStoreDomain(this.moduleName);
     if (rawSqStore) throw SecurityQuestionsError.unableToReplace();
     const newSharesDetails = await this.tbSDK.generateNewShare();
