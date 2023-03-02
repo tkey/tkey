@@ -424,8 +424,8 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         strictEqual(tssPubKey.x.toString(16, 64), tssCommits[0].x.toString(16, 64));
         strictEqual(tssPubKey.y.toString(16, 64), tssCommits[0].y.toString(16, 64));
         const updatedShareStore = await tb.deleteShare(newShare.newShareIndex, true, {
-          deviceTSSIndex: retrievedTSSIndex,
-          deviceTSSShare: retrievedTSS,
+          inputTSSIndex: retrievedTSSIndex,
+          inputTSSShare: retrievedTSS,
           authSignatures: signatures,
           factorPub,
         });
