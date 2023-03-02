@@ -38,6 +38,18 @@ class ServiceProviderBase implements IServiceProvider {
     serverThreshold: number;
   };
 
+  rssNodeDetails: {
+    serverEndpoints: string[];
+    serverPubKeys: PointHex[];
+    serverThreshold: number;
+  };
+
+  sssNodeDetails: {
+    serverEndpoints: string[];
+    serverPubKeys: PointHex[];
+    serverThreshold: number;
+  };
+
   constructor({ enableLogging = false, postboxKey, useTSS = false }: ServiceProviderArgs) {
     this.useTSS = useTSS;
     this.enableLogging = enableLogging;
@@ -45,6 +57,16 @@ class ServiceProviderBase implements IServiceProvider {
     this.serviceProviderName = "ServiceProviderBase";
     this.tssPubKeys = {};
     this.tssNodeDetails = {
+      serverEndpoints: [],
+      serverPubKeys: [],
+      serverThreshold: -1,
+    };
+    this.rssNodeDetails = {
+      serverEndpoints: [],
+      serverPubKeys: [],
+      serverThreshold: -1,
+    };
+    this.sssNodeDetails = {
       serverEndpoints: [],
       serverPubKeys: [],
       serverThreshold: -1,
@@ -101,6 +123,22 @@ class ServiceProviderBase implements IServiceProvider {
     serverThreshold: number;
   }> {
     return this.tssNodeDetails;
+  }
+
+  async getRSSNodeDetails(): Promise<{
+    serverEndpoints: string[];
+    serverPubKeys: PointHex[];
+    serverThreshold: number;
+  }> {
+    return this.rssNodeDetails;
+  }
+
+  async getSSSNodeDetails(): Promise<{
+    serverEndpoints: string[];
+    serverPubKeys: PointHex[];
+    serverThreshold: number;
+  }> {
+    return this.sssNodeDetails;
   }
 
   _setTSSPubKey(tssTag: string, tssNonce: number, tssPubKey: Point) {
