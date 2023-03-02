@@ -433,21 +433,20 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         });
 
         // eslint-disable-next-line no-console
-        // console.log("deleted share");
-        // deletedShareIndex = newShare.newShareIndex;
-        // deletedShareStores = newShare.newShareStores;
-        // shareStoreAfterDelete = updatedShareStore.newShareStores;
-        // await tb.syncLocalMetadataTransitions();
+        deletedShareIndex = newShare.newShareIndex;
+        deletedShareStores = newShare.newShareStores;
+        shareStoreAfterDelete = updatedShareStore.newShareStores;
+        await tb.syncLocalMetadataTransitions();
       });
-      it.only(`#should be not be able to lookup delete share, manualSync=${mode}`, async function () {
-        // if (!customSP.useTSS) this.skip();
-        // const newKeys = Object.keys(shareStoreAfterDelete);
-        // if (newKeys.find((el) => el === deletedShareIndex.toString("hex"))) {
-        //   fail("Unable to delete share index");
-        // }
-        // rejects(async () => {
-        //   await tb.getTSSShare(oldFactorKey);
-        // });
+      it(`#should be not be able to lookup delete share, manualSync=${mode}`, async function () {
+        if (!customSP.useTSS) this.skip();
+        const newKeys = Object.keys(shareStoreAfterDelete);
+        if (newKeys.find((el) => el === deletedShareIndex.toString("hex"))) {
+          fail("Unable to delete share index");
+        }
+        rejects(async () => {
+          await tb.getTSSShare(oldFactorKey);
+        });
       });
       it(`#should not be able to delete more than threshold number of shares, manualSync=${mode}`, async function () {
         if (!customSP.useTSS) this.skip();
