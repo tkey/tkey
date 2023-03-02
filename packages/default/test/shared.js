@@ -402,7 +402,13 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         newFactorKey = new BN(generatePrivate());
 
         const newFactorPub = getPubKeyPoint(newFactorKey);
-        const newShare = await tb.generateNewShare(false);
+        const newShare = await tb.generateNewShare(true, {
+          inputTSSShare: deviceTSSShare,
+          inputTSSIndex: deviceTSSIndex,
+          newFactorPub,
+          newTSSIndex: 2,
+          authSignatures: signatures,
+        });
         const reconstructedKey = await tb.reconstructKey();
         await tb.syncLocalMetadataTransitions();
 
