@@ -656,15 +656,15 @@ class ThresholdKey implements ITKey {
       if (found.length > 1) throw CoreError.default("found two or more factorPubs that match, error in metadata");
       const updatedFactorPubs = existingFactorPubs.filter((f) => !f.x.eq(factorPub.x) || !f.y.eq(factorPub.y));
       this.metadata.addTSSData({ tssTag: this.tssTag, factorPubs: updatedFactorPubs });
-      const tssNodeDetails = await this._getTSSNodeDetails();
+      const rssNodeDetails = await this._getRssNodeDetails();
       const randomSelectedServers = randomSelection(
-        new Array(tssNodeDetails.serverEndpoints.length).fill(null).map((_, i) => i + 1),
-        Math.ceil(tssNodeDetails.serverEndpoints.length / 2)
+        new Array(rssNodeDetails.serverEndpoints.length).fill(null).map((_, i) => i + 1),
+        Math.ceil(rssNodeDetails.serverEndpoints.length / 2)
       );
 
       const updatedTSSIndexes = updatedFactorPubs.map((fb) => this.getFactorEncs(fb).tssIndex);
 
-      this._refreshTSSShares(
+      await this._refreshTSSShares(
         false,
         deviceTSSShare,
         deviceTSSIndex,
@@ -672,7 +672,7 @@ class ThresholdKey implements ITKey {
         updatedTSSIndexes,
         this.serviceProvider.getVerifierNameVerifierId(),
         {
-          ...tssNodeDetails,
+          ...rssNodeDetails,
           selectedServers: selectedServers || randomSelectedServers,
           authSignatures,
         }
@@ -687,6 +687,17 @@ class ThresholdKey implements ITKey {
 
   async _getTSSNodeDetails(): Promise<{ serverEndpoints: string[]; serverPubKeys: PointHex[]; serverThreshold: number }> {
     const { serverEndpoints, serverPubKeys, serverThreshold } = await this.serviceProvider.getTSSNodeDetails();
+    if (!Array.isArray(serverEndpoints) || serverEndpoints.length === 0) throw new Error("service provider tss server endpoints are missing");
+    if (!Array.isArray(serverPubKeys) || serverPubKeys.length === 0) throw new Error("service provider pub keys are missing");
+    return {
+      serverEndpoints,
+      serverPubKeys,
+      serverThreshold: serverThreshold || Math.floor(serverEndpoints.length / 2) + 1,
+    };
+  }
+
+  async _getRssNodeDetails(): Promise<{ serverEndpoints: string[]; serverPubKeys: PointHex[]; serverThreshold: number }> {
+    const { serverEndpoints, serverPubKeys, serverThreshold } = await this.serviceProvider.getRSSNodeDetails();
     if (!Array.isArray(serverEndpoints) || serverEndpoints.length === 0) throw new Error("service provider tss server endpoints are missing");
     if (!Array.isArray(serverPubKeys) || serverPubKeys.length === 0) throw new Error("service provider pub keys are missing");
     return {
@@ -731,17 +742,17 @@ class ThresholdKey implements ITKey {
       });
 
       const verifierId = this.serviceProvider.getVerifierNameVerifierId();
-      const tssNodeDetails = await this._getTSSNodeDetails();
+      const rssNodeDetails = await this._getRssNodeDetails();
       const randomSelectedServers = randomSelection(
-        new Array(tssNodeDetails.serverEndpoints.length).fill(null).map((_, i) => i + 1),
-        Math.ceil(tssNodeDetails.serverEndpoints.length / 2)
+        new Array(rssNodeDetails.serverEndpoints.length).fill(null).map((_, i) => i + 1),
+        Math.ceil(rssNodeDetails.serverEndpoints.length / 2)
       );
 
       const existingTSSIndexes = existingFactorPubs.map((fb) => this.getFactorEncs(fb).tssIndex);
       const updatedTSSIndexes = existingTSSIndexes.concat([newTSSIndex]);
 
       await this._refreshTSSShares(false, inputTSSShare, inputTSSIndex, updatedFactorPubs, updatedTSSIndexes, verifierId, {
-        ...tssNodeDetails,
+        ...rssNodeDetails,
         selectedServers: selectedServers || randomSelectedServers,
         authSignatures,
       });
@@ -801,6 +812,8 @@ class ThresholdKey implements ITKey {
     const newLabel = `${verifierNameVerifierId}\u0015${this.tssTag}\u0016${tssNonce + 1}`;
 
     const newTSSServerPub = await this.serviceProvider.getTSSPubKey(this.tssTag, tssNonce + 1);
+    // eslint-disable-next-line no-console
+    console.log("newTSSServerPub", newTSSServerPub.x.toString("hex"), this.tssTag, tssNonce + 1);
     const refreshResponses = await rssClient.refresh({
       factorPubs: factorPubs.map((f) => hexPoint(f)),
       targetIndexes,

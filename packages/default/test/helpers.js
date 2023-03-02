@@ -153,7 +153,7 @@ export async function fetchPostboxKeyAndSigs(opts) {
   };
 }
 // this function is only for testing and will return tss shares only for test verifiers.
-export async function fetchTssDkgKeys(opts) {
+export async function assignTssDkgKeys(opts) {
   let { serviceProvider, verifierName, verifierId, maxTSSNonceToSimulate, tssTag } = opts;
   tssTag = tssTag || "default";
   maxTSSNonceToSimulate = maxTSSNonceToSimulate || 1;

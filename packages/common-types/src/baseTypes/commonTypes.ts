@@ -75,6 +75,16 @@ export interface IServiceProvider extends ISerializable {
     serverPubKeys: PointHex[];
     serverThreshold: number;
   }>;
+  getRSSNodeDetails(): Promise<{
+    serverEndpoints: string[];
+    serverPubKeys: PointHex[];
+    serverThreshold: number;
+  }>;
+  getSSSNodeDetails(): Promise<{
+    serverEndpoints: string[];
+    serverPubKeys: PointHex[];
+    serverThreshold: number;
+  }>;
   getTSSPubKey(tssTag: string, tssNonce: number): Promise<Point>;
   sign(msg: BNString): string;
 }
