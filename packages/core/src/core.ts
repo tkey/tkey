@@ -606,8 +606,8 @@ class ThresholdKey implements ITKey {
     shareIndex: BNString,
     useTSS?: boolean,
     tssOptions?: {
-      deviceTSSShare: BN;
-      deviceTSSIndex: number;
+      inputTSSShare: BN;
+      inputTSSIndex: number;
       factorPub: Point;
       authSignatures: string[];
       selectedServers?: number[];
@@ -648,7 +648,7 @@ class ThresholdKey implements ITKey {
     }
 
     if (useTSS) {
-      const { factorPub, deviceTSSIndex, deviceTSSShare, selectedServers, authSignatures } = tssOptions;
+      const { factorPub, inputTSSIndex, inputTSSShare, selectedServers, authSignatures } = tssOptions;
       const existingFactorPubs = this.metadata.factorPubs[this.tssTag];
 
       const found = existingFactorPubs.filter((f) => f.x.eq(factorPub.x) && f.y.eq(factorPub.y));
@@ -666,8 +666,8 @@ class ThresholdKey implements ITKey {
 
       await this._refreshTSSShares(
         false,
-        deviceTSSShare,
-        deviceTSSIndex,
+        inputTSSShare,
+        inputTSSIndex,
         updatedFactorPubs,
         updatedTSSIndexes,
         this.serviceProvider.getVerifierNameVerifierId(),
@@ -827,7 +827,10 @@ class ThresholdKey implements ITKey {
     });
 
     const secondCommit = ecPoint(hexPoint(newTSSServerPub)).add(ecPoint(tssPubKey).neg());
-    const newTSSCommits = [Point.fromJSON(tssPubKey), Point.fromJSON({ x: secondCommit.getX(), y: secondCommit.getY() })];
+    const newTSSCommits = [
+      Point.fromJSON(tssPubKey),
+      Point.fromJSON({ x: secondCommit.getX().toString(16, 64), y: secondCommit.getY().toString(16, 64) }),
+    ];
     const factorEncs: {
       [factorPubID: string]: FactorEnc;
     } = {};
@@ -1144,7 +1147,7 @@ class ThresholdKey implements ITKey {
     });
 
     try {
-      await tb.initialize({ neverInitializeNewKey: true, withShare: params && params.withShare });
+      await tb.initialize({ neverInitializeNewKey: true, withShare: params && params.withShare }); // TODO: need to modify for TSS
     } catch (err) {
       throw CoreError.fromCode(1103, `${err.message}`);
     }
