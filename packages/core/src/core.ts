@@ -85,8 +85,10 @@ class ThresholdKey implements ITKey {
 
   haveWriteMetadataLock: string;
 
+  serverTimeOffset?: number = 0;
+
   constructor(args?: TKeyArgs) {
-    const { enableLogging = false, modules = {}, serviceProvider, storageLayer, manualSync = false } = args || {};
+    const { enableLogging = false, modules = {}, serviceProvider, storageLayer, manualSync = false, serverTimeOffset } = args || {};
     this.enableLogging = enableLogging;
     this.serviceProvider = serviceProvider;
     this.storageLayer = storageLayer;
@@ -101,10 +103,11 @@ class ThresholdKey implements ITKey {
     this._localMetadataTransitions = [[], []];
     this.setModuleReferences(); // Providing ITKeyApi access to modules
     this.haveWriteMetadataLock = "";
+    this.serverTimeOffset = serverTimeOffset;
   }
 
   static async fromJSON(value: StringifiedType, args: TKeyArgs): Promise<ThresholdKey> {
-    const { enableLogging, privKey, metadata, shares, _localMetadataTransitions, manualSync, lastFetchedCloudMetadata } = value;
+    const { enableLogging, privKey, metadata, shares, _localMetadataTransitions, manualSync, lastFetchedCloudMetadata, serverTimeOffset } = value;
     const { storageLayer, serviceProvider, modules } = args;
 
     const tb = new ThresholdKey({
@@ -113,6 +116,7 @@ class ThresholdKey implements ITKey {
       serviceProvider,
       modules,
       manualSync,
+      serverTimeOffset,
     });
     if (privKey) tb.privKey = new BN(privKey, "hex");
 
