@@ -385,7 +385,7 @@ class ThresholdKey implements ITKey {
     const { userEnc, serverEncs, tssIndex, type } = factorEncs;
     const tssShareBufs = await Promise.all(
       [decrypt(Buffer.from(factorKey.toString(16, 64), "hex"), userEnc)].concat(
-        serverEncs.map((factorEnc) => decrypt(Buffer.from(factorKey.toString(16, 64), "hex"), factorEnc))
+        serverEncs.filter((x) => x !== null).map((factorEnc) => decrypt(Buffer.from(factorKey.toString(16, 64), "hex"), factorEnc))
       )
     );
 
