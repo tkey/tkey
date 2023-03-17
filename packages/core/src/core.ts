@@ -383,13 +383,19 @@ class ThresholdKey implements ITKey {
     const factorPub = getPubKeyPoint(factorKey);
     const factorEncs = this.getFactorEncs(factorPub);
     const { userEnc, serverEncs, tssIndex, type } = factorEncs;
-    const tssShareBufs = await Promise.all(
-      [decrypt(Buffer.from(factorKey.toString(16, 64), "hex"), userEnc)].concat(
-        serverEncs.filter((x) => x !== null).map((factorEnc) => decrypt(Buffer.from(factorKey.toString(16, 64), "hex"), factorEnc))
-      )
+    const userDecryption = await decrypt(Buffer.from(factorKey.toString(16, 64), "hex"), userEnc);
+    const serverDecryptions = await Promise.all(
+      serverEncs.map((factorEnc) => {
+        if (factorEnc === null) return null;
+        return decrypt(Buffer.from(factorKey.toString(16, 64), "hex"), factorEnc);
+      })
     );
+    const tssShareBufs = [userDecryption].concat(serverDecryptions);
 
-    const tssShareBNs = tssShareBufs.map((buf) => new BN(buf.toString("hex"), "hex"));
+    const tssShareBNs = tssShareBufs.map((buf) => {
+      if (buf === null) return null;
+      return new BN(buf.toString("hex"), "hex");
+    });
     const tssCommits = this.getTSSCommits();
 
     const userDec = tssShareBNs[0];
@@ -417,6 +423,7 @@ class ThresholdKey implements ITKey {
     const combis = kCombinations(serverDecs.length, threshold || Math.ceil(serverDecs.length / 2));
     for (let i = 0; i < combis.length; i++) {
       const combi = combis[i];
+      if (combi.includes(null)) continue;
       const selectedServerDecs = serverDecs.filter((_, j) => combi.indexOf(j) > -1);
       const selectedServerIndexes = serverIndexes.filter((_, j) => combi.indexOf(j) > -1);
       const serverLagrangeCoeffs = selectedServerIndexes.map((x) => getLagrangeCoeffs(selectedServerIndexes, x));
