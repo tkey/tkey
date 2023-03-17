@@ -423,8 +423,9 @@ class ThresholdKey implements ITKey {
     const combis = kCombinations(serverDecs.length, threshold || Math.ceil(serverDecs.length / 2));
     for (let i = 0; i < combis.length; i++) {
       const combi = combis[i];
-      if (combi.includes(null)) continue;
       const selectedServerDecs = serverDecs.filter((_, j) => combi.indexOf(j) > -1);
+      if (selectedServerDecs.includes(null)) continue;
+
       const selectedServerIndexes = serverIndexes.filter((_, j) => combi.indexOf(j) > -1);
       const serverLagrangeCoeffs = selectedServerIndexes.map((x) => getLagrangeCoeffs(selectedServerIndexes, x));
       const serverInterpolated = dotProduct(serverLagrangeCoeffs, selectedServerDecs, ecCurve.n);
