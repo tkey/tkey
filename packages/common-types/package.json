@@ -44,7 +44,7 @@
   },
   "dependencies": {
     "@toruslabs/customauth": "^11.4.0",
-    "@toruslabs/eccrypto": "^1.1.8",
+    "@toruslabs/eccrypto": "^2.1.1",
     "@toruslabs/rss-client": "^1.3.0",
     "bn.js": "^5.2.1",
     "elliptic": "^6.5.4",
