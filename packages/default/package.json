@@ -1,6 +1,6 @@
 {
   "name": "@tkey/default",
-  "version": "8.0.4-alpha.0",
+  "version": "8.0.5-alpha.0",
   "description": "TKey default library",
   "main": "dist/default.cjs.js",
   "module": "dist/default.esm.js",
@@ -34,21 +34,21 @@
     "src"
   ],
   "dependencies": {
-    "@tkey/common-types": "^8.0.0-alpha.0",
-    "@tkey/core": "^8.0.4-alpha.0",
-    "@tkey/security-questions": "^8.0.0-alpha.0",
-    "@tkey/service-provider-base": "^8.0.0-alpha.0",
-    "@tkey/service-provider-torus": "^8.0.1-alpha.0",
-    "@tkey/share-serialization": "^8.0.0-alpha.0",
-    "@tkey/share-transfer": "^8.0.0-alpha.0",
-    "@tkey/storage-layer-torus": "^8.0.0-alpha.0",
+    "@tkey/common-types": "^8.0.5-alpha.0",
+    "@tkey/core": "^8.0.5-alpha.0",
+    "@tkey/security-questions": "^8.0.5-alpha.0",
+    "@tkey/service-provider-base": "^8.0.5-alpha.0",
+    "@tkey/service-provider-torus": "^8.0.5-alpha.0",
+    "@tkey/share-serialization": "^8.0.5-alpha.0",
+    "@tkey/share-transfer": "^8.0.5-alpha.0",
+    "@tkey/storage-layer-torus": "^8.0.5-alpha.0",
     "@toruslabs/eccrypto": "^2.1.1",
     "@toruslabs/rss-client": "^1.4.0",
     "bn.js": "^5.2.1"
   },
   "devDependencies": {
-    "@tkey/private-keys": "^8.0.0-alpha.0",
-    "@tkey/seed-phrase": "^8.0.0-alpha.0",
+    "@tkey/private-keys": "^8.0.5-alpha.0",
+    "@tkey/seed-phrase": "^8.0.5-alpha.0",
     "@toruslabs/http-helpers": "^3.2.0",
     "jsrsasign": "^10.6.1",
     "web3-utils": "^1.8.1"
