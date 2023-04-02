@@ -1,6 +1,6 @@
 {
   "name": "@tkey/storage-layer-torus",
-  "version": "8.0.5-alpha.0",
+  "version": "8.0.6-alpha.0",
   "description": "TKey Torus Storage Layer Module",
   "author": "Torus Labs",
   "homepage": "https://github.com/tkey/tkey#readme",
@@ -38,7 +38,7 @@
     "@babel/runtime": "7.x"
   },
   "dependencies": {
-    "@tkey/common-types": "^8.0.5-alpha.0",
+    "@tkey/common-types": "^8.0.6-alpha.0",
     "@toruslabs/http-helpers": "^3.2.0",
     "bn.js": "^5.2.1",
     "json-stable-stringify": "^1.0.2",
