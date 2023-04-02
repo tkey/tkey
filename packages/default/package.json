@@ -43,7 +43,7 @@
     "@tkey/share-transfer": "^8.0.5-alpha.0",
     "@tkey/storage-layer-torus": "^8.0.5-alpha.0",
     "@toruslabs/eccrypto": "^2.1.1",
-    "@toruslabs/rss-client": "^1.4.0",
+    "@toruslabs/rss-client": "^1.4.1",
     "bn.js": "^5.2.1"
   },
   "devDependencies": {
