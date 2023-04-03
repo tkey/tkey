@@ -1,6 +1,6 @@
 {
   "name": "@tkey/security-questions",
-  "version": "8.0.6-alpha.0",
+  "version": "8.0.7-alpha.0",
   "description": "TKey Security Questions Module",
   "author": "Torus Labs",
   "homepage": "https://github.com/tkey/tkey#readme",
@@ -41,7 +41,7 @@
     "@babel/runtime": "7.x"
   },
   "dependencies": {
-    "@tkey/common-types": "^8.0.6-alpha.0",
+    "@tkey/common-types": "^8.0.7-alpha.0",
     "bn.js": "^5.2.1",
     "web3-utils": "^1.8.1"
   },
