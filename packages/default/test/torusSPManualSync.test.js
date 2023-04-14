@@ -9,6 +9,7 @@ const torusSp = new ServiceProviderTorus({
   postboxKey: PRIVATE_KEY,
   customAuthArgs: {
     baseUrl: "http://localhost:3000",
+    web3AuthClientId: "test",
   },
 });
 const metadataURL = getMetadataUrl();
