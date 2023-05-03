@@ -10,6 +10,7 @@ env:
 jobs:
   test:
     strategy:
+      max-parallel: 1
       matrix:
         browser: [chromium, firefox]
         # browser: [chromium, firefox, webkit]
