@@ -11,8 +11,8 @@ module.exports = async (config) => {
   const torusConfig = (await import("@toruslabs/torus-scripts/config/torus.config.js")).default;
   const webpackConfig = generateWebpackConfig.default(torusConfig.name);
   if (process.env.INFRA === "LOCAL") {
-    config.set({ ...localBrowserConfig(webpackConfig, config, { args: [process.env.MOCKED] }) });
+    config.set({ ...localBrowserConfig(webpackConfig, config, { args: [process.env.MOCKED, process.env.METADATA] }) });
   } else if (process.env.INFRA === "CLOUD") {
-    config.set({ ...browserStackConfig(webpackConfig, config, { name: pkgName, args: [process.env.MOCKED] }) });
+    config.set({ ...browserStackConfig(webpackConfig, config, { name: pkgName, args: [process.env.MOCKED, process.env.METADATA] }) });
   }
 };
