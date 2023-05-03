@@ -1,24 +1,17 @@
-import { generateAddressFromPublicKey, generateID, ISeedPhraseFormat, ISeedPhraseStore, MetamaskSeedPhraseStore } from "@tkey/common-types";
-import { generateMnemonic, mnemonicToSeed, validateMnemonic } from "bip39";
+import { generateID, ISeedPhraseFormat, ISeedPhraseStore, MetamaskSeedPhraseStore } from "@tkey/common-types";
 import BN from "bn.js";
-import HDKey from "hdkey";
-import { provider } from "web3-core";
-import { fromWei } from "web3-utils";
-
-import Web3Eth from "./web3";
+import { HDNodeWallet, Mnemonic, Provider } from "ethers";
 
 class MetamaskSeedPhraseFormat implements ISeedPhraseFormat {
   type: string;
 
+  provider: Provider;
+
   hdPathString: string;
 
-  provider: provider;
-
-  root: HDKey;
-
-  constructor(ethProvider: provider) {
-    this.hdPathString = `m/44'/60'/0'/0`;
+  constructor(ethProvider: Provider) {
     this.type = "HD Key Tree";
+    this.hdPathString = "m/44'/60'/0'/0";
     this.provider = ethProvider;
   }
 
@@ -28,51 +21,44 @@ class MetamaskSeedPhraseFormat implements ISeedPhraseFormat {
     if (wordCount % 3 !== 0 || wordCount > 24 || wordCount < 12) {
       return false;
     }
-    return validateMnemonic(seedPhrase);
+    return Mnemonic.isValidMnemonic(parsedSeedPhrase);
   }
 
   async deriveKeysFromSeedPhrase(seedPhraseStore: ISeedPhraseStore): Promise<BN[]> {
     const mmStore = seedPhraseStore as MetamaskSeedPhraseStore;
     const { seedPhrase } = mmStore;
-    const seed = await mnemonicToSeed(seedPhrase);
-    const hdkey = HDKey.fromMasterSeed(seed);
-    const root = hdkey.derive(this.hdPathString);
-
+    const hdkey = HDNodeWallet.fromPhrase(seedPhrase, "", this.hdPathString);
+    const root = hdkey.derivePath(this.hdPathString);
     const numOfWallets = mmStore.numberOfWallets;
     const wallets: BN[] = [];
     for (let i = 0; i < numOfWallets; i += 1) {
       const child = root.deriveChild(i);
-      const wallet = new BN(child.privateKey);
+      const wallet = new BN(child.privateKey.slice(2), "hex");
       wallets.push(wallet);
     }
     return wallets;
   }
 
   async createSeedPhraseStore(seedPhrase?: string): Promise<MetamaskSeedPhraseStore> {
-    let numberOfWallets = 0;
-    const finalSeedPhrase = seedPhrase || generateMnemonic();
-    let lastBalance: string;
-    const web3 = new Web3Eth(this.provider);
-    const hdkey = HDKey.fromMasterSeed(finalSeedPhrase);
-    const root = hdkey.derive(this.hdPathString);
-
+    let numberOfWallets = 1;
+    let lastBalance: bigint;
+    const hdkey = seedPhrase ? HDNodeWallet.fromPhrase(seedPhrase, "", this.hdPathString) : HDNodeWallet.createRandom("", this.hdPathString);
+    const root = hdkey.derivePath(this.hdPathString);
     // seek out the first zero balance
-    while (lastBalance !== "0") {
+    while (lastBalance !== BigInt(0)) {
       const wallet = root.deriveChild(numberOfWallets);
-      const address = generateAddressFromPublicKey(wallet.publicKey);
-
-      lastBalance = await web3.getBalance(address);
-      lastBalance = fromWei(lastBalance);
-
+      console.log(wallet.address, wallet.privateKey);
+      lastBalance = await this.provider.getBalance(wallet.address);
       numberOfWallets += 1;
     }
 
-    return {
+    const obj = {
       id: generateID(),
       type: this.type,
-      seedPhrase: finalSeedPhrase,
+      seedPhrase: hdkey.mnemonic.phrase,
       numberOfWallets,
     };
+    return obj;
   }
 }
 export default MetamaskSeedPhraseFormat;
