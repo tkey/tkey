@@ -14,6 +14,7 @@ import { post } from "@toruslabs/http-helpers";
 import { keccak256 } from "@toruslabs/torus.js";
 import { deepEqual, deepStrictEqual, equal, fail, notEqual, notStrictEqual, strict, strictEqual, throws } from "assert";
 import BN from "bn.js";
+import { JsonRpcProvider } from "ethers";
 import { createSandbox } from "sinon";
 
 import ThresholdKey from "../src/index";
@@ -831,7 +832,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     let secp256k1Format;
     let ed25519privateKeyFormat;
     beforeEach("Setup ThresholdKey", async function () {
-      metamaskSeedPhraseFormat = new MetamaskSeedPhraseFormat("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68");
+      metamaskSeedPhraseFormat = new MetamaskSeedPhraseFormat(new JsonRpcProvider("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68"));
       secp256k1Format = new SECP256K1Format();
       ed25519privateKeyFormat = new ED25519Format();
       tb = new ThresholdKey({
@@ -884,7 +885,9 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       strictEqual(returnedSeed[0].seedPhrase, seedPhraseToSet);
       strictEqual(returnedSeed[1].seedPhrase, seedPhraseToSet2);
 
-      const metamaskSeedPhraseFormat2 = new MetamaskSeedPhraseFormat("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68");
+      const metamaskSeedPhraseFormat2 = new MetamaskSeedPhraseFormat(
+        new JsonRpcProvider("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68")
+      );
       const tb2 = new ThresholdKey({
         serviceProvider: customSP,
         manualSync: mode,
@@ -1041,7 +1044,9 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       await tb.modules.privateKeyModule.setPrivateKey("secp256k1n", actualPrivateKeys[1]);
       await tb.syncLocalMetadataTransitions();
 
-      const metamaskSeedPhraseFormat2 = new MetamaskSeedPhraseFormat("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68");
+      const metamaskSeedPhraseFormat2 = new MetamaskSeedPhraseFormat(
+        new JsonRpcProvider("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68")
+      );
       const tb2 = new ThresholdKey({
         serviceProvider: customSP,
         manualSync: mode,
