@@ -22,15 +22,9 @@ class TorusServiceProvider extends ServiceProviderBase {
 
   verifierType?: "normal" | "aggregate" | "hybrid";
 
-  constructor({ enableLogging = false, postboxKey, customAuthArgs, nodeEndpoints, nodePubKeys, useTSS }: TorusServiceProviderArgs) {
+  constructor({ enableLogging = false, postboxKey, customAuthArgs, useTSS }: TorusServiceProviderArgs) {
     super({ enableLogging, postboxKey, useTSS });
     this.customAuthArgs = customAuthArgs;
-    if (nodeEndpoints && nodeEndpoints.length > 0) {
-      CustomAuth.torusNodeEndpoints = nodeEndpoints;
-    }
-    if (nodePubKeys && nodePubKeys.length > 0) {
-      CustomAuth.torusPubKeys = nodePubKeys;
-    }
     this.directWeb = new CustomAuth(customAuthArgs);
 
     this.serviceProviderName = "TorusServiceProvider";
@@ -65,39 +59,70 @@ class TorusServiceProvider extends ServiceProviderBase {
   }
 
   async getTSSNodeDetails(): Promise<{ serverEndpoints: string[]; serverPubKeys: PointHex[]; serverThreshold: number }> {
-    const { torusPubKeys } = CustomAuth;
-    const tssNodeEndpoints = CustomAuth.getTSSEndpoints();
+    if (!this.verifierId) throw new Error("no verifierId, not logged in");
+    if (!this.verifierName) throw new Error("no verifierName, not logged in");
+
+    const { torusNodeTSSEndpoints: tssNodeEndpoints, torusNodePub: torusPubKeys } = await this.directWeb.nodeDetailManager.getNodeDetails({
+      verifier: this.verifierName,
+      verifierId: this.verifierId,
+    });
+
     return {
       serverEndpoints: tssNodeEndpoints,
-      serverPubKeys: torusPubKeys,
+      serverPubKeys: torusPubKeys.map((key) => {
+        return {
+          x: key.X,
+          y: key.Y,
+        };
+      }),
       serverThreshold: Math.ceil(tssNodeEndpoints.length / 2),
     };
   }
 
   async getSSSNodeDetails(): Promise<{ serverEndpoints: string[]; serverPubKeys: PointHex[]; serverThreshold: number }> {
-    const { torusPubKeys } = CustomAuth;
-    const tssNodeEndpoints = CustomAuth.getSSSEndpoints();
+    if (!this.verifierId) throw new Error("no verifierId, not logged in");
+    if (!this.verifierName) throw new Error("no verifierName, not logged in");
+
+    const { torusNodeSSSEndpoints: tssNodeEndpoints, torusNodePub: torusPubKeys } = await this.directWeb.nodeDetailManager.getNodeDetails({
+      verifier: this.verifierName,
+      verifierId: this.verifierId,
+    });
     return {
       serverEndpoints: tssNodeEndpoints,
-      serverPubKeys: torusPubKeys,
+      serverPubKeys: torusPubKeys.map((key) => {
+        return {
+          x: key.X,
+          y: key.Y,
+        };
+      }),
       serverThreshold: Math.ceil(tssNodeEndpoints.length / 2),
     };
   }
 
   async getRSSNodeDetails(): Promise<{ serverEndpoints: string[]; serverPubKeys: PointHex[]; serverThreshold: number }> {
-    const { torusPubKeys } = CustomAuth;
-    const rssNodeEndpoints = CustomAuth.getRSSEndpoints();
+    if (!this.verifierId) throw new Error("no verifierId, not logged in");
+    if (!this.verifierName) throw new Error("no verifierName, not logged in");
+
+    const { torusNodeRSSEndpoints: tssNodeEndpoints, torusNodePub: torusPubKeys } = await this.directWeb.nodeDetailManager.getNodeDetails({
+      verifier: this.verifierName,
+      verifierId: this.verifierId,
+    });
 
     return {
-      serverEndpoints: rssNodeEndpoints,
-      serverPubKeys: torusPubKeys,
-      serverThreshold: Math.ceil(rssNodeEndpoints.length / 2),
+      serverEndpoints: tssNodeEndpoints,
+      serverPubKeys: torusPubKeys.map((key) => {
+        return {
+          x: key.X,
+          y: key.Y,
+        };
+      }),
+      serverThreshold: Math.ceil(tssNodeEndpoints.length / 2),
     };
   }
 
   async getTSSPubKey(tssTag: string, tssNonce: number): Promise<Point> {
     if (!this.verifierName || !this.verifierId) throw new Error("verifier userinfo not found, not logged in yet");
-    const sssNodeEndpoints = CustomAuth.getSSSEndpoints();
+    const { serverEndpoints: sssNodeEndpoints } = await this.getSSSNodeDetails();
     const tssServerPub = (await this.directWeb.torus.getPublicAddress(
       sssNodeEndpoints,
       {

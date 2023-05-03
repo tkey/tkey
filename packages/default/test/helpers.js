@@ -39,6 +39,9 @@ export function getServiceProvider(params) {
     return new ServiceProviderTorus({
       postboxKey: isEmptyProvider ? null : PRIVATE_KEY,
       customAuthArgs: {
+        network: "sapphire_mainnet",
+
+        web3AuthClientId: "YOUR_CLIENT_ID",
         // this url has no effect as postbox key is passed
         // passing it just to satisfy direct auth checks.
         baseUrl: "http://localhost:3000",
@@ -135,7 +138,7 @@ export async function fetchPostboxKeyAndSigs(opts) {
   const retrieveSharesResponse = await serviceProvider.directWeb.torus.retrieveShares(sssEndpoints, verifierName, { verifier_id: verifierId }, token);
 
   const signatures = [];
-  retrieveSharesResponse.sessionTokensData.filter((session) => {
+  retrieveSharesResponse.sessionTokenData.filter((session) => {
     if (session) {
       signatures.push(
         JSON.stringify({

@@ -17,6 +17,8 @@ const torusSp = new ServiceProviderTorus({
   //   y: new BN("4f3909bf64be23a32887086fccd449e0e57042622a1364e0d670f6eb798238d7", "hex"),
   // },
   customAuthArgs: {
+    network: "sapphire_mainnet",
+    web3AuthClientId: "YOUR_CLIENT_ID",
     baseUrl: "http://localhost:3000",
   },
 });
