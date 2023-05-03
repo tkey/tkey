@@ -1,6 +1,6 @@
 {
   "name": "@tkey/security-questions",
-  "version": "7.4.0",
+  "version": "9.0.0",
   "description": "TKey Security Questions Module",
   "author": "Torus Labs",
   "homepage": "https://github.com/tkey/tkey#readme",
@@ -41,9 +41,9 @@
     "@babel/runtime": "7.x"
   },
   "dependencies": {
-    "ethereum-cryptography": "^2.0.0",
-    "@tkey/common-types": "^7.4.0",
-    "bn.js": "^5.2.1"
+    "@tkey/common-types": "^9.0.0",
+    "bn.js": "^5.2.1",
+    "ethereum-cryptography": "^2.0.0"
   },
   "devDependencies": {
     "@types/bn.js": "^5.1.1"
