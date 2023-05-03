@@ -13,7 +13,7 @@ jobs:
     name: Backward Compatibility Tests
     strategy:
       matrix:
-        node: ["16.x"]
+        node: ["18.x"]
         os: [ubuntu-latest]
 
     runs-on: ${{ matrix.os }}
@@ -29,18 +29,6 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
           cache: "npm"
-
-      - name: Get npm cache directory
-        id: npm-cache-dir
-        run: |
-          echo "::set-output name=dir::$(npm config get cache)"
-      - uses: actions/cache@v3
-        id: npm-cache # use this to check for `cache-hit` ==> if: steps.npm-cache.outputs.cache-hit != 'true'
-        with:
-          path: ${{ steps.npm-cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
 
       - name: Install dependencies, bootstrap, pack
         run: |

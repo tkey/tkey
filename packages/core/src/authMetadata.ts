@@ -1,7 +1,7 @@
 import { ecCurve, IAuthMetadata, StringifiedType, stripHexPrefix, toPrivKeyEC } from "@tkey/common-types";
+import { keccak256 } from "@toruslabs/torus.js";
 import BN from "bn.js";
 import stringify from "json-stable-stringify";
-import { keccak256 } from "web3-utils";
 
 import CoreError from "./errors";
 import Metadata from "./metadata";
@@ -23,7 +23,7 @@ class AuthMetadata implements IAuthMetadata {
     if (!m.pubKey) throw CoreError.metadataPubKeyUnavailable();
 
     const pubK = ecCurve.keyFromPublic({ x: m.pubKey.x.toString("hex", 64), y: m.pubKey.y.toString("hex", 64) }, "hex");
-    if (!pubK.verify(stripHexPrefix(keccak256(stringify(data))), sig)) {
+    if (!pubK.verify(stripHexPrefix(keccak256(Buffer.from(stringify(data), "utf8"))), sig)) {
       throw CoreError.default("Signature not valid for returning metadata");
     }
     return new AuthMetadata(m);
@@ -34,7 +34,7 @@ class AuthMetadata implements IAuthMetadata {
 
     if (!this.privKey) throw CoreError.privKeyUnavailable();
     const k = toPrivKeyEC(this.privKey);
-    const sig = k.sign(stripHexPrefix(keccak256(stringify(data))));
+    const sig = k.sign(stripHexPrefix(keccak256(Buffer.from(stringify(data), "utf8"))));
 
     return {
       data,

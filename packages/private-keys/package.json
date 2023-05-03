@@ -43,8 +43,7 @@
   "dependencies": {
     "@tkey/common-types": "^7.4.0",
     "@toruslabs/tweetnacl-js": "^1.0.4",
-    "bn.js": "^5.2.1",
-    "randombytes": "^2.1.0"
+    "bn.js": "^5.2.1"
   },
   "bugs": {
     "url": "https://github.com/tkey/tkey/issues"
@@ -54,6 +53,10 @@
       "yarn run lint --",
       "prettier --write 'src/**/*.ts'"
     ]
+  },
+  "engines": {
+    "node": ">=16.18.1",
+    "npm": ">=8.x"
   },
   "gitHead": "9967ce9f795f495f28ef0da1fc50acde31dcc258"
 }

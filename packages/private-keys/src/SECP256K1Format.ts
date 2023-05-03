@@ -1,6 +1,18 @@
 import { ecCurve, generateID, IPrivateKeyFormat, IPrivateKeyStore } from "@tkey/common-types";
 import BN from "bn.js";
-import randombytes from "randombytes";
+import nodeCrypto from "crypto";
+
+const browserCrypto = global.crypto || global.msCrypto || {};
+
+export function randomBytes(size: number): Buffer {
+  const arr = new Uint8Array(size);
+  if (typeof browserCrypto.getRandomValues === "undefined") {
+    return Buffer.from(nodeCrypto.randomBytes(size));
+  }
+  browserCrypto.getRandomValues(arr);
+
+  return Buffer.from(arr);
+}
 
 export class SECP256K1Format implements IPrivateKeyFormat {
   privateKey: BN;
@@ -23,7 +35,7 @@ export class SECP256K1Format implements IPrivateKeyFormat {
   createPrivateKeyStore(privateKey?: BN): IPrivateKeyStore {
     let privKey: BN;
     if (!privateKey) {
-      privKey = new BN(randombytes(64));
+      privKey = new BN(randomBytes(64));
     } else {
       if (!this.validatePrivateKey(privateKey)) {
         throw Error("Invalid Private Key");

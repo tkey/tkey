@@ -1,8 +1,8 @@
 import { decrypt as ecDecrypt, encrypt as ecEncrypt, generatePrivate } from "@toruslabs/eccrypto";
+import { keccak256, toChecksumAddress } from "@toruslabs/torus.js";
 import BN from "bn.js";
 import { ec as EC } from "elliptic";
 import { serializeError } from "serialize-error";
-import { keccak256, toChecksumAddress } from "web3-utils";
 
 import { EncryptedMessage } from "./baseTypes/commonTypes";
 
@@ -54,7 +54,7 @@ export function prettyPrintError(error: Error): string {
 }
 
 export function generateAddressFromPublicKey(publicKey: Buffer): string {
-  const ethAddressLower = `0x${keccak256(publicKey.toString("hex")).slice(64 - 38)}`;
+  const ethAddressLower = `0x${keccak256(publicKey).slice(64 - 38)}`;
   return toChecksumAddress(ethAddressLower);
 }
 

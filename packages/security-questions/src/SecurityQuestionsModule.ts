@@ -11,13 +11,13 @@ import {
   ShareStoreMap,
 } from "@tkey/common-types";
 import BN from "bn.js";
-import { keccak256 } from "web3-utils";
+import { keccak256 } from "ethereum-cryptography/keccak";
 
 import SecurityQuestionsError from "./errors";
 import SecurityQuestionStore from "./SecurityQuestionStore";
 
 function answerToUserInputHashBN(answerString: string): BN {
-  return new BN(keccak256(answerString).slice(2), "hex");
+  return new BN(keccak256(Buffer.from(answerString, "utf8")));
 }
 
 export const SECURITY_QUESTIONS_MODULE_NAME = "securityQuestions";

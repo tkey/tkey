@@ -47,9 +47,8 @@
   "devDependencies": {
     "@tkey/private-keys": "^7.4.0",
     "@tkey/seed-phrase": "^7.4.0",
-    "@toruslabs/eccrypto": "^2.1.1",
-    "@toruslabs/http-helpers": "^3.3.0",
-    "web3-utils": "^1.9.0"
+    "@toruslabs/eccrypto": "^3.0.0",
+    "@toruslabs/http-helpers": "^4.0.0"
   },
   "peerDependencies": {
     "@babel/runtime": "7.x"
@@ -78,5 +77,9 @@
     "direct auth",
     "tkey"
   ],
+  "engines": {
+    "node": ">=16.18.1",
+    "npm": ">=8.x"
+  },
   "gitHead": "9967ce9f795f495f28ef0da1fc50acde31dcc258"
 }

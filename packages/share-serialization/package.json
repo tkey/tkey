@@ -44,9 +44,8 @@
   },
   "dependencies": {
     "@tkey/common-types": "^7.4.0",
-    "@types/create-hash": "1.2.2",
     "bn.js": "^5.2.1",
-    "create-hash": "^1.2.0"
+    "ethereum-cryptography": "^2.0.0"
   },
   "bugs": {
     "url": "https://github.com/tkey/tkey/issues"
@@ -56,6 +55,10 @@
       "yarn run lint --",
       "prettier --write 'src/**/*.ts'"
     ]
+  },
+  "engines": {
+    "node": ">=16.18.1",
+    "npm": ">=8.x"
   },
   "gitHead": "9967ce9f795f495f28ef0da1fc50acde31dcc258"
 }
