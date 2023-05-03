@@ -43,13 +43,13 @@
     "@babel/runtime": "7.x"
   },
   "dependencies": {
-    "@toruslabs/customauth": "^12.0.0",
-    "@toruslabs/eccrypto": "^2.1.1",
+    "@toruslabs/customauth": "^13.0.0",
+    "@toruslabs/eccrypto": "^3.0.0",
     "bn.js": "^5.2.1",
     "elliptic": "^6.5.4",
     "serialize-error": "^8.1.0",
     "ts-custom-error": "^3.3.1",
-    "web3-utils": "^1.9.0"
+    "@toruslabs/torus.js": "^8.0.0"
   },
   "devDependencies": {
     "@types/bn.js": "^5.1.1",
@@ -63,6 +63,10 @@
       "yarn run lint --",
       "prettier --write 'src/**/*.ts'"
     ]
+  },
+  "engines": {
+    "node": ">=16.18.1",
+    "npm": ">=8.x"
   },
   "gitHead": "9967ce9f795f495f28ef0da1fc50acde31dcc258"
 }

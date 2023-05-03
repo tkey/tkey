@@ -42,12 +42,8 @@
   },
   "dependencies": {
     "@tkey/common-types": "^7.4.0",
-    "bip39": "^3.1.0",
     "bn.js": "^5.2.1",
-    "hdkey": "^2.1.0",
-    "web3-core": "^1.9.0",
-    "web3-eth": "^1.9.0",
-    "web3-utils": "^1.9.0"
+    "ethers": "^6.3.0"
   },
   "devDependencies": {
     "@types/bn.js": "^5.1.1"
@@ -57,6 +53,10 @@
       "yarn run lint --",
       "prettier --write 'src/**/*.ts'"
     ]
+  },
+  "engines": {
+    "node": ">=16.18.1",
+    "npm": ">=8.x"
   },
   "gitHead": "9967ce9f795f495f28ef0da1fc50acde31dcc258"
 }

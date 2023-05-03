@@ -11,10 +11,11 @@ import ShareTransferModule from "@tkey/share-transfer";
 import TorusStorageLayer from "@tkey/storage-layer-torus";
 import { generatePrivate } from "@toruslabs/eccrypto";
 import { post } from "@toruslabs/http-helpers";
+import { keccak256 } from "@toruslabs/torus.js";
 import { deepEqual, deepStrictEqual, equal, fail, notEqual, notStrictEqual, strict, strictEqual, throws } from "assert";
 import BN from "bn.js";
+import { JsonRpcProvider } from "ethers";
 import { createSandbox } from "sinon";
-import { keccak256 } from "web3-utils";
 
 import ThresholdKey from "../src/index";
 import { getMetadataUrl, getServiceProvider, initStorageLayer, isMocked } from "./helpers";
@@ -93,7 +94,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       }
     });
     it(`#should be able to reconstruct key when initializing with user input, manualSync=${mode}`, async function () {
-      let determinedShare = new BN(keccak256("user answer blublu").slice(2), "hex");
+      let determinedShare = new BN(keccak256(Buffer.from("user answer blublu")).slice(2), "hex");
       determinedShare = determinedShare.umod(ecCurve.curve.n);
       const resp1 = await tb._initializeNewKey({ determinedShare, initializeModules: true });
       await tb.syncLocalMetadataTransitions();
@@ -121,7 +122,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       }
     });
     it(`#should be able to reconstruct key when initializing a with a share, manualSync=${mode}`, async function () {
-      let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
+      let userInput = new BN(keccak256(Buffer.from("user answer blublu")).slice(2), "hex");
       userInput = userInput.umod(ecCurve.curve.n);
       const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
       await tb.syncLocalMetadataTransitions();
@@ -135,7 +136,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       }
     });
     it(`#should be able to reconstruct key after refresh and initializing with a share, manualSync=${mode}`, async function () {
-      let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
+      let userInput = new BN(keccak256(Buffer.from("user answer blublu")).slice(2), "hex");
       userInput = userInput.umod(ecCurve.curve.n);
       const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
       const newShares = await tb.generateNewShare();
@@ -151,7 +152,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       }
     });
     it(`#should be able to reconstruct key after refresh and initializing with service provider, manualSync=${mode}`, async function () {
-      let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
+      let userInput = new BN(keccak256(Buffer.from("user answer blublu")).slice(2), "hex");
       userInput = userInput.umod(ecCurve.curve.n);
       const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
       const newShares = await tb.generateNewShare();
@@ -335,7 +336,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       tb = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
     });
     it(`#should serialize and deserialize correctly without tkeyArgs, manualSync=${mode}`, async function () {
-      let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
+      let userInput = new BN(keccak256(Buffer.from("user answer blublu")).slice(2), "hex");
       userInput = userInput.umod(ecCurve.curve.n);
       const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
       await tb.generateNewShare();
@@ -347,7 +348,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       strictEqual(finalKey.privKey.toString("hex"), resp1.privKey.toString("hex"), "Incorrect serialization");
     });
     it(`#should serialize and deserialize correctly with tkeyArgs, manualSync=${mode}`, async function () {
-      let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
+      let userInput = new BN(keccak256(Buffer.from("user answer blublu")).slice(2), "hex");
       userInput = userInput.umod(ecCurve.curve.n);
       const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
       await tb.generateNewShare();
@@ -359,7 +360,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       strictEqual(finalKey.privKey.toString("hex"), resp1.privKey.toString("hex"), "Incorrect serialization");
     });
     it(`#should serialize and deserialize correctly, keeping localTransitions consistent before syncing NewKeyAssign, manualSync=${mode}`, async function () {
-      let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
+      let userInput = new BN(keccak256(Buffer.from("user answer blublu")).slice(2), "hex");
       userInput = userInput.umod(ecCurve.curve.n);
       const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
 
@@ -386,7 +387,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       }
     });
     it(`#should serialize and deserialize correctly keeping localTransitions  afterNewKeyAssign, manualSync=${mode}`, async function () {
-      let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
+      let userInput = new BN(keccak256(Buffer.from("user answer blublu")).slice(2), "hex");
       userInput = userInput.umod(ecCurve.curve.n);
       const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
       await tb.syncLocalMetadataTransitions();
@@ -831,7 +832,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     let secp256k1Format;
     let ed25519privateKeyFormat;
     beforeEach("Setup ThresholdKey", async function () {
-      metamaskSeedPhraseFormat = new MetamaskSeedPhraseFormat("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68");
+      metamaskSeedPhraseFormat = new MetamaskSeedPhraseFormat(new JsonRpcProvider("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68"));
       secp256k1Format = new SECP256K1Format();
       ed25519privateKeyFormat = new ED25519Format();
       tb = new ThresholdKey({
@@ -884,7 +885,9 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       strictEqual(returnedSeed[0].seedPhrase, seedPhraseToSet);
       strictEqual(returnedSeed[1].seedPhrase, seedPhraseToSet2);
 
-      const metamaskSeedPhraseFormat2 = new MetamaskSeedPhraseFormat("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68");
+      const metamaskSeedPhraseFormat2 = new MetamaskSeedPhraseFormat(
+        new JsonRpcProvider("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68")
+      );
       const tb2 = new ThresholdKey({
         serviceProvider: customSP,
         manualSync: mode,
@@ -1041,7 +1044,9 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       await tb.modules.privateKeyModule.setPrivateKey("secp256k1n", actualPrivateKeys[1]);
       await tb.syncLocalMetadataTransitions();
 
-      const metamaskSeedPhraseFormat2 = new MetamaskSeedPhraseFormat("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68");
+      const metamaskSeedPhraseFormat2 = new MetamaskSeedPhraseFormat(
+        new JsonRpcProvider("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68")
+      );
       const tb2 = new ThresholdKey({
         serviceProvider: customSP,
         manualSync: mode,

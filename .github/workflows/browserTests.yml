@@ -4,12 +4,13 @@ on: [push]
 
 env:
   PLAYWRIGHT_BROWSERS_PATH: 0
-  NODE_VERSION: 16
+  NODE_VERSION: 18
   FORCE_COLOR: 3
 
 jobs:
   test:
     strategy:
+      max-parallel: 1
       matrix:
         browser: [chromium, firefox]
         # browser: [chromium, firefox, webkit]
@@ -31,18 +32,6 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
-
-      - name: Get npm cache directory
-        id: npm-cache-dir
-        run: |
-          echo "::set-output name=dir::$(npm config get cache)"
-      - uses: actions/cache@v3
-        id: npm-cache # use this to check for `cache-hit` ==> if: steps.npm-cache.outputs.cache-hit != 'true'
-        with:
-          path: ${{ steps.npm-cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
 
       - name: Install Node.js dependencies
         run: npm ci

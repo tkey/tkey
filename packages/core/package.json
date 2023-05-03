@@ -35,12 +35,12 @@
   ],
   "dependencies": {
     "@tkey/common-types": "^7.4.0",
-    "@toruslabs/eccrypto": "^2.1.1",
-    "@toruslabs/http-helpers": "^3.3.0",
+    "@toruslabs/eccrypto": "^3.0.0",
+    "@toruslabs/http-helpers": "^4.0.0",
     "bn.js": "^5.2.1",
     "elliptic": "^6.5.4",
     "json-stable-stringify": "^1.0.2",
-    "web3-utils": "^1.9.0"
+    "@toruslabs/torus.js": "^8.0.0"
   },
   "devDependencies": {
     "@types/bn.js": "^5.1.1",
@@ -71,5 +71,9 @@
     "direct auth",
     "tkey"
   ],
+  "engines": {
+    "node": ">=16.18.1",
+    "npm": ">=8.x"
+  },
   "gitHead": "9967ce9f795f495f28ef0da1fc50acde31dcc258"
 }

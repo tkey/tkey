@@ -12,7 +12,6 @@ import {
   ONE_KEY_NAMESPACE,
   prettyPrintError,
   StringifiedType,
-  stripHexPrefix,
   toPrivKeyEC,
   toPrivKeyECC,
   TorusStorageLayerAPIParams,
@@ -20,11 +19,11 @@ import {
 } from "@tkey/common-types";
 import { post } from "@toruslabs/http-helpers";
 import BN from "bn.js";
+import { keccak256 } from "ethereum-cryptography/keccak";
 import stringify from "json-stable-stringify";
-import { keccak256 } from "web3-utils";
 
 function signDataWithPrivKey(data: { timestamp: number }, privKey: BN): string {
-  const sig = ecCurve.sign(stripHexPrefix(keccak256(stringify(data))), toPrivKeyECC(privKey), "utf-8");
+  const sig = ecCurve.sign(keccak256(Buffer.from(stringify(data), "utf8")), toPrivKeyECC(privKey), "utf-8");
   return sig.toDER("hex");
 }
 
@@ -180,7 +179,7 @@ class TorusStorageLayer implements IStorageLayer {
       setTKeyStore.data = "<deleted>";
     }
 
-    const hash = keccak256(stringify(setTKeyStore)).slice(2);
+    const hash = keccak256(Buffer.from(stringify(setTKeyStore), "utf8"));
     if (privKey) {
       const unparsedSig = toPrivKeyEC(privKey).sign(hash);
       sig = Buffer.from(unparsedSig.r.toString(16, 64) + unparsedSig.s.toString(16, 64) + new BN(0).toString(16, 2), "hex").toString("base64");
@@ -189,7 +188,7 @@ class TorusStorageLayer implements IStorageLayer {
       pubY = pubK.y.toString("hex");
     } else {
       const point = serviceProvider.retrievePubKeyPoint();
-      sig = serviceProvider.sign(hash);
+      sig = serviceProvider.sign(new BN(hash));
       pubX = point.getX().toString("hex");
       pubY = point.getY().toString("hex");
     }
@@ -212,7 +211,7 @@ class TorusStorageLayer implements IStorageLayer {
     if (privKey) {
       signature = signDataWithPrivKey(data, privKey);
     } else {
-      signature = serviceProvider.sign(stripHexPrefix(keccak256(stringify(data))));
+      signature = serviceProvider.sign(new BN(keccak256(Buffer.from(stringify(data), "utf8"))));
     }
     const metadataParams = {
       key: toPrivKeyEC(privKey).getPublic("hex"),
@@ -232,7 +231,7 @@ class TorusStorageLayer implements IStorageLayer {
     if (privKey) {
       signature = signDataWithPrivKey(data, privKey);
     } else {
-      signature = serviceProvider.sign(stripHexPrefix(keccak256(stringify(data))));
+      signature = serviceProvider.sign(new BN(keccak256(Buffer.from(stringify(data), "utf8"))));
     }
     const metadataParams = {
       key: toPrivKeyEC(privKey).getPublic("hex"),
