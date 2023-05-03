@@ -43,7 +43,6 @@ function compareBNArray(a, b, message) {
   return a.map((el) => {
     // console.log(el, b[index], el.cmp(b[index]));
     const found = b.find((pl) => pl.cmp(el) === 0);
-    console.log(a, b, found);
     if (!found) throw new Error(message);
     return 0;
   });
@@ -875,7 +874,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         await tb2.modules.privateKeyModule.setPrivateKey("secp256k1n", actualPrivateKeys[0].toString("hex"));
       }, Error);
     });
-    it.only(`#should get/set multiple seed phrase, manualSync=${mode}`, async function () {
+    it(`#should get/set multiple seed phrase, manualSync=${mode}`, async function () {
       const seedPhraseToSet = "seed sock milk update focus rotate barely fade car face mechanic mercy";
       const seedPhraseToSet2 = "object brass success calm lizard science syrup planet exercise parade honey impulse";
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
@@ -899,8 +898,6 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       tb2.inputShareStore(resp1.deviceShare);
       const reconstuctedKey = await tb2.reconstructKey();
       await tb.modules.seedPhrase.getSeedPhrasesWithAccounts();
-      console.log(reconstuctedKey, "reconstuctedKey");
-      console.log(resp1.privKey);
 
       compareReconstructedKeys(reconstuctedKey, {
         privKey: resp1.privKey,
