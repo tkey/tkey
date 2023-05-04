@@ -239,6 +239,8 @@ export type LocalTransitionData = [...IAuthMetadatas, ...ShareStores, ...IMessag
 export type LocalMetadataTransitions = [LocalTransitionShares, LocalTransitionData];
 
 export interface ITKeyApi {
+  setModuleState<T>(data: T, moduleName: string);
+  getModuleState<T>(moduleName: string): T;
   getMetadata(): IMetadata;
   getStorageLayer(): IStorageLayer;
   initialize(params: { input?: ShareStore; importKey?: BN; neverInitializeNewKey?: boolean }): Promise<KeyDetails>;
@@ -256,6 +258,7 @@ export interface ITKeyApi {
     middleware: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap) => unknown
   ): void;
   _addReconstructKeyMiddleware(moduleName: string, middleware: () => Promise<Array<BN>>): void;
+  _addReconstructKeyMiddlewareV2(moduleName: string, middleware: (tkey: ITKeyApi, moduleName: string) => Promise<Array<BN>>): void;
   _addShareSerializationMiddleware(
     serialize: (share: BN, type: string) => Promise<unknown>,
     deserialize: (serializedShare: unknown, type: string) => Promise<BN>
@@ -310,3 +313,7 @@ export interface ITKey extends ITKeyApi, ISerializable {
 
   getKeyDetails(): KeyDetails;
 }
+
+export type ReconstructKeyMiddlewareMapV2 = {
+  [moduleName: string]: (tkey: ITKeyApi, moduleName: string) => Promise<BN[]>;
+};

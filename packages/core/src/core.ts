@@ -30,6 +30,7 @@ import {
   prettyPrintError,
   ReconstructedKeyResult,
   ReconstructKeyMiddlewareMap,
+  ReconstructKeyMiddlewareMapV2,
   RefreshMiddlewareMap,
   RefreshSharesResult,
   Share,
@@ -81,11 +82,15 @@ class ThresholdKey implements ITKey {
 
   _shareSerializationMiddleware: ShareSerializationMiddleware;
 
+  _reconstructKeyMiddlewareV2: ReconstructKeyMiddlewareMapV2;
+
   storeDeviceShare: (deviceShareStore: ShareStore, customDeviceInfo?: StringifiedType) => Promise<void>;
 
   haveWriteMetadataLock: string;
 
   serverTimeOffset?: number = 0;
+
+  moduleState: Record<string, any> = {};
 
   constructor(args?: TKeyArgs) {
     const { enableLogging = false, modules = {}, serviceProvider, storageLayer, manualSync = false, serverTimeOffset } = args || {};
@@ -98,6 +103,7 @@ class ThresholdKey implements ITKey {
     this.manualSync = manualSync;
     this._refreshMiddleware = {};
     this._reconstructKeyMiddleware = {};
+    this._reconstructKeyMiddlewareV2 = {};
     this._shareSerializationMiddleware = undefined;
     this.storeDeviceShare = undefined;
     this._localMetadataTransitions = [[], []];
@@ -191,6 +197,14 @@ class ThresholdKey implements ITKey {
       await tb.initialize({ neverInitializeNewKey: true });
     }
     return tb;
+  }
+
+  getModuleState<T>(moduleName: string): T {
+    return this.moduleState[moduleName] as T;
+  }
+
+  setModuleState<T>(data: T, moduleName: string) {
+    this.moduleState[moduleName] = data;
   }
 
   getStorageLayer(): IStorageLayer {
@@ -439,6 +453,21 @@ class ThresholdKey implements ITKey {
         })
       );
     }
+
+    // duplicate for testing purpose only
+    if (_reconstructKeyMiddleware && Object.keys(this._reconstructKeyMiddlewareV2).length > 0) {
+      // retireve/reconstruct extra keys that live on metadata
+      await Promise.all(
+        Object.keys(this._reconstructKeyMiddlewareV2).map(async (x) => {
+          if (Object.prototype.hasOwnProperty.call(this._reconstructKeyMiddlewareV2, x)) {
+            const extraKeys = await this._reconstructKeyMiddlewareV2[x](this, x);
+            returnObject[x] = extraKeys;
+            returnObject.allKeys.push(...extraKeys);
+          }
+        })
+      );
+    }
+
     return returnObject;
   }
 
@@ -1071,6 +1100,10 @@ class ThresholdKey implements ITKey {
     this._reconstructKeyMiddleware[moduleName] = middleware;
   }
 
+  _addReconstructKeyMiddlewareV2(moduleName: string, middleware: (tkey: ITKeyApi, moduleName: string) => Promise<BN[]>): void {
+    this._reconstructKeyMiddlewareV2[moduleName] = middleware;
+  }
+
   _addShareSerializationMiddleware(
     serialize: (share: BN, type: string) => Promise<unknown>,
     deserialize: (serializedShare: unknown, type: string) => Promise<BN>
@@ -1290,6 +1323,8 @@ class ThresholdKey implements ITKey {
 
   getApi(): ITKeyApi {
     return {
+      getModuleState: this.getModuleState.bind(this),
+      setModuleState: this.setModuleState.bind(this),
       getMetadata: this.getMetadata.bind(this),
       getStorageLayer: this.getStorageLayer.bind(this),
       initialize: this.initialize.bind(this),
@@ -1297,6 +1332,7 @@ class ThresholdKey implements ITKey {
       _syncShareMetadata: this._syncShareMetadata.bind(this),
       _addRefreshMiddleware: this._addRefreshMiddleware.bind(this),
       _addReconstructKeyMiddleware: this._addReconstructKeyMiddleware.bind(this),
+      _addReconstructKeyMiddlewareV2: this._addReconstructKeyMiddlewareV2.bind(this),
       _addShareSerializationMiddleware: this._addShareSerializationMiddleware.bind(this),
       addShareDescription: this.addShareDescription.bind(this),
       generateNewShare: this.generateNewShare.bind(this),

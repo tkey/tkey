@@ -5,7 +5,8 @@
 import { ecCurve, getPubKeyPoint, KEY_NOT_FOUND, SHARE_DELETED } from "@tkey/common-types";
 import PrivateKeyModule, { ED25519Format, SECP256K1Format } from "@tkey/private-keys";
 import SecurityQuestionsModule from "@tkey/security-questions";
-import SeedPhraseModule, { MetamaskSeedPhraseFormat } from "@tkey/seed-phrase";
+import SeedPhraseModule, { MetamaskSeedPhraseFormat, SEED_PHRASE_MODULE_NAME } from "@tkey/seed-phrase";
+import SeedPhraseModuleV2 from "@tkey/seed-phrase-v2";
 import TorusServiceProvider from "@tkey/service-provider-torus";
 import ShareTransferModule from "@tkey/share-transfer";
 import TorusStorageLayer from "@tkey/storage-layer-torus";
@@ -1051,6 +1052,74 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       await tb2.initialize();
       tb2.inputShareStore(resp1.deviceShare);
       const reconstructedKey = await tb2.reconstructKey();
+
+      compareReconstructedKeys(reconstructedKey, {
+        privKey: resp1.privKey,
+        seedPhraseModule: [
+          new BN("70dc3117300011918e26b02176945cc15c3d548cf49fd8418d97f93af699e46", "hex"),
+          new BN("4d62a55af3496a7b290a12dd5fd5ef3e051d787dbc005fb74536136949602f9e", "hex"),
+        ],
+        privateKeyModule: [
+          new BN("4bd0041b7654a9b16a7268a5de7982f2422b15635c4fd170c140dc4897624390", "hex"),
+          new BN("1ea6edde61c750ec02896e9ac7fe9ac0b48a3630594fdf52ad5305470a2635c0", "hex"),
+        ],
+        allKeys: [
+          resp1.privKey,
+          new BN("70dc3117300011918e26b02176945cc15c3d548cf49fd8418d97f93af699e46", "hex"),
+          new BN("4d62a55af3496a7b290a12dd5fd5ef3e051d787dbc005fb74536136949602f9e", "hex"),
+          new BN("4bd0041b7654a9b16a7268a5de7982f2422b15635c4fd170c140dc4897624390", "hex"),
+          new BN("1ea6edde61c750ec02896e9ac7fe9ac0b48a3630594fdf52ad5305470a2635c0", "hex"),
+        ],
+      });
+
+      const reconstructedKey2 = await tb2.reconstructKey(false);
+      compareReconstructedKeys(reconstructedKey2, {
+        privKey: resp1.privKey,
+        allKeys: [resp1.privKey],
+      });
+    });
+
+    it.only(`#should be able to get/set private keys and seed phrase v2, manualSync=${mode}`, async function () {
+      const resp1 = await tb._initializeNewKey({ initializeModules: true });
+
+      await tb.modules.seedPhrase.setSeedPhrase("HD Key Tree", "seed sock milk update focus rotate barely fade car face mechanic mercy");
+      await tb.modules.seedPhrase.setSeedPhrase("HD Key Tree", "chapter gas cost saddle annual mouse chef unknown edit pen stairs claw");
+
+      const actualPrivateKeys = [
+        new BN("4bd0041b7654a9b16a7268a5de7982f2422b15635c4fd170c140dc4897624390", "hex"),
+        new BN("1ea6edde61c750ec02896e9ac7fe9ac0b48a3630594fdf52ad5305470a2635c0", "hex"),
+      ];
+      await tb.modules.privateKeyModule.setPrivateKey("secp256k1n", actualPrivateKeys[0]);
+      await tb.modules.privateKeyModule.setPrivateKey("secp256k1n", actualPrivateKeys[1]);
+      await tb.syncLocalMetadataTransitions();
+
+      const metamaskSeedPhraseFormat2 = new MetamaskSeedPhraseFormat("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68");
+      const tb2 = new ThresholdKey({
+        serviceProvider: customSP,
+        manualSync: mode,
+        storageLayer: customSL,
+        modules: {
+          // seedPhrase: new SeedPhraseModule([metamaskSeedPhraseFormat2]),
+          privateKeyModule: new PrivateKeyModule([secp256k1Format]),
+        },
+      });
+      await tb2.initialize();
+      tb2.inputShareStore(resp1.deviceShare);
+
+      const mdata = {
+        moduleName: SEED_PHRASE_MODULE_NAME,
+        seedPhraseFormats: [metamaskSeedPhraseFormat2],
+      };
+      SeedPhraseModuleV2.setModuleReferences(tb2, mdata);
+
+      const reconstructedKey = await tb2.reconstructKey();
+
+      // Example SeedPhrase Module api call
+      const key = await SeedPhraseModuleV2.getAccounts(tb2);
+      console.log(key);
+      const keyAccounts = await SeedPhraseModuleV2.getSeedPhrasesWithAccounts(tb2);
+      console.log(keyAccounts)
+
 
       compareReconstructedKeys(reconstructedKey, {
         privKey: resp1.privKey,
