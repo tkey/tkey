@@ -81,8 +81,6 @@ class ThresholdKey implements ITKey {
 
   _shareSerializationMiddleware: ShareSerializationMiddleware;
 
-  storeDeviceShare: (deviceShareStore: ShareStore, customDeviceInfo?: StringifiedType) => Promise<void>;
-
   haveWriteMetadataLock: string;
 
   serverTimeOffset?: number = 0;
@@ -99,7 +97,6 @@ class ThresholdKey implements ITKey {
     this._refreshMiddleware = {};
     this._reconstructKeyMiddleware = {};
     this._shareSerializationMiddleware = undefined;
-    this.storeDeviceShare = undefined;
     this._localMetadataTransitions = [[], []];
     this.setModuleReferences(); // Providing ITKeyApi access to modules
     this.haveWriteMetadataLock = "";
@@ -252,7 +249,6 @@ class ThresholdKey implements ITKey {
         if (neverInitializeNewKey) {
           throw CoreError.default("key has not been generated yet");
         }
-        
 
         // no metadata set, assumes new user
         const newKeyDetails = await this._initializeNewKey({ initializeModules: true, importedKey: importKey, delete1OutOf1: p.delete1OutOf1 });
@@ -281,8 +277,6 @@ class ThresholdKey implements ITKey {
     const reinitializing = transitionMetadata && previousLocalMetadataTransitionsExists; // are we reinitializing the SDK?
     // in the case we're reinitializing whilst newKeyAssign has not been synced
     const reinitializingWithNewKeyAssign = reinitializing && previouslyFetchedCloudMetadata === undefined;
-
-    
 
     // We determine the latest metadata on the SDK and if there has been
     // needed transitions to include
@@ -712,10 +706,6 @@ class ThresholdKey implements ITKey {
       this.inputShareStore(new ShareStore(shares[shareIndex.toString("hex")], poly.getPolynomialID()));
     }
 
-    if (this.storeDeviceShare) {
-      await this.storeDeviceShare(new ShareStore(shares[shareIndexes[1].toString("hex")], poly.getPolynomialID()));
-    }
-
     const result = {
       privKey: this.privKey,
       deviceShare: new ShareStore(shares[shareIndexes[1].toString("hex")], poly.getPolynomialID()),
@@ -1103,13 +1093,6 @@ class ThresholdKey implements ITKey {
     };
   }
 
-  _setDeviceStorage(storeDeviceStorage: (deviceShareStore: ShareStore) => Promise<void>): void {
-    if (this.storeDeviceShare) {
-      throw CoreError.default("storeDeviceShare already set");
-    }
-    this.storeDeviceShare = storeDeviceStorage;
-  }
-
   async addShareDescription(shareIndex: string, description: string, updateMetadata?: boolean): Promise<void> {
     if (!this.metadata) {
       throw CoreError.metadataUndefined();
@@ -1327,7 +1310,6 @@ class ThresholdKey implements ITKey {
       outputShareStore: this.outputShareStore.bind(this),
       inputShare: this.inputShare.bind(this),
       outputShare: this.outputShare.bind(this),
-      _setDeviceStorage: this._setDeviceStorage.bind(this),
       encrypt: this.encrypt.bind(this),
       decrypt: this.decrypt.bind(this),
       getTKeyStore: this.getTKeyStore.bind(this),
