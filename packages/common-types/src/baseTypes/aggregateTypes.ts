@@ -131,6 +131,8 @@ export type KeyDetails = {
   threshold: number;
   totalShares: number;
   shareDescriptions: ShareDescriptionMap;
+  deviceShare?: ShareStore;
+  userShare?: ShareStore;
 };
 
 export type TKeyArgs = {
