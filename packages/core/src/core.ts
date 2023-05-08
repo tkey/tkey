@@ -695,7 +695,7 @@ class ThresholdKey implements ITKey {
 
   async _getTSSNodeDetails(): Promise<{ serverEndpoints: string[]; serverPubKeys: PointHex[]; serverThreshold: number }> {
     const { serverEndpoints, serverPubKeys, serverThreshold } = await this.serviceProvider.getTSSNodeDetails();
-    if (!Array.isArray(serverEndpoints) || serverEndpoints.length === 0) throw new Error("service provider tss server endpoints are missing");
+    if (!Array.isArray(serverEndpoints) || serverEndpoints.length === 0) throw new Error("service provider tss server endpoints are missing TSSNodeDetails");
     if (!Array.isArray(serverPubKeys) || serverPubKeys.length === 0) throw new Error("service provider pub keys are missing");
     return {
       serverEndpoints,

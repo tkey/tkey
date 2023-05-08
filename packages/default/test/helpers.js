@@ -1,3 +1,4 @@
+/* eslint-disable no-debugger */
 import { ecCurve, getPubKeyPoint, Point } from "@tkey/common-types";
 import ServiceProviderBase from "@tkey/service-provider-base";
 import ServiceProviderTorus from "@tkey/service-provider-torus";
@@ -5,6 +6,7 @@ import TorusStorageLayer, { MockStorageLayer } from "@tkey/storage-layer-torus";
 import { generatePrivate } from "@toruslabs/eccrypto";
 import { generatePolynomial, getShare, hexPoint, MockServer, postEndpoint } from "@toruslabs/rss-client";
 import BN from "bn.js";
+import { debug } from "console";
 // eslint-disable-next-line import/no-extraneous-dependencies
 import KJUR from "jsrsasign";
 
@@ -96,7 +98,8 @@ export async function setupTSSMocks(opts) {
   }
 
   serviceProvider._setTSSNodeDetails(serverEndpoints, serverPubKeys, serverThreshold);
-
+  serviceProvider.rssNodeDetails = { ...serviceProvider.tssNodeDetails };
+  console.log(serviceProvider);
   return {
     serverEndpoints,
     serverPubKeys,
