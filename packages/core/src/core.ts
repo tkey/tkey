@@ -252,7 +252,6 @@ class ThresholdKey implements ITKey {
         if (neverInitializeNewKey) {
           throw CoreError.default("key has not been generated yet");
         }
-        
 
         // no metadata set, assumes new user
         const newKeyDetails = await this._initializeNewKey({ initializeModules: true, importedKey: importKey, delete1OutOf1: p.delete1OutOf1 });
@@ -267,10 +266,10 @@ class ThresholdKey implements ITKey {
       throw CoreError.default("Input is not supported");
     }
 
-    await this.postInit(shareStore, transitionMetadata, previouslyFetchedCloudMetadata, previousLocalMetadataTransitions);
+    await this.initializeWithShareStore(shareStore, transitionMetadata, previouslyFetchedCloudMetadata, previousLocalMetadataTransitions);
   }
 
-  async postInit(
+  async initializeWithShareStore(
     shareStore: ShareStore,
     transitionMetadata?: Metadata,
     previouslyFetchedCloudMetadata?: Metadata,
@@ -281,8 +280,6 @@ class ThresholdKey implements ITKey {
     const reinitializing = transitionMetadata && previousLocalMetadataTransitionsExists; // are we reinitializing the SDK?
     // in the case we're reinitializing whilst newKeyAssign has not been synced
     const reinitializingWithNewKeyAssign = reinitializing && previouslyFetchedCloudMetadata === undefined;
-
-    
 
     // We determine the latest metadata on the SDK and if there has been
     // needed transitions to include
