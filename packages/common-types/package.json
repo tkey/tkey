@@ -52,8 +52,8 @@
     "web3-utils": "^1.8.1"
   },
   "devDependencies": {
-    "@toruslabs/customauth": "file:./toruslabs-customauth-11.4.2-alpha.6.tgz",
-    "@toruslabs/torus.js": "file:./toruslabs-torus.js-7.1.0.tgz",
+    "@toruslabs/customauth": "file:./toruslabs-customauth-13.0.0.tgz",
+    "@toruslabs/torus.js": "file:./toruslabs-torus.js-9.0.0.tgz",
     "@types/bn.js": "^5.1.1",
     "@types/elliptic": "^6.4.14"
   },
