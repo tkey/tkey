@@ -1,13 +1,12 @@
-/* eslint-disable no-debugger */
 import { ecCurve, getPubKeyPoint, Point } from "@tkey/common-types";
 import ServiceProviderBase from "@tkey/service-provider-base";
 import ServiceProviderTorus from "@tkey/service-provider-torus";
 import TorusStorageLayer, { MockStorageLayer } from "@tkey/storage-layer-torus";
 import { generatePrivate } from "@toruslabs/eccrypto";
 import { generatePolynomial, getShare, hexPoint, MockServer, postEndpoint } from "@toruslabs/rss-client";
+import { throws } from "assert";
 import BN from "bn.js";
 import { debug } from "console";
-// eslint-disable-next-line import/no-extraneous-dependencies
 import KJUR from "jsrsasign";
 
 let mocked;
@@ -184,4 +183,42 @@ export async function assignTssDkgKeys(opts) {
     serverDKGPrivKeys,
     // serverDKGPubKeys,
   };
+}
+
+export const rejects = async (fn, error, msg) => {
+  let f = () => {};
+  try {
+    await fn();
+  } catch (e) {
+    f = () => {
+      throw e;
+    };
+  } finally {
+    throws(f, error, msg);
+  }
+};
+
+export function getTempKey() {
+  return generatePrivate().toString("hex");
+}
+function compareBNArray(a, b, message) {
+  if (a.length !== b.length) throw new Error(message);
+  return a.map((el) => {
+    const found = b.find((pl) => pl.cmp(el) === 0);
+    if (!found) throw new Error(message);
+    return 0;
+  });
+}
+
+export function compareReconstructedKeys(a, b, message) {
+  if (a.privKey.cmp(b.privKey) !== 0) throw new Error(message);
+  if (a.seedPhraseModule && b.seedPhraseModule) {
+    compareBNArray(a.seedPhraseModule, b.seedPhraseModule, message);
+  }
+  if (a.privateKeyModule && b.privateKeyModule) {
+    compareBNArray(a.privateKeyModule, b.privateKeyModule, message);
+  }
+  if (a.allKeys && b.allKeys) {
+    compareBNArray(a.allKeys, b.allKeys, message);
+  }
 }
