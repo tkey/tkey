@@ -1,4 +1,4 @@
-import { keccak256 } from "ethereum-cryptography/keccak";
+import { sha256 } from "ethereum-cryptography/sha256";
 
 import ShareSerializationError from "./errors";
 
@@ -25,7 +25,7 @@ export function bytesToBinary(bytes: number[]): string {
 export function deriveChecksumBits(entropyBuffer: Buffer): string {
   const ENT = entropyBuffer.length * 8;
   const CS = ENT / 32;
-  const hash = keccak256(entropyBuffer);
+  const hash = sha256(entropyBuffer);
 
   return bytesToBinary(Array.from(hash)).slice(0, CS);
 }
