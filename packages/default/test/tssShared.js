@@ -15,7 +15,7 @@ import { assignTssDkgKeys, fetchPostboxKeyAndSigs, getMetadataUrl, getServicePro
 const metadataURL = getMetadataUrl();
 
 // eslint-disable-next-line mocha/no-exports
-export const tssSharedTests = (mode, torusSP, storageLayer) => {
+export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
   const customSP = torusSP;
   const customSL = storageLayer;
   describe.only("TSS tests", function () {
@@ -35,7 +35,7 @@ export const tssSharedTests = (mode, torusSP, storageLayer) => {
         verifierId: sp.verifierId,
       });
       sp.postboxKey = postboxkey;
-      const { serverDKGPrivKeys } = await assignTssDkgKeys({
+      const { serverDKGPrivKeys } =  await assignTssDkgKeys({
         serviceProvider: sp,
         verifierName: sp.verifierName,
         verifierId: sp.verifierId,

@@ -31,11 +31,21 @@ const torusSp = new ServiceProviderTorus({
 const metadataURL = getMetadataUrl();
 const torusSL = initStorageLayer({ hostUrl: metadataURL });
 
-const MANUAL_SYNC = true;
-describe.only(`TorusServiceProvider with manualSync: ${MANUAL_SYNC}`, function () {
-  // eslint-disable-next-line mocha/no-setup-in-describe
-  sharedTestCases(MANUAL_SYNC, torusSp, torusSL);
+describe.only(`TSS Test with TorusServiceProvider`, function () {
+  const MANUAL_SYNC = true;
+  describe.only(`TSS TorusServiceProvider with manualSync: ${MANUAL_SYNC}`, function () {
+    // eslint-disable-next-line mocha/no-setup-in-describe
+    sharedTestCases(MANUAL_SYNC, torusSp, torusSL);
 
-  // eslint-disable-next-line mocha/no-setup-in-describe
-  tssSharedTests(MANUAL_SYNC, torusSp, torusSL);
+    // eslint-disable-next-line mocha/no-setup-in-describe
+    tssSharedTests(MANUAL_SYNC, torusSp, torusSL);
+  });
+
+  describe.only(`TSS TorusServiceProvider with manualSync: ${false}`, function () {
+    // eslint-disable-next-line mocha/no-setup-in-describe
+    sharedTestCases(false, torusSp, torusSL);
+
+    // eslint-disable-next-line mocha/no-setup-in-describe
+    tssSharedTests(false, torusSp, torusSL);
+  });
 });
