@@ -11,7 +11,16 @@ import stringify from "json-stable-stringify";
 import { keccak256 } from "web3-utils";
 
 import ThresholdKey from "../src/index";
-import { assignTssDkgKeys, fetchPostboxKeyAndSigs, getMetadataUrl, getServiceProvider, initStorageLayer, isMocked, setupTSSMocks } from "./helpers";
+import {
+  assignTssDkgKeys,
+  fetchPostboxKeyAndSigs,
+  getMetadataUrl,
+  getServiceProvider,
+  initStorageLayer,
+  isMocked,
+  setupTSS,
+  setupTSSMocks,
+} from "./helpers";
 const metadataURL = getMetadataUrl();
 
 // eslint-disable-next-line mocha/no-exports
@@ -28,19 +37,16 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
 
       sp.verifierName = "torus-test-health";
       sp.verifierId = "test19@example.com";
-      const testId = sp.getVerifierNameVerifierId();
-      const { signatures, postboxkey } = await fetchPostboxKeyAndSigs({
-        serviceProvider: sp,
-        verifierName: sp.verifierName,
-        verifierId: sp.verifierId,
-      });
-      sp.postboxKey = postboxkey;
-      const { serverDKGPrivKeys } =  await assignTssDkgKeys({
+      const { signatures, serverDKGPrivKeys } = await setupTSS({
         serviceProvider: sp,
         verifierName: sp.verifierName,
         verifierId: sp.verifierId,
         maxTSSNonceToSimulate: 2,
+        tssTag: "default",
+        MOCK_RSS,
       });
+
+      const testId = sp.getVerifierNameVerifierId();
       // const storageLayer = initStorageLayer({ hostUrl: metadataURL });
       const tb1 = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync: mode });
 
@@ -117,12 +123,20 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
 
       sp.verifierName = "torus-test-health";
       sp.verifierId = "test@example.com";
-      const { postboxkey } = await fetchPostboxKeyAndSigs({
+      // const { postboxkey } = await fetchPostboxKeyAndSigs({
+      //   serviceProvider: sp,
+      //   verifierName: sp.verifierName,
+      //   verifierId: sp.verifierId,
+      // });
+      // sp.postboxKey = postboxkey;
+      await setupTSS({
         serviceProvider: sp,
         verifierName: sp.verifierName,
         verifierId: sp.verifierId,
+        maxTSSNonceToSimulate: 2,
+        tssTag: "default",
+        MOCK_RSS,
       });
-      sp.postboxKey = postboxkey;
 
       // const storageLayer = initStorageLayer({ hostUrl: metadataURL });
       const tb1 = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync: mode });

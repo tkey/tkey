@@ -96,7 +96,7 @@ export async function setupTSSMocks(opts) {
   }
 
   serviceProvider._setTSSNodeDetails(serverEndpoints, serverPubKeys, serverThreshold);
-
+  serviceProvider.rssNodeDetails = { ...serviceProvider.tssNodeDetails };
   return {
     serverEndpoints,
     serverPubKeys,
@@ -180,5 +180,41 @@ export async function assignTssDkgKeys(opts) {
   return {
     serverDKGPrivKeys,
     // serverDKGPubKeys,
+  };
+}
+
+export async function setupTSS(opts) {
+  const { serviceProvider, verifierName, verifierId, maxTSSNonceToSimulate, tssTag, MOCK_RSS } = opts;
+  if (MOCK_RSS) {
+    const { serverEndpoints, serverPubKeys, serverDKGPrivKeys, serverDKGPubKeys } = await setupTSSMocks({
+      serviceProvider ,
+      verifierName,
+      verifierId,
+      maxTSSNonceToSimulate,
+      tssTag,
+    });
+    const signatures = "signature";
+    return {
+      signatures,
+      serverDKGPrivKeys,
+    };
+  }
+
+  const { signatures, postboxkey } = await fetchPostboxKeyAndSigs({
+    serviceProvider,
+    verifierName,
+    verifierId,
+  });
+  serviceProvider.postboxKey = postboxkey;
+  const { serverDKGPrivKeys } = await assignTssDkgKeys({
+    serviceProvider,
+    verifierName,
+    verifierId,
+    maxTSSNonceToSimulate,
+  });
+
+  return {
+    signatures,
+    serverDKGPrivKeys,
   };
 }
