@@ -334,7 +334,7 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
           serviceProvider: sp,
           verifierName: sp.verifierName,
           verifierId: sp.verifierId,
-          maxTSSNonceToSimulate: 2,
+          maxTSSNonceToSimulate: 4,
           tssTag: "default",
           MOCK_RSS,
         });
