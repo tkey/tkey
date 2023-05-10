@@ -169,22 +169,20 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
 
       sp.verifierName = "torus-test-health";
       sp.verifierId = "test18@example.com";
-      const { serverDKGPrivKeys } = await assignTssDkgKeys({
+
+      const { serverDKGPrivKeys } = await setupTSS({
         serviceProvider: sp,
         verifierName: sp.verifierName,
         verifierId: sp.verifierId,
         maxTSSNonceToSimulate: 2,
+        tssTag: "default",
+        MOCK_RSS,
       });
 
       const tss1 = new BN(serverDKGPrivKeys[0], "hex");
       const deviceTSSShare = new BN(generatePrivate());
       const deviceTSSIndex = 2;
-      const { postboxkey } = await fetchPostboxKeyAndSigs({
-        serviceProvider: sp,
-        verifierName: sp.verifierName,
-        verifierId: sp.verifierId,
-      });
-      sp.postboxKey = postboxkey;
+
       // const storageLayer = initStorageLayer({ hostUrl: metadataURL });
       const tb1 = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync: mode });
 
@@ -220,21 +218,17 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
 
       sp.verifierName = "torus-test-health";
       sp.verifierId = "test18@example.com";
-      const { signatures, postboxkey } = await fetchPostboxKeyAndSigs({
-        serviceProvider: sp,
-        verifierName: sp.verifierName,
-        verifierId: sp.verifierId,
-      });
-
-      const testId = sp.getVerifierNameVerifierId();
-
-      sp.postboxKey = postboxkey;
-      const { serverDKGPrivKeys } = await assignTssDkgKeys({
+      const { signatures, serverDKGPrivKeys } = await setupTSS({
         serviceProvider: sp,
         verifierName: sp.verifierName,
         verifierId: sp.verifierId,
         maxTSSNonceToSimulate: 2,
+        tssTag: "default",
+        MOCK_RSS,
       });
+
+      const testId = sp.getVerifierNameVerifierId();
+
       const storageLayer = initStorageLayer({ hostUrl: metadataURL });
       const tb1 = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync: mode });
 
@@ -336,17 +330,13 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
 
         sp.verifierName = "torus-test-health";
         sp.verifierId = "test192@example.com";
-        const { signatures, postboxkey } = await fetchPostboxKeyAndSigs({
+        const { signatures, serverDKGPrivKeys } = await setupTSS({
           serviceProvider: sp,
           verifierName: sp.verifierName,
           verifierId: sp.verifierId,
-        });
-        sp.postboxKey = postboxkey;
-        const { serverDKGPrivKeys } = await assignTssDkgKeys({
-          serviceProvider: sp,
-          verifierName: sp.verifierName,
-          verifierId: sp.verifierId,
-          maxTSSNonceToSimulate: 4,
+          maxTSSNonceToSimulate: 2,
+          tssTag: "default",
+          MOCK_RSS,
         });
 
         // tb = new ThresholdKey({ serviceProvider: sp, storageLayer: customSL, manualSync: mode });
@@ -485,18 +475,15 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
 
         sp.verifierName = "torus-test-health";
         sp.verifierId = "test18@example.com";
-        const { postboxkey } = await fetchPostboxKeyAndSigs({
-          serviceProvider: sp,
-          verifierName: sp.verifierName,
-          verifierId: sp.verifierId,
-        });
-        sp.postboxKey = postboxkey;
-        const { serverDKGPrivKeys } = await assignTssDkgKeys({
+        const { signatures, serverDKGPrivKeys } = await setupTSS({
           serviceProvider: sp,
           verifierName: sp.verifierName,
           verifierId: sp.verifierId,
           maxTSSNonceToSimulate: 2,
+          tssTag: "default",
+          MOCK_RSS,
         });
+
         const deviceTSSShare = new BN(generatePrivate());
         const deviceTSSIndex = 2;
         const factorKey = new BN(generatePrivate());
@@ -542,18 +529,15 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
         const sp = customSP;
         sp.verifierName = "torus-test-health";
         sp.verifierId = "test18@example.com";
-        const { postboxkey } = await fetchPostboxKeyAndSigs({
-          serviceProvider: sp,
-          verifierName: sp.verifierName,
-          verifierId: sp.verifierId,
-        });
-        sp.postboxKey = postboxkey;
-        const { serverDKGPrivKeys } = await assignTssDkgKeys({
+        const { signatures, serverDKGPrivKeys } = await setupTSS({
           serviceProvider: sp,
           verifierName: sp.verifierName,
           verifierId: sp.verifierId,
           maxTSSNonceToSimulate: 2,
+          tssTag: "default",
+          MOCK_RSS,
         });
+
         const deviceTSSShare = new BN(generatePrivate());
         const deviceTSSIndex = 2;
         const factorKey = new BN(generatePrivate());
@@ -597,17 +581,13 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
         const sp = customSP;
         sp.verifierName = "torus-test-health";
         sp.verifierId = "test18@example.com";
-        const { postboxkey } = await fetchPostboxKeyAndSigs({
-          serviceProvider: sp,
-          verifierName: sp.verifierName,
-          verifierId: sp.verifierId,
-        });
-        sp.postboxKey = postboxkey;
-        await assignTssDkgKeys({
+        const { signatures, serverDKGPrivKeys } = await setupTSS({
           serviceProvider: sp,
           verifierName: sp.verifierName,
           verifierId: sp.verifierId,
           maxTSSNonceToSimulate: 2,
+          tssTag: "default",
+          MOCK_RSS,
         });
 
         let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");

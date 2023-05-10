@@ -92,11 +92,15 @@ export async function setupTSSMocks(opts) {
         });
       })
     );
-    serviceProvider._setTSSPubKey("default", j, new Point(dkg2Pub.x, dkg2Pub.y));
+    serviceProvider._setTSSPubKey(tssTag, j, new Point(dkg2Pub.x, dkg2Pub.y));
   }
 
   serviceProvider._setTSSNodeDetails(serverEndpoints, serverPubKeys, serverThreshold);
   serviceProvider.rssNodeDetails = { ...serviceProvider.tssNodeDetails };
+
+  // update new serviceprovider postbox key
+  const postboxKey = new BN(generatePrivate());
+  serviceProvider.postboxKey = postboxKey.toString(16, 64);
   return {
     serverEndpoints,
     serverPubKeys,
