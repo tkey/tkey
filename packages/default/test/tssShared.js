@@ -3,6 +3,7 @@
 /* eslint-disable import/no-extraneous-dependencies */
 
 import { ecCurve, getPubKeyPoint, KEY_NOT_FOUND, SHARE_DELETED } from "@tkey/common-types";
+import { TSS_MODULE_NAME, TSSModule } from "@tkey/tss";
 import { generatePrivate } from "@toruslabs/eccrypto";
 import { getLagrangeCoeffs } from "@toruslabs/rss-client";
 import { deepEqual, deepStrictEqual, equal, fail, notEqual, notStrictEqual, rejects, strict, strictEqual, throws } from "assert";
@@ -54,8 +55,9 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
       const factorKey = new BN(generatePrivate());
       const factorPub = getPubKeyPoint(factorKey);
 
-      await tb1.initialize({ useTSS: true, factorPub, deviceTSSShare, deviceTSSIndex });
-      await tb1.reconstructKey();
+      const tssModule = new TSSModule(tb1);
+      await tssModule.initalizeWithTss(tb1, {}, { factorPub, deviceTSSShare, deviceTSSIndex });
+
       const newShare = await tb1.generateNewShare();
       const reconstructedKey = await tb1.reconstructKey();
       await tb1.syncLocalMetadataTransitions();
@@ -64,11 +66,15 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
       }
 
       const tb2 = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync: mode });
-      await tb2.initialize({ useTSS: true, factorPub });
+
+      const tssModule2 = new TSSModule(tb2);
+      await tssModule2.initalizeWithTss(tb2, {}, { factorPub });
+      // await tb2.initialize({ useTSS: true, factorPub });
       tb2.inputShareStore(newShare.newShareStores[newShare.newShareIndex.toString("hex")]);
       await tb2.reconstructKey();
-      const { tssShare: retrievedTSS, tssIndex: retrievedTSSIndex } = await tb2.getTSSShare(factorKey);
-      const tssCommits = tb2.getTSSCommits();
+      const { tssShare: retrievedTSS, tssIndex: retrievedTSSIndex } = await tssModule2.getTSSShare(tb2, factorKey);
+      const tssCommits = tssModule2.getTSSCommits(tb2);
+
       const tssPrivKey = getLagrangeCoeffs([1, retrievedTSSIndex], 1)
         .mul(serverDKGPrivKeys[0])
         .add(getLagrangeCoeffs([1, retrievedTSSIndex], retrievedTSSIndex).mul(retrievedTSS))
@@ -85,7 +91,7 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
 
       const factorPubs = [factorPub, factorPub2];
       const { serverEndpoints, serverPubKeys } = await sp.getRSSNodeDetails();
-      await tb2._refreshTSSShares(true, retrievedTSS, retrievedTSSIndex, factorPubs, [2, 3], testId, {
+      await tssModule2._refreshTSSShares(tb2, true, retrievedTSS, retrievedTSSIndex, factorPubs, [2, 3], testId, {
         serverThreshold: 3,
         selectedServers: [1, 2, 3],
         serverEndpoints,
@@ -93,8 +99,16 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
         authSignatures: signatures,
       });
 
+      // await tb2._refreshTSSShares(true, retrievedTSS, retrievedTSSIndex, factorPubs, [2, 3], testId, {
+      //   serverThreshold: 3,
+      //   selectedServers: [1, 2, 3],
+      //   serverEndpoints,
+      //   serverPubKeys,
+      //   authSignatures: signatures,
+      // });
+
       {
-        const { tssShare: newTSS2, tssIndex } = await tb2.getTSSShare(factorKey);
+        const { tssShare: newTSS2, tssIndex } = await tssModule2.getTSSShare(tb2, factorKey);
         const newTSSPrivKey = getLagrangeCoeffs([1, 2], 1)
           .mul(new BN(serverDKGPrivKeys[1], "hex"))
           .add(getLagrangeCoeffs([1, 2], 2).mul(newTSS2))
@@ -105,7 +119,7 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
       }
 
       {
-        const { tssShare: newTSS2, tssIndex } = await tb2.getTSSShare(factorKey2);
+        const { tssShare: newTSS2, tssIndex } = await tssModule2.getTSSShare(tb2, factorKey2);
         const newTSSPrivKey = getLagrangeCoeffs([1, 3], 1)
           .mul(new BN(serverDKGPrivKeys[1], "hex"))
           .add(getLagrangeCoeffs([1, 3], 3).mul(newTSS2))

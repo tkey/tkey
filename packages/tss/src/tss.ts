@@ -31,14 +31,12 @@ export class TSSModule implements IModule {
 
   tbSDK: ITKeyApi;
 
-  canUseFileStorage: boolean;
-
   tssTag: string;
 
-  constructor(moduleName: string, tbSDK: ITKeyApi) {
+  constructor(tbSDK: ITKeyApi, moduleName = TSS_MODULE_NAME, tssTag = "default") {
     this.moduleName = moduleName;
     this.tbSDK = tbSDK;
-    this.canUseFileStorage = true;
+    this.tssTag = tssTag;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function

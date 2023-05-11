@@ -295,7 +295,7 @@ class ThresholdKey implements ITKey {
           throw CoreError.default("key has not been generated yet");
         }
         // no metadata set, assumes new user
-        await this._initializeNewKey({
+        const result = await this._initializeNewKey({
           initializeModules: true,
           importedKey: importKey,
           delete1OutOf1: p.delete1OutOf1,
@@ -304,7 +304,11 @@ class ThresholdKey implements ITKey {
           const { factorEncs, factorPubs, tssPolyCommits } = await this._initializeNewTSSKey(this.tssTag, deviceTSSShare, factorPub, deviceTSSIndex);
           this.metadata.addTSSData({ tssTag: this.tssTag, tssNonce: 0, tssPolyCommits, factorPubs, factorEncs });
         }
-        return this.getKeyDetails();
+        const keyDetail = this.getKeyDetails();
+        keyDetail.deviceShare = result.deviceShare;
+        keyDetail.userShare = result.userShare;
+
+        return keyDetail;
       }
       // else we continue with catching up share and metadata
       shareStore = ShareStore.fromJSON(rawServiceProviderShare);
