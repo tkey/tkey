@@ -78,6 +78,24 @@ export interface IMetadata extends ISerializable {
 
   nonce: number;
 
+  tssNonces?: {
+    [tssTag: string]: number;
+  };
+
+  tssPolyCommits?: {
+    [tssTag: string]: Point[];
+  };
+
+  factorPubs?: {
+    [tssTag: string]: Point[];
+  };
+
+  factorEncs?: {
+    [tssTag: string]: {
+      [factorPubID: string]: FactorEnc;
+    };
+  };
+
   getShareIndexesForPolynomial(polyID: PolynomialID): string[];
   getLatestPublicPolynomial(): PublicPolynomial;
   addTSSData(tssData: {
@@ -142,6 +160,8 @@ export type KeyDetails = {
   threshold: number;
   totalShares: number;
   shareDescriptions: ShareDescriptionMap;
+  deviceShare?: ShareStore;
+  userShare?: ShareStore;
 };
 
 export type TKeyArgs = {
@@ -252,8 +272,18 @@ export type LocalMetadataTransitions = [LocalTransitionShares, LocalTransitionDa
 
 export interface ITKeyApi {
   getMetadata(): IMetadata;
+  getServiceProvider(): IServiceProvider;
   getStorageLayer(): IStorageLayer;
-  initialize(params: { input?: ShareStore; importKey?: BN; neverInitializeNewKey?: boolean }): Promise<KeyDetails>;
+  initialize(params: {
+    withShare?: ShareStore;
+    importKey?: BN;
+    neverInitializeNewKey?: boolean;
+    transitionMetadata?: IMetadata;
+    previouslyFetchedCloudMetadata?: IMetadata;
+    previousLocalMetadataTransitions?: LocalMetadataTransitions;
+    delete1OutOf1?: boolean;
+    // input?: ShareStore; importKey?: BN; neverInitializeNewKey?: boolean
+  }): Promise<KeyDetails>;
   catchupToLatestShare(params: {
     shareStore: ShareStore;
     polyID?: string;

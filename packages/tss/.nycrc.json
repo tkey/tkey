@@ -1,0 +1,10 @@
+{
+  "all": true,
+  "include": [
+    "src/**"
+  ],
+  "exclude": [
+    "**/test/**"
+  ],
+  "excludeNodeModules": false
+}

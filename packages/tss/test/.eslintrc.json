@@ -1,0 +1,8 @@
+{
+  "rules": {
+    "prefer-arrow-callback": "off",
+    "func-names": "off",
+    "import/no-extraneous-dependencies": "off"
+  }
+  
+}

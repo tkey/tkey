@@ -220,6 +220,14 @@ class ThresholdKey implements ITKey {
     throw CoreError.metadataUndefined();
   }
 
+  getServiceProvider(): IServiceProvider {
+    if (typeof this.serviceProvider !== "undefined") {
+      return this.serviceProvider;
+    }
+
+    throw CoreError.default("serviceProvider undefined");
+  }
+
   async initialize(params?: {
     withShare?: ShareStore;
     importKey?: BN;
@@ -1697,6 +1705,7 @@ class ThresholdKey implements ITKey {
   getApi(): ITKeyApi {
     return {
       getMetadata: this.getMetadata.bind(this),
+      getServiceProvider: this.getServiceProvider.bind(this),
       getStorageLayer: this.getStorageLayer.bind(this),
       initialize: this.initialize.bind(this),
       catchupToLatestShare: this.catchupToLatestShare.bind(this),
