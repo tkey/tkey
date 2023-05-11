@@ -85,7 +85,7 @@ export interface IServiceProvider extends ISerializable {
     serverPubKeys: PointHex[];
     serverThreshold: number;
   }>;
-  getTSSPubKey(tssTag: string, tssNonce: number): Promise<Point>;
+  getTSSPubKey(tssTag: string, tssNonce: number): Promise<{ pubKey: Point; nodeIndexes?: number[] }>;
   sign(msg: BNString): string;
 }
 export type TorusStorageLayerAPIParams = {

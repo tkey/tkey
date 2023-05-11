@@ -120,7 +120,13 @@ class TorusServiceProvider extends ServiceProviderBase {
     };
   }
 
-  async getTSSPubKey(tssTag: string, tssNonce: number): Promise<Point> {
+  async getTSSPubKey(
+    tssTag: string,
+    tssNonce: number
+  ): Promise<{
+    pubKey: Point;
+    nodeIndexes?: number[];
+  }> {
     if (!this.verifierName || !this.verifierId) throw new Error("verifier userinfo not found, not logged in yet");
     const { serverEndpoints: sssNodeEndpoints } = await this.getSSSNodeDetails();
     const tssServerPub = (await this.directWeb.torus.getPublicAddress(
@@ -133,7 +139,10 @@ class TorusServiceProvider extends ServiceProviderBase {
       true
     )) as TorusPublicKey;
 
-    return new Point(tssServerPub.X, tssServerPub.Y);
+    return {
+      pubKey: new Point(tssServerPub.X, tssServerPub.Y),
+      nodeIndexes: tssServerPub.nodeIndexes || [],
+    };
   }
 
   async triggerLogin(params: SubVerifierDetails): Promise<TorusLoginResponse> {
