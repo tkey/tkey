@@ -1216,6 +1216,8 @@ class ThresholdKey implements ITKey {
     } else {
       throw CoreError.default("can only add type ShareStore into shares");
     }
+    ss = this.metadata.shareToShareStore(ss.share.share as BN);
+
     const latestShareRes = await this.catchupToLatestShare({ shareStore: ss, includeLocalMetadataTransitions: true });
     // if not in poly id list, metadata is probably outdated
     // is !this.metadata.polyIDList.includes(latestShareRes.latestShare.polynomialID)
