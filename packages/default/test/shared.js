@@ -773,24 +773,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         fail("key should be able to be reconstructed");
       }
     });
-    // it(`#should be able to guru test, manualSync=${mode}`, async function () {
-    //   const importedKey = new BN(generatePrivate());
-    //   const resp1 = await tb._initializeNewKey({ importedKey, initializeModules: true });
-    //   await tb.syncLocalMetadataTransitions();
 
-    //   const importedKey2 = new BN(generatePrivate());
-    //   const resp2 = await tb._initializeNewKey({ importedKey2, initializeModules: true });
-    //   await tb.syncLocalMetadataTransitions();
-
-    //   const tb2 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
-    //   await tb2.initialize();
-    //   await tb2.inputShareStoreSafe(resp1.deviceShare);
-
-    //   const reconstructedKey = await tb2.reconstructKey();
-    //   if (importedKey.cmp(reconstructedKey.privKey) !== 0) {
-    //     fail("key should be able to be reconstructed");
-    //   }
-    // });
     it(`#should be able to reconstruct key when initializing a with a share, manualSync=${mode}`, async function () {
       let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
       userInput = userInput.umod(ecCurve.curve.n);
