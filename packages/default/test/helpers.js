@@ -191,7 +191,7 @@ export async function setupTSS(opts) {
   const { serviceProvider, verifierName, verifierId, maxTSSNonceToSimulate, tssTag, MOCK_RSS } = opts;
   if (MOCK_RSS) {
     const { serverEndpoints, serverPubKeys, serverDKGPrivKeys, serverDKGPubKeys } = await setupTSSMocks({
-      serviceProvider ,
+      serviceProvider,
       verifierName,
       verifierId,
       maxTSSNonceToSimulate,
@@ -222,3 +222,8 @@ export async function setupTSS(opts) {
     serverDKGPrivKeys,
   };
 }
+
+export const generateVerifierId = (prefix = "") => {
+  const randomkey = generatePrivate().toString("hex");
+  return `${prefix}${randomkey}@mail.com`;
+};
