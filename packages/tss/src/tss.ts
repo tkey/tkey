@@ -1,4 +1,5 @@
 import {
+  BNString,
   decrypt,
   ecCurve,
   ecPoint,
@@ -10,7 +11,6 @@ import {
   IMetadata,
   IModule,
   InitializeNewTSSKeyResult,
-  ITKeyApi,
   LocalMetadataTransitions,
   Point,
   PointHex,
@@ -18,7 +18,7 @@ import {
   RSSClient,
   ShareStore,
 } from "@tkey/common-types";
-import { dotProduct, getLagrangeCoeffs, kCombinations } from "@tkey/core";
+import ThresholdKey, { dotProduct, getLagrangeCoeffs, kCombinations } from "@tkey/core";
 import { generatePrivate } from "@toruslabs/eccrypto";
 import BN from "bn.js";
 
@@ -29,26 +29,26 @@ export const TSS_MODULE_NAME = "TSSModule";
 export class TSSModule implements IModule {
   moduleName: string;
 
-  tbSDK: ITKeyApi;
+  tkey: ThresholdKey;
 
   tssTag: string;
 
-  constructor(tbSDK: ITKeyApi, moduleName = TSS_MODULE_NAME, tssTag = "default") {
+  constructor(tkey: ThresholdKey, moduleName = TSS_MODULE_NAME, tssTag = "default") {
     this.moduleName = moduleName;
-    this.tbSDK = tbSDK;
+    this.tkey = tkey;
     this.tssTag = tssTag;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   async initialize(): Promise<void> {}
 
-  async setModuleReferences(api: ITKeyApi): Promise<void> {
-    this.tbSDK = api;
+  async setModuleReferences(api: ThresholdKey): Promise<void> {
+    this.tkey = api;
   }
 
-  async initalizeWithTss(
-    tkey: ITKeyApi,
-    params: {
+  async initializeWithTss(
+    tssOptions: { deviceTSSShare: BN; deviceTSSIndex: number; factorPub: Point },
+    params?: {
       withShare?: ShareStore;
       importKey?: BN;
       neverInitializeNewKey?: boolean;
@@ -56,53 +56,46 @@ export class TSSModule implements IModule {
       previouslyFetchedCloudMetadata?: IMetadata;
       previousLocalMetadataTransitions?: LocalMetadataTransitions;
       delete1OutOf1?: boolean;
-    },
-    tssOptions: { deviceTSSShare: BN; deviceTSSIndex: number; factorPub: Point }
+    }
   ) {
     const { deviceTSSIndex, deviceTSSShare, factorPub } = tssOptions;
-    const result = await tkey.initialize(params);
+    const result = await this.tkey.initialize(params);
 
-    const metadata = tkey.getMetadata();
+    const metadata = this.tkey.getMetadata();
     if (result.deviceShare) {
-      const { factorEncs, factorPubs, tssPolyCommits } = await this._initializeNewTSSKey(
-        tkey,
-        this.tssTag,
-        deviceTSSShare,
-        factorPub,
-        deviceTSSIndex
-      );
+      const { factorEncs, factorPubs, tssPolyCommits } = await this._initializeNewTSSKey(this.tssTag, deviceTSSShare, factorPub, deviceTSSIndex);
       metadata.addTSSData({ tssTag: this.tssTag, tssNonce: 0, tssPolyCommits, factorPubs, factorEncs });
     } else if (!metadata.tssPolyCommits[this.tssTag]) {
       // if tss shares have not been created for this tssTag, create new tss sharing
-      await this._initializeNewTSSKey(tkey, this.tssTag, deviceTSSShare, factorPub);
+      await this._initializeNewTSSKey(this.tssTag, deviceTSSShare, factorPub);
     }
     return result;
   }
 
-  getTSSCommits(tkey: ITKeyApi): Point[] {
+  getTSSCommits(): Point[] {
     // if (!this.privKey) throw TSSError.default("tss pub cannot be returned until you've reconstructed tkey");
     // if (!this.metadata) throw TSSError.metadataUndefined();
-    const metadata = tkey.getMetadata();
+    const metadata = this.tkey.getMetadata();
     const tssPolyCommits = metadata.tssPolyCommits[this.tssTag];
     // if (!tssPolyCommits) throw TSSError.default(`tss poly commits not found for tssTag ${this.tssTag}`);
     // if (tssPolyCommits.length === 0) throw TSSError.default("tss poly commits is empty");
     return tssPolyCommits;
   }
 
-  getTSSPub(tkey: ITKeyApi): Point {
-    return this.getTSSCommits(tkey)[0];
+  getTSSPub(): Point {
+    return this.getTSSCommits()[0];
   }
 
   /**
    * getTSSShare accepts a factorKey and returns the TSS share based on the factor encrypted TSS shares in the metadata
    * @param factorKey - factor key
    */
-  async getTSSShare(tkey: ITKeyApi, factorKey: BN, opts?: { threshold: number }): Promise<{ tssIndex: number; tssShare: BN }> {
+  async getTSSShare(factorKey: BN, opts?: { threshold: number }): Promise<{ tssIndex: number; tssShare: BN }> {
     // check tkey for write state
     // if (!this.privKey) throw TSSError.default("tss share cannot be returned until you've reconstructed tkey");
 
     const factorPub = getPubKeyPoint(factorKey);
-    const factorEncs = this.getFactorEncs(tkey, factorPub);
+    const factorEncs = this.getFactorEncs(factorPub);
     const { userEnc, serverEncs, tssIndex, type } = factorEncs;
     const userDecryption = await decrypt(Buffer.from(factorKey.toString(16, 64), "hex"), userEnc);
     const serverDecryptions = await Promise.all(
@@ -117,7 +110,7 @@ export class TSSModule implements IModule {
       if (buf === null) return null;
       return new BN(buf.toString("hex"), "hex");
     });
-    const tssCommits = this.getTSSCommits(tkey);
+    const tssCommits = this.getTSSCommits();
 
     const userDec = tssShareBNs[0];
 
@@ -167,8 +160,8 @@ export class TSSModule implements IModule {
   }
 
   //   getFactorEncryptedData() {}
-  getFactorEncs(tkey: ITKeyApi, factorPub: Point): FactorEnc {
-    const metadata = tkey.getMetadata();
+  getFactorEncs(factorPub: Point): FactorEnc {
+    const metadata = this.tkey.getMetadata();
     if (!metadata) throw TSSError.default("no metadata found");
     if (!metadata.factorEncs) throw TSSError.default("no factor encs mapping");
     if (!metadata.factorPubs) throw TSSError.default("no factor pubs mapping");
@@ -182,21 +175,18 @@ export class TSSModule implements IModule {
     return metadata.factorEncs[this.tssTag][factorPubID];
   }
 
-  async generateNewShare(
-    tkey: ITKeyApi,
-    tssOptions?: {
-      inputTSSShare: BN;
-      inputTSSIndex: number;
-      newFactorPub: Point;
-      newTSSIndex: number;
-      authSignatures?: string[];
-      selectedServers?: number[];
-    }
-  ): Promise<GenerateNewShareResult> {
+  async generateNewShare(tssOptions?: {
+    inputTSSShare: BN;
+    inputTSSIndex: number;
+    newFactorPub: Point;
+    newTSSIndex: number;
+    authSignatures?: string[];
+    selectedServers?: number[];
+  }): Promise<GenerateNewShareResult> {
     if (!tssOptions) throw TSSError.default("must provide tss options when calling generateNewShare with useTSS true");
     const { newFactorPub, inputTSSIndex, inputTSSShare, newTSSIndex, selectedServers, authSignatures } = tssOptions;
 
-    const metadata = tkey.getMetadata();
+    const metadata = this.tkey.getMetadata();
     if (!metadata.tssPolyCommits[this.tssTag]) throw new Error(`tss key has not been initialized for tssTag ${this.tssTag}`);
     const existingFactorPubs = metadata.factorPubs[this.tssTag];
     const updatedFactorPubs = existingFactorPubs.concat([newFactorPub]);
@@ -210,36 +200,36 @@ export class TSSModule implements IModule {
       factorEncs: metadata.factorEncs[this.tssTag],
     });
 
-    const verifierId = tkey.getServiceProvider().getVerifierNameVerifierId();
-    const rssNodeDetails = await this._getRssNodeDetails(tkey);
+    const verifierId = this.tkey.getServiceProvider().getVerifierNameVerifierId();
+    const rssNodeDetails = await this._getRssNodeDetails();
     const randomSelectedServers = randomSelection(
       new Array(rssNodeDetails.serverEndpoints.length).fill(null).map((_, i) => i + 1),
       Math.ceil(rssNodeDetails.serverEndpoints.length / 2)
     );
 
-    const existingTSSIndexes = existingFactorPubs.map((fb) => this.getFactorEncs(tkey, fb).tssIndex);
+    const existingTSSIndexes = existingFactorPubs.map((fb) => this.getFactorEncs(fb).tssIndex);
     const updatedTSSIndexes = existingTSSIndexes.concat([newTSSIndex]);
 
-    await this._refreshTSSShares(tkey, false, inputTSSShare, inputTSSIndex, updatedFactorPubs, updatedTSSIndexes, verifierId, {
+    await this._refreshTSSShares(false, inputTSSShare, inputTSSIndex, updatedFactorPubs, updatedTSSIndexes, verifierId, {
       ...rssNodeDetails,
       selectedServers: selectedServers || randomSelectedServers,
       authSignatures,
     });
-    const newShare = await tkey.generateNewShare();
+    const newShare = await this.tkey.generateNewShare();
     return newShare;
   }
 
   async deleteShare(
-    tkey: ITKeyApi,
     tssOptions: {
       inputTSSShare: BN;
       inputTSSIndex: number;
       factorPub: Point;
       authSignatures: string[];
       selectedServers?: number[];
-    }
+    },
+    shareIndex: BNString
   ) {
-    const metadata = tkey.getMetadata();
+    const metadata = this.tkey.getMetadata();
     const { factorPub, inputTSSIndex, inputTSSShare, selectedServers, authSignatures } = tssOptions;
     const existingFactorPubs = metadata.factorPubs[this.tssTag];
 
@@ -248,31 +238,34 @@ export class TSSModule implements IModule {
     if (found.length > 1) throw TSSError.default("found two or more factorPubs that match, error in metadata");
     const updatedFactorPubs = existingFactorPubs.filter((f) => !f.x.eq(factorPub.x) || !f.y.eq(factorPub.y));
     metadata.addTSSData({ tssTag: this.tssTag, factorPubs: updatedFactorPubs });
-    const rssNodeDetails = await this._getRssNodeDetails(tkey);
+    const rssNodeDetails = await this._getRssNodeDetails();
     const randomSelectedServers = randomSelection(
       new Array(rssNodeDetails.serverEndpoints.length).fill(null).map((_, i) => i + 1),
       Math.ceil(rssNodeDetails.serverEndpoints.length / 2)
     );
 
-    const updatedTSSIndexes = updatedFactorPubs.map((fb) => this.getFactorEncs(tkey, fb).tssIndex);
+    const updatedTSSIndexes = updatedFactorPubs.map((fb) => this.getFactorEncs(fb).tssIndex);
 
     await this._refreshTSSShares(
-      tkey,
       false,
       inputTSSShare,
       inputTSSIndex,
       updatedFactorPubs,
       updatedTSSIndexes,
-      tkey.getServiceProvider().getVerifierNameVerifierId(),
+      this.tkey.getServiceProvider().getVerifierNameVerifierId(),
       {
         ...rssNodeDetails,
         selectedServers: selectedServers || randomSelectedServers,
         authSignatures,
       }
     );
+
+    // delete associated tkey share
+    const result = await this.tkey.deleteShare(shareIndex);
+    return result;
   }
 
-  async _initializeNewTSSKey(tkey: ITKeyApi, tssTag: string, deviceTSSShare, factorPub, deviceTSSIndex?): Promise<InitializeNewTSSKeyResult> {
+  async _initializeNewTSSKey(tssTag: string, deviceTSSShare, factorPub, deviceTSSIndex?): Promise<InitializeNewTSSKeyResult> {
     let tss2: BN;
     const _tssIndex = deviceTSSIndex || 2; // TODO: fix
     if (deviceTSSShare) {
@@ -280,7 +273,7 @@ export class TSSModule implements IModule {
     } else {
       tss2 = new BN(generatePrivate());
     }
-    const tss1Pub = await tkey.getServiceProvider().getTSSPubKey(tssTag, 0);
+    const tss1Pub = await this.tkey.getServiceProvider().getTSSPubKey(tssTag, 0);
     const tss1PubKey = ecCurve.keyFromPublic({ x: tss1Pub.x.toString(16, 64), y: tss1Pub.y.toString(16, 64) }).getPublic();
     const tss2Pub = getPubKeyPoint(tss2);
     const tss2PubKey = ecCurve.keyFromPublic({ x: tss2Pub.x.toString(16, 64), y: tss2Pub.y.toString(16, 64) }).getPublic();
@@ -322,7 +315,6 @@ export class TSSModule implements IModule {
   }
 
   async _refreshTSSShares(
-    tkey: ITKeyApi,
     updateMetadata: boolean,
     inputShare: BN,
     inputIndex: number,
@@ -340,7 +332,7 @@ export class TSSModule implements IModule {
     // if (!this.metadata) throw TSSError.metadataUndefined();
     // if (!this.metadata.tssPolyCommits) throw TSSError.default(`tss poly commits obj not found`);
 
-    const metadata = tkey.getMetadata();
+    const metadata = this.tkey.getMetadata();
     const tssCommits = metadata.tssPolyCommits[this.tssTag];
     if (!tssCommits) throw TSSError.default(`tss commits not found for tssTag ${this.tssTag}`);
     if (tssCommits.length === 0) throw TSSError.default(`tssCommits is empty`);
@@ -365,7 +357,7 @@ export class TSSModule implements IModule {
     const oldLabel = `${verifierNameVerifierId}\u0015${this.tssTag}\u0016${tssNonce}`;
     const newLabel = `${verifierNameVerifierId}\u0015${this.tssTag}\u0016${tssNonce + 1}`;
 
-    const newTSSServerPub = await tkey.getServiceProvider().getTSSPubKey(this.tssTag, tssNonce + 1);
+    const newTSSServerPub = await this.tkey.getServiceProvider().getTSSPubKey(this.tssTag, tssNonce + 1);
     // eslint-disable-next-line no-console
     console.log("newTSSServerPub", newTSSServerPub.x.toString("hex"), this.tssTag, tssNonce + 1);
     const refreshResponses = await rssClient.refresh({
@@ -399,11 +391,11 @@ export class TSSModule implements IModule {
     }
 
     metadata.addTSSData({ tssTag: this.tssTag, tssNonce: tssNonce + 1, tssPolyCommits: newTSSCommits, factorPubs, factorEncs });
-    if (updateMetadata) await tkey._syncShareMetadata();
+    if (updateMetadata) await this.tkey._syncShareMetadata();
   }
 
-  async _getRssNodeDetails(tkey: ITKeyApi): Promise<{ serverEndpoints: string[]; serverPubKeys: PointHex[]; serverThreshold: number }> {
-    const { serverEndpoints, serverPubKeys, serverThreshold } = await tkey.getServiceProvider().getRSSNodeDetails();
+  async _getRssNodeDetails(): Promise<{ serverEndpoints: string[]; serverPubKeys: PointHex[]; serverThreshold: number }> {
+    const { serverEndpoints, serverPubKeys, serverThreshold } = await this.tkey.getServiceProvider().getRSSNodeDetails();
     if (!Array.isArray(serverEndpoints) || serverEndpoints.length === 0) throw new Error("service provider tss server endpoints are missing");
     if (!Array.isArray(serverPubKeys) || serverPubKeys.length === 0) throw new Error("service provider pub keys are missing");
     return {
