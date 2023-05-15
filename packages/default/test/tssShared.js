@@ -327,8 +327,8 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
         const deviceTSSShare = new BN(generatePrivate());
         const deviceTSSIndex = 3;
 
-        sp.verifierName = verifierId;
-        sp.verifierId = "test192@example.com";
+        sp.verifierName = "torus-test-health";
+        sp.verifierId = verifierId;
         const { signatures, serverDKGPrivKeys } = await setupTSS({
           serviceProvider: sp,
           verifierName: sp.verifierName,
@@ -468,12 +468,9 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
       it(`#should serialize and deserialize correctly without tkeyArgs, manualSync=${mode}`, async function () {
         if (!customSP.useTSS) this.skip();
         const sp = customSP;
-        let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
-        userInput = userInput.umod(ecCurve.curve.n);
-        const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
-
         sp.verifierName = "torus-test-health";
         sp.verifierId = verifierId;
+
         const { signatures, serverDKGPrivKeys } = await setupTSS({
           serviceProvider: sp,
           verifierName: sp.verifierName,
@@ -482,6 +479,10 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
           tssTag: "default",
           MOCK_RSS,
         });
+
+        let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
+        userInput = userInput.umod(ecCurve.curve.n);
+        const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
 
         const deviceTSSShare = new BN(generatePrivate());
         const deviceTSSIndex = 2;
@@ -521,13 +522,10 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
       });
       it(`#should serialize and deserialize correctly with tkeyArgs, manualSync=${mode}`, async function () {
         if (!customSP.useTSS) this.skip();
-        let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
-        userInput = userInput.umod(ecCurve.curve.n);
-        const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
 
         const sp = customSP;
         sp.verifierName = "torus-test-health";
-        sp.verifierId = "test18@example.com";
+        sp.verifierId = verifierId;
         const { signatures, serverDKGPrivKeys } = await setupTSS({
           serviceProvider: sp,
           verifierName: sp.verifierName,
@@ -536,6 +534,10 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
           tssTag: "default",
           MOCK_RSS,
         });
+
+        let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
+        userInput = userInput.umod(ecCurve.curve.n);
+        const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
 
         const deviceTSSShare = new BN(generatePrivate());
         const deviceTSSIndex = 2;
@@ -580,6 +582,7 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
         const sp = customSP;
         sp.verifierName = "torus-test-health";
         sp.verifierId = verifierId;
+
         const { signatures, serverDKGPrivKeys } = await setupTSS({
           serviceProvider: sp,
           verifierName: sp.verifierName,
