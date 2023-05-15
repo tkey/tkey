@@ -610,7 +610,7 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
         strictEqual(finalKey.privKey.toString("hex"), resp1.privKey.toString("hex"), "Incorrect serialization");
 
         const tssModule3 = new TSSModule(tb3);
-        
+
         const { tssShare: tssShare2, tssIndex: tssIndex2 } = await tssModule3.getTSSShare(newFactorKey);
         const tssPrivKey2 = getLagrangeCoeffs([1, tssIndex2], 1)
           .mul(serverDKGPrivKeys[1])
@@ -618,6 +618,7 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
           .umod(ecCurve.n);
         strictEqual(tssPrivKey.toString("hex"), tssPrivKey2.toString("hex"), "Incorrect tss key");
       });
+      // all test below does not related to TSS
       // TODO: add test for initialize such that initialize throws if the remote metadata is already there
       it(`#should serialize and deserialize correctly, keeping localTransitions consistent before syncing NewKeyAssign, manualSync=${mode}`, async function () {
         if (!customSP.useTSS) this.skip();
