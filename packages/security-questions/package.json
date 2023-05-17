@@ -41,6 +41,7 @@
     "@babel/runtime": "7.x"
   },
   "dependencies": {
+    "@tkey/core" : "^8.0.7-alpha.0",
     "@tkey/common-types": "^8.0.7-alpha.0",
     "bn.js": "^5.2.1",
     "web3-utils": "^1.8.1"

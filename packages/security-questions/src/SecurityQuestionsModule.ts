@@ -4,12 +4,12 @@ import {
   IModule,
   isEmptyObject,
   ISQAnswerStore,
-  ITKeyApi,
   SecurityQuestionStoreArgs,
   Share,
   ShareStore,
   ShareStoreMap,
 } from "@tkey/common-types";
+import ThresholdKey from "@tkey/core";
 import BN from "bn.js";
 import { keccak256 } from "web3-utils";
 
@@ -26,7 +26,7 @@ const TKEYSTORE_ID = "answer";
 class SecurityQuestionsModule implements IModule {
   moduleName: string;
 
-  tbSDK: ITKeyApi;
+  tbSDK: ThresholdKey;
 
   saveAnswers: boolean;
 
@@ -59,7 +59,7 @@ class SecurityQuestionsModule implements IModule {
     return undefined;
   }
 
-  setModuleReferences(tbSDK: ITKeyApi): void {
+  setModuleReferences(tbSDK: ThresholdKey): void {
     this.tbSDK = tbSDK;
     this.tbSDK._addRefreshMiddleware(this.moduleName, SecurityQuestionsModule.refreshSecurityQuestionsMiddleware);
   }
@@ -156,7 +156,7 @@ class SecurityQuestionsModule implements IModule {
       answer: answerString,
       id: TKEYSTORE_ID,
     };
-    await this.tbSDK._setTKeyStoreItem(this.moduleName, answerStore, false);
+    await this.tbSDK._setTKeyStoreItem(this.moduleName, answerStore);
   }
 
   async getAnswer(): Promise<string> {
