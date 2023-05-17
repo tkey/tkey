@@ -1158,17 +1158,17 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       });
     });
     it(`#should be able to reconstruct key and initialize a key with security questions, manualSync=${mode}`, async function () {
+      const securityQuestion = new SecurityQuestionsModule();
+      securityQuestion.addMiddlewareToTkey(tb);
+
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
       await rejects(async function () {
-        await tb.modules.securityQuestions.inputShareFromSecurityQuestions("blublu");
+        await securityQuestion.inputShareFromSecurityQuestions(tb, "blublu");
       }, Error);
 
-      const securityQuestion = new SecurityQuestionsModule();
-      securityQuestion.setModuleReferences(tb);
-
-      await securityQuestion.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
+      await securityQuestion.generateNewShareWithSecurityQuestions(tb, "blublu", "who is your cat?");
       await tb.syncLocalMetadataTransitions();
-      const question = securityQuestion.getSecurityQuestions();
+      const question = securityQuestion.getSecurityQuestions(tb);
       strictEqual(question, "who is your cat?");
       const tb2 = new ThresholdKey({
         serviceProvider: customSP,
@@ -1176,14 +1176,13 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         // modules: { securityQuestions: new SecurityQuestionsModule() },
       });
       await tb2.initialize();
-      const securityQuestion2 = new SecurityQuestionsModule();
-      securityQuestion2.setModuleReferences(tb2);
+      securityQuestion.addMiddlewareToTkey(tb2);
       // wrong password
       await rejects(async function () {
-        await securityQuestion2.inputShareFromSecurityQuestions("blublu-wrong");
+        await securityQuestion.inputShareFromSecurityQuestions(tb2, "blublu-wrong");
       }, Error);
 
-      await securityQuestion2.inputShareFromSecurityQuestions("blublu");
+      await securityQuestion.inputShareFromSecurityQuestions(tb2, "blublu");
       const reconstructedKey = await tb2.reconstructKey();
       // compareBNArray(resp1.privKey, reconstructedKey, "key should be able to be reconstructed");
       if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
@@ -1193,9 +1192,9 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     it(`#should be able to delete and add security questions, manualSync=${mode}`, async function () {
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
       const securityQuestion = new SecurityQuestionsModule();
-      securityQuestion.setModuleReferences(tb);
+      securityQuestion.addMiddlewareToTkey(tb);
 
-      await securityQuestion.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
+      await securityQuestion.generateNewShareWithSecurityQuestions(tb, "blublu", "who is your cat?");
       await tb.generateNewShare();
       await tb.syncLocalMetadataTransitions();
 
@@ -1204,7 +1203,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       await tb.deleteShare(sqIndex);
 
       // add sq again
-      await securityQuestion.generateNewShareWithSecurityQuestions("blubluss", "who is your cat?");
+      await securityQuestion.generateNewShareWithSecurityQuestions(tb, "blubluss", "who is your cat?");
       await tb.syncLocalMetadataTransitions();
 
       const tb2 = new ThresholdKey({
@@ -1213,10 +1212,9 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         // modules: { securityQuestions: new SecurityQuestionsModule() },
       });
       await tb2.initialize();
-      const securityQuestion2 = new SecurityQuestionsModule();
-      securityQuestion2.setModuleReferences(tb2);
+      securityQuestion.addMiddlewareToTkey(tb2);
 
-      await securityQuestion2.inputShareFromSecurityQuestions("blubluss");
+      await securityQuestion.inputShareFromSecurityQuestions(tb2, "blubluss");
       const reconstructedKey = await tb2.reconstructKey();
       if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
         fail("key should be able to be reconstructed");
@@ -1224,24 +1222,23 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     });
     it(`#should be able to reconstruct key and initialize a key with security questions after refresh, manualSync=${mode}`, async function () {
       const securityQuestion = new SecurityQuestionsModule();
-      securityQuestion.setModuleReferences(tb);
+      securityQuestion.addMiddlewareToTkey(tb);
 
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
 
-      await securityQuestion.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
+      await securityQuestion.generateNewShareWithSecurityQuestions(tb, "blublu", "who is your cat?");
       const tb2 = new ThresholdKey({
         serviceProvider: customSP,
         storageLayer: customSL,
       });
 
-      const securityQuestion2 = new SecurityQuestionsModule();
-      securityQuestion2.setModuleReferences(tb2);
+      securityQuestion.addMiddlewareToTkey(tb2);
 
       await tb.generateNewShare();
       await tb.syncLocalMetadataTransitions();
 
       await tb2.initialize();
-      await securityQuestion2.inputShareFromSecurityQuestions("blublu");
+      await securityQuestion.inputShareFromSecurityQuestions(tb2, "blublu");
 
       const reconstructedKey = await tb2.reconstructKey();
       // compareBNArray(resp1.privKey, reconstructedKey, "key should be able to be reconstructed");
@@ -1251,16 +1248,16 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     });
     it(`#should be able to change password, manualSync=${mode}`, async function () {
       const securityQuestion = new SecurityQuestionsModule();
-      securityQuestion.setModuleReferences(tb);
+      securityQuestion.addMiddlewareToTkey(tb);
 
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
       // should throw
       await rejects(async function () {
-        await securityQuestion.changeSecurityQuestionAndAnswer("dodo", "who is your cat?");
+        await securityQuestion.changeSecurityQuestionAndAnswer(tb, "dodo", "who is your cat?");
       }, Error);
 
-      await securityQuestion.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
-      await securityQuestion.changeSecurityQuestionAndAnswer("dodo", "who is your cat?");
+      await securityQuestion.generateNewShareWithSecurityQuestions(tb, "blublu", "who is your cat?");
+      await securityQuestion.changeSecurityQuestionAndAnswer(tb, "dodo", "who is your cat?");
       await tb.syncLocalMetadataTransitions();
 
       const tb2 = new ThresholdKey({
@@ -1268,12 +1265,11 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         storageLayer: customSL,
       });
 
-      const securityQuestion2 = new SecurityQuestionsModule();
-      securityQuestion2.setModuleReferences(tb2);
+      securityQuestion.addMiddlewareToTkey(tb2);
 
       await tb2.initialize();
 
-      await securityQuestion2.inputShareFromSecurityQuestions("dodo");
+      await securityQuestion.inputShareFromSecurityQuestions(tb2, "dodo");
       const reconstructedKey = await tb2.reconstructKey();
       // compareBNArray(resp1.privKey, reconstructedKey, "key should be able to be reconstructed");
       if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
@@ -1282,10 +1278,10 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     });
     it(`#should be able to change password and serialize, manualSync=${mode}`, async function () {
       const securityQuestion = new SecurityQuestionsModule();
-      securityQuestion.setModuleReferences(tb); 
+      securityQuestion.addMiddlewareToTkey(tb);
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
-      await securityQuestion.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
-      await securityQuestion.changeSecurityQuestionAndAnswer("dodo", "who is your cat?");
+      await securityQuestion.generateNewShareWithSecurityQuestions(tb, "blublu", "who is your cat?");
+      await securityQuestion.changeSecurityQuestionAndAnswer(tb, "dodo", "who is your cat?");
       await tb.syncLocalMetadataTransitions();
 
       const tb2 = new ThresholdKey({
@@ -1293,11 +1289,10 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         storageLayer: customSL,
       });
 
-      const securityQuestion2 = new SecurityQuestionsModule();
-      securityQuestion2.setModuleReferences(tb2);
+      securityQuestion.addMiddlewareToTkey(tb2);
       await tb2.initialize();
 
-      await securityQuestion2.inputShareFromSecurityQuestions("dodo");
+      await securityQuestion.inputShareFromSecurityQuestions(tb2, "dodo");
       const reconstructedKey = await tb2.reconstructKey();
       // compareBNArray(resp1.privKey, reconstructedKey, "key should be able to be reconstructed");
       if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
@@ -1316,18 +1311,18 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       });
 
       const securityQuestion = new SecurityQuestionsModule(true);
-      securityQuestion.setModuleReferences(tb);
+      securityQuestion.addMiddlewareToTkey(tb);
 
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
       const qn = "who is your cat?";
       const ans1 = "blublu";
       const ans2 = "dodo";
-      await securityQuestion.generateNewShareWithSecurityQuestions(ans1, qn);
-      let gotAnswer = await securityQuestion.getAnswer();
+      await securityQuestion.generateNewShareWithSecurityQuestions(tb, ans1, qn);
+      let gotAnswer = await securityQuestion.getAnswer(tb);
       if (gotAnswer !== ans1) {
         fail("answers should be the same");
       }
-      await securityQuestion.changeSecurityQuestionAndAnswer(ans2, qn);
+      await securityQuestion.changeSecurityQuestionAndAnswer(tb, ans2, qn);
       await tb.syncLocalMetadataTransitions();
 
       const tb2 = new ThresholdKey({
@@ -1335,19 +1330,18 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         storageLayer: customSL,
       });
 
-      const securityQuestion2 = new SecurityQuestionsModule(true);
-      securityQuestion2.setModuleReferences(tb2);
+      securityQuestion.addMiddlewareToTkey(tb2);
 
       await tb2.initialize();
 
-      await securityQuestion2.inputShareFromSecurityQuestions("dodo");
+      await securityQuestion.inputShareFromSecurityQuestions(tb2, "dodo");
       const reconstructedKey = await tb2.reconstructKey();
       // compareBNArray(resp1.privKey, reconstructedKey, "key should be able to be reconstructed");
       if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
         fail("key should be able to be reconstructed");
       }
 
-      gotAnswer = await securityQuestion2.getAnswer();
+      gotAnswer = await securityQuestion.getAnswer(tb2);
       if (gotAnswer !== ans2) {
         fail("answers should be the same");
       }
