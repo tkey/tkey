@@ -858,7 +858,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         fail("key should be able to be reconstructed");
       }
     });
-    it(`#should be able to output unavailable share store, manualSync=${mode}`, async function () {
+    it(`#shouldn't be able to insert shares from random threshold key, manualSync=${mode}`, async function () {
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
       const { newShareStores: tbShareStore, newShareIndex: tbShareIndex } = await tb.generateNewShare();
       await tb.syncLocalMetadataTransitions();
