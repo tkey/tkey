@@ -4,6 +4,7 @@
 /* eslint-disable import/no-extraneous-dependencies */
 
 import { ecCurve, getPubKeyPoint, KEY_NOT_FOUND, SHARE_DELETED } from "@tkey/common-types";
+import MnemonicModule from "@tkey/mnemonic";
 import PrivateKeyModule, { ED25519Format, SECP256K1Format } from "@tkey/private-keys";
 import SecurityQuestionsModule from "@tkey/security-questions";
 import SeedPhraseModule, { MetamaskSeedPhraseFormat } from "@tkey/seed-phrase";
@@ -867,6 +868,45 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       });
 
       await tb2.inputShare(exportedSeedShare.toString("hex"), "mnemonic");
+      const reconstructedKey = await tb2.reconstructKey();
+
+      if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
+        fail("key should be able to be reconstructed");
+      }
+    });
+  });
+
+  describe("Mnemonic serialization", function () {
+    it(`#should be able to import and export mnemonic share, manualSync=${mode}`, async function () {
+      const tb = new ThresholdKey({
+        serviceProvider: customSP,
+        manualSync: mode,
+        storageLayer: customSL,
+      });
+      const resp1 = await tb._initializeNewKey({ initializeModules: true });
+
+      // should throw
+      await rejects(async function () {
+        await tb.outputShare(resp1.deviceShare.share.shareIndex, "mnemonic-49");
+      });
+      const mnemonicModule = new MnemonicModule();
+
+      const exportedSeedShare = await mnemonicModule.exportShare(tb, resp1.deviceShare.share.shareIndex);
+      await tb.syncLocalMetadataTransitions();
+
+      const tb2 = new ThresholdKey({
+        serviceProvider: customSP,
+        manualSync: mode,
+        storageLayer: customSL,
+      });
+      await tb2.initialize();
+
+      // // should throw
+      // await rejects(async function () {
+      //   await tb2.inputShare(exportedSeedShare.toString("hex"), "mnemonic-49");
+      // });
+
+      await mnemonicModule.importShare(tb2, exportedSeedShare.toString("hex"));
       const reconstructedKey = await tb2.reconstructKey();
 
       if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
