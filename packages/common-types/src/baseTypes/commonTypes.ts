@@ -45,6 +45,14 @@ export interface TorusServiceProviderArgs extends ServiceProviderArgs {
   nodePubKeys?: PointHex[];
 }
 
+export enum TkeyStatus {
+  NOT_INITIALIZED = "NOT_INITIALIZED",
+  // READ MODE
+  INITIALIZED = "INITIALIZED",
+  // WRITE MODE
+  RECONSTRUCTED = "RECONSTRUCTED",
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type StringifiedType = Record<string, any>;
 

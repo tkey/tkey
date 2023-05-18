@@ -48,6 +48,7 @@ import {
   ShareStorePolyIDShareIndexMap,
   StringifiedType,
   TKeyArgs,
+  TkeyStatus,
   TkeyStoreItemType,
   toPrivKeyECC,
 } from "@tkey/common-types";
@@ -220,6 +221,20 @@ class ThresholdKey implements ITKey {
     throw CoreError.metadataUndefined();
   }
 
+  getTkeyStatus(): TkeyStatus {
+    try {
+      const keyDetails = this.getKeyDetails();
+      if (keyDetails.totalShares < keyDetails.threshold) {
+        // READ MODE
+        return TkeyStatus.INITIALIZED;
+      }
+      // WRITE MODE
+      return TkeyStatus.RECONSTRUCTED;
+    } catch {
+      return TkeyStatus.NOT_INITIALIZED;
+    }
+  }
+
   async initialize(params?: {
     withShare?: ShareStore;
     importKey?: BN;
@@ -232,7 +247,7 @@ class ThresholdKey implements ITKey {
     deviceTSSShare?: BN;
     deviceTSSIndex?: number;
     factorPub?: Point;
-  }): Promise<KeyDetails> {
+  }): Promise<KeyDetails & { deviceShare?: ShareStore; userShare?: ShareStore }> {
     // setup initial params/states
     const p = params || {};
 
@@ -287,7 +302,7 @@ class ThresholdKey implements ITKey {
           throw CoreError.default("key has not been generated yet");
         }
         // no metadata set, assumes new user
-        await this._initializeNewKey({
+        const result = await this._initializeNewKey({
           initializeModules: true,
           importedKey: importKey,
           delete1OutOf1: p.delete1OutOf1,
@@ -296,13 +311,43 @@ class ThresholdKey implements ITKey {
           const { factorEncs, factorPubs, tssPolyCommits } = await this._initializeNewTSSKey(this.tssTag, deviceTSSShare, factorPub, deviceTSSIndex);
           this.metadata.addTSSData({ tssTag: this.tssTag, tssNonce: 0, tssPolyCommits, factorPubs, factorEncs });
         }
-        return this.getKeyDetails();
+        const keyDetails = this.getKeyDetails();
+        return { ...keyDetails, deviceShare: result.deviceShare, userShare: result.userShare };
       }
       // else we continue with catching up share and metadata
       shareStore = ShareStore.fromJSON(rawServiceProviderShare);
     } else {
       throw CoreError.default("Input is not supported");
     }
+
+    return this.initializeWithShareStore({
+      shareStore,
+      transitionMetadata,
+      previouslyFetchedCloudMetadata,
+      previousLocalMetadataTransitions,
+      useTSS,
+      deviceTSSShare,
+      factorPub,
+    });
+  }
+
+  async initializeWithShareStore(params: {
+    shareStore: ShareStore;
+    transitionMetadata?: Metadata;
+    previouslyFetchedCloudMetadata?: Metadata;
+    previousLocalMetadataTransitions?: LocalMetadataTransitions;
+    useTSS?: boolean;
+    deviceTSSShare?: BN;
+    factorPub?: Point;
+  }) {
+    const { shareStore, transitionMetadata, previouslyFetchedCloudMetadata, previousLocalMetadataTransitions, useTSS, deviceTSSShare, factorPub } =
+      params;
+
+    const previousLocalMetadataTransitionsExists =
+      previousLocalMetadataTransitions && previousLocalMetadataTransitions[0].length > 0 && previousLocalMetadataTransitions[1].length > 0;
+    const reinitializing = transitionMetadata && previousLocalMetadataTransitionsExists; // are we reinitializing the SDK?
+    // in the case we're reinitializing whilst newKeyAssign has not been synced
+    const reinitializingWithNewKeyAssign = reinitializing && previouslyFetchedCloudMetadata === undefined;
 
     // We determine the latest metadata on the SDK and if there has been
     // needed transitions to include
