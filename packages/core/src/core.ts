@@ -48,6 +48,7 @@ import {
   ShareStorePolyIDShareIndexMap,
   StringifiedType,
   TKeyArgs,
+  TkeyStatus,
   TkeyStoreItemType,
   toPrivKeyECC,
 } from "@tkey/common-types";
@@ -228,6 +229,20 @@ class ThresholdKey implements ITKey {
     throw CoreError.default("serviceProvider undefined");
   }
 
+  getTkeyStatus(): TkeyStatus {
+    try {
+      const keyDetails = this.getKeyDetails();
+      if (keyDetails.totalShares < keyDetails.threshold) {
+        // READ MODE
+        return TkeyStatus.INITIALIZED;
+      }
+      // WRITE MODE
+      return TkeyStatus.RECONSTRUCTED;
+    } catch {
+      return TkeyStatus.NOT_INITIALIZED;
+    }
+  }
+
   async initialize(params?: {
     withShare?: ShareStore;
     importKey?: BN;
@@ -240,7 +255,7 @@ class ThresholdKey implements ITKey {
     deviceTSSShare?: BN;
     deviceTSSIndex?: number;
     factorPub?: Point;
-  }): Promise<KeyDetails> {
+  }): Promise<KeyDetails & { deviceShare?: ShareStore; userShare?: ShareStore }> {
     // setup initial params/states
     const p = params || {};
 
@@ -315,6 +330,35 @@ class ThresholdKey implements ITKey {
     } else {
       throw CoreError.default("Input is not supported");
     }
+
+    return this.initializeWithShareStore({
+      shareStore,
+      transitionMetadata,
+      previouslyFetchedCloudMetadata,
+      previousLocalMetadataTransitions,
+      useTSS,
+      deviceTSSShare,
+      factorPub,
+    });
+  }
+
+  async initializeWithShareStore(params: {
+    shareStore: ShareStore;
+    transitionMetadata?: Metadata;
+    previouslyFetchedCloudMetadata?: Metadata;
+    previousLocalMetadataTransitions?: LocalMetadataTransitions;
+    useTSS?: boolean;
+    deviceTSSShare?: BN;
+    factorPub?: Point;
+  }) {
+    const { shareStore, transitionMetadata, previouslyFetchedCloudMetadata, previousLocalMetadataTransitions, useTSS, deviceTSSShare, factorPub } =
+      params;
+
+    const previousLocalMetadataTransitionsExists =
+      previousLocalMetadataTransitions && previousLocalMetadataTransitions[0].length > 0 && previousLocalMetadataTransitions[1].length > 0;
+    const reinitializing = transitionMetadata && previousLocalMetadataTransitionsExists; // are we reinitializing the SDK?
+    // in the case we're reinitializing whilst newKeyAssign has not been synced
+    const reinitializingWithNewKeyAssign = reinitializing && previouslyFetchedCloudMetadata === undefined;
 
     // We determine the latest metadata on the SDK and if there has been
     // needed transitions to include
