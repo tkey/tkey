@@ -578,7 +578,7 @@ class ThresholdKey implements ITKey {
       await Promise.all(
         Object.keys(this._reconstructKeyMiddleware).map(async (x) => {
           if (Object.prototype.hasOwnProperty.call(this._reconstructKeyMiddleware, x)) {
-            const extraKeys = await this._reconstructKeyMiddleware[x]();
+            const extraKeys = await this._reconstructKeyMiddleware[x](this);
             returnObject[x] = extraKeys;
             returnObject.allKeys.push(...extraKeys);
           }
@@ -1466,7 +1466,7 @@ class ThresholdKey implements ITKey {
     this._refreshMiddleware[moduleName] = middleware;
   }
 
-  _addReconstructKeyMiddleware(moduleName: string, middleware: () => Promise<BN[]>): void {
+  _addReconstructKeyMiddleware(moduleName: string, middleware: (tkey: ITKeyApi) => Promise<BN[]>): void {
     this._reconstructKeyMiddleware[moduleName] = middleware;
   }
 
