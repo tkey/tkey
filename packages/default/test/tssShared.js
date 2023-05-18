@@ -20,12 +20,10 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
   const customSL = storageLayer;
   let verifierId;
 
-  before(function () {
-    verifierId = generateVerifierId();
-    console.log(verifierId)
-  });
-
   describe.only("TSS tests", function () {
+    before(function () {
+      verifierId = generateVerifierId();
+    });
     it("#should be able to refresh tss shares", async function () {
       const sp = customSP;
       if (!sp.useTSS) this.skip();
