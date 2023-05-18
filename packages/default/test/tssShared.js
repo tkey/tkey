@@ -20,7 +20,7 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
   const customSL = storageLayer;
   let verifierId;
 
-  describe.only("TSS tests", function () {
+  describe("TSS tests", function () {
     before(function () {
       verifierId = generateVerifierId();
     });
