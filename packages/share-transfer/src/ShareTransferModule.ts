@@ -64,7 +64,9 @@ class ShareTransferModule implements IModule {
     this.requestStatusCheckInterval = interval;
   }
 
-  initialize(): Promise<void> {}
+  initialize(): Promise<void> {
+    return Promise.resolve();
+  }
 
   async setup(tkey: ITKeyApi): Promise<void> {
     const metadata = tkey.getMetadata();
