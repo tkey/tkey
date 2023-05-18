@@ -47,7 +47,8 @@ export type RefreshMiddlewareMap = {
 };
 
 export type ReconstructKeyMiddlewareMap = {
-  [moduleName: string]: () => Promise<BN[]>;
+  // eslint-disable-next-line no-use-before-define
+  [moduleName: string]: (tkey: ITKeyApi) => Promise<BN[]>;
 };
 
 export type ShareSerializationMiddleware = {
@@ -297,7 +298,7 @@ export interface ITKeyApi {
     moduleName: string,
     middleware: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap) => unknown
   ): void;
-  _addReconstructKeyMiddleware(moduleName: string, middleware: () => Promise<Array<BN>>): void;
+  _addReconstructKeyMiddleware(moduleName: string, middleware: (tkey: ITKeyApi) => Promise<Array<BN>>): void;
   _addShareSerializationMiddleware(
     serialize: (share: BN, type: string) => Promise<unknown>,
     deserialize: (serializedShare: unknown, type: string) => Promise<BN>
