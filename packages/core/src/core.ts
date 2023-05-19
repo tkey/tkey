@@ -819,9 +819,14 @@ class ThresholdKey implements ITKey {
     const oldLabel = `${verifierNameVerifierId}\u0015${this.tssTag}\u0016${tssNonce}`;
     const newLabel = `${verifierNameVerifierId}\u0015${this.tssTag}\u0016${tssNonce + 1}`;
 
-    const newTSSServerPub = await this.serviceProvider.getTSSPubKey(this.tssTag, tssNonce + 1);
+    const { pubKey: newTSSServerPub, nodeIndexes } = await this.serviceProvider.getTSSPubKey(this.tssTag, tssNonce + 1);
+    let finalSelectedServers = selectedServers;
+
+    if (nodeIndexes?.length > 0) {
+      finalSelectedServers = nodeIndexes.slice(0, Math.min(selectedServers.length, nodeIndexes.length));
+    }
     // eslint-disable-next-line no-console
-    console.log("newTSSServerPub", newTSSServerPub.x.toString("hex"), this.tssTag, tssNonce + 1);
+    console.log("newTSSServerPub", finalSelectedServers, nodeIndexes, newTSSServerPub.x.toString("hex"), this.tssTag, tssNonce + 1);
     const refreshResponses = await rssClient.refresh({
       factorPubs: factorPubs.map((f) => hexPoint(f)),
       targetIndexes,
@@ -831,7 +836,7 @@ class ThresholdKey implements ITKey {
       dkgNewPub: hexPoint(newTSSServerPub),
       inputShare,
       inputIndex,
-      selectedServers,
+      selectedServers: finalSelectedServers,
     });
 
     const secondCommit = ecPoint(hexPoint(newTSSServerPub)).add(ecPoint(tssPubKey).neg());
@@ -979,7 +984,7 @@ class ThresholdKey implements ITKey {
     } else {
       tss2 = new BN(generatePrivate());
     }
-    const tss1Pub = await this.serviceProvider.getTSSPubKey(tssTag, 0);
+    const { pubKey: tss1Pub } = await this.serviceProvider.getTSSPubKey(tssTag, 0);
     const tss1PubKey = ecCurve.keyFromPublic({ x: tss1Pub.x.toString(16, 64), y: tss1Pub.y.toString(16, 64) }).getPublic();
     const tss2Pub = getPubKeyPoint(tss2);
     const tss2PubKey = ecCurve.keyFromPublic({ x: tss2Pub.x.toString(16, 64), y: tss2Pub.y.toString(16, 64) }).getPublic();

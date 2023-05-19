@@ -145,13 +145,13 @@ class ServiceProviderBase implements IServiceProvider {
     this.tssPubKeys[`${this.verifierName}\u001c${this.verifierId}\u0015${tssTag}\u0016${tssNonce}`] = tssPubKey;
   }
 
-  async getTSSPubKey(tssTag: string, tssNonce: number): Promise<Point> {
+  async getTSSPubKey(tssTag: string, tssNonce: number): Promise<{ pubKey: Point }> {
     const tssPubKey = this.tssPubKeys[`${this.verifierName}\u001c${this.verifierId}\u0015${tssTag}\u0016${tssNonce}`];
 
     if (!tssPubKey) {
       throw new Error(`tss pub key could not be found for ${this.verifierName}\u001c${this.verifierId}\u0015${tssTag}\u0016${tssNonce}`);
     }
-    return tssPubKey;
+    return { pubKey: tssPubKey };
   }
 
   sign(msg: BNString): string {
