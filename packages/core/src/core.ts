@@ -233,7 +233,7 @@ class ThresholdKey implements ITKey {
     deviceTSSShare?: BN;
     deviceTSSIndex?: number;
     factorPub?: Point;
-  }): Promise<KeyDetails & { deviceShare: ShareStore; userShare: ShareStore }> {
+  }): Promise<KeyDetails & { deviceShare?: ShareStore; userShare?: ShareStore }> {
     // setup initial params/states
     const p = params || {};
 
@@ -278,12 +278,12 @@ class ThresholdKey implements ITKey {
       if (spIncludeLocalMetadataTransitions) {
         shareStore = this.getMetadataFromLocalMetadataTransistion({
           _localMetadataTransitions: spLocalMetadataTransitions,
-          serviceProvider: this.serviceProvider,
+          privKey: this.serviceProvider.postboxKey,
         }) as ShareStore;
       }
       if (!shareStore) {
         const rawServiceProviderShare = await this.getGenericMetadataWithTransitionStates({
-          serviceProvider: this.serviceProvider,
+          privKey: this.serviceProvider.postboxKey,
         });
         const noKeyFound: { message?: string } = rawServiceProviderShare as { message?: string };
         if (noKeyFound.message === KEY_NOT_FOUND) {
@@ -1379,7 +1379,7 @@ class ThresholdKey implements ITKey {
     await this.addLocalMetadataTransitions({ input: authMetadatas, privKey });
   }
 
-  async getAuthMetadata(params: { serviceProvider?: IServiceProvider; privKey?: BN; includeLocalMetadataTransitions?: boolean }): Promise<Metadata> {
+  async getAuthMetadata(params: { privKey: BN; includeLocalMetadataTransitions?: boolean }): Promise<Metadata> {
     if (params.includeLocalMetadataTransitions) {
       const authMetadata = this.getMetadataFromLocalMetadataTransistion(params) as AuthMetadata;
       if (authMetadata) return authMetadata.metadata;
@@ -1390,11 +1390,7 @@ class ThresholdKey implements ITKey {
     return authMetadata.metadata;
   }
 
-  getMetadataFromLocalMetadataTransistion(params: {
-    _localMetadataTransitions?: LocalMetadataTransitions;
-    serviceProvider?: IServiceProvider;
-    privKey?: BN;
-  }) {
+  getMetadataFromLocalMetadataTransistion(params: { _localMetadataTransitions?: LocalMetadataTransitions; privKey: BN }) {
     const transitions: LocalMetadataTransitions = params._localMetadataTransitions
       ? params._localMetadataTransitions
       : this._localMetadataTransitions;
@@ -1402,7 +1398,6 @@ class ThresholdKey implements ITKey {
     for (let i = transitions.privKey.length - 1; i >= 0; i -= 1) {
       const x = transitions.privKey[i];
       if (params.privKey && x && x.cmp(params.privKey) === 0) index = i;
-      else if (params.serviceProvider && !x) index = i;
     }
     if (index !== null) {
       return transitions.data[index];
@@ -1411,8 +1406,8 @@ class ThresholdKey implements ITKey {
   }
 
   // fetches the latest metadata potentially searching in local transition states first
-  async getGenericMetadataWithTransitionStates(params: { serviceProvider?: IServiceProvider; privKey?: BN }): Promise<unknown> {
-    if (!((params.serviceProvider && params.serviceProvider.postboxKey.toString("hex") !== "0") || params.privKey)) {
+  async getGenericMetadataWithTransitionStates(params: { privKey: BN }): Promise<unknown> {
+    if (params.privKey.toString("hex") === "0" || !params.privKey) {
       throw CoreError.default("require either serviceProvider or priv key in getGenericMetadataWithTransitionStates");
     }
 
