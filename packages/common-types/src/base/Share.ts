@@ -16,6 +16,7 @@ class Share implements ISerializable {
 
   static fromJSON(value: StringifiedType): Share {
     const { share, shareIndex } = value;
+    if (!share || !shareIndex) throw new Error("Invalid ShareStore JSON");
     return new Share(shareIndex, share);
   }
 

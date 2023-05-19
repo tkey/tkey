@@ -18,6 +18,7 @@ class AuthMetadata implements IAuthMetadata {
 
   static fromJSON(value: StringifiedType): AuthMetadata {
     const { data, sig } = value;
+    if (!data || !sig) throw CoreError.default("Metadata or signature not provided");
 
     const m = Metadata.fromJSON(data);
     if (!m.pubKey) throw CoreError.metadataPubKeyUnavailable();

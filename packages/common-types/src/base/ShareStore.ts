@@ -13,6 +13,7 @@ class ShareStore implements ISerializable {
 
   static fromJSON(value: StringifiedType): ShareStore {
     const { share, polynomialID } = value;
+    if (!share || !polynomialID) throw new Error("Invalid ShareStore JSON");
     return new ShareStore(Share.fromJSON(share), polynomialID);
   }
 
