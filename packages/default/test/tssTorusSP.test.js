@@ -3,7 +3,6 @@ import ServiceProviderTorus from "@tkey/service-provider-torus";
 import { generatePrivate } from "@toruslabs/eccrypto";
 
 import { getMetadataUrl, initStorageLayer } from "./helpers";
-import { sharedTestCases } from "./shared";
 import { tssSharedTests } from "./tssShared";
 
 const PRIVATE_KEY = generatePrivate().toString("hex");
@@ -34,16 +33,10 @@ describe(`TSS Test with TorusServiceProvider`, function () {
   const MANUAL_SYNC = true;
   describe(`TSS TorusServiceProvider with manualSync: ${MANUAL_SYNC}`, function () {
     // eslint-disable-next-line mocha/no-setup-in-describe
-    sharedTestCases(MANUAL_SYNC, torusSp, torusSL);
-
-    // eslint-disable-next-line mocha/no-setup-in-describe
     tssSharedTests(MANUAL_SYNC, torusSp, torusSL);
   });
 
   describe(`TSS TorusServiceProvider with manualSync: ${false}`, function () {
-    // eslint-disable-next-line mocha/no-setup-in-describe
-    sharedTestCases(false, torusSp, torusSL);
-
     // eslint-disable-next-line mocha/no-setup-in-describe
     tssSharedTests(false, torusSp, torusSL);
   });
