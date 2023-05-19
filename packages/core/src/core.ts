@@ -275,42 +275,31 @@ class ThresholdKey implements ITKey {
       const spIncludeLocalMetadataTransitions = reinitializingWithNewKeyAssign;
       const spLocalMetadataTransitions = reinitializingWithNewKeyAssign ? previousLocalMetadataTransitions : undefined;
 
-      if (spIncludeLocalMetadataTransitions) {
-        shareStore = this.getMetadataFromLocalMetadataTransistion({
-          _localMetadataTransitions: spLocalMetadataTransitions,
-          privKey: this.serviceProvider.postboxKey,
-        }) as ShareStore;
-      }
-      if (!shareStore) {
-        const rawServiceProviderShare = await this.getGenericMetadataWithTransitionStates({
-          privKey: this.serviceProvider.postboxKey,
-        });
-        const noKeyFound: { message?: string } = rawServiceProviderShare as { message?: string };
-        if (noKeyFound.message === KEY_NOT_FOUND) {
-          if (neverInitializeNewKey) {
-            throw CoreError.default("key has not been generated yet");
-          }
-          // no metadata set, assumes new user
-          const result = await this._initializeNewKey({
-            initializeModules: true,
-            importedKey: importKey,
-            delete1OutOf1: p.delete1OutOf1,
-          });
-          if (useTSS) {
-            const { factorEncs, factorPubs, tssPolyCommits } = await this._initializeNewTSSKey(
-              this.tssTag,
-              deviceTSSShare,
-              factorPub,
-              deviceTSSIndex
-            );
-            this.metadata.addTSSData({ tssTag: this.tssTag, tssNonce: 0, tssPolyCommits, factorPubs, factorEncs });
-          }
-          const keyDetails = this.getKeyDetails();
-          return { ...keyDetails, deviceShare: result.deviceShare, userShare: result.userShare };
+      const rawServiceProviderShare = await this.getGenericMetadataWithTransitionStates({
+        privKey: this.serviceProvider.postboxKey,
+        includeLocalMetadataTransitions: spIncludeLocalMetadataTransitions,
+        _localMetadataTransitions: spLocalMetadataTransitions,
+      });
+      const noKeyFound: { message?: string } = rawServiceProviderShare as { message?: string };
+      if (noKeyFound.message === KEY_NOT_FOUND) {
+        if (neverInitializeNewKey) {
+          throw CoreError.default("key has not been generated yet");
         }
-        // else we continue with catching up share and metadata
-        shareStore = ShareStore.fromJSON(rawServiceProviderShare);
+        // no metadata set, assumes new user
+        const result = await this._initializeNewKey({
+          initializeModules: true,
+          importedKey: importKey,
+          delete1OutOf1: p.delete1OutOf1,
+        });
+        if (useTSS) {
+          const { factorEncs, factorPubs, tssPolyCommits } = await this._initializeNewTSSKey(this.tssTag, deviceTSSShare, factorPub, deviceTSSIndex);
+          this.metadata.addTSSData({ tssTag: this.tssTag, tssNonce: 0, tssPolyCommits, factorPubs, factorEncs });
+        }
+        const keyDetails = this.getKeyDetails();
+        return { ...keyDetails, deviceShare: result.deviceShare, userShare: result.userShare };
       }
+      // else we continue with catching up share and metadata
+      shareStore = ShareStore.fromJSON(rawServiceProviderShare);
     } else {
       throw CoreError.default("Input is not supported");
     }
@@ -1380,37 +1369,37 @@ class ThresholdKey implements ITKey {
   }
 
   async getAuthMetadata(params: { privKey: BN; includeLocalMetadataTransitions?: boolean }): Promise<Metadata> {
-    if (params.includeLocalMetadataTransitions) {
-      const authMetadata = this.getMetadataFromLocalMetadataTransistion(params) as AuthMetadata;
-      if (authMetadata) return authMetadata.metadata;
-    }
-
     const raw = await this.getGenericMetadataWithTransitionStates({ ...params });
     const authMetadata = AuthMetadata.fromJSON(raw);
     return authMetadata.metadata;
   }
 
-  getMetadataFromLocalMetadataTransistion(params: { _localMetadataTransitions?: LocalMetadataTransitions; privKey: BN }) {
-    const transitions: LocalMetadataTransitions = params._localMetadataTransitions
-      ? params._localMetadataTransitions
-      : this._localMetadataTransitions;
-    let index = null;
-    for (let i = transitions.privKey.length - 1; i >= 0; i -= 1) {
-      const x = transitions.privKey[i];
-      if (params.privKey && x && x.cmp(params.privKey) === 0) index = i;
-    }
-    if (index !== null) {
-      return transitions.data[index];
-    }
-    return undefined;
-  }
-
   // fetches the latest metadata potentially searching in local transition states first
-  async getGenericMetadataWithTransitionStates(params: { privKey: BN }): Promise<unknown> {
+  async getGenericMetadataWithTransitionStates(params: {
+    privKey: BN;
+    includeLocalMetadataTransitions?: boolean;
+    _localMetadataTransitions?: LocalMetadataTransitions;
+  }): Promise<StringifiedType> {
     if (params.privKey.toString("hex") === "0" || !params.privKey) {
-      throw CoreError.default("require either serviceProvider or priv key in getGenericMetadataWithTransitionStates");
+      throw CoreError.default("require either priv key in getGenericMetadataWithTransitionStates");
     }
 
+    if (params.includeLocalMetadataTransitions) {
+      const transitions: LocalMetadataTransitions = params._localMetadataTransitions
+        ? params._localMetadataTransitions
+        : this._localMetadataTransitions;
+      let index = null;
+      for (let i = transitions.privKey.length - 1; i >= 0; i -= 1) {
+        const x = transitions.privKey[i];
+        if (params.privKey && x && x.cmp(params.privKey) === 0) index = i;
+      }
+      // found local metadata transition that matched
+      if (index !== null) {
+        return transitions.data[index];
+      }
+    }
+
+    // local metadata transition that match with privKey not found
     let raw: IMessageMetadata;
     try {
       raw = await this.storageLayer.getMetadata(params);
@@ -1420,8 +1409,7 @@ class ThresholdKey implements ITKey {
     if ((raw as IMessageMetadata).message === SHARE_DELETED) {
       throw CoreError.fromCode(1308);
     }
-    return raw as StringifiedType;
-    // return params.fromJSONConstructor.fromJSON(raw);
+    return raw;
   }
 
   // Lock functions
