@@ -1370,6 +1370,10 @@ class ThresholdKey implements ITKey {
 
   async getAuthMetadata(params: { privKey: BN; includeLocalMetadataTransitions?: boolean }): Promise<Metadata> {
     const raw = await this.getGenericMetadataWithTransitionStates({ ...params });
+    if (raw instanceof AuthMetadata) {
+      // if `raw` is from localMetadata, return without deserialize
+      return raw.metadata;
+    }
     const authMetadata = AuthMetadata.fromJSON(raw);
     return authMetadata.metadata;
   }
