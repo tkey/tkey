@@ -858,39 +858,76 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         fail("key should be able to be reconstructed");
       }
     });
-    it(`#shouldn't be able to insert shares from random threshold key, manualSync=${mode}`, async function () {
+    it(`#should be able to insert shares from existing tkey using _initializeNewKey, manualSync=${mode}`, async function () {
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
       const { newShareStores: tbShareStore, newShareIndex: tbShareIndex } = await tb.generateNewShare();
       await tb.syncLocalMetadataTransitions();
-
-      const tb2 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
-      const resp2 = await tb2._initializeNewKey({ initializeModules: true });
-      const { newShareStores, newShareIndex } = await tb2.generateNewShare();
-      await tb2.syncLocalMetadataTransitions();
 
       const tb3 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
 
       await tb3.initialize({ neverInitializeNewKey: true });
       try {
-        await tb3.inputShareStoreSafe(resp2.deviceShare, true);
-        await tb3.inputShareStoreSafe(newShareStores[newShareIndex.toString("hex")], true);
+        await tb3.inputShareStoreSafe(resp1.deviceShare, true);
       } catch (err) {
         throw new Error(err);
       }
-      await rejects(async () => {
-        await tb3.inputShareStoreSafe(tbShareStore[tbShareIndex.toString("hex")], true);
-      }, Error);
-      await rejects(async () => {
-        await tb3.inputShareStoreSafe(resp1.deviceShare, true);
-      }, Error);
-
       const reconstructedKey = await tb3.reconstructKey();
-      const shareStore = tb3.outputShareStore(newShareIndex);
-      strictEqual(newShareStores[newShareIndex.toString("hex")].share.share.toString("hex"), shareStore.share.share.toString("hex"));
 
+      if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
+        fail("key should be able to be reconstructed");
+      }
+      const shareStore = tb3.outputShareStore(tbShareIndex);
+      strictEqual(tbShareStore[tbShareIndex.toString("hex")].share.share.toString("hex"), shareStore.share.share.toString("hex"));
+    });
+    it(`#should be able to insert shares from existing tkey using new TKey Instance, manualSync=${mode}`, async function () {
+      const tb2 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
+      const resp2 = await tb2._initializeNewKey({ initializeModules: true });
+      await tb2.syncLocalMetadataTransitions();
+
+      const tb3 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
+
+      await tb3.initialize({ neverInitializeNewKey: true });
+      await tb3.inputShareStoreSafe(resp2.deviceShare, true);
+      const reconstructedKey = await tb3.reconstructKey();
       if (resp2.privKey.cmp(reconstructedKey.privKey) !== 0) {
         fail("key should be able to be reconstructed");
       }
+    });
+    it(`#shouldn't be able to insert shares from random threshold key, manualSync=${mode}`, async function () {
+      // wrong tkey instance
+      const resp1 = await tb._initializeNewKey({ initializeModules: true });
+      const { newShareStores: tbShareStore, newShareIndex: tbShareIndex } = await tb.generateNewShare();
+      await tb.syncLocalMetadataTransitions();
+
+      // tkey instance with correct share stores and index
+      const tb2 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
+      const resp2 = await tb2._initializeNewKey({ initializeModules: true });
+      await tb2.syncLocalMetadataTransitions();
+
+      const tb3 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
+      await tb3.initialize({ neverInitializeNewKey: true });
+
+      // throws since share doesn't
+      await rejects(
+        async () => {
+          await tb3.inputShareStoreSafe(tbShareStore[tbShareIndex.toString("hex")], true);
+        },
+        (err) => {
+          strictEqual(err.code, 1307, "CoreError: Share doesn't exist");
+          return true;
+        }
+      );
+      await rejects(
+        async () => {
+          await tb3.inputShareStoreSafe(resp1.deviceShare, true);
+        },
+        (err) => {
+          strictEqual(err.code, 1307, "CoreError: Share doesn't exist");
+          return true;
+        }
+      );
+      // should be able to insert if correct share store and index
+      await tb3.inputShareStoreSafe(resp2.deviceShare, true);
     });
     it(`#should be able to update metadata, manualSync=${mode}`, async function () {
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
