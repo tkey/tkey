@@ -66,7 +66,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
   const customSP = torusSP;
   const customSL = storageLayer;
   describe("TSS tests", function () {
-    it("#should be able to refresh tss shares", async function () {
+    it.only("#should be able to refresh tss shares", async function () {
       const sp = customSP;
       if (!sp.useTSS) this.skip();
 
@@ -154,6 +154,22 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         // eslint-disable-next-line no-console
         console.log("newTSS2", newTSS2.toString("hex"), tssIndex);
       }
+
+      const factorKey3 = new BN(generatePrivate());
+      const factorPub3 = getPubKeyPoint(factorKey3);
+      const data = await tb2.addFactorPub(factorPub3, 3, factorKey);
+      const tssShareFrom2 = await tb2.getTSSShare(factorKey3);
+      await tb2.getTSSShare(factorKey2);
+      await tb2.getTSSShare(factorKey);
+      await tb2.syncLocalMetadataTransitions();
+      
+      const factorKey4 = new BN(generatePrivate());
+      const factorPub4 = getPubKeyPoint(factorKey4);
+      const data2 = await tb2.addFactorPub(factorPub3, 3, factorKey);
+      await tb2.getTSSShare(factorKey3);
+
+      console.log(tssShareFrom2);
+      console.log(data, factorPub2, factorPub3, JSON.stringify(tb2.metadata));
     });
     it("#should be able to reconstruct tssShare from factor key (tss2) when initializing a key with useTSS true", async function () {
       const sp = customSP;

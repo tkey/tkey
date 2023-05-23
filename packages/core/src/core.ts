@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/member-ordering */
 import {
   BNString,
   CatchupToLatestShareResult,
@@ -1728,6 +1729,123 @@ class ThresholdKey implements ITKey {
 
   private async initializeModules() {
     return Promise.all(Object.keys(this.modules).map((x) => this.modules[x].initialize()));
+  }
+
+  async addFactorPub(newFactorPub: Point, newFactorTSSIndex: number, inputFactorKey: BN) {
+    if (!this) {
+      throw new Error("tkey does not exist, cannot add factor pub");
+    }
+    if (newFactorTSSIndex !== 2 && newFactorTSSIndex !== 3) {
+      throw new Error("tssIndex must be 2 or 3");
+    }
+    if (!this.metadata.factorPubs || !Array.isArray(this.metadata.factorPubs[this.tssTag])) {
+      throw new Error("factorPubs does not exist");
+    }
+    const existingFactorPubs = this.metadata.factorPubs[this.tssTag].slice();
+    const updatedFactorPubs = existingFactorPubs.concat([newFactorPub]);
+    const existingTSSIndexes = existingFactorPubs.map((fb) => this.getFactorEncs(fb).tssIndex);
+    const updatedTSSIndexes = existingTSSIndexes.concat([newFactorTSSIndex]);
+    const { tssShare, tssIndex } = await this.getTSSShare(inputFactorKey);
+    this.metadata.addTSSData({
+      tssTag: this.tssTag,
+      factorPubs: updatedFactorPubs,
+    });
+    const rssNodeDetails = await this._getRssNodeDetails();
+    const { serverEndpoints, serverPubKeys, serverThreshold } = rssNodeDetails;
+    const randomSelectedServers = randomSelection(
+      new Array(rssNodeDetails.serverEndpoints.length).fill(null).map((_, i) => i + 1),
+      Math.ceil(rssNodeDetails.serverEndpoints.length / 2)
+    );
+    const verifierNameVerifierId = this.serviceProvider.getVerifierNameVerifierId();
+    // const signatures = (await this.mpcSettingsService.getSettingsPageData()).signatures;
+    await this._refreshTSSShares(true, tssShare, tssIndex, updatedFactorPubs, updatedTSSIndexes, verifierNameVerifierId, {
+      selectedServers: randomSelectedServers,
+      serverEndpoints,
+      serverPubKeys,
+      serverThreshold,
+      authSignatures: [""],
+    });
+  }
+
+  /**
+   * This function copies a new factor key for an existing TSS share
+   * @param {Point} newFactorPub - A point representing a new factor public key.
+   * @param {number} newFactorTSSIndex - The index of the new factor in the TSS (Threshold Secret
+   * Sharing) scheme. It must be either 2 or 3.
+   * @param {BN} inputFactorKey - The inputFactorKey represents the private key used to decrypt the tss share.
+   */
+  async copyFactorPub(newFactorPub: Point, newFactorTSSIndex: number, inputFactorKey: BN) {
+    if (!this) {
+      throw new Error("tkey does not exist, cannot copy factor pub");
+    }
+    if (newFactorTSSIndex !== 2 && newFactorTSSIndex !== 3) {
+      throw new Error("input factor tssIndex must be 2 or 3");
+    }
+    if (!this.metadata.factorPubs || !Array.isArray(this.metadata.factorPubs[this.tssTag])) {
+      throw new Error("factorPubs does not exist, failed in copy factor pub");
+    }
+    if (!this.metadata.factorEncs || typeof this.metadata.factorEncs[this.tssTag] !== "object") {
+      throw new Error("factorEncs does not exist, failed in copy factor pub");
+    }
+    const existingFactorPubs = this.metadata.factorPubs[this.tssTag].slice();
+    const updatedFactorPubs = existingFactorPubs.concat([newFactorPub]);
+    const { tssShare, tssIndex } = await this.getTSSShare(inputFactorKey);
+    if (tssIndex !== newFactorTSSIndex) {
+      throw new Error("retrieved tssIndex does not match input factor tssIndex");
+    }
+    const factorEncs = JSON.parse(JSON.stringify(this.metadata.factorEncs[this.tssTag]));
+    const factorPubID = newFactorPub.x.toString(16, 64);
+    factorEncs[factorPubID] = {
+      tssIndex: newFactorTSSIndex,
+      type: "direct",
+      userEnc: await encrypt(
+        Buffer.concat([
+          Buffer.from("04", "hex"),
+          Buffer.from(newFactorPub.x.toString(16, 64), "hex"),
+          Buffer.from(newFactorPub.y.toString(16, 64), "hex"),
+        ]),
+        Buffer.from(tssShare.toString(16, 64), "hex")
+      ),
+      serverEncs: [],
+    };
+    this.metadata.addTSSData({
+      tssTag: this.tssTag,
+      factorPubs: updatedFactorPubs,
+      factorEncs,
+    });
+  }
+
+  async deleteFactorPub(factorPub: Point, inputFactorKey: BN) {
+    if (!this) {
+      throw new Error("tkey does not exist, cannot add factor pub");
+    }
+    if (!this.metadata.factorPubs || !Array.isArray(this.metadata.factorPubs[this.tssTag])) {
+      throw new Error("factorPubs does not exist");
+    }
+    const existingFactorPubs = this.metadata.factorPubs[this.tssTag].slice();
+    const found = existingFactorPubs.filter((f) => f.x.eq(factorPub.x) && f.y.eq(factorPub.y));
+    if (found.length === 0) throw new Error("could not find factorPub to delete");
+    if (found.length > 1) throw new Error("found two or more factorPubs that match, error in metadata");
+    const updatedFactorPubs = existingFactorPubs.filter((f) => !f.x.eq(factorPub.x) || !f.y.eq(factorPub.y));
+    this.metadata.addTSSData({
+      tssTag: this.tssTag,
+      factorPubs: updatedFactorPubs,
+    });
+
+    const rssNodeDetails = await this._getRssNodeDetails();
+    const randomSelectedServers = randomSelection(
+      new Array(rssNodeDetails.serverEndpoints.length).fill(null).map((_, i) => i + 1),
+      Math.ceil(rssNodeDetails.serverEndpoints.length / 2)
+    );
+
+    const updatedTSSIndexes = updatedFactorPubs.map((fb) => this.getFactorEncs(fb).tssIndex);
+    const { tssShare, tssIndex } = await this.getTSSShare(inputFactorKey);
+    // const signatures = (await this.mpcSettingsService.getSettingsPageData()).signatures;
+    await this._refreshTSSShares(false, tssShare, tssIndex, updatedFactorPubs, updatedTSSIndexes, this.serviceProvider.getVerifierNameVerifierId(), {
+      ...rssNodeDetails,
+      selectedServers: randomSelectedServers,
+      authSignatures: [""],
+    });
   }
 }
 
