@@ -1085,19 +1085,20 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     });
   });
 
-  describe("Tkey LocalMetadataTransistion", function () {
-    it("should able to reconstrust with localMetadataTransistion", async function () {
+  describe("Tkey LocalMetadataTransition", function () {
+    it("should able to initialize and reconstruct with localMetadataTransision", async function () {
       const tb = new ThresholdKey({
         serviceProvider: customSP,
         manualSync: true,
         storageLayer: customSL,
       });
 
-      const resp1 = await tb._initializeNewKey();
+      await tb._initializeNewKey();
 
       await tb.reconstructKey(true);
 
-      const newShare = await tb.generateNewShare();
+      const newShareMap = await tb.generateNewShare();
+      const newShare = newShareMap.newShareStores[newShareMap.newShareIndex.toString("hex")];
 
       const localMetadataTransistionShare = tb._localMetadataTransitions[0];
       const localMetadataTransistionData = tb._localMetadataTransitions[1];
@@ -1116,6 +1117,11 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         previousLocalMetadataTransitions: [localMetadataTransistionShare, localMetadataTransistionData],
         // withShare: shareToUseForSerialization,
       });
+
+      await tb2.inputShareStoreSafe(newShare);
+      await tb2.reconstructKey();
+
+      strictEqual(tb.privKey.toString("hex"), tb2.privKey.toString("hex"));
     });
   });
 
