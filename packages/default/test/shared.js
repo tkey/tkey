@@ -3,6 +3,7 @@
 /* eslint-disable import/no-extraneous-dependencies */
 
 import { ecCurve, getPubKeyPoint, KEY_NOT_FOUND, SHARE_DELETED } from "@tkey/common-types";
+import { Metadata } from "@tkey/core";
 import PrivateKeyModule, { ED25519Format, SECP256K1Format } from "@tkey/private-keys";
 import SecurityQuestionsModule from "@tkey/security-questions";
 import SeedPhraseModule, { MetamaskSeedPhraseFormat } from "@tkey/seed-phrase";
@@ -1080,6 +1081,40 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       compareReconstructedKeys(reconstructedKey2, {
         privKey: resp1.privKey,
         allKeys: [resp1.privKey],
+      });
+    });
+  });
+
+  describe("Tkey LocalMetadataTransistion", function () {
+    it("should able to reconstrust with localMetadataTransistion", async function () {
+      const tb = new ThresholdKey({
+        serviceProvider: customSP,
+        manualSync: true,
+        storageLayer: customSL,
+      });
+
+      const resp1 = await tb._initializeNewKey();
+
+      await tb.reconstructKey(true);
+
+      const newShare = await tb.generateNewShare();
+
+      const localMetadataTransistionShare = tb._localMetadataTransitions[0];
+      const localMetadataTransistionData = tb._localMetadataTransitions[1];
+
+      const tb2 = new ThresholdKey({
+        serviceProvider: customSP,
+        manualSync: mode,
+        storageLayer: customSL,
+      });
+
+      const newMetadata = Metadata.fromJSON(tb.metadata.toJSON());
+      await tb2.initialize({
+        neverInitializeNewKey: true,
+        transitionMetadata: newMetadata,
+        // previouslyFetchedCloudMetadata: tempCloud,
+        previousLocalMetadataTransitions: [localMetadataTransistionShare, localMetadataTransistionData],
+        // withShare: shareToUseForSerialization,
       });
     });
   });
