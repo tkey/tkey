@@ -906,6 +906,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
 
       const tb3 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
       await tb3.initialize({ neverInitializeNewKey: true });
+      await tb3.syncLocalMetadataTransitions();
 
       // throws since share doesn't
       await rejects(
@@ -928,6 +929,16 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       );
       // should be able to insert if correct share store and index
       await tb3.inputShareStoreSafe(resp2.deviceShare, true);
+      await tb3.reconstructKey();
+      const { newShareStores: tb3ShareStore, newShareIndex: tb3ShareIndex } = await tb3.generateNewShare();
+      await tb3.syncLocalMetadataTransitions();
+      await tb3.reconstructKey();
+
+      await tb2.inputShareStoreSafe(tb3ShareStore[tb3ShareIndex.toString("hex")], true);
+      const reconstructedKey2 = await tb2.reconstructKey();
+      if (resp2.privKey.cmp(reconstructedKey2.privKey) !== 0) {
+        fail("key should be able to be reconstructed");
+      }
     });
     it(`#should be able to update metadata, manualSync=${mode}`, async function () {
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
