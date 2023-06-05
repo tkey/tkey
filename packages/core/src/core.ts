@@ -66,6 +66,7 @@ import {
   lagrangeInterpolation,
 } from "./lagrangeInterpolatePolynomial";
 import Metadata from "./metadata";
+import { eqSet, isSome } from "./util";
 
 // TODO: handle errors for get and set with retries
 
@@ -1216,7 +1217,41 @@ class ThresholdKey implements ITKey {
     } else {
       throw CoreError.default("can only add type ShareStore into shares");
     }
+
+    // get current metadata poly id
+    // const existingPolyShares = this.metadata.polyIDList;
+    // const existingPolyIDs = [];
+    // existingPolyShares.map((polyList) => existingPolyIDs.push(polyList[0]));
+
+    // // get input metadata's poly id
+    // const newShareMetadata = await this.storageLayer.getMetadata({ privKey: ss.share.share as BN });
+    // const parseNewMeta = Metadata.fromJSON(JSON.parse(stringify((newShareMetadata as any).data))) as Metadata;
+    // const newPolyIDs = [];
+    // const newShareIndexes = new Set<string>();
+    // parseNewMeta.polyIDList.map((polyList) => {
+    //   newPolyIDs.push(polyList[0]);
+    //   return polyList[1].forEach((item) => newShareIndexes.add(item));
+    // });
+
+    // // check if poly id list is outdated
+    // if (existingPolyIDs.length !== newPolyIDs.length && isSome(existingPolyIDs, newPolyIDs)) {
+    //   // catchup to latest tKey
+    //   await this.updateSDK();
+    // } else {
+    //   const existingShareIndexes = new Set<string>();
+    //   this.metadata.polyIDList.map((polyList) => polyList[1].forEach((item) => existingShareIndexes.add(item)));
+
+    //   // make sure share indexes of input share's metadata and existing are same
+    //   if (!eqSet(newShareIndexes, existingShareIndexes)) {
+    //     // throw error if share index is random
+    //     throw CoreError.fromCode(1307);
+    //   }
+    // }
+
     const latestShareRes = await this.catchupToLatestShare({ shareStore: ss, includeLocalMetadataTransitions: true });
+    if (!latestShareRes.shareMetadata.polyIDList.find((tuple) => tuple[0] === this.metadata.getLatestPublicPolynomial().getPolynomialID())) {
+      throw CoreError.fromCode(1307);
+    }
     // if not in poly id list, metadata is probably outdated
     // is !this.metadata.polyIDList.includes(latestShareRes.latestShare.polynomialID)
     if (!this.metadata.polyIDList.find((tuple) => tuple[0] === latestShareRes.latestShare.polynomialID)) {
