@@ -955,6 +955,7 @@ class ThresholdKey implements ITKey {
         const x = transitions[0][i];
         if (params.privKey && x && x.cmp(params.privKey) === 0) index = i;
         else if (params.serviceProvider && !x) index = i;
+        if (index !== null) break;
       }
       if (index !== null) {
         return transitions[1][index];

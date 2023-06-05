@@ -2,7 +2,8 @@
 /* eslint-disable mocha/no-exports */
 /* eslint-disable import/no-extraneous-dependencies */
 
-import { ecCurve, getPubKeyPoint, KEY_NOT_FOUND, SHARE_DELETED } from "@tkey/common-types";
+import { ecCurve, getPubKeyPoint, KEY_NOT_FOUND, SHARE_DELETED, ShareStore } from "@tkey/common-types";
+import { Metadata } from "@tkey/core";
 import PrivateKeyModule, { ED25519Format, SECP256K1Format } from "@tkey/private-keys";
 import SecurityQuestionsModule from "@tkey/security-questions";
 import SeedPhraseModule, { MetamaskSeedPhraseFormat } from "@tkey/seed-phrase";
@@ -1081,6 +1082,96 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         privKey: resp1.privKey,
         allKeys: [resp1.privKey],
       });
+    });
+  });
+
+  describe("Tkey LocalMetadataTransition", function () {
+    it("should able to get latest share from getGenericMetadataWithTransitionStates with localMetadataTransision", async function () {
+      const tb = new ThresholdKey({
+        serviceProvider: customSP,
+        manualSync: true,
+        storageLayer: customSL,
+      });
+
+      await tb._initializeNewKey();
+
+      await tb.reconstructKey();
+
+      await tb.generateNewShare();
+
+      const expectLatestSPShare = await tb.getGenericMetadataWithTransitionStates({
+        fromJSONConstructor: ShareStore,
+        serviceProvider: customSP,
+        includeLocalMetadataTransitions: true,
+        _localMetadataTransitions: tb._localMetadataTransitions,
+      });
+
+      const latestSPShareStore = tb.outputShareStore(new BN(1));
+
+      strictEqual(JSON.stringify(latestSPShareStore.toJSON()), JSON.stringify(expectLatestSPShare.toJSON()));
+    });
+
+    it("should able to get catchupToLatestShare with localMetadataTransision", async function () {
+      const tb = new ThresholdKey({
+        serviceProvider: customSP,
+        manualSync: true,
+        storageLayer: customSL,
+      });
+
+      await tb._initializeNewKey();
+      const spShareStore = tb.outputShareStore(new BN(1));
+
+      await tb.reconstructKey();
+
+      await tb.generateNewShare();
+
+      const expectLatestResult = await tb.catchupToLatestShare({
+        shareStore: spShareStore,
+        includeLocalMetadataTransitions: true,
+      });
+
+      const latestSPShareStore = tb.outputShareStore(new BN(1));
+
+      strictEqual(JSON.stringify(latestSPShareStore.toJSON()), JSON.stringify(expectLatestResult.latestShare.toJSON()));
+      strictEqual(JSON.stringify(tb.metadata.toJSON()), JSON.stringify(expectLatestResult.shareMetadata.toJSON()));
+    });
+
+    it("should able to initialize and reconstruct with localMetadataTransision", async function () {
+      const tb = new ThresholdKey({
+        serviceProvider: customSP,
+        manualSync: true,
+        storageLayer: customSL,
+      });
+
+      await tb._initializeNewKey();
+
+      await tb.reconstructKey(true);
+
+      const newShareMap = await tb.generateNewShare();
+      const newShare = newShareMap.newShareStores[newShareMap.newShareIndex.toString("hex")];
+
+      const localMetadataTransistionShare = tb._localMetadataTransitions[0];
+      const localMetadataTransistionData = tb._localMetadataTransitions[1];
+
+      const tb2 = new ThresholdKey({
+        serviceProvider: customSP,
+        manualSync: mode,
+        storageLayer: customSL,
+      });
+
+      const newMetadata = Metadata.fromJSON(tb.metadata.toJSON());
+      await tb2.initialize({
+        neverInitializeNewKey: true,
+        transitionMetadata: newMetadata,
+        // previouslyFetchedCloudMetadata: tempCloud,
+        previousLocalMetadataTransitions: [localMetadataTransistionShare, localMetadataTransistionData],
+        // withShare: shareToUseForSerialization,
+      });
+
+      await tb2.inputShareStoreSafe(newShare);
+      await tb2.reconstructKey();
+
+      strictEqual(tb.privKey.toString("hex"), tb2.privKey.toString("hex"));
     });
   });
 
