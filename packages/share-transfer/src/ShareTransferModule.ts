@@ -28,8 +28,6 @@ export const SHARE_TRANSFER_MODULE_NAME = "shareTransfer";
 class ShareTransferModule implements IModule {
   moduleName: string;
 
-  tbSDK: ITKeyApi;
-
   currentEncKey: BN;
 
   requestStatusCheckId: number;
@@ -58,17 +56,20 @@ class ShareTransferModule implements IModule {
     return generalStore as ShareTransferStorePointer;
   }
 
-  setModuleReferences(tbSDK: ITKeyApi): void {
-    this.tbSDK = tbSDK;
-    this.tbSDK._addRefreshMiddleware(this.moduleName, ShareTransferModule.refreshShareTransferMiddleware);
+  setModuleReferences(tkey: ITKeyApi): void {
+    tkey._addRefreshMiddleware(this.moduleName, ShareTransferModule.refreshShareTransferMiddleware);
   }
 
   setRequestStatusCheckInterval(interval: number): void {
     this.requestStatusCheckInterval = interval;
   }
 
-  async initialize(): Promise<void> {
-    const metadata = this.tbSDK.getMetadata();
+  initialize(): Promise<void> {
+    return Promise.resolve();
+  }
+
+  async setup(tkey: ITKeyApi): Promise<void> {
+    const metadata = tkey.getMetadata();
     const rawShareTransferStorePointer = metadata.getGeneralStoreDomain(this.moduleName) as ShareTransferStorePointerArgs;
     let shareTransferStorePointer: ShareTransferStorePointer;
     if (!rawShareTransferStorePointer) {
@@ -82,13 +83,14 @@ class ShareTransferModule implements IModule {
   }
 
   async requestNewShare(
+    tkey: ITKeyApi,
     userAgent: string,
     availableShareIndexes: Array<string>,
     callback?: (err?: ITkeyError, shareStore?: ShareStore) => void
   ): Promise<string> {
     if (this.currentEncKey) throw ShareTransferError.requestExists(`${this.currentEncKey.toString("hex")}`);
     this.currentEncKey = new BN(generatePrivate());
-    const [newShareTransferStore, userIp] = await Promise.all([this.getShareTransferStore(), getClientIp()]);
+    const [newShareTransferStore, userIp] = await Promise.all([this.getShareTransferStore(tkey), getClientIp()]);
     const encPubKeyX = getPubKeyPoint(this.currentEncKey).x.toString("hex");
     newShareTransferStore[encPubKeyX] = new ShareRequest({
       encPubKey: getPubKeyECC(this.currentEncKey),
@@ -98,18 +100,18 @@ class ShareTransferModule implements IModule {
       userIp,
       timestamp: Date.now(),
     });
-    await this.setShareTransferStore(newShareTransferStore);
+    await this.setShareTransferStore(tkey, newShareTransferStore);
     // watcher
     if (callback) {
       this.requestStatusCheckId = Number(
         setInterval(async () => {
           try {
-            const latestShareTransferStore = await this.getShareTransferStore();
+            const latestShareTransferStore = await this.getShareTransferStore(tkey);
             if (!this.currentEncKey) throw ShareTransferError.missingEncryptionKey();
             if (latestShareTransferStore[encPubKeyX].encShareInTransit) {
               const shareStoreBuf = await decrypt(toPrivKeyECC(this.currentEncKey), latestShareTransferStore[encPubKeyX].encShareInTransit);
               const receivedShare = ShareStore.fromJSON(JSON.parse(shareStoreBuf.toString()));
-              await this.tbSDK.inputShareStoreSafe(receivedShare, true);
+              await tkey.inputShareStoreSafe(receivedShare, true);
               this._cleanUpCurrentRequest();
               callback(null, receivedShare);
             } else if (!latestShareTransferStore[encPubKeyX]) {
@@ -126,20 +128,20 @@ class ShareTransferModule implements IModule {
     return encPubKeyX;
   }
 
-  async addCustomInfoToShareRequest(encPubKeyX: string, customInfo: string): Promise<void> {
-    const shareTransferStore = await this.getShareTransferStore();
+  async addCustomInfoToShareRequest(tkey: ITKeyApi, encPubKeyX: string, customInfo: string): Promise<void> {
+    const shareTransferStore = await this.getShareTransferStore(tkey);
     if (!shareTransferStore[encPubKeyX]) throw ShareTransferError.missingEncryptionKey();
     shareTransferStore[encPubKeyX].customInfo = customInfo;
-    await this.setShareTransferStore(shareTransferStore);
+    await this.setShareTransferStore(tkey, shareTransferStore);
   }
 
-  async lookForRequests(): Promise<Array<string>> {
-    const shareTransferStore = await this.getShareTransferStore();
+  async lookForRequests(tkey: ITKeyApi): Promise<Array<string>> {
+    const shareTransferStore = await this.getShareTransferStore(tkey);
     return Object.keys(shareTransferStore);
   }
 
-  async approveRequest(encPubKeyX: string, shareStore?: ShareStore): Promise<void> {
-    const shareTransferStore = await this.getShareTransferStore();
+  async approveRequest(tkey: ITKeyApi, encPubKeyX: string, shareStore?: ShareStore): Promise<void> {
+    const shareTransferStore = await this.getShareTransferStore(tkey);
     if (!shareTransferStore[encPubKeyX]) throw ShareTransferError.missingEncryptionKey();
 
     let bufferedShare: Buffer;
@@ -148,46 +150,46 @@ class ShareTransferModule implements IModule {
     } else {
       const store = new ShareRequest(shareTransferStore[encPubKeyX]);
       const { availableShareIndexes } = store;
-      const metadata = this.tbSDK.getMetadata();
+      const metadata = tkey.getMetadata();
       const latestPolynomial = metadata.getLatestPublicPolynomial();
       const latestPolynomialId = latestPolynomial.getPolynomialID();
       const indexes = metadata.getShareIndexesForPolynomial(latestPolynomialId);
       const filtered = indexes.filter((el) => !availableShareIndexes.includes(el));
-      const share = this.tbSDK.outputShareStore(filtered[0]);
+      const share = tkey.outputShareStore(filtered[0]);
       bufferedShare = Buffer.from(JSON.stringify(share));
     }
     const shareRequest = new ShareRequest(shareTransferStore[encPubKeyX]);
     shareTransferStore[encPubKeyX].encShareInTransit = await encrypt(shareRequest.encPubKey, bufferedShare);
-    await this.setShareTransferStore(shareTransferStore);
+    await this.setShareTransferStore(tkey, shareTransferStore);
     this.currentEncKey = undefined;
   }
 
-  async approveRequestWithShareIndex(encPubKeyX: string, shareIndex: string): Promise<void> {
-    const deviceShare = this.tbSDK.outputShareStore(shareIndex);
-    return this.approveRequest(encPubKeyX, deviceShare);
+  async approveRequestWithShareIndex(tkey: ITKeyApi, encPubKeyX: string, shareIndex: string): Promise<void> {
+    const deviceShare = tkey.outputShareStore(shareIndex);
+    return this.approveRequest(tkey, encPubKeyX, deviceShare);
   }
 
-  async getShareTransferStore(): Promise<ShareTransferStore> {
-    const metadata = this.tbSDK.getMetadata();
+  async getShareTransferStore(tkey: ITKeyApi): Promise<ShareTransferStore> {
+    const metadata = tkey.getMetadata();
     const shareTransferStorePointer = new ShareTransferStorePointer(metadata.getGeneralStoreDomain(this.moduleName) as ShareTransferStorePointerArgs);
-    const storageLayer = this.tbSDK.getStorageLayer();
+    const storageLayer = tkey.getStorageLayer();
     return storageLayer.getMetadata<ShareTransferStore>({ privKey: shareTransferStorePointer.pointer });
   }
 
-  async setShareTransferStore(shareTransferStore: ShareTransferStore): Promise<void> {
-    const metadata = this.tbSDK.getMetadata();
+  async setShareTransferStore(tkey: ITKeyApi, shareTransferStore: ShareTransferStore): Promise<void> {
+    const metadata = tkey.getMetadata();
     const shareTransferStorePointer = new ShareTransferStorePointer(metadata.getGeneralStoreDomain(this.moduleName) as ShareTransferStorePointerArgs);
-    const storageLayer = this.tbSDK.getStorageLayer();
+    const storageLayer = tkey.getStorageLayer();
     await storageLayer.setMetadata({ input: shareTransferStore, privKey: shareTransferStorePointer.pointer });
   }
 
-  async startRequestStatusCheck(encPubKeyX: string, deleteRequestAfterCompletion: boolean): Promise<ShareStore> {
+  async startRequestStatusCheck(tkey: ITKeyApi, encPubKeyX: string, deleteRequestAfterCompletion: boolean): Promise<ShareStore> {
     // watcher
     return new Promise((resolve, reject) => {
       this.requestStatusCheckId = Number(
         setInterval(async () => {
           try {
-            const latestShareTransferStore = await this.getShareTransferStore();
+            const latestShareTransferStore = await this.getShareTransferStore(tkey);
             if (!this.currentEncKey) throw ShareTransferError.missingEncryptionKey();
             if (!latestShareTransferStore[encPubKeyX]) {
               this._cleanUpCurrentRequest();
@@ -195,9 +197,9 @@ class ShareTransferModule implements IModule {
             } else if (latestShareTransferStore[encPubKeyX].encShareInTransit) {
               const shareStoreBuf = await decrypt(toPrivKeyECC(this.currentEncKey), latestShareTransferStore[encPubKeyX].encShareInTransit);
               const receivedShare = ShareStore.fromJSON(JSON.parse(shareStoreBuf.toString()));
-              await this.tbSDK.inputShareStoreSafe(receivedShare, true);
+              await tkey.inputShareStoreSafe(receivedShare, true);
               if (deleteRequestAfterCompletion) {
-                await this.deleteShareTransferStore(encPubKeyX);
+                await this.deleteShareTransferStore(tkey, encPubKeyX);
               }
               this._cleanUpCurrentRequest();
               resolve(receivedShare);
@@ -215,17 +217,17 @@ class ShareTransferModule implements IModule {
     clearInterval(this.requestStatusCheckId);
   }
 
-  async deleteShareTransferStore(encPubKey: string): Promise<void> {
-    const currentShareTransferStore = await this.getShareTransferStore();
+  async deleteShareTransferStore(tkey: ITKeyApi, encPubKey: string): Promise<void> {
+    const currentShareTransferStore = await this.getShareTransferStore(tkey);
     delete currentShareTransferStore[encPubKey];
-    await this.setShareTransferStore(currentShareTransferStore);
+    await this.setShareTransferStore(tkey, currentShareTransferStore);
   }
 
-  async resetShareTransferStore(): Promise<void> {
-    const metadata = this.tbSDK.getMetadata();
+  async resetShareTransferStore(tkey: ITKeyApi): Promise<void> {
+    const metadata = tkey.getMetadata();
     const shareTransferStorePointer = { pointer: new BN(generatePrivate()) };
     metadata.setGeneralStoreDomain(this.moduleName, shareTransferStorePointer);
-    await this.tbSDK._syncShareMetadata();
+    await tkey._syncShareMetadata();
   }
 
   private _cleanUpCurrentRequest(): void {
