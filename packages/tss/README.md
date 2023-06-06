@@ -1,91 +1,91 @@
 # tKey Web Storage Module
 
-[![npm version](https://img.shields.io/npm/v/@tkey/web-storage?label=%22%22)](https://www.npmjs.com/package/@tkey/web-storage/v/latest)                       [![minzip](https://img.shields.io/bundlephobia/minzip/@tkey/web-storage?label=%22%22)](https://bundlephobia.com/result?p=@tkey/web-storage@latest)
+[![npm version](https://img.shields.io/npm/v/@tkey/tss?label=%22%22)](https://www.npmjs.com/package/@tkey/tss/v/latest)                       
+[![minzip](https://img.shields.io/bundlephobia/minzip/@tkey/tss?label=%22%22)](https://bundlephobia.com/result?p=@tkey/tss@latest)
 
-The tKey Web Storage Module helps you store and recall key shares in the from local and file storage. This module is the part of the [tKey SDK](https://github.com/tkey/tkey/).
+The tKey TSS Module enable tss- Threshold Signature Scheme (MPC - multi Party Computing) feature. This module is the part of the [tKey SDK](https://github.com/tkey/tkey/).
 
 ## Installation
 
 ```shell
-npm install --save @tkey/web-storage
+npm install --save @tkey/tss
 ```
 
 ## Initialization
 
-#### Import the `WebStorageModule` class from `@tkey/web-storage`
+#### Import the `TSSModule` class from `@tkey/tss`
 
 ```javascript
-import WebStorageModule from "@tkey/web-storage";
+import TSSModule from "@tkey/tss";
 ```
 
-#### Assign the `WebStorageModule` class to a variable
+#### Assign the `TSSModule` class to a variable
 
 ```javascript
-const webStorageModule = new WebStorageModule(params);
+const tssModule = new TSSModule(params);
 ```
 
 ### Parameters
 
 `params`
 
-- `canUseFileStorage?`: `boolean`
-
+- `tkey`: `ThresholdKey`
+- `moduleName` = `TSS_MODULE_NAME`, 
+- `tssTag` = `default`
 ### Returns
 
-The `WebStorageModule` class returns an object with the following properties:
+The `TSSModule` class returns an object with the following properties:
 
 ```ts
-class WebStorageModule implements IModule {
+class TSSModule {
   moduleName: string;
-  tbSDK: ITKeyApi;
-  canUseFileStorage: boolean;
-  constructor(canUseFileStorage?: boolean);
-  setFileStorageAccess(): Promise<void>;
-  setModuleReferences(tbSDK: ITKeyApi): void;
-  initialize(): Promise<void>;
-  storeDeviceShare(deviceShareStore: ShareStore, customDeviceInfo?: StringifiedType): Promise<void>;
-  storeDeviceShareOnFileStorage(shareIndex: BNString): Promise<void>;
-  getDeviceShare(): Promise<ShareStore>;
-  inputShareFromWebStorage(): Promise<void>;
+  tkey: ThresholdKey;
+  tssTag: string;
+ 
+  async setModuleReferences(api: ThresholdKey): Promise<void>
+    async initializeWithTss(
+    tssOptions: { deviceTSSShare: BN; deviceTSSIndex: number; factorPub: Point },
+    params?: {
+      withShare?: ShareStore;
+      importKey?: BN;
+      neverInitializeNewKey?: boolean;
+      transitionMetadata?: IMetadata;
+      previouslyFetchedCloudMetadata?: IMetadata;
+      previousLocalMetadataTransitions?: LocalMetadataTransitions;
+      delete1OutOf1?: boolean;
+    }
+  )
+  
+  getTSSCommits(): Point[]
+   
+  getTSSPub(): Point 
+
+  async getTSSShare(factorKey: BN, opts?: { threshold: number }): Promise<{ tssIndex: number; tssShare: BN }> 
+  
+  getFactorEncs(factorPub: Point): FactorEnc 
+  
+  async generateNewShare(tssOptions?: {
+    inputTSSShare: BN;
+    inputTSSIndex: number;
+    newFactorPub: Point;
+    newTSSIndex: number;
+    authSignatures?: string[];
+    selectedServers?: number[];
+  }): Promise<GenerateNewShareResult> 
+
+  async deleteShare(
+    tssOptions: {
+      inputTSSShare: BN;
+      inputTSSIndex: number;
+      factorPub: Point;
+      authSignatures: string[];
+      selectedServers?: number[];
+    },
+    shareIndex: BNString
+  ) : Promise<void>
 }
 ```
 
 ## Usage
 
-With the `WebStorageModule`, you've access to the following functions:
-
-### Store Device Share
-
-#### `storeDeviceShare(deviceShareStore: ShareStore, customDeviceInfo?: StringifiedType)`
-
-- `deviceShareStore`: The `ShareStore` object to store.
-- `customDeviceInfo?`: Information about the device to store.
-
-#### `ShareStore`
-
-```ts
-class ShareStore implements ISerializable {
-  share: Share;
-  polynomialID: PolynomialID;
-  constructor(share: Share, polynomialID: PolynomialID);
-  static fromJSON(value: StringifiedType): ShareStore;
-  toJSON(): StringifiedType;
-}
-interface ISerializable {
-  toJSON(): StringifiedType;
-}
-```
-
-### Storing a Share on File Storage
-
-#### `storeDeviceShareOnFileStorage(shareIndex)`
-
-- `shareIndex`: The index of the share to store.
-
-### Get a ShareStore from Storage
-
-#### `getDeviceShare()`
-
-#### Return
-
-- `Promise<ShareStore>`: The [`ShareStore`](#sharestore) object.
+With the `TSSModule`, you've access to the following functions:
