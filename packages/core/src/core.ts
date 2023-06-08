@@ -812,24 +812,32 @@ class ThresholdKey implements ITKey {
     } else {
       throw CoreError.default("can only add type ShareStore into shares");
     }
-    const latestShareRes = await this.catchupToLatestShare({ shareStore: ss, includeLocalMetadataTransitions: true });
-    // if not in poly id list, metadata is probably outdated
-    // is !this.metadata.polyIDList.includes(latestShareRes.latestShare.polynomialID)
-    if (!latestShareRes.shareMetadata.polyIDList.find((tuple) => tuple[0] === this.metadata.getLatestPublicPolynomial().getPolynomialID())) {
-      throw CoreError.fromCode(1307);
+    const polynomialId = this.metadata.getLatestPublicPolynomial().getPolynomialID();
+    if (ss.polynomialID !== polynomialId) {
+      const latestShareRes = await this.catchupToLatestShare({ shareStore: ss, includeLocalMetadataTransitions: true });
+      // is !this.metadata.polyIDList.includes(latestShareRes.latestShare.polynomialID)
+      // check if the latest share is part of the current tkey instances
+      // to avoid random share getting input into metadata
+      if (!latestShareRes.shareMetadata.polyIDList.find((tuple) => tuple[0] === polynomialId)) {
+        throw CoreError.fromCode(1307);
+      }
+      // if not in poly id list, metadata is probably outdated
+      // if (!this.metadata.polyIDList.find((tuple) => tuple[0] === latestShareRes.latestShare.polynomialID)) {
+      if (polynomialId !== latestShareRes.latestShare.polynomialID) {
+        if (!autoUpdateMetadata)
+          throw CoreError.default(
+            `TKey SDK metadata seems to be outdated because shareIndex: ` +
+              `${latestShareRes.latestShare.share.shareIndex.toString("hex")} has a more recent metadata. Please call updateSDK first`
+          );
+        else this.metadata = latestShareRes.shareMetadata;
+      }
+      if (!(latestShareRes.latestShare.polynomialID in this.shares)) {
+        this.shares[latestShareRes.latestShare.polynomialID] = {};
+      }
+      this.shares[latestShareRes.latestShare.polynomialID][latestShareRes.latestShare.share.shareIndex.toString("hex")] = latestShareRes.latestShare;
+    } else {
+      this.shares[ss.polynomialID][ss.share.shareIndex.toString("hex")] = ss;
     }
-    if (!this.metadata.polyIDList.find((tuple) => tuple[0] === latestShareRes.latestShare.polynomialID)) {
-      if (!autoUpdateMetadata)
-        throw CoreError.default(
-          `TKey SDK metadata seems to be outdated because shareIndex: ` +
-            `${latestShareRes.latestShare.share.shareIndex.toString("hex")} has a more recent metadata. Please call updateSDK first`
-        );
-      else this.metadata = latestShareRes.shareMetadata;
-    }
-    if (!(latestShareRes.latestShare.polynomialID in this.shares)) {
-      this.shares[latestShareRes.latestShare.polynomialID] = {};
-    }
-    this.shares[latestShareRes.latestShare.polynomialID][latestShareRes.latestShare.share.shareIndex.toString("hex")] = latestShareRes.latestShare;
   }
 
   outputShareStore(shareIndex: BNString, polyID?: string): ShareStore {
