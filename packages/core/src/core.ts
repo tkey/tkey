@@ -833,6 +833,9 @@ class ThresholdKey implements ITKey {
         this.shares[latestShareRes.latestShare.polynomialID] = {};
       }
       this.shares[latestShareRes.latestShare.polynomialID][latestShareRes.latestShare.share.shareIndex.toString("hex")] = latestShareRes.latestShare;
+      if (!(ss.polynomialID in this.shares)) {
+        this.shares[ss.polynomialID] = {};
+      }
     } else {
       this.shares[ss.polynomialID][ss.share.shareIndex.toString("hex")] = ss;
     }
