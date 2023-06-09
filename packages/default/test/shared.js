@@ -1083,6 +1083,43 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         allKeys: [resp1.privKey],
       });
     });
+
+    it(`#should be able to increase threshold limit of tkey, manualSync=${mode}`, async function () {
+      // tkey instance with correct share stores and index
+      const tb2 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
+      const resp2 = await tb2._initializeNewKey({ initializeModules: true });
+      await tb2.syncLocalMetadataTransitions();
+
+      const tb3 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
+      await tb3.initialize({ neverInitializeNewKey: true });
+
+      // should be able to insert if correct share store and index
+      await tb3.inputShareStoreSafe(resp2.deviceShare, true);
+      await tb3.reconstructKey();
+
+      // generate new shares
+      await tb3.generateNewShare();
+      await tb3.generateNewShare();
+      await tb3.syncLocalMetadataTransitions();
+
+      // reconstruct tkey
+      const reconstructPreThreshold = await tb3.reconstructKey();
+
+      const poly = tb3.metadata.getLatestPublicPolynomial();
+      const existingShareIndexes = tb3.metadata.getShareIndexesForPolynomial(poly.getPolynomialID());
+
+      // increase threshold from 2 -> 3
+      const newThreshold = 3;
+      await tb3._refreshShares(newThreshold, existingShareIndexes, poly.getPolynomialID());
+
+      // 3/4 shares is required to reconstruct tkey
+      const reconstructPostThreshold = await tb3.reconstructKey();
+      if (reconstructPreThreshold.privKey.cmp(reconstructPostThreshold.privKey) !== 0) {
+        fail("key should be able to be reconstructed");
+      }
+      // console.log("newThreshold", tb3.metadata.getLatestPublicPolynomial().getThreshold());
+      equal(tb3.metadata.getLatestPublicPolynomial().getThreshold(), newThreshold);
+    });
   });
 
   describe("Tkey LocalMetadataTransition", function () {
