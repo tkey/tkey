@@ -1,13 +1,13 @@
 // import ServiceProviderBase from "@tkey/service-provider-base";
-import ServiceProviderTorus from "@tkey/service-provider-torus";
+import { ServiceProviderBase } from "@tkey/service-provider-base";
 import { generatePrivate } from "@toruslabs/eccrypto";
 
 import { getMetadataUrl, initStorageLayer } from "./helpers";
-import { sharedTestCases } from "./shared";
+import { tssSharedTests } from "./tssShared";
 
 const PRIVATE_KEY = generatePrivate().toString("hex");
 
-const torusSp = new ServiceProviderTorus({
+const torusSp = new ServiceProviderBase({
   postboxKey: PRIVATE_KEY,
   tssVerifier: "test-tss-verifier",
   useTSS: true,
@@ -30,8 +30,15 @@ const torusSp = new ServiceProviderTorus({
 const metadataURL = getMetadataUrl();
 const torusSL = initStorageLayer({ hostUrl: metadataURL });
 
-const MANUAL_SYNC = true;
-describe.only(`TorusServiceProvider with manualSync: ${MANUAL_SYNC}`, function () {
-  // eslint-disable-next-line mocha/no-setup-in-describe
-  sharedTestCases(MANUAL_SYNC, torusSp, torusSL);
+describe(`TSS Test with BaseServiceProvider Mock RSS`, function () {
+  const MOCK_RSS = true;
+  describe(`TSS BaseServiceProvider Mock RSS with manualSync: ${true}`, function () {
+    // eslint-disable-next-line mocha/no-setup-in-describe
+    tssSharedTests(true, torusSp, torusSL, MOCK_RSS);
+  });
+
+  describe(`TSS BaseServiceProvider Mock RSS with manualSync: ${false}`, function () {
+    // eslint-disable-next-line mocha/no-setup-in-describe
+    tssSharedTests(false, torusSp, torusSL, MOCK_RSS);
+  });
 });
