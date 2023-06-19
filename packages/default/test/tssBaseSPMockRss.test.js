@@ -30,15 +30,14 @@ const torusSp = new ServiceProviderBase({
 const metadataURL = getMetadataUrl();
 const torusSL = initStorageLayer({ hostUrl: metadataURL });
 
-describe(`TSS Test with BaseServiceProvider Mock Rss`, function () {
-  const MANUAL_SYNC = true;
+describe(`TSS Test with BaseServiceProvider Mock RSS`, function () {
   const MOCK_RSS = true;
-  describe(`TSS BaseServiceProvider Mock Rss with manualSync: ${MANUAL_SYNC}`, function () {
+  describe(`TSS BaseServiceProvider Mock RSS with manualSync: ${true}`, function () {
     // eslint-disable-next-line mocha/no-setup-in-describe
-    tssSharedTests(MANUAL_SYNC, torusSp, torusSL, MOCK_RSS);
+    tssSharedTests(true, torusSp, torusSL, MOCK_RSS);
   });
 
-  describe(`TSS BaseServiceProvider Mock Rss with manualSync: ${false}`, function () {
+  describe(`TSS BaseServiceProvider Mock RSS with manualSync: ${false}`, function () {
     // eslint-disable-next-line mocha/no-setup-in-describe
     tssSharedTests(false, torusSp, torusSL, MOCK_RSS);
   });
