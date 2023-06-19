@@ -21,6 +21,11 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
   let verifierId;
 
   describe("TSS tests", function () {
+    // TDOO: add tests
+    // 1. share transfer in case of TSS
+    // 2. Security questions in case of TSS
+    // 3. Metadata consistency of TSS tkey. for example, generate new share in TSS should update tkey as well, properly.
+    // 4. updating tkey shouldn't affect TSS. (2/3 -> 2/4 tkey shouldn't affect TSS ), add case for deletion as well
     before(function () {
       verifierId = generateVerifierId();
     });
