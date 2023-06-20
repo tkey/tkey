@@ -43,13 +43,14 @@
     "@tkey/share-transfer": "^8.1.0-alpha.0",
     "@tkey/storage-layer-torus": "^8.1.0-alpha.0",
     "@toruslabs/eccrypto": "^2.1.1",
-    "@toruslabs/rss-client": "^1.4.1",
     "bn.js": "^5.2.1"
   },
   "devDependencies": {
     "@tkey/private-keys": "^8.1.0-alpha.0",
     "@tkey/seed-phrase": "^8.1.0-alpha.0",
     "@toruslabs/http-helpers": "^4.0.0",
+    "@toruslabs/rss-client": "^1.4.1",
+    "@tkey/tss": "^8.1.0-alpha.0",
     "jsrsasign": "^10.6.1",
     "web3-utils": "^1.8.1"
   },
