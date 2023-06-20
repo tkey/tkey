@@ -56,7 +56,7 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
       const factorPub = getPubKeyPoint(factorKey);
 
       const tssModule = new TSSModule(tb1);
-      await tssModule.initializeWithTss({ factorPub, deviceTSSShare, deviceTSSIndex });
+      await tssModule.initializeWithTss(tb1, { factorPub, deviceTSSShare, deviceTSSIndex });
       await tb1.reconstructKey();
       const newShare = await tb1.generateNewShare();
       const reconstructedKey = await tb1.reconstructKey();
@@ -66,12 +66,12 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
       }
 
       const tb2 = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync: mode });
-      const tssModule2 = new TSSModule(tb2);
-      await tssModule2.initializeWithTss({ factorPub });
+      const tssModule2 = new TSSModule();
+      await tssModule2.initializeWithTss(tb2, { factorPub });
 
       tb2.inputShareStore(newShare.newShareStores[newShare.newShareIndex.toString("hex")]);
       await tb2.reconstructKey();
-      const { tssShare: retrievedTSS, tssIndex: retrievedTSSIndex } = await tssModule2.getTSSShare(factorKey);
+      const { tssShare: retrievedTSS, tssIndex: retrievedTSSIndex } = await tssModule2.getTSSShare(tb2, factorKey);
       const tssCommits = tssModule2.getTSSCommits(tb2);
 
       const tssPrivKey = getLagrangeCoeffs([1, retrievedTSSIndex], 1)
@@ -90,7 +90,7 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
 
       const factorPubs = [factorPub, factorPub2];
       const { serverEndpoints, serverPubKeys } = await sp.getRSSNodeDetails();
-      await tssModule2._refreshTSSShares(true, retrievedTSS, retrievedTSSIndex, factorPubs, [2, 3], testId, {
+      await tssModule2._refreshTSSShares(tb2, true, retrievedTSS, retrievedTSSIndex, factorPubs, [2, 3], testId, {
         serverThreshold: 3,
         selectedServers: [1, 2, 3],
         serverEndpoints,
@@ -107,7 +107,7 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
       // });
 
       {
-        const { tssShare: newTSS2, tssIndex } = await tssModule2.getTSSShare(factorKey);
+        const { tssShare: newTSS2, tssIndex } = await tssModule2.getTSSShare(tb2, factorKey);
         const newTSSPrivKey = getLagrangeCoeffs([1, 2], 1)
           .mul(new BN(serverDKGPrivKeys[1], "hex"))
           .add(getLagrangeCoeffs([1, 2], 2).mul(newTSS2))
@@ -118,7 +118,7 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
       }
 
       {
-        const { tssShare: newTSS2, tssIndex } = await tssModule2.getTSSShare(factorKey2);
+        const { tssShare: newTSS2, tssIndex } = await tssModule2.getTSSShare(tb2, factorKey2);
         const newTSSPrivKey = getLagrangeCoeffs([1, 3], 1)
           .mul(new BN(serverDKGPrivKeys[1], "hex"))
           .add(getLagrangeCoeffs([1, 3], 3).mul(newTSS2))
@@ -161,15 +161,15 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
 
       // await tb1.initialize({ useTSS: true, factorPub, deviceTSSShare, deviceTSSIndex });
       const tssModule = new TSSModule(tb1);
-      await tssModule.initializeWithTss({ factorPub, deviceTSSShare, deviceTSSIndex });
+      await tssModule.initializeWithTss(tb1, { factorPub, deviceTSSShare, deviceTSSIndex });
       const reconstructedKey = await tb1.reconstructKey();
       await tb1.syncLocalMetadataTransitions();
       if (tb1.privKey.cmp(reconstructedKey.privKey) !== 0) {
         fail("key should be able to be reconstructed");
       }
-      const { tssShare: tss2 } = await tssModule.getTSSShare(factorKey);
+      const { tssShare: tss2 } = await tssModule.getTSSShare(tb1, factorKey);
 
-      const tssCommits = tssModule.getTSSCommits();
+      const tssCommits = tssModule.getTSSCommits(tb1);
       const tss2Pub = ecCurve.g.mul(tss2);
       const tssCommitA0 = ecCurve.keyFromPublic({ x: tssCommits[0].x.toString(16, 64), y: tssCommits[0].y.toString(16, 64) }).getPublic();
       const tssCommitA1 = ecCurve.keyFromPublic({ x: tssCommits[1].x.toString(16, 64), y: tssCommits[1].y.toString(16, 64) }).getPublic();
@@ -206,17 +206,17 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
       const factorKey = new BN(generatePrivate());
       const factorPub = getPubKeyPoint(factorKey);
 
-      const tssModule = new TSSModule(tb1);
+      const tssModule = new TSSModule();
 
-      await tssModule.initializeWithTss({ factorPub, deviceTSSShare, deviceTSSIndex });
+      await tssModule.initializeWithTss(tb1, { factorPub, deviceTSSShare, deviceTSSIndex });
       const reconstructedKey = await tb1.reconstructKey();
       await tb1.syncLocalMetadataTransitions();
       if (tb1.privKey.cmp(reconstructedKey.privKey) !== 0) {
         fail("key should be able to be reconstructed");
       }
 
-      const { tssShare: tss2 } = await tssModule.getTSSShare(factorKey);
-      const tssCommits = tssModule.getTSSCommits();
+      const { tssShare: tss2 } = await tssModule.getTSSShare(tb1, factorKey);
+      const tssCommits = tssModule.getTSSCommits(tb1);
 
       const tssPrivKey = getLagrangeCoeffs([1, deviceTSSIndex], 1)
         .mul(tss1)
@@ -255,16 +255,16 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
       const factorKey = new BN(generatePrivate());
       const factorPub = getPubKeyPoint(factorKey);
 
-      const tssModule = new TSSModule(tb1);
-      await tssModule.initializeWithTss({ factorPub, deviceTSSShare, deviceTSSIndex });
+      const tssModule = new TSSModule();
+      await tssModule.initializeWithTss(tb1, { factorPub, deviceTSSShare, deviceTSSIndex });
       const reconstructedKey = await tb1.reconstructKey();
       await tb1.syncLocalMetadataTransitions();
       if (tb1.privKey.cmp(reconstructedKey.privKey) !== 0) {
         fail("key should be able to be reconstructed");
       }
 
-      const { tssShare: retrievedTSS, tssIndex: retrievedTSSIndex } = await tssModule.getTSSShare(factorKey);
-      const tssCommits = tssModule.getTSSCommits();
+      const { tssShare: retrievedTSS, tssIndex: retrievedTSSIndex } = await tssModule.getTSSShare(tb1, factorKey);
+      const tssCommits = tssModule.getTSSCommits(tb1);
 
       const tssPrivKey = getLagrangeCoeffs([1, retrievedTSSIndex], 1)
         .mul(serverDKGPrivKeys[0])
@@ -283,7 +283,7 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
       const factorPubs = [factorPub, factorPub2];
       const { serverEndpoints, serverPubKeys } = await sp.getRSSNodeDetails();
 
-      await tssModule._refreshTSSShares(true, retrievedTSS, retrievedTSSIndex, factorPubs, [2, 3], testId, {
+      await tssModule._refreshTSSShares(tb1, true, retrievedTSS, retrievedTSSIndex, factorPubs, [2, 3], testId, {
         serverThreshold: 3,
         selectedServers: [1, 2, 3],
         serverEndpoints,
@@ -291,7 +291,7 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
       });
 
       {
-        const { tssShare: newTSS2 } = await tssModule.getTSSShare(factorKey);
+        const { tssShare: newTSS2 } = await tssModule.getTSSShare(tb1, factorKey);
         const newTSSPrivKey = getLagrangeCoeffs([1, 2], 1)
           .mul(new BN(serverDKGPrivKeys[1], "hex"))
           .add(getLagrangeCoeffs([1, 2], 2).mul(newTSS2))
@@ -300,7 +300,7 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
       }
 
       {
-        const { tssShare: newTSS2 } = await tssModule.getTSSShare(factorKey2);
+        const { tssShare: newTSS2 } = await tssModule.getTSSShare(tb1, factorKey2);
         const newTSSPrivKey = getLagrangeCoeffs([1, 3], 1)
           .mul(new BN(serverDKGPrivKeys[1], "hex"))
           .add(getLagrangeCoeffs([1, 3], 3).mul(newTSS2))
@@ -375,12 +375,12 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
         const factorKey = new BN(generatePrivate());
         const factorPub = getPubKeyPoint(factorKey);
 
-        tssModule = new TSSModule(tb);
-        await tssModule.initializeWithTss({ factorPub, deviceTSSShare, deviceTSSIndex });
+        tssModule = new TSSModule();
+        await tssModule.initializeWithTss(tb, { factorPub, deviceTSSShare, deviceTSSIndex });
         newFactorKey = new BN(generatePrivate());
 
         const newFactorPub = getPubKeyPoint(newFactorKey);
-        const newShare = await tssModule.generateNewShare({
+        const newShare = await tssModule.generateNewShare(tb, {
           inputTSSShare: deviceTSSShare,
           inputTSSIndex: deviceTSSIndex,
           newFactorPub,
@@ -393,8 +393,8 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
         if (tb.privKey.cmp(reconstructedKey.privKey) !== 0) {
           fail("key should be able to be reconstructed");
         }
-        const { tssShare: retrievedTSS, tssIndex: retrievedTSSIndex } = await tssModule.getTSSShare(factorKey);
-        const tssCommits = tssModule.getTSSCommits();
+        const { tssShare: retrievedTSS, tssIndex: retrievedTSSIndex } = await tssModule.getTSSShare(tb, factorKey);
+        const tssCommits = tssModule.getTSSCommits(tb);
         const tssPrivKey = getLagrangeCoeffs([1, retrievedTSSIndex], 1)
           .mul(serverDKGPrivKeys[1])
           .add(getLagrangeCoeffs([1, retrievedTSSIndex], retrievedTSSIndex).mul(retrievedTSS))
@@ -404,6 +404,7 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
         strictEqual(tssPubKey.x.toString(16, 64), tssCommits[0].x.toString(16, 64));
         strictEqual(tssPubKey.y.toString(16, 64), tssCommits[0].y.toString(16, 64));
         const updatedShareStore = await tssModule.deleteShare(
+          tb,
           {
             inputTSSIndex: retrievedTSSIndex,
             inputTSSShare: retrievedTSS,
@@ -426,9 +427,9 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
           fail("Unable to delete share index");
         }
         rejects(async () => {
-          await tssModule.getTSSShare(oldFactorKey);
+          await tssModule.getTSSShare(tb, oldFactorKey);
         });
-        await tssModule.getTSSShare(newFactorKey);
+        await tssModule.getTSSShare(tb, newFactorKey);
       });
       // it(`#should be able to delete a user and reset tss nonce, manualSync=${mode}`, async function () {
       //   if (!customSP.useTSS) this.skip();
@@ -489,11 +490,9 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
     });
     describe("with tss, tkey serialization/deserialization", function () {
       let tb;
-      let tssModule;
       beforeEach("Setup ThresholdKey", async function () {
         if (!customSP.useTSS) this.skip();
         tb = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
-        tssModule = new TSSModule(tb);
       });
       it(`#should serialize and deserialize correctly without tkeyArgs, manualSync=${mode}`, async function () {
         if (!customSP.useTSS) this.skip();
@@ -502,6 +501,7 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
         sp.verifierName = "torus-test-health";
         sp.verifierId = verifierId;
 
+        const tssModule = new TSSModule();
         const { signatures, serverDKGPrivKeys } = await setupTSS({
           serviceProvider: sp,
           verifierName: sp.verifierName,
@@ -513,14 +513,20 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
 
         let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
         userInput = userInput.umod(ecCurve.curve.n);
-        const resp1 = await tssModule.tkey._initializeNewKey({ userInput, initializeModules: true });
+        const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
 
         const deviceTSSShare = new BN(generatePrivate());
         const deviceTSSIndex = 2;
         const factorKey = new BN(generatePrivate());
         const factorPub = getPubKeyPoint(factorKey);
-        const { factorEncs, factorPubs, tssPolyCommits } = await tssModule._initializeNewTSSKey("default", deviceTSSShare, factorPub, deviceTSSIndex);
-        tb.metadata.addTSSData({ tssTag: tb.tssTag, tssNonce: 0, tssPolyCommits, factorPubs, factorEncs });
+        const { factorEncs, factorPubs, tssPolyCommits } = await tssModule._initializeNewTSSKey(
+          tb,
+          "default",
+          deviceTSSShare,
+          factorPub,
+          deviceTSSIndex
+        );
+        tssModule.addTSSMetadata(tb, { tssTag: tb.tssTag, tssNonce: 0, tssPolyCommits, factorPubs, factorEncs });
         const { tssShare, tssIndex } = await tb.getTSSShare(factorKey);
 
         const tssPrivKey = getLagrangeCoeffs([1, tssIndex], 1)
@@ -545,7 +551,7 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
         strictEqual(finalKey.privKey.toString("hex"), resp1.privKey.toString("hex"), "Incorrect serialization");
 
         const tssModule3 = new TSSModule(tb3);
-        const { tssShare: tssShare2, tssIndex: tssIndex2 } = await tssModule3.getTSSShare(newFactorKey);
+        const { tssShare: tssShare2, tssIndex: tssIndex2 } = await tssModule3.getTSSShare(tb3, newFactorKey);
         const tssPrivKey2 = getLagrangeCoeffs([1, tssIndex2], 1)
           .mul(serverDKGPrivKeys[1])
           .add(getLagrangeCoeffs([1, tssIndex2], tssIndex2).mul(tssShare2))
@@ -555,9 +561,7 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
 
       it(`#should serialize and deserialize correctly with tkeyArgs, manualSync=${mode}`, async function () {
         if (!customSP.useTSS) this.skip();
-        let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
-        userInput = userInput.umod(ecCurve.curve.n);
-        const resp1 = await tssModule.tkey._initializeNewKey({ userInput, initializeModules: true });
+        const tssModule = new TSSModule();
 
         const sp = customSP;
         sp.verifierName = "torus-test-health";
@@ -580,9 +584,16 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
         const factorKey = new BN(generatePrivate());
         const factorPub = getPubKeyPoint(factorKey);
         // const tssModule = new TSSModule(tb);
-        const { factorEncs, factorPubs, tssPolyCommits } = await tssModule._initializeNewTSSKey("default", deviceTSSShare, factorPub, deviceTSSIndex);
-        tssModule.tkey.metadata.addTSSData({ tssTag: tb.tssTag, tssNonce: 0, tssPolyCommits, factorPubs, factorEncs });
-        const { tssShare, tssIndex } = await tssModule.getTSSShare(factorKey);
+        const { factorEncs, factorPubs, tssPolyCommits } = await tssModule._initializeNewTSSKey(
+          tb,
+          "default",
+          deviceTSSShare,
+          factorPub,
+          deviceTSSIndex
+        );
+        tssModule.addTSSMetadata(tb, { tssTag: tb.tssTag, tssNonce: 0, tssPolyCommits, factorPubs, factorEncs }, mode);
+        const { tssShare, tssIndex } = await tssModule.getTSSShare(tb, factorKey);
+
         const tssPrivKey = getLagrangeCoeffs([1, tssIndex], 1)
           .mul(serverDKGPrivKeys[0])
           .add(getLagrangeCoeffs([1, tssIndex], tssIndex).mul(tssShare))
@@ -591,7 +602,7 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
         const newFactorKey = new BN(generatePrivate());
         const newFactorPub = getPubKeyPoint(newFactorKey);
 
-        await tb.generateNewShare(true, {
+        await tssModule.generateNewShare(tb, {
           inputTSSShare: tssShare,
           inputTSSIndex: tssIndex,
           newFactorPub,
@@ -607,7 +618,7 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
 
         const tssModule3 = new TSSModule(tb3);
 
-        const { tssShare: tssShare2, tssIndex: tssIndex2 } = await tssModule3.getTSSShare(newFactorKey);
+        const { tssShare: tssShare2, tssIndex: tssIndex2 } = await tssModule3.getTSSShare(tb3, newFactorKey);
         const tssPrivKey2 = getLagrangeCoeffs([1, tssIndex2], 1)
           .mul(serverDKGPrivKeys[1])
           .add(getLagrangeCoeffs([1, tssIndex2], tssIndex2).mul(tssShare2))
@@ -619,6 +630,7 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
       it(`#should serialize and deserialize correctly, keeping localTransitions consistent before syncing NewKeyAssign, manualSync=${mode}`, async function () {
         if (!customSP.useTSS) this.skip();
 
+        const tssModule = new TSSModule();
         const sp = customSP;
         sp.verifierName = "torus-test-health";
         sp.verifierId = verifierId;
@@ -661,6 +673,8 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
       });
       it(`#should serialize and deserialize correctly keeping localTransitions afterNewKeyAssign, manualSync=${mode}`, async function () {
         if (!customSP.useTSS) this.skip();
+
+        const tssModule = new TSSModule();
         let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
         userInput = userInput.umod(ecCurve.curve.n);
         const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
@@ -686,6 +700,7 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
         }
       });
       it(`#should not be able to updateSDK with newKeyAssign transitions unsynced, manualSync=${mode}`, async function () {
+        const tssModule = new TSSModule();
         await tb._initializeNewKey({ initializeModules: true });
         // TODO: initialize new tss key
         const stringified = JSON.stringify(tb);
