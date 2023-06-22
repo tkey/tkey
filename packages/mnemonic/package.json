@@ -1,6 +1,6 @@
 {
   "name": "@tkey/mnemonic",
-  "version": "8.0.7-alpha.0",
+  "version": "8.1.0-alpha.0",
   "description": "TKey share serialization module",
   "author": "Torus Labs",
   "homepage": "https://github.com/tkey/tkey#readme",

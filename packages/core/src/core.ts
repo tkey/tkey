@@ -230,17 +230,12 @@ class ThresholdKey implements ITKey {
   }
 
   getTkeyStatus(): TkeyStatus {
-    try {
-      const keyDetails = this.getKeyDetails();
-      if (keyDetails.totalShares < keyDetails.threshold) {
-        // READ MODE
-        return TkeyStatus.INITIALIZED;
-      }
-      // WRITE MODE
-      return TkeyStatus.RECONSTRUCTED;
-    } catch {
-      return TkeyStatus.NOT_INITIALIZED;
-    }
+    // NOT INITIALIZED
+    if (!this.metadata) return TkeyStatus.NOT_INITIALIZED;
+    // READ MODE
+    if (!this.privKey) return TkeyStatus.INITIALIZED;
+    // WRITE MODE
+    return TkeyStatus.RECONSTRUCTED;
   }
 
   async initialize(params?: {

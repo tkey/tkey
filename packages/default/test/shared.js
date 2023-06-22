@@ -710,11 +710,14 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       });
     });
     it(`#should be able to transfer share via the module, manualSync=${mode}`, async function () {
-      const shareTransferModule = new ShareTransferModule();
-      const resp1 = await tb._initializeNewKey({ initializeModules: true });
 
-      shareTransferModule.setup(tb);
+      const resp1 = await tb._initializeNewKey({ initializeModules: true });
       await tb.syncLocalMetadataTransitions();
+
+      const shareTransferModule = new ShareTransferModule();
+      await shareTransferModule.setup(tb);
+
+      if (mode) await tb.syncLocalMetadataTransitions();
 
       const tb2 = new ThresholdKey({
         serviceProvider: customSP,
@@ -722,15 +725,17 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         storageLayer: customSL,
         // modules: { shareTransfer: new ShareTransferModule() },
       });
-      await tb2.initialize();
+      const keyD = await tb2.initialize();
       const shareTransferModule2 = new ShareTransferModule();
       await shareTransferModule2.setup(tb2);
+
 
       // usually should be called in callback, but mocha does not allow
       const pubkey = await shareTransferModule2.requestNewShare(tb2);
 
       const result = await tb.generateNewShare();
 
+      // await shareTransferModule.setup(tb);
       await shareTransferModule.approveRequest(tb, pubkey, result.newShareStores[result.newShareIndex.toString("hex")]);
       await tb.syncLocalMetadataTransitions();
 
@@ -745,7 +750,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     it(`#should be able to change share transfer pointer after share deletion, manualSync=${mode}`, async function () {
       await tb._initializeNewKey({ initializeModules: true });
       const shareTransferModule = new ShareTransferModule();
-      shareTransferModule.setup(tb);
+      await shareTransferModule.setup(tb);
 
       const firstShareTransferPointer = tb.metadata.generalStore.shareTransfer.pointer.toString("hex");
       const { newShareIndex: newShareIndex1 } = await tb.generateNewShare();
@@ -765,9 +770,9 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
 
       const shareTransferModule = new ShareTransferModule();
-      shareTransferModule.setup(tb);
+      await shareTransferModule.setup(tb);
 
-      await tb.syncLocalMetadataTransitions();
+      if (mode) await tb.syncLocalMetadataTransitions();
 
       const tb2 = new ThresholdKey({
         serviceProvider: customSP,
@@ -776,9 +781,9 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         // modules: { shareTransfer: new ShareTransferModule() },
       });
 
-      const shareTransferModule2 = new ShareTransferModule();
-      shareTransferModule2.setup(tb2);
       await tb2.initialize();
+      const shareTransferModule2 = new ShareTransferModule();
+      await shareTransferModule2.setup(tb2);
       const currentShareIndexes = tb2.getCurrentShareIndexes();
       // usually should be called in callback, but mocha does not allow
       const pubkey = await shareTransferModule2.requestNewShare(tb2, "unit test", currentShareIndexes);
@@ -800,20 +805,21 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     });
     it(`#should be able to delete share transfer from another device, manualSync=${mode}`, async function () {
       await tb._initializeNewKey({ initializeModules: true });
+      tb.reconstructKey();
 
       const shareTransferModule = new ShareTransferModule();
-      shareTransferModule.setup(tb);
-      await tb.syncLocalMetadataTransitions();
+      await shareTransferModule.setup(tb);
+      if (mode) await tb.syncLocalMetadataTransitions();
 
       const tb2 = new ThresholdKey({
         serviceProvider: customSP,
         manualSync: mode,
         storageLayer: customSL,
       });
+      await tb2.initialize();
 
       const shareTransferModule2 = new ShareTransferModule();
-      shareTransferModule2.setup(tb2);
-      await tb2.initialize();
+      await shareTransferModule2.setup(tb2);
 
       // usually should be called in callback, but mocha does not allow
       const encKey2 = await shareTransferModule2.requestNewShare(tb2);
@@ -827,7 +833,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       await tb._initializeNewKey({ initializeModules: true });
 
       const shareTransferModule = new ShareTransferModule();
-      shareTransferModule.setup(tb);
+      await shareTransferModule.setup(tb);
       await tb.syncLocalMetadataTransitions();
 
       await shareTransferModule.resetShareTransferStore(tb);

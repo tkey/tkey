@@ -39,6 +39,7 @@
   },
   "dependencies": {
     "@tkey/common-types": "^8.1.0-alpha.0",
+    "@tkey/core": "^8.1.0-alpha.0",
     "@toruslabs/eccrypto": "^2.1.1",
     "@toruslabs/http-helpers": "^4.0.0",
     "bn.js": "^5.2.1"

@@ -4,13 +4,14 @@ import {
   getPubKeyECC,
   getPubKeyPoint,
   IModule,
-  ITKeyApi,
   ITkeyError,
   ShareStore,
   ShareStoreMap,
   ShareTransferStorePointerArgs,
+  TkeyStatus,
   toPrivKeyECC,
 } from "@tkey/common-types";
+import type Threshold from "@tkey/core";
 import { generatePrivate } from "@toruslabs/eccrypto";
 import BN from "bn.js";
 
@@ -56,7 +57,7 @@ class ShareTransferModule implements IModule {
     return generalStore as ShareTransferStorePointer;
   }
 
-  setModuleReferences(tkey: ITKeyApi): void {
+  setModuleReferences(tkey: Threshold): void {
     tkey._addRefreshMiddleware(this.moduleName, ShareTransferModule.refreshShareTransferMiddleware);
   }
 
@@ -68,7 +69,7 @@ class ShareTransferModule implements IModule {
     return Promise.resolve();
   }
 
-  async setup(tkey: ITKeyApi): Promise<void> {
+  async enable(tkey: Threshold): Promise<void> {
     const metadata = tkey.getMetadata();
     const rawShareTransferStorePointer = metadata.getGeneralStoreDomain(this.moduleName) as ShareTransferStorePointerArgs;
     let shareTransferStorePointer: ShareTransferStorePointer;
@@ -78,12 +79,32 @@ class ShareTransferModule implements IModule {
       // await this.tbSDK.syncShareMetadata(); // Requires threshold shares
       // OPTIMIZATION TO NOT SYNC METADATA TWICE ON INIT, WILL FAIL IF TKEY DOES NOT HAVE MODULE AS DEFAULT
     } else {
-      shareTransferStorePointer = new ShareTransferStorePointer(rawShareTransferStorePointer);
+      // shareTransferStorePointer = new ShareTransferStorePointer(rawShareTransferStorePointer);
+      throw Error("Enabled");
     }
+    this.setModuleReferences(tkey);
+    // will add to localmetadata transistion if manual sync is true
+    await tkey._syncShareMetadata();
+    // sync localmetadata if it is not manual sync
+    if (!tkey.manualSync) await tkey.syncLocalMetadataTransitions();
+  }
+
+  async setup(tkey: Threshold): Promise<void> {
+    const metadata = tkey.getMetadata();
+    const rawShareTransferStorePointer = metadata.getGeneralStoreDomain(this.moduleName) as ShareTransferStorePointerArgs;
+    if (!rawShareTransferStorePointer) {
+      const status = tkey.getTkeyStatus();
+      if (status === TkeyStatus.RECONSTRUCTED) {
+        await this.enable(tkey);
+      } else {
+        throw new Error("Share Transfer is not enabled");
+      }
+    }
+    this.setModuleReferences(tkey);
   }
 
   async requestNewShare(
-    tkey: ITKeyApi,
+    tkey: Threshold,
     userAgent: string,
     availableShareIndexes: Array<string>,
     callback?: (err?: ITkeyError, shareStore?: ShareStore) => void
@@ -128,19 +149,19 @@ class ShareTransferModule implements IModule {
     return encPubKeyX;
   }
 
-  async addCustomInfoToShareRequest(tkey: ITKeyApi, encPubKeyX: string, customInfo: string): Promise<void> {
+  async addCustomInfoToShareRequest(tkey: Threshold, encPubKeyX: string, customInfo: string): Promise<void> {
     const shareTransferStore = await this.getShareTransferStore(tkey);
     if (!shareTransferStore[encPubKeyX]) throw ShareTransferError.missingEncryptionKey();
     shareTransferStore[encPubKeyX].customInfo = customInfo;
     await this.setShareTransferStore(tkey, shareTransferStore);
   }
 
-  async lookForRequests(tkey: ITKeyApi): Promise<Array<string>> {
+  async lookForRequests(tkey: Threshold): Promise<Array<string>> {
     const shareTransferStore = await this.getShareTransferStore(tkey);
     return Object.keys(shareTransferStore);
   }
 
-  async approveRequest(tkey: ITKeyApi, encPubKeyX: string, shareStore?: ShareStore): Promise<void> {
+  async approveRequest(tkey: Threshold, encPubKeyX: string, shareStore?: ShareStore): Promise<void> {
     const shareTransferStore = await this.getShareTransferStore(tkey);
     if (!shareTransferStore[encPubKeyX]) throw ShareTransferError.missingEncryptionKey();
 
@@ -164,26 +185,26 @@ class ShareTransferModule implements IModule {
     this.currentEncKey = undefined;
   }
 
-  async approveRequestWithShareIndex(tkey: ITKeyApi, encPubKeyX: string, shareIndex: string): Promise<void> {
+  async approveRequestWithShareIndex(tkey: Threshold, encPubKeyX: string, shareIndex: string): Promise<void> {
     const deviceShare = tkey.outputShareStore(shareIndex);
     return this.approveRequest(tkey, encPubKeyX, deviceShare);
   }
 
-  async getShareTransferStore(tkey: ITKeyApi): Promise<ShareTransferStore> {
+  async getShareTransferStore(tkey: Threshold): Promise<ShareTransferStore> {
     const metadata = tkey.getMetadata();
     const shareTransferStorePointer = new ShareTransferStorePointer(metadata.getGeneralStoreDomain(this.moduleName) as ShareTransferStorePointerArgs);
     const storageLayer = tkey.getStorageLayer();
     return storageLayer.getMetadata<ShareTransferStore>({ privKey: shareTransferStorePointer.pointer });
   }
 
-  async setShareTransferStore(tkey: ITKeyApi, shareTransferStore: ShareTransferStore): Promise<void> {
+  async setShareTransferStore(tkey: Threshold, shareTransferStore: ShareTransferStore): Promise<void> {
     const metadata = tkey.getMetadata();
     const shareTransferStorePointer = new ShareTransferStorePointer(metadata.getGeneralStoreDomain(this.moduleName) as ShareTransferStorePointerArgs);
     const storageLayer = tkey.getStorageLayer();
     await storageLayer.setMetadata({ input: shareTransferStore, privKey: shareTransferStorePointer.pointer });
   }
 
-  async startRequestStatusCheck(tkey: ITKeyApi, encPubKeyX: string, deleteRequestAfterCompletion: boolean): Promise<ShareStore> {
+  async startRequestStatusCheck(tkey: Threshold, encPubKeyX: string, deleteRequestAfterCompletion: boolean): Promise<ShareStore> {
     // watcher
     return new Promise((resolve, reject) => {
       this.requestStatusCheckId = Number(
@@ -217,13 +238,13 @@ class ShareTransferModule implements IModule {
     clearInterval(this.requestStatusCheckId);
   }
 
-  async deleteShareTransferStore(tkey: ITKeyApi, encPubKey: string): Promise<void> {
+  async deleteShareTransferStore(tkey: Threshold, encPubKey: string): Promise<void> {
     const currentShareTransferStore = await this.getShareTransferStore(tkey);
     delete currentShareTransferStore[encPubKey];
     await this.setShareTransferStore(tkey, currentShareTransferStore);
   }
 
-  async resetShareTransferStore(tkey: ITKeyApi): Promise<void> {
+  async resetShareTransferStore(tkey: Threshold): Promise<void> {
     const metadata = tkey.getMetadata();
     const shareTransferStorePointer = { pointer: new BN(generatePrivate()) };
     metadata.setGeneralStoreDomain(this.moduleName, shareTransferStorePointer);
