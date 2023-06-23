@@ -14,7 +14,7 @@ import TorusStorageLayer from "@tkey/storage-layer-torus";
 import { generatePrivate } from "@toruslabs/eccrypto";
 import { post } from "@toruslabs/http-helpers";
 import { getLagrangeCoeffs } from "@toruslabs/rss-client";
-import { deepEqual, deepStrictEqual, equal, fail, notEqual, notStrictEqual, strict, strictEqual, throws } from "assert";
+import assert, { deepEqual, deepStrictEqual, equal, fail, notEqual, notStrictEqual, strict, strictEqual, throws } from "assert";
 import BN from "bn.js";
 import stringify from "json-stable-stringify";
 import { createSandbox } from "sinon";
@@ -699,7 +699,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     });
   });
 
-  describe("ShareTransferModule", function () {
+  describe.only("ShareTransferModule", function () {
     let tb;
     beforeEach("Setup ThresholdKey", async function () {
       tb = new ThresholdKey({
@@ -744,6 +744,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       }
     });
 
+    // keep here for backwards compatibility for default tkey
     it(`#should be able to change share transfer pointer after share deletion, manualSync=${mode}`, async function () {
       await tb._initializeNewKey({ initializeModules: true });
       const shareTransferModule = new ShareTransferModule();
@@ -761,6 +762,49 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
 
       notStrictEqual(secondShareTransferPointer, thirdShareTransferPointer);
       await tb.syncLocalMetadataTransitions();
+    });
+
+    it.only(`#should be able to detect unknown share or deleted share request, manualSync=${mode}`, async function () {
+      const resp1 = await tb._initializeNewKey({ initializeModules: true });
+      await tb.syncLocalMetadataTransitions();
+
+      const shareTransferModule = new ShareTransferModule();
+      await shareTransferModule.setup(tb);
+
+      const shareDetails = await tb.generateNewShare();
+      const shareIndex = shareDetails.newShareIndex.toString("hex");
+
+      if (mode) await tb.syncLocalMetadataTransitions();
+
+      // deleted share managed to initalized before sync
+      await tb.deleteShare(shareIndex);
+
+      const tb2 = new ThresholdKey({
+        serviceProvider: customSP,
+        manualSync: mode,
+        storageLayer: customSL,
+        // modules: { shareTransfer: new ShareTransferModule() },
+      });
+      if (!mode) {
+        // will fail with share is deleted for auto sync
+        await assert.rejects(tb2.initializeWithShareStore({ shareStore: shareDetails.newShareStores[shareIndex] }));
+        return;
+      }
+      await tb2.initializeWithShareStore({ shareStore: shareDetails.newShareStores[shareIndex] });
+
+      const shareTransferModule2 = new ShareTransferModule();
+      await shareTransferModule2.setup(tb2);
+
+      // usually should be called in callback, but mocha does not allow
+      const pubkey = await shareTransferModule2.requestNewShare(tb2);
+
+      // deleted share synced after tb2 initialized
+      if (mode) await tb.syncLocalMetadataTransitions();
+
+      // approve will auto generate new share if shareStore is not provided
+      await assert.rejects(shareTransferModule.approveRequest(tb, pubkey), () => {
+        return true;
+      });
     });
 
     it(`#should be able to transfer device share, manualSync=${mode}`, async function () {
