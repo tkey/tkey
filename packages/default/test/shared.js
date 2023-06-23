@@ -710,7 +710,6 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       });
     });
     it(`#should be able to transfer share via the module, manualSync=${mode}`, async function () {
-
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
       await tb.syncLocalMetadataTransitions();
 
@@ -729,17 +728,15 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const shareTransferModule2 = new ShareTransferModule();
       await shareTransferModule2.setup(tb2);
 
-
       // usually should be called in callback, but mocha does not allow
       const pubkey = await shareTransferModule2.requestNewShare(tb2);
 
-      const result = await tb.generateNewShare();
-
-      // await shareTransferModule.setup(tb);
-      await shareTransferModule.approveRequest(tb, pubkey, result.newShareStores[result.newShareIndex.toString("hex")]);
+      // approve will auto generate new share if shareStore is not provided
+      await shareTransferModule.approveRequest(tb, pubkey);
       await tb.syncLocalMetadataTransitions();
 
       await shareTransferModule2.startRequestStatusCheck(tb2, pubkey);
+      // await shareTransferModule2.checkForApprovedRequest(tb2, pubkey);
 
       const reconstructedKey = await tb2.reconstructKey();
       if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
@@ -778,7 +775,6 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         serviceProvider: customSP,
         manualSync: mode,
         storageLayer: customSL,
-        // modules: { shareTransfer: new ShareTransferModule() },
       });
 
       await tb2.initialize();

@@ -9,6 +9,7 @@ import {
   ShareStoreMap,
   ShareTransferStorePointerArgs,
   TkeyStatus,
+  toPrivKeyEC,
   toPrivKeyECC,
 } from "@tkey/common-types";
 import type Threshold from "@tkey/core";
@@ -16,12 +17,12 @@ import { generatePrivate } from "@toruslabs/eccrypto";
 import BN from "bn.js";
 
 import ShareTransferError from "./errors";
-import ShareRequest from "./ShareRequest";
+import ShareRequest, { AuthShareRequest } from "./ShareRequest";
 import ShareTransferStorePointer from "./ShareTransferStorePointer";
 import { getClientIp } from "./utils";
 
 export type ShareTransferStore = {
-  [encPubKeyX: string]: ShareRequest;
+  [encPubKeyX: string]: AuthShareRequest;
 };
 
 export const SHARE_TRANSFER_MODULE_NAME = "shareTransfer";
@@ -113,7 +114,7 @@ class ShareTransferModule implements IModule {
     this.currentEncKey = new BN(generatePrivate());
     const [newShareTransferStore, userIp] = await Promise.all([this.getShareTransferStore(tkey), getClientIp()]);
     const encPubKeyX = getPubKeyPoint(this.currentEncKey).x.toString("hex");
-    newShareTransferStore[encPubKeyX] = new ShareRequest({
+    const shareRequest = new ShareRequest({
       encPubKey: getPubKeyECC(this.currentEncKey),
       encShareInTransit: undefined,
       availableShareIndexes,
@@ -121,24 +122,22 @@ class ShareTransferModule implements IModule {
       userIp,
       timestamp: Date.now(),
     });
+
+    const authRequest = new AuthShareRequest(shareRequest);
+
+    // pick available share from latest poly and sign using it
+    const latestPolyId = tkey.metadata.polyIDList.at(-1)[0];
+    const { share } = Object.values(tkey.shares[latestPolyId])[0].share;
+    newShareTransferStore[encPubKeyX] = await authRequest.sign(share.toString("hex"));
+
     await this.setShareTransferStore(tkey, newShareTransferStore);
     // watcher
     if (callback) {
       this.requestStatusCheckId = Number(
         setInterval(async () => {
           try {
-            const latestShareTransferStore = await this.getShareTransferStore(tkey);
-            if (!this.currentEncKey) throw ShareTransferError.missingEncryptionKey();
-            if (latestShareTransferStore[encPubKeyX].encShareInTransit) {
-              const shareStoreBuf = await decrypt(toPrivKeyECC(this.currentEncKey), latestShareTransferStore[encPubKeyX].encShareInTransit);
-              const receivedShare = ShareStore.fromJSON(JSON.parse(shareStoreBuf.toString()));
-              await tkey.inputShareStoreSafe(receivedShare, true);
-              this._cleanUpCurrentRequest();
-              callback(null, receivedShare);
-            } else if (!latestShareTransferStore[encPubKeyX]) {
-              this._cleanUpCurrentRequest();
-              callback(ShareTransferError.userCancelledRequest());
-            }
+            const receivedShare = await this.checkForApprovedRequest(tkey, encPubKeyX, true);
+            callback(null, receivedShare);
           } catch (error) {
             this._cleanUpCurrentRequest();
             callback(error);
@@ -151,9 +150,22 @@ class ShareTransferModule implements IModule {
 
   async addCustomInfoToShareRequest(tkey: Threshold, encPubKeyX: string, customInfo: string): Promise<void> {
     const shareTransferStore = await this.getShareTransferStore(tkey);
+    // validation
     if (!shareTransferStore[encPubKeyX]) throw ShareTransferError.missingEncryptionKey();
-    shareTransferStore[encPubKeyX].customInfo = customInfo;
-    await this.setShareTransferStore(tkey, shareTransferStore);
+    const receivedAuthRequest = AuthShareRequest.fromJSON(shareTransferStore[encPubKeyX]);
+    if (!receivedAuthRequest) throw ShareTransferError.missingEncryptionKey();
+    const store = await receivedAuthRequest.getVerifiedShareRequest();
+    const requestedBy = await this.validateRequest(tkey, encPubKeyX);
+
+    // update
+    store.customInfo = customInfo;
+
+    // sign and sync to metadata server
+    const authReq = new AuthShareRequest(store);
+    const signedReq = await authReq.sign(requestedBy.share.share.toString("hex"));
+
+    const updatedShareTransferStore = { ...shareTransferStore, [encPubKeyX]: signedReq };
+    await this.setShareTransferStore(tkey, updatedShareTransferStore);
   }
 
   async lookForRequests(tkey: Threshold): Promise<Array<string>> {
@@ -161,15 +173,35 @@ class ShareTransferModule implements IModule {
     return Object.keys(shareTransferStore);
   }
 
+  // Validation is needed before approve to prevent request from unknown share or deleted share
+  // DO NOT refresh share (generate new share) before validate. refresh share before validation will cause the share transfer request to fail
+  async validateRequest(tkey: Threshold, encPubKeyX: string) {
+    const shareTransferStore = await this.getShareTransferStore(tkey);
+    const receivedAuthRequest = AuthShareRequest.fromJSON(shareTransferStore[encPubKeyX]);
+
+    // check if request signer is in latest poly
+    const latestShareStore = tkey.getAllShareStoresForLatestPolynomial();
+    const requestedBy = latestShareStore.find((item) => {
+      return toPrivKeyEC(item.share.share).getPublic().encodeCompressed("hex") === receivedAuthRequest.commitment;
+    });
+    if (!requestedBy) throw new Error("Share Transfer attempt from unknown share");
+    return requestedBy;
+  }
+
   async approveRequest(tkey: Threshold, encPubKeyX: string, shareStore?: ShareStore): Promise<void> {
     const shareTransferStore = await this.getShareTransferStore(tkey);
-    if (!shareTransferStore[encPubKeyX]) throw ShareTransferError.missingEncryptionKey();
+    const receivedAuthRequest = AuthShareRequest.fromJSON(shareTransferStore[encPubKeyX]);
 
+    if (!receivedAuthRequest) throw ShareTransferError.missingEncryptionKey();
+    const store = await receivedAuthRequest.getVerifiedShareRequest();
+
+    const requestedBy = await this.validateRequest(tkey, encPubKeyX);
+
+    // get to be transfered share store
     let bufferedShare: Buffer;
     if (shareStore) {
       bufferedShare = Buffer.from(JSON.stringify(shareStore));
-    } else {
-      const store = new ShareRequest(shareTransferStore[encPubKeyX]);
+    } else if (store.availableShareIndexes) {
       const { availableShareIndexes } = store;
       const metadata = tkey.getMetadata();
       const latestPolynomial = metadata.getLatestPublicPolynomial();
@@ -178,10 +210,21 @@ class ShareTransferModule implements IModule {
       const filtered = indexes.filter((el) => !availableShareIndexes.includes(el));
       const share = tkey.outputShareStore(filtered[0]);
       bufferedShare = Buffer.from(JSON.stringify(share));
+    } else {
+      const newShareDetails = await tkey.generateNewShare();
+      const newShare = newShareDetails.newShareStores[newShareDetails.newShareIndex.toString("hex")];
+      bufferedShare = Buffer.from(JSON.stringify(newShare));
     }
-    const shareRequest = new ShareRequest(shareTransferStore[encPubKeyX]);
-    shareTransferStore[encPubKeyX].encShareInTransit = await encrypt(shareRequest.encPubKey, bufferedShare);
-    await this.setShareTransferStore(tkey, shareTransferStore);
+    // encrypt share and update store
+    store.encShareInTransit = await encrypt(store.encPubKey, bufferedShare);
+
+    // sign and sync to metadata server
+    const authReq = new AuthShareRequest(store);
+    const signedReq = await authReq.sign(requestedBy.share.share.toString("hex"));
+
+    const updatedShareTransferStore = { ...shareTransferStore, [encPubKeyX]: signedReq };
+    await this.setShareTransferStore(tkey, updatedShareTransferStore);
+
     this.currentEncKey = undefined;
   }
 
@@ -210,21 +253,8 @@ class ShareTransferModule implements IModule {
       this.requestStatusCheckId = Number(
         setInterval(async () => {
           try {
-            const latestShareTransferStore = await this.getShareTransferStore(tkey);
-            if (!this.currentEncKey) throw ShareTransferError.missingEncryptionKey();
-            if (!latestShareTransferStore[encPubKeyX]) {
-              this._cleanUpCurrentRequest();
-              reject(ShareTransferError.userCancelledRequest());
-            } else if (latestShareTransferStore[encPubKeyX].encShareInTransit) {
-              const shareStoreBuf = await decrypt(toPrivKeyECC(this.currentEncKey), latestShareTransferStore[encPubKeyX].encShareInTransit);
-              const receivedShare = ShareStore.fromJSON(JSON.parse(shareStoreBuf.toString()));
-              await tkey.inputShareStoreSafe(receivedShare, true);
-              if (deleteRequestAfterCompletion) {
-                await this.deleteShareTransferStore(tkey, encPubKeyX);
-              }
-              this._cleanUpCurrentRequest();
-              resolve(receivedShare);
-            }
+            const receivedShare = await this.checkForApprovedRequest(tkey, encPubKeyX, deleteRequestAfterCompletion);
+            resolve(receivedShare);
           } catch (err) {
             this._cleanUpCurrentRequest();
             reject(err);
@@ -232,6 +262,27 @@ class ShareTransferModule implements IModule {
         }, this.requestStatusCheckInterval)
       );
     });
+  }
+
+  async checkForApprovedRequest(tkey: Threshold, encPubKeyX: string, deleteRequestAfterCompletion: boolean): Promise<ShareStore> {
+    const latestShareTransferStore = await this.getShareTransferStore(tkey);
+    const authRequest = AuthShareRequest.fromJSON(latestShareTransferStore[encPubKeyX]);
+    const shareRequest = await authRequest.getVerifiedShareRequest();
+
+    if (!this.currentEncKey) throw ShareTransferError.missingEncryptionKey();
+    if (!authRequest) {
+      this._cleanUpCurrentRequest();
+      throw ShareTransferError.userCancelledRequest();
+    } else if (shareRequest.encShareInTransit) {
+      const shareStoreBuf = await decrypt(toPrivKeyECC(this.currentEncKey), shareRequest.encShareInTransit);
+      const receivedShare = ShareStore.fromJSON(JSON.parse(shareStoreBuf.toString()));
+      await tkey.inputShareStoreSafe(receivedShare, true);
+      if (deleteRequestAfterCompletion) {
+        await this.deleteShareTransferStore(tkey, encPubKeyX);
+      }
+      this._cleanUpCurrentRequest();
+      return receivedShare;
+    }
   }
 
   async cancelRequestStatusCheck(): Promise<void> {
