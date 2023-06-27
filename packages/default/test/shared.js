@@ -82,32 +82,58 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         verifierId: sp.verifierId,
       });
       sp.postboxKey = postboxkey;
+      const newTag = "testTag";
+
       const { serverDKGPrivKeys } = await assignTssDkgKeys({
         serviceProvider: sp,
         verifierName: sp.verifierName,
         verifierId: sp.verifierId,
-        maxTSSNonceToSimulate: 2,
+        maxTSSNonceToSimulate: 3,
+        // tssTag: newTag,
       });
+
+      const { serverDKGPrivKeys: serverKey1 } = await assignTssDkgKeys({
+        serviceProvider: sp,
+        verifierName: sp.verifierName,
+        verifierId: sp.verifierId,
+        maxTSSNonceToSimulate: 3,
+        tssTag: newTag,
+      });
+
       const storageLayer = initStorageLayer({ hostUrl: metadataURL });
       const tb1 = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync: mode });
+      // tb1.setTssTag(newTag);
 
       // factor key needs to passed from outside of tKey
       const factorKey = new BN(generatePrivate());
       const factorPub = getPubKeyPoint(factorKey);
 
-      await tb1.initialize({ useTSS: true, factorPub, deviceTSSShare, deviceTSSIndex });
-      const newShare = await tb1.generateNewShare();
+      // await tb1.initialize({ useTSS: true, factorPub, deviceTSSShare, deviceTSSIndex });
+      await tb1.initialize();
       const reconstructedKey = await tb1.reconstructKey();
+      await tb1.createTaggedTSSShare("default", factorPub, deviceTSSShare, deviceTSSIndex);
+
+      const deviceTSSShareTag = new BN(generatePrivate());
+      const deviceTSSIndexTag = 2;
+      const factorKeyTag = new BN(generatePrivate());
+      const factorPubTag = getPubKeyPoint(factorKeyTag);
+      tb1.setTssTag(newTag);
+      await tb1.createTaggedTSSShare(newTag, factorPubTag, deviceTSSShareTag, deviceTSSIndexTag);
+
+      const newShare = await tb1.generateNewShare();
       await tb1.syncLocalMetadataTransitions();
       if (tb1.privKey.cmp(reconstructedKey.privKey) !== 0) {
         fail("key should be able to be reconstructed");
       }
 
+
       const tb2 = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync: mode });
-      await tb2.initialize({ useTSS: true, factorPub });
-      tb2.inputShareStore(newShare.newShareStores[newShare.newShareIndex.toString("hex")]);
+      // tb2.setTssTag(newTag);
+      await tb2.initialize();
+      await tb2.inputShareStoreSafe(newShare.newShareStores[newShare.newShareIndex.toString("hex")]);
       await tb2.reconstructKey();
       const { tssShare: retrievedTSS, tssIndex: retrievedTSSIndex } = await tb2.getTSSShare(factorKey);
+
       const tssCommits = tb2.getTSSCommits();
       const tssPrivKey = getLagrangeCoeffs([1, retrievedTSSIndex], 1)
         .mul(serverDKGPrivKeys[0])
@@ -118,13 +144,27 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       strictEqual(tssPubKey.x.toString(16, 64), tssCommits[0].x.toString(16, 64));
       strictEqual(tssPubKey.y.toString(16, 64), tssCommits[0].y.toString(16, 64));
 
-      // // test tss refresh
+      // set tkey to new TSS Tag
+      tb2.setTssTag(newTag);
+      const { tssShare: retrievedTSSTag, tssIndex: retrievedTSSIndexTag } = await tb2.getTSSShare(factorKeyTag);
 
+      const tssCommitsTag = tb2.getTSSCommits();
+      const tssPrivKeyTag = getLagrangeCoeffs([1, retrievedTSSIndexTag], 1)
+        .mul(serverKey1[0])
+        .add(getLagrangeCoeffs([1, retrievedTSSIndexTag], retrievedTSSIndexTag).mul(retrievedTSSTag))
+        .umod(ecCurve.n);
+
+      const tssPubKeyTag = getPubKeyPoint(tssPrivKeyTag);
+      strictEqual(tssPubKeyTag.x.toString(16, 64), tssCommitsTag[0].x.toString(16, 64));
+      strictEqual(tssPubKeyTag.y.toString(16, 64), tssCommitsTag[0].y.toString(16, 64));
+
+      // // test tss refresh
       const factorKey2 = new BN(generatePrivate());
       const factorPub2 = getPubKeyPoint(factorKey2);
 
       const factorPubs = [factorPub, factorPub2];
       const { serverEndpoints, serverPubKeys } = await sp.getRSSNodeDetails();
+      tb2.setTssTag("default");
       await tb2._refreshTSSShares(true, retrievedTSS, retrievedTSSIndex, factorPubs, [2, 3], testId, {
         serverThreshold: 3,
         selectedServers: [1, 2, 3],

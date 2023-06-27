@@ -354,7 +354,9 @@ class ThresholdKey implements ITKey {
     if (useTSS) {
       if (!this.metadata.tssPolyCommits[this.tssTag]) {
         // if tss shares have not been created for this tssTag, create new tss sharing
-        await this._initializeNewTSSKey(this.tssTag, deviceTSSShare, factorPub);
+        const { factorEncs, factorPubs, tssPolyCommits } = await this._initializeNewTSSKey(this.tssTag, deviceTSSShare, factorPub, deviceTSSIndex);
+        this.metadata.addTSSData({ tssTag: this.tssTag, tssNonce: 0, tssPolyCommits, factorPubs, factorEncs });
+        await this._syncShareMetadata();
       }
     }
 
@@ -456,6 +458,23 @@ class ThresholdKey implements ITKey {
 
   getTSSPub(): Point {
     return this.getTSSCommits()[0];
+  }
+
+  setTssTag(tssTag: string): void {
+    this.tssTag = tssTag;
+  }
+
+  async createTaggedTSSShare(tssTag: string, factorPub: Point, tssShare: BN, tssIndex: number) {
+    if (!this.privKey) throw CoreError.default("tkey must be reconstructed");
+    const { factorEncs, factorPubs, tssPolyCommits } = await this._initializeNewTSSKey(tssTag, tssShare, factorPub, tssIndex);
+    await this.metadata.addTSSData({
+      tssTag,
+      tssNonce: 0,
+      tssPolyCommits,
+      factorPubs,
+      factorEncs,
+    });
+    await this._syncShareMetadata();
   }
 
   /**
@@ -1434,6 +1453,7 @@ class ThresholdKey implements ITKey {
 
     const shareArray = this.getAllShareStoresForLatestPolynomial().map((x) => x.share.share);
     await this.syncMultipleShareMetadata(shareArray, adjustScopedStore);
+    if (!this.manualSync) await this.syncLocalMetadataTransitions();
   }
 
   async syncMultipleShareMetadata(shares: BN[], adjustScopedStore?: (ss: unknown) => unknown): Promise<void> {
