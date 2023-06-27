@@ -90,7 +90,7 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
 
       const factorPubs = [factorPub, factorPub2];
       const { serverEndpoints, serverPubKeys } = await sp.getRSSNodeDetails();
-      await tssModule2._refreshTSSShares(tb2, true, retrievedTSS, retrievedTSSIndex, factorPubs, [2, 3], testId, {
+      await tssModule2._refreshTSSShares(tb2, true, retrievedTSS, retrievedTSSIndex, factorPubs, [2, 3], testId, tssModule2.tssTag, {
         serverThreshold: 3,
         selectedServers: [1, 2, 3],
         serverEndpoints,
@@ -423,7 +423,7 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
       const factorPubs = [factorPub, factorPub2];
       const { serverEndpoints, serverPubKeys } = await sp.getRSSNodeDetails();
 
-      await tssModule._refreshTSSShares(tb1, true, retrievedTSS, retrievedTSSIndex, factorPubs, [2, 3], testId, {
+      await tssModule._refreshTSSShares(tb1, true, retrievedTSS, retrievedTSSIndex, factorPubs, [2, 3], testId, tssModule.tssTag, {
         serverThreshold: 3,
         selectedServers: [1, 2, 3],
         serverEndpoints,
