@@ -51,13 +51,16 @@ export function getServiceProvider(params) {
   return new ServiceProviderBase({ postboxKey: isEmptyProvider ? null : PRIVATE_KEY });
 }
 
+const MockServers = [new MockServer(), new MockServer(), new MockServer(), new MockServer(), new MockServer()];
+
 export async function setupTSSMocks(opts) {
-  let { serviceProvider, verifierName, verifierId, maxTSSNonceToSimulate, tssTag } = opts;
+  let { serviceProvider, verifierName, verifierId, maxTSSNonceToSimulate, tssTag, postboxKey } = opts;
   tssTag = tssTag || "default";
   serviceProvider._setVerifierNameVerifierId(verifierName, verifierId);
   const vid = serviceProvider.getVerifierNameVerifierId();
   maxTSSNonceToSimulate = maxTSSNonceToSimulate || 1;
-  const serverEndpoints = [new MockServer(), new MockServer(), new MockServer(), new MockServer(), new MockServer()];
+  // const serverEndpoints = [new MockServer(), new MockServer(), new MockServer(), new MockServer(), new MockServer()];
+  const serverEndpoints = MockServers;
   const serverCount = serverEndpoints.length;
   const serverPrivKeys = [];
   for (let i = 0; i < serverCount; i++) {
@@ -92,10 +95,17 @@ export async function setupTSSMocks(opts) {
         });
       })
     );
-    serviceProvider._setTSSPubKey("default", j, new Point(dkg2Pub.x, dkg2Pub.y));
+    serviceProvider._setTSSPubKey(tssTag, j, new Point(dkg2Pub.x, dkg2Pub.y));
   }
 
   serviceProvider._setTSSNodeDetails(serverEndpoints, serverPubKeys, serverThreshold);
+  serviceProvider.rssNodeDetails = { ...serviceProvider.tssNodeDetails };
+
+  // update new serviceprovider postbox key
+  if (!postboxKey) {
+    const postboxKeyGenerated = new BN(generatePrivate());
+    serviceProvider.postboxKey = postboxKeyGenerated.toString(16, 64);
+  }
 
   return {
     serverEndpoints,
@@ -182,3 +192,47 @@ export async function assignTssDkgKeys(opts) {
     // serverDKGPubKeys,
   };
 }
+
+export async function setupTSS(opts) {
+  const { serviceProvider, verifierName, verifierId, maxTSSNonceToSimulate, tssTag, MOCK_RSS, postboxKey } = opts;
+  if (MOCK_RSS) {
+    const { serverEndpoints, serverPubKeys, serverDKGPrivKeys, serverDKGPubKeys } = await setupTSSMocks({
+      serviceProvider,
+      verifierName,
+      verifierId,
+      maxTSSNonceToSimulate,
+      tssTag,
+      postboxKey,
+    });
+    const signatures = "signature";
+    return {
+      signatures,
+      serverDKGPrivKeys,
+    };
+  }
+
+  // get signature and postboxkey from nodes
+  const { signatures, postboxkey } = await fetchPostboxKeyAndSigs({
+    serviceProvider,
+    verifierName,
+    verifierId,
+  });
+  serviceProvider.postboxKey = postboxkey;
+  const { serverDKGPrivKeys } = await assignTssDkgKeys({
+    serviceProvider,
+    verifierName,
+    verifierId,
+    maxTSSNonceToSimulate,
+    tssTag,
+  });
+
+  return {
+    signatures,
+    serverDKGPrivKeys,
+  };
+}
+
+export const generateVerifierId = (prefix = "") => {
+  const randomkey = generatePrivate().toString("hex");
+  return `${prefix}${randomkey}@mail.com`;
+};

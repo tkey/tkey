@@ -48,6 +48,7 @@ import {
   ShareStorePolyIDShareIndexMap,
   StringifiedType,
   TKeyArgs,
+  TkeyStatus,
   TkeyStoreItemType,
   toPrivKeyECC,
 } from "@tkey/common-types";
@@ -220,6 +221,23 @@ class ThresholdKey implements ITKey {
     throw CoreError.metadataUndefined();
   }
 
+  getServiceProvider(): IServiceProvider {
+    if (typeof this.serviceProvider !== "undefined") {
+      return this.serviceProvider;
+    }
+
+    throw CoreError.default("serviceProvider undefined");
+  }
+
+  getTkeyStatus(): TkeyStatus {
+    // NOT INITIALIZED
+    if (!this.metadata) return TkeyStatus.NOT_INITIALIZED;
+    // READ MODE
+    if (!this.privKey) return TkeyStatus.INITIALIZED;
+    // WRITE MODE
+    return TkeyStatus.RECONSTRUCTED;
+  }
+
   async initialize(params?: {
     withShare?: ShareStore;
     importKey?: BN;
@@ -232,7 +250,7 @@ class ThresholdKey implements ITKey {
     deviceTSSShare?: BN;
     deviceTSSIndex?: number;
     factorPub?: Point;
-  }): Promise<KeyDetails> {
+  }): Promise<KeyDetails & { deviceShare?: ShareStore; userShare?: ShareStore }> {
     // setup initial params/states
     const p = params || {};
 
@@ -287,7 +305,7 @@ class ThresholdKey implements ITKey {
           throw CoreError.default("key has not been generated yet");
         }
         // no metadata set, assumes new user
-        await this._initializeNewKey({
+        const result = await this._initializeNewKey({
           initializeModules: true,
           importedKey: importKey,
           delete1OutOf1: p.delete1OutOf1,
@@ -296,13 +314,46 @@ class ThresholdKey implements ITKey {
           const { factorEncs, factorPubs, tssPolyCommits } = await this._initializeNewTSSKey(this.tssTag, deviceTSSShare, factorPub, deviceTSSIndex);
           this.metadata.addTSSData({ tssTag: this.tssTag, tssNonce: 0, tssPolyCommits, factorPubs, factorEncs });
         }
-        return this.getKeyDetails();
+        const keyDetail = this.getKeyDetails();
+        keyDetail.deviceShare = result.deviceShare;
+        keyDetail.userShare = result.userShare;
+
+        return keyDetail;
       }
       // else we continue with catching up share and metadata
       shareStore = ShareStore.fromJSON(rawServiceProviderShare);
     } else {
       throw CoreError.default("Input is not supported");
     }
+
+    return this.initializeWithShareStore({
+      shareStore,
+      transitionMetadata,
+      previouslyFetchedCloudMetadata,
+      previousLocalMetadataTransitions,
+      useTSS,
+      deviceTSSShare,
+      factorPub,
+    });
+  }
+
+  async initializeWithShareStore(params: {
+    shareStore: ShareStore;
+    transitionMetadata?: Metadata;
+    previouslyFetchedCloudMetadata?: Metadata;
+    previousLocalMetadataTransitions?: LocalMetadataTransitions;
+    useTSS?: boolean;
+    deviceTSSShare?: BN;
+    factorPub?: Point;
+  }) {
+    const { shareStore, transitionMetadata, previouslyFetchedCloudMetadata, previousLocalMetadataTransitions, useTSS, deviceTSSShare, factorPub } =
+      params;
+
+    const previousLocalMetadataTransitionsExists =
+      previousLocalMetadataTransitions && previousLocalMetadataTransitions[0].length > 0 && previousLocalMetadataTransitions[1].length > 0;
+    const reinitializing = transitionMetadata && previousLocalMetadataTransitionsExists; // are we reinitializing the SDK?
+    // in the case we're reinitializing whilst newKeyAssign has not been synced
+    const reinitializingWithNewKeyAssign = reinitializing && previouslyFetchedCloudMetadata === undefined;
 
     // We determine the latest metadata on the SDK and if there has been
     // needed transitions to include
@@ -354,7 +405,9 @@ class ThresholdKey implements ITKey {
     if (useTSS) {
       if (!this.metadata.tssPolyCommits[this.tssTag]) {
         // if tss shares have not been created for this tssTag, create new tss sharing
-        await this._initializeNewTSSKey(this.tssTag, deviceTSSShare, factorPub);
+        const { factorEncs, factorPubs, tssPolyCommits } = await this._initializeNewTSSKey(this.tssTag, deviceTSSShare, factorPub);
+        this.metadata.addTSSData({ tssTag: this.tssTag, tssNonce: 0, tssPolyCommits, factorPubs, factorEncs });
+        this._syncShareMetadata();
       }
     }
 
@@ -578,7 +631,7 @@ class ThresholdKey implements ITKey {
       await Promise.all(
         Object.keys(this._reconstructKeyMiddleware).map(async (x) => {
           if (Object.prototype.hasOwnProperty.call(this._reconstructKeyMiddleware, x)) {
-            const extraKeys = await this._reconstructKeyMiddleware[x]();
+            const extraKeys = await this._reconstructKeyMiddleware[x](this);
             returnObject[x] = extraKeys;
             returnObject.allKeys.push(...extraKeys);
           }
@@ -1434,6 +1487,7 @@ class ThresholdKey implements ITKey {
 
     const shareArray = this.getAllShareStoresForLatestPolynomial().map((x) => x.share.share);
     await this.syncMultipleShareMetadata(shareArray, adjustScopedStore);
+    if (!this.manualSync) this.syncLocalMetadataTransitions();
   }
 
   async syncMultipleShareMetadata(shares: BN[], adjustScopedStore?: (ss: unknown) => unknown): Promise<void> {
@@ -1471,7 +1525,7 @@ class ThresholdKey implements ITKey {
     this._refreshMiddleware[moduleName] = middleware;
   }
 
-  _addReconstructKeyMiddleware(moduleName: string, middleware: () => Promise<BN[]>): void {
+  _addReconstructKeyMiddleware(moduleName: string, middleware: (tkey: ITKeyApi) => Promise<BN[]>): void {
     this._reconstructKeyMiddleware[moduleName] = middleware;
   }
 
@@ -1697,6 +1751,7 @@ class ThresholdKey implements ITKey {
   getApi(): ITKeyApi {
     return {
       getMetadata: this.getMetadata.bind(this),
+      getServiceProvider: this.getServiceProvider.bind(this),
       getStorageLayer: this.getStorageLayer.bind(this),
       initialize: this.initialize.bind(this),
       catchupToLatestShare: this.catchupToLatestShare.bind(this),

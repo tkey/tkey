@@ -8,7 +8,7 @@ export const SEED_PHRASE_MODULE_NAME = "seedPhraseModule";
 class SeedPhraseModule implements IModule {
   moduleName: string;
 
-  tbSDK: ITKeyApi;
+  tkey: ITKeyApi;
 
   seedPhraseFormats: ISeedPhraseFormat[];
 
@@ -17,15 +17,14 @@ class SeedPhraseModule implements IModule {
     this.seedPhraseFormats = formats;
   }
 
-  setModuleReferences(tbSDK: ITKeyApi): void {
-    this.tbSDK = tbSDK;
-    this.tbSDK._addReconstructKeyMiddleware(this.moduleName, this.getAccounts.bind(this));
+  setModuleReferences(tkey: ITKeyApi): void {
+    tkey._addReconstructKeyMiddleware(this.moduleName, this.getAccounts.bind(this));
   }
 
   // eslint-disable-next-line
   async initialize(): Promise<void> {}
 
-  async setSeedPhrase(seedPhraseType: string, seedPhrase?: string): Promise<void> {
+  async setSeedPhrase(tkey: ITKeyApi, seedPhraseType: string, seedPhrase?: string): Promise<void> {
     const format = this.seedPhraseFormats.find((el) => el.type === seedPhraseType);
     if (!format) {
       throw SeedPhraseError.notSupported();
@@ -34,32 +33,32 @@ class SeedPhraseModule implements IModule {
       throw SeedPhraseError.invalid(`${seedPhraseType}`);
     }
     const seedPhraseStore = await format.createSeedPhraseStore(seedPhrase);
-    return this.tbSDK._setTKeyStoreItem(this.moduleName, seedPhraseStore);
+    return tkey._setTKeyStoreItem(this.moduleName, seedPhraseStore);
   }
 
-  async setSeedPhraseStoreItem(partialStore: ISeedPhraseStore): Promise<void> {
-    const seedPhraseItem = (await this.tbSDK.getTKeyStoreItem(this.moduleName, partialStore.id)) as ISeedPhraseStore;
+  async setSeedPhraseStoreItem(tkey: ITKeyApi, partialStore: ISeedPhraseStore): Promise<void> {
+    const seedPhraseItem = (await tkey.getTKeyStoreItem(this.moduleName, partialStore.id)) as ISeedPhraseStore;
     const originalItem: ISeedPhraseStore = { id: seedPhraseItem.id, type: seedPhraseItem.type, seedPhrase: seedPhraseItem.seedPhrase };
     // Disallow editing critical fields
     const finalItem = { ...partialStore, ...originalItem };
-    return this.tbSDK._setTKeyStoreItem(this.moduleName, finalItem);
+    return tkey._setTKeyStoreItem(this.moduleName, finalItem);
   }
 
-  async CRITICAL_changeSeedPhrase(oldSeedPhrase: string, newSeedPhrase: string): Promise<void> {
-    const seedPhrases = await this.getSeedPhrases();
+  async CRITICAL_changeSeedPhrase(tkey: ITKeyApi, oldSeedPhrase: string, newSeedPhrase: string): Promise<void> {
+    const seedPhrases = await this.getSeedPhrases(tkey);
     const itemToChange = seedPhrases.find((x) => x.seedPhrase === oldSeedPhrase);
     itemToChange.seedPhrase = newSeedPhrase;
-    return this.tbSDK._setTKeyStoreItem(this.moduleName, itemToChange);
+    return tkey._setTKeyStoreItem(this.moduleName, itemToChange);
   }
 
-  async getSeedPhrases(): Promise<ISeedPhraseStore[]> {
-    return this.tbSDK.getTKeyStore(this.moduleName) as Promise<ISeedPhraseStore[]>;
+  async getSeedPhrases(tkey: ITKeyApi): Promise<ISeedPhraseStore[]> {
+    return tkey.getTKeyStore(this.moduleName) as Promise<ISeedPhraseStore[]>;
   }
 
-  async getSeedPhrasesWithAccounts(): Promise<ISeedPhraseStoreWithKeys[]> {
+  async getSeedPhrasesWithAccounts(tkey: ITKeyApi): Promise<ISeedPhraseStoreWithKeys[]> {
     try {
       // Get seed phrases for all available formats from TKeyStore
-      const seedPhrases = await this.getSeedPhrases();
+      const seedPhrases = await this.getSeedPhrases(tkey);
       return await Promise.all(
         seedPhrases.map(async (x) => {
           const suitableFormat = this.seedPhraseFormats.find((y) => y.type === x.type);
@@ -72,10 +71,10 @@ class SeedPhraseModule implements IModule {
     }
   }
 
-  async getAccounts(): Promise<BN[]> {
+  async getAccounts(tkey: ITKeyApi): Promise<BN[]> {
     try {
       // Get seed phrases for all available formats from TKeyStore
-      const seedPhrases = await this.getSeedPhrases();
+      const seedPhrases = (await tkey.getTKeyStore(this.moduleName)) as ISeedPhraseStore[];
       const responses = await Promise.all(
         seedPhrases.map(async (x) => {
           const suitableFormat = this.seedPhraseFormats.find((y) => y.type === x.type);

@@ -8,8 +8,6 @@ export const PRIVATE_KEY_MODULE_NAME = "privateKeyModule";
 class PrivateKeyModule implements IModule {
   moduleName: string;
 
-  tbSDK: ITKeyApi;
-
   privateKeyFormats: IPrivateKeyFormat[];
 
   constructor(formats: IPrivateKeyFormat[]) {
@@ -17,15 +15,14 @@ class PrivateKeyModule implements IModule {
     this.privateKeyFormats = formats;
   }
 
-  setModuleReferences(tbSDK: ITKeyApi): void {
-    this.tbSDK = tbSDK;
-    this.tbSDK._addReconstructKeyMiddleware(this.moduleName, this.getAccounts.bind(this));
+  setModuleReferences(tkey: ITKeyApi): void {
+    tkey._addReconstructKeyMiddleware(this.moduleName, this.getAccounts.bind(this));
   }
 
   // eslint-disable-next-line
   async initialize(): Promise<void> {}
 
-  async setPrivateKey(privateKeyType: string, privateKey?: BN): Promise<void> {
+  async setPrivateKey(tkey: ITKeyApi, privateKeyType: string, privateKey?: BN): Promise<void> {
     const format = this.privateKeyFormats.find((el) => el.type === privateKeyType);
     if (!format) {
       throw PrivateKeysError.notSupported();
@@ -34,17 +31,17 @@ class PrivateKeyModule implements IModule {
       throw PrivateKeysError.invalidPrivateKey(`${privateKey}`);
     }
     const privateKeyStore = format.createPrivateKeyStore(privateKey);
-    return this.tbSDK._setTKeyStoreItem(this.moduleName, privateKeyStore);
+    return tkey._setTKeyStoreItem(this.moduleName, privateKeyStore);
   }
 
-  async getPrivateKeys(): Promise<IPrivateKeyStore[]> {
-    return this.tbSDK.getTKeyStore(this.moduleName) as Promise<IPrivateKeyStore[]>;
+  async getPrivateKeys(tkey: ITKeyApi): Promise<IPrivateKeyStore[]> {
+    return tkey.getTKeyStore(this.moduleName) as Promise<IPrivateKeyStore[]>;
   }
 
-  async getAccounts(): Promise<BN[]> {
+  async getAccounts(tkey: ITKeyApi): Promise<BN[]> {
     try {
       // Get all private keys
-      const privateKeys = await this.getPrivateKeys();
+      const privateKeys = (await tkey.getTKeyStore(this.moduleName)) as IPrivateKeyStore[];
       return privateKeys.reduce((acc: BN[], x) => {
         acc.push(BN.isBN(x.privateKey) ? x.privateKey : new BN(x.privateKey, "hex"));
         return acc;

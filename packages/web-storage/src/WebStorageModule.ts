@@ -1,4 +1,4 @@
-import { BNString, DeviceShareDescription, IModule, ITKeyApi, prettyPrintError, ShareStore, StringifiedType } from "@tkey/common-types";
+import { BNString, DeviceShareDescription, ITKeyApi, prettyPrintError, ShareStore, StringifiedType } from "@tkey/common-types";
 import BN from "bn.js";
 
 import WebStorageError from "./errors";
@@ -7,10 +7,8 @@ import { getShareFromLocalStorage, storeShareOnLocalStorage } from "./LocalStora
 
 export const WEB_STORAGE_MODULE_NAME = "webStorage";
 
-class WebStorageModule implements IModule {
+class WebStorageModule {
   moduleName: string;
-
-  tbSDK: ITKeyApi;
 
   canUseFileStorage: boolean;
 
@@ -40,16 +38,8 @@ class WebStorageModule implements IModule {
     } catch (error) {}
   }
 
-  setModuleReferences(tbSDK: ITKeyApi): void {
-    this.tbSDK = tbSDK;
-    this.tbSDK._setDeviceStorage(this.storeDeviceShare.bind(this));
-  }
-
-  // eslint-disable-next-line
-  async initialize(): Promise<void> {}
-
-  async storeDeviceShare(deviceShareStore: ShareStore, customDeviceInfo?: StringifiedType): Promise<void> {
-    const metadata = this.tbSDK.getMetadata();
+  async storeDeviceShare(tkey: ITKeyApi, deviceShareStore: ShareStore, customDeviceInfo?: StringifiedType): Promise<void> {
+    const metadata = tkey.getMetadata();
     const tkeypubx = metadata.pubKey.x.toString("hex");
     await storeShareOnLocalStorage(deviceShareStore, tkeypubx);
     const shareDescription: DeviceShareDescription = {
@@ -60,18 +50,18 @@ class WebStorageModule implements IModule {
     if (customDeviceInfo) {
       shareDescription.customDeviceInfo = JSON.stringify(customDeviceInfo);
     }
-    await this.tbSDK.addShareDescription(deviceShareStore.share.shareIndex.toString("hex"), JSON.stringify(shareDescription), true);
+    await tkey.addShareDescription(deviceShareStore.share.shareIndex.toString("hex"), JSON.stringify(shareDescription), true);
   }
 
-  async storeDeviceShareOnFileStorage(shareIndex: BNString): Promise<void> {
-    const metadata = this.tbSDK.getMetadata();
+  async storeDeviceShareOnFileStorage(tkey: ITKeyApi, shareIndex: BNString): Promise<void> {
+    const metadata = tkey.getMetadata();
     const tkeypubx = metadata.pubKey.x.toString("hex");
-    const shareStore = this.tbSDK.outputShareStore(new BN(shareIndex));
+    const shareStore = tkey.outputShareStore(new BN(shareIndex));
     return storeShareOnFileStorage(shareStore, tkeypubx);
   }
 
-  async getDeviceShare(): Promise<ShareStore> {
-    const metadata = this.tbSDK.getMetadata();
+  async getDeviceShare(tkey: ITKeyApi): Promise<ShareStore> {
+    const metadata = tkey.getMetadata();
     const tkeypubx = metadata.pubKey.x.toString("hex");
     let shareStore: ShareStore;
     try {
@@ -95,16 +85,16 @@ class WebStorageModule implements IModule {
     return shareStore;
   }
 
-  async inputShareFromWebStorage(): Promise<void> {
-    const shareStore = await this.getDeviceShare();
+  async inputShareFromWebStorage(tkey: ITKeyApi): Promise<void> {
+    const shareStore = await this.getDeviceShare(tkey);
     let latestShareStore = shareStore;
-    const metadata = this.tbSDK.getMetadata();
+    const metadata = tkey.getMetadata();
     if (metadata.getLatestPublicPolynomial().getPolynomialID() !== shareStore.polynomialID) {
-      latestShareStore = (await this.tbSDK.catchupToLatestShare({ shareStore, includeLocalMetadataTransitions: true })).latestShare;
+      latestShareStore = (await tkey.catchupToLatestShare({ shareStore, includeLocalMetadataTransitions: true })).latestShare;
       const tkeypubx = metadata.pubKey.x.toString("hex");
       await storeShareOnLocalStorage(latestShareStore, tkeypubx);
     }
-    this.tbSDK.inputShareStore(latestShareStore);
+    tkey.inputShareStore(latestShareStore);
   }
 }
 
