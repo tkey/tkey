@@ -111,21 +111,20 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       // await tb1.initialize({ useTSS: true, factorPub, deviceTSSShare, deviceTSSIndex });
       await tb1.initialize();
       const reconstructedKey = await tb1.reconstructKey();
-      await tb1.createTaggedTSSShare("default", factorPub, deviceTSSShare, deviceTSSIndex);
+      await tb1.createTaggedTSSShare(factorPub, deviceTSSShare, deviceTSSIndex);
 
       const deviceTSSShareTag = new BN(generatePrivate());
       const deviceTSSIndexTag = 2;
       const factorKeyTag = new BN(generatePrivate());
       const factorPubTag = getPubKeyPoint(factorKeyTag);
       tb1.setTssTag(newTag);
-      await tb1.createTaggedTSSShare(newTag, factorPubTag, deviceTSSShareTag, deviceTSSIndexTag);
+      await tb1.createTaggedTSSShare(factorPubTag, deviceTSSShareTag, deviceTSSIndexTag);
 
       const newShare = await tb1.generateNewShare();
       await tb1.syncLocalMetadataTransitions();
       if (tb1.privKey.cmp(reconstructedKey.privKey) !== 0) {
         fail("key should be able to be reconstructed");
       }
-
 
       const tb2 = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync: mode });
       // tb2.setTssTag(newTag);
