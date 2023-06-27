@@ -699,7 +699,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     });
   });
 
-  describe.only("ShareTransferModule", function () {
+  describe("ShareTransferModule", function () {
     let tb;
     beforeEach("Setup ThresholdKey", async function () {
       tb = new ThresholdKey({
@@ -764,7 +764,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       await tb.syncLocalMetadataTransitions();
     });
 
-    it.only(`#should be able to detect unknown share or deleted share request, manualSync=${mode}`, async function () {
+    it(`#should be able to detect unknown share or deleted share request, manualSync=${mode}`, async function () {
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
       await tb.syncLocalMetadataTransitions();
 

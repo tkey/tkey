@@ -174,7 +174,6 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
         fail("key should be able to be reconstructed");
       }
 
-      console.log("success");
       const deviceTSSShareTagged = new BN(generatePrivate());
       const deviceTSSIndexTagged = 2;
       const factorKeyTagged = new BN(generatePrivate());
@@ -186,13 +185,10 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
       //   factorPub: factorPubTagged,
       // });
       if (mode) await tb1.syncLocalMetadataTransitions();
-      console.log("create new tag");
 
       const tb2 = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync: mode });
       await tb2.initialize();
-      console.log("tb2 initialized");
       await tb2.inputShareStoreSafe(newShare.newShareStores[newShare.newShareIndex.toString("hex")]);
-      console.log("reconstruting");
       await tb2.reconstructKey();
 
       const tssModule2 = new TSSModule("modulename", "superTag");
@@ -201,8 +197,6 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
 
       // const { tssShare: retrievedTSS, tssIndex: retrievedTSSIndex } = await tssModule2.getTSSShare(tb2, factorKeyTagged, { tssTag: "testTag" });
       const { tssShare: retrievedTSS, tssIndex: retrievedTSSIndex } = await tssModule2.getTSSShare(tb2, factorKey);
-      console.log("share", retrievedTSS);
-      console.log("tss", deviceTSSShare);
       const tssCommits = tssModule2.getTSSCommits(tb2);
 
       const tssPrivKey = getLagrangeCoeffs([1, retrievedTSSIndex], 1)
@@ -230,8 +224,6 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
       strictEqual(tssPubKey3.y.toString(16, 64), tssCommits3[0].y.toString(16, 64));
 
       // // test tss refresh
-      console.log("generated correct pubkey");
-
       const factorKey2 = new BN(generatePrivate());
       const factorPub2 = getPubKeyPoint(factorKey2);
 
