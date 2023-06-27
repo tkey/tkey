@@ -16,6 +16,7 @@ import {
   randomSelection,
   RSSClient,
   ShareStore,
+  TkeyStatus,
 } from "@tkey/common-types";
 import ThresholdKey, { dotProduct, getLagrangeCoeffs, kCombinations } from "@tkey/core";
 import { generatePrivate } from "@toruslabs/eccrypto";
@@ -63,35 +64,58 @@ export class TSSModule {
       metadata.addTSSData({ tssTag: this.tssTag, tssNonce: 0, tssPolyCommits, factorPubs, factorEncs });
     } else if (!metadata.tssPolyCommits[this.tssTag]) {
       // if tss shares have not been created for this tssTag, create new tss sharing
-      await this._initializeNewTSSKey(tkey, this.tssTag, deviceTSSShare, factorPub);
+      const { factorEncs, factorPubs, tssPolyCommits } = await this._initializeNewTSSKey(tkey, this.tssTag, deviceTSSShare, factorPub);
+      await this.addTSSMetadata(tkey, {
+        tssTag: this.tssTag,
+        tssNonce: 0,
+        tssPolyCommits,
+        factorPubs,
+        factorEncs,
+      });
     }
     return result;
   }
 
-  getTSSCommits(tkey: ThresholdKey): Point[] {
+  async createTaggedTSSShare(tkey: ThresholdKey, tssTag: string, factorPub: Point, tssShare: BN, tssIndex: number) {
+    if (tkey.getTkeyStatus() !== TkeyStatus.RECONSTRUCTED) throw TSSError.default("tkey must be reconstructed");
+    const { factorEncs, factorPubs, tssPolyCommits } = await this._initializeNewTSSKey(tkey, tssTag, tssShare, factorPub, tssIndex);
+    await this.addTSSMetadata(tkey, {
+      tssTag,
+      tssNonce: 0,
+      tssPolyCommits,
+      factorPubs,
+      factorEncs,
+    });
+  }
+
+  getTSSCommits(tkey: ThresholdKey, tssTag?: string): Point[] {
     // if (!this.privKey) throw TSSError.default("tss pub cannot be returned until you've reconstructed tkey");
     // if (!this.metadata) throw TSSError.metadataUndefined();
+    if (tkey.getTkeyStatus() !== TkeyStatus.RECONSTRUCTED) throw TSSError.default("tkey must be reconstructed");
+    if (!tssTag) tssTag = this.tssTag;
     const metadata = tkey.getMetadata();
-    const tssPolyCommits = metadata.tssPolyCommits[this.tssTag];
-    if (!tssPolyCommits) throw TSSError.default(`tss poly commits not found for tssTag ${this.tssTag}`);
+    const tssPolyCommits = metadata.tssPolyCommits[tssTag];
+    if (!tssPolyCommits) throw TSSError.default(`tss poly commits not found for tssTag ${tssTag}`);
     if (tssPolyCommits.length === 0) throw TSSError.default("tss poly commits is empty");
     return tssPolyCommits;
   }
 
-  getTSSPub(tkey: ThresholdKey): Point {
-    return this.getTSSCommits(tkey)[0];
+  getTSSPub(tkey: ThresholdKey, tssTag?: string): Point {
+    if (!tssTag) tssTag = this.tssTag;
+    return this.getTSSCommits(tkey, tssTag)[0];
   }
 
   /**
    * getTSSShare accepts a factorKey and returns the TSS share based on the factor encrypted TSS shares in the metadata
    * @param factorKey - factor key
    */
-  async getTSSShare(tkey: ThresholdKey, factorKey: BN, opts?: { threshold: number }): Promise<{ tssIndex: number; tssShare: BN }> {
-    // check tkey for write state
-    // if (!this.privKey) throw TSSError.default("tss share cannot be returned until you've reconstructed tkey");
+  async getTSSShare(tkey: ThresholdKey, factorKey: BN, opts?: { threshold?: number; tssTag?: string }): Promise<{ tssIndex: number; tssShare: BN }> {
+    if (tkey.getTkeyStatus() !== TkeyStatus.RECONSTRUCTED) throw TSSError.default("tkey must be reconstructed");
+
+    const tssTag = opts?.tssTag || this.tssTag;
 
     const factorPub = getPubKeyPoint(factorKey);
-    const factorEncs = this.getFactorEncs(tkey, factorPub);
+    const factorEncs = this.getFactorEncs(tkey, factorPub, tssTag);
     const { userEnc, serverEncs, tssIndex, type } = factorEncs;
     const userDecryption = await decrypt(Buffer.from(factorKey.toString(16, 64), "hex"), userEnc);
     const serverDecryptions = await Promise.all(
@@ -106,7 +130,7 @@ export class TSSModule {
       if (buf === null) return null;
       return new BN(buf.toString("hex"), "hex");
     });
-    const tssCommits = this.getTSSCommits(tkey);
+    const tssCommits = this.getTSSCommits(tkey, tssTag);
 
     const userDec = tssShareBNs[0];
 
@@ -156,19 +180,20 @@ export class TSSModule {
   }
 
   //   getFactorEncryptedData() {}
-  getFactorEncs(tkey: ThresholdKey, factorPub: Point): FactorEnc {
+  getFactorEncs(tkey: ThresholdKey, factorPub: Point, tssTag: string): FactorEnc {
     const metadata = tkey.getMetadata();
     if (!metadata) throw TSSError.default("no metadata found");
     if (!metadata.factorEncs) throw TSSError.default("no factor encs mapping");
     if (!metadata.factorPubs) throw TSSError.default("no factor pubs mapping");
 
-    const factorPubs = metadata.factorPubs[this.tssTag];
-    if (!factorPubs) throw TSSError.default(`no factor pubs for this tssTag ${this.tssTag}`);
+    const factorPubs = metadata.factorPubs[tssTag];
+    if (!factorPubs) throw TSSError.default(`no factor pubs for this tssTag ${tssTag}`);
     if (factorPubs.filter((f) => f.x.cmp(factorPub.x) === 0 && f.y.cmp(factorPub.y) === 0).length === 0)
-      throw TSSError.default(`factor pub ${factorPub} not found for tssTag ${this.tssTag}`);
-    if (!metadata.factorEncs[this.tssTag]) throw TSSError.default(`no factor encs for tssTag ${this.tssTag}`);
+      throw TSSError.default(`factor pub ${factorPub.x} not found for tssTag ${tssTag}`);
+    if (!metadata.factorEncs[tssTag]) throw TSSError.default(`no factor encs for tssTag ${tssTag}`);
+
     const factorPubID = factorPub.x.toString(16, 64);
-    return metadata.factorEncs[this.tssTag][factorPubID];
+    return metadata.factorEncs[tssTag][factorPubID];
   }
 
   async generateNewShare(
@@ -180,23 +205,25 @@ export class TSSModule {
       newTSSIndex: number;
       authSignatures?: string[];
       selectedServers?: number[];
+      tssTag?: string;
     }
   ): Promise<GenerateNewShareResult> {
     if (!tssOptions) throw TSSError.default("must provide tss options when calling generateNewShare with useTSS true");
     const { newFactorPub, inputTSSIndex, inputTSSShare, newTSSIndex, selectedServers, authSignatures } = tssOptions;
+    const tssTag = tssOptions?.tssTag || this.tssTag;
 
     const metadata = tkey.getMetadata();
-    if (!metadata.tssPolyCommits[this.tssTag]) throw new Error(`tss key has not been initialized for tssTag ${this.tssTag}`);
-    const existingFactorPubs = metadata.factorPubs[this.tssTag];
+    if (!metadata.tssPolyCommits[tssTag]) throw new Error(`tss key has not been initialized for tssTag ${tssTag}`);
+    const existingFactorPubs = metadata.factorPubs[tssTag];
     const updatedFactorPubs = existingFactorPubs.concat([newFactorPub]);
 
     // only modify factorPubs
     metadata.addTSSData({
       tssTag: this.tssTag,
-      tssNonce: metadata.tssNonces[this.tssTag],
-      tssPolyCommits: metadata.tssPolyCommits[this.tssTag],
+      tssNonce: metadata.tssNonces[tssTag],
+      tssPolyCommits: metadata.tssPolyCommits[tssTag],
       factorPubs: updatedFactorPubs,
-      factorEncs: metadata.factorEncs[this.tssTag],
+      factorEncs: metadata.factorEncs[tssTag],
     });
 
     const verifierId = tkey.getServiceProvider().getVerifierNameVerifierId();
@@ -206,10 +233,10 @@ export class TSSModule {
       Math.ceil(rssNodeDetails.serverEndpoints.length / 2)
     );
 
-    const existingTSSIndexes = existingFactorPubs.map((fb) => this.getFactorEncs(tkey, fb).tssIndex);
+    const existingTSSIndexes = existingFactorPubs.map((fb) => this.getFactorEncs(tkey, fb, tssTag).tssIndex);
     const updatedTSSIndexes = existingTSSIndexes.concat([newTSSIndex]);
 
-    await this._refreshTSSShares(tkey, false, inputTSSShare, inputTSSIndex, updatedFactorPubs, updatedTSSIndexes, verifierId, {
+    await this._refreshTSSShares(tkey, false, inputTSSShare, inputTSSIndex, updatedFactorPubs, updatedTSSIndexes, verifierId, tssTag, {
       ...rssNodeDetails,
       selectedServers: selectedServers || randomSelectedServers,
       authSignatures,
@@ -227,25 +254,28 @@ export class TSSModule {
       factorPub: Point;
       authSignatures: string[];
       selectedServers?: number[];
+      tssTag?: string;
     },
     shareIndex: BNString
   ) {
+    const tssTag = tssOptions?.tssTag || this.tssTag;
+
     const metadata = tkey.getMetadata();
     const { factorPub, inputTSSIndex, inputTSSShare, selectedServers, authSignatures } = tssOptions;
-    const existingFactorPubs = metadata.factorPubs[this.tssTag];
+    const existingFactorPubs = metadata.factorPubs[tssTag];
 
     const found = existingFactorPubs.filter((f) => f.x.eq(factorPub.x) && f.y.eq(factorPub.y));
     if (found.length === 0) throw TSSError.default("could not find factorPub to delete");
     if (found.length > 1) throw TSSError.default("found two or more factorPubs that match, error in metadata");
     const updatedFactorPubs = existingFactorPubs.filter((f) => !f.x.eq(factorPub.x) || !f.y.eq(factorPub.y));
-    metadata.addTSSData({ tssTag: this.tssTag, factorPubs: updatedFactorPubs });
+    metadata.addTSSData({ tssTag, factorPubs: updatedFactorPubs });
     const rssNodeDetails = await this._getRssNodeDetails(tkey);
     const randomSelectedServers = randomSelection(
       new Array(rssNodeDetails.serverEndpoints.length).fill(null).map((_, i) => i + 1),
       Math.ceil(rssNodeDetails.serverEndpoints.length / 2)
     );
 
-    const updatedTSSIndexes = updatedFactorPubs.map((fb) => this.getFactorEncs(tkey, fb).tssIndex);
+    const updatedTSSIndexes = updatedFactorPubs.map((fb) => this.getFactorEncs(tkey, fb, tssTag).tssIndex);
 
     await this._refreshTSSShares(
       tkey,
@@ -255,6 +285,7 @@ export class TSSModule {
       updatedFactorPubs,
       updatedTSSIndexes,
       tkey.getServiceProvider().getVerifierNameVerifierId(),
+      tssTag,
       {
         ...rssNodeDetails,
         selectedServers: selectedServers || randomSelectedServers,
@@ -267,7 +298,13 @@ export class TSSModule {
     return result;
   }
 
-  async _initializeNewTSSKey(tkey: ThresholdKey, tssTag: string, deviceTSSShare, factorPub, deviceTSSIndex?): Promise<InitializeNewTSSKeyResult> {
+  async _initializeNewTSSKey(
+    tkey: ThresholdKey,
+    tssTag: string,
+    deviceTSSShare,
+    factorPub: Point,
+    deviceTSSIndex?: number
+  ): Promise<InitializeNewTSSKeyResult> {
     let tss2: BN;
     const _tssIndex = deviceTSSIndex || 2; // TODO: fix
     if (deviceTSSShare) {
@@ -279,6 +316,7 @@ export class TSSModule {
     const { pubKey: tss1Pub } = await tkey.serviceProvider.getTSSPubKey(tssTag, 0);
     const tss1PubKey = ecCurve.keyFromPublic({ x: tss1Pub.x.toString(16, 64), y: tss1Pub.y.toString(16, 64) }).getPublic();
     const tss2Pub = getPubKeyPoint(tss2);
+
     const tss2PubKey = ecCurve.keyFromPublic({ x: tss2Pub.x.toString(16, 64), y: tss2Pub.y.toString(16, 64) }).getPublic();
 
     const L1_0 = getLagrangeCoeffs([1, _tssIndex], 1, 0);
@@ -325,6 +363,7 @@ export class TSSModule {
     factorPubs: Point[],
     targetIndexes: number[],
     verifierNameVerifierId: string,
+    tssTag: string,
     serverOpts: {
       serverEndpoints: string[];
       serverPubKeys: PointHex[];
@@ -334,11 +373,13 @@ export class TSSModule {
     }
   ): Promise<void> {
     // if (!this.metadata) throw TSSError.metadataUndefined();
-    // if (!this.metadata.tssPolyCommits) throw TSSError.default(`tss poly commits obj not found`);
+    if (tkey.getTkeyStatus() !== TkeyStatus.RECONSTRUCTED) throw TSSError.default(`tkey is not active`);
+    if (!tkey.metadata.tssPolyCommits) throw TSSError.default(`tss poly commits obj not found`);
 
+    const tssTagLocal = tssTag || this.tssTag;
     const metadata = tkey.getMetadata();
-    const tssCommits = metadata.tssPolyCommits[this.tssTag];
-    if (!tssCommits) throw TSSError.default(`tss commits not found for tssTag ${this.tssTag}`);
+    const tssCommits = metadata.tssPolyCommits[tssTagLocal];
+    if (!tssCommits) throw TSSError.default(`tss commits not found for tssTag ${tssTagLocal}`);
     if (tssCommits.length === 0) throw TSSError.default(`tssCommits is empty`);
     const tssPubKeyPoint = tssCommits[0];
     const tssPubKey = hexPoint(tssPubKeyPoint);
@@ -352,23 +393,24 @@ export class TSSModule {
     });
 
     if (!metadata.factorPubs) throw TSSError.default(`factorPubs obj not found`);
-    if (!factorPubs) throw TSSError.default(`factorPubs not found for tssTag ${this.tssTag}`);
+    if (!factorPubs) throw TSSError.default(`factorPubs not found for tssTag ${tssTagLocal}`);
     if (factorPubs.length === 0) throw TSSError.default(`factorPubs is empty`);
 
     if (!metadata.tssNonces) throw TSSError.default(`tssNonces obj not found`);
-    const tssNonce: number = metadata.tssNonces[this.tssTag] || 0;
+    const tssNonce: number = metadata.tssNonces[tssTagLocal] || 0;
 
-    const oldLabel = `${verifierNameVerifierId}\u0015${this.tssTag}\u0016${tssNonce}`;
-    const newLabel = `${verifierNameVerifierId}\u0015${this.tssTag}\u0016${tssNonce + 1}`;
+    const oldLabel = `${verifierNameVerifierId}\u0015${tssTagLocal}\u0016${tssNonce}`;
+    const newLabel = `${verifierNameVerifierId}\u0015${tssTagLocal}\u0016${tssNonce + 1}`;
 
-    const { pubKey: newTSSServerPub, nodeIndexes } = await tkey.serviceProvider.getTSSPubKey(this.tssTag, tssNonce + 1);
+    const { pubKey: newTSSServerPub, nodeIndexes } = await tkey.serviceProvider.getTSSPubKey(tssTagLocal, tssNonce + 1);
     let finalSelectedServers = selectedServers;
 
     if (nodeIndexes?.length > 0) {
       finalSelectedServers = nodeIndexes.slice(0, Math.min(selectedServers.length, nodeIndexes.length));
     }
     // eslint-disable-next-line no-console
-    console.log("newTSSServerPub", finalSelectedServers, nodeIndexes, newTSSServerPub.x.toString("hex"), this.tssTag, tssNonce + 1);
+    console.log("newTSSServerPub", finalSelectedServers, nodeIndexes, newTSSServerPub.x.toString("hex"), tssTagLocal, tssNonce + 1);
+
     const refreshResponses = await rssClient.refresh({
       factorPubs: factorPubs.map((f) => hexPoint(f)),
       targetIndexes,
@@ -399,7 +441,7 @@ export class TSSModule {
       };
     }
 
-    metadata.addTSSData({ tssTag: this.tssTag, tssNonce: tssNonce + 1, tssPolyCommits: newTSSCommits, factorPubs, factorEncs });
+    metadata.addTSSData({ tssTag: tssTagLocal, tssNonce: tssNonce + 1, tssPolyCommits: newTSSCommits, factorPubs, factorEncs });
     if (updateMetadata) await tkey._syncShareMetadata();
   }
 
@@ -424,13 +466,12 @@ export class TSSModule {
       factorEncs?: {
         [factorPubID: string]: FactorEnc;
       };
-    },
-    updateMetadata = true
+    }
   ) {
-    if (tssData.tssTag) tssData.tssTag = this.tssTag;
     // overwrite default tss tag if provided from args
     tkey.metadata.addTSSData({ tssTag: this.tssTag, ...tssData });
-    if (updateMetadata) await tkey._syncShareMetadata();
+    await tkey._syncShareMetadata();
+    if (!tkey.manualSync) tkey.syncLocalMetadataTransitions();
   }
 }
 

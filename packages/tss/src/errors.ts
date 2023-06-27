@@ -20,8 +20,6 @@ export abstract class TkeyError extends Error implements ITkeyError {
 
     this.code = code;
     this.message = message || "";
-    // Set name explicitly as minification can mangle class names
-    Object.defineProperty(this, "name", { value: "TkeyError" });
   }
 
   toJSON(): ITkeyError {
@@ -55,6 +53,6 @@ export class TSSError extends TkeyError {
   }
 
   public static default(extraMessage = ""): ITkeyError {
-    return new TSSError(3000, `${TSSError.messages[8000]}${extraMessage}`);
+    return new TSSError(8000, `${TSSError.messages[8000]}${extraMessage}`);
   }
 }

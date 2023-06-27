@@ -52,7 +52,7 @@ export function getServiceProvider(params) {
 }
 
 export async function setupTSSMocks(opts) {
-  let { serviceProvider, verifierName, verifierId, maxTSSNonceToSimulate, tssTag } = opts;
+  let { serviceProvider, verifierName, verifierId, maxTSSNonceToSimulate, tssTag, postboxKey } = opts;
   tssTag = tssTag || "default";
   serviceProvider._setVerifierNameVerifierId(verifierName, verifierId);
   const vid = serviceProvider.getVerifierNameVerifierId();
@@ -99,8 +99,11 @@ export async function setupTSSMocks(opts) {
   serviceProvider.rssNodeDetails = { ...serviceProvider.tssNodeDetails };
 
   // update new serviceprovider postbox key
-  const postboxKey = new BN(generatePrivate());
-  serviceProvider.postboxKey = postboxKey.toString(16, 64);
+  if (!postboxKey) {
+    const postboxKeyGenerated = new BN(generatePrivate());
+    serviceProvider.postboxKey = postboxKeyGenerated.toString(16, 64);
+  }
+
   return {
     serverEndpoints,
     serverPubKeys,
@@ -188,7 +191,7 @@ export async function assignTssDkgKeys(opts) {
 }
 
 export async function setupTSS(opts) {
-  const { serviceProvider, verifierName, verifierId, maxTSSNonceToSimulate, tssTag, MOCK_RSS } = opts;
+  const { serviceProvider, verifierName, verifierId, maxTSSNonceToSimulate, tssTag, MOCK_RSS, postboxKey } = opts;
   if (MOCK_RSS) {
     const { serverEndpoints, serverPubKeys, serverDKGPrivKeys, serverDKGPubKeys } = await setupTSSMocks({
       serviceProvider,
@@ -196,6 +199,7 @@ export async function setupTSS(opts) {
       verifierId,
       maxTSSNonceToSimulate,
       tssTag,
+      postboxKey,
     });
     const signatures = "signature";
     return {
@@ -204,6 +208,7 @@ export async function setupTSS(opts) {
     };
   }
 
+  // get signature and postboxkey from nodes
   const { signatures, postboxkey } = await fetchPostboxKeyAndSigs({
     serviceProvider,
     verifierName,
@@ -215,6 +220,7 @@ export async function setupTSS(opts) {
     verifierName,
     verifierId,
     maxTSSNonceToSimulate,
+    tssTag,
   });
 
   return {
