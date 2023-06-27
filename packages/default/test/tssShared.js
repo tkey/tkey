@@ -90,7 +90,7 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
 
       const factorPubs = [factorPub, factorPub2];
       const { serverEndpoints, serverPubKeys } = await sp.getRSSNodeDetails();
-      await tssModule2._refreshTSSShares(tb2, true, retrievedTSS, retrievedTSSIndex, factorPubs, [2, 3], testId, tssModule2.tssTag, {
+      await tssModule2._refreshTSSShares(tb2, true, retrievedTSS, retrievedTSSIndex, factorPubs, [2, 3], testId, {
         serverThreshold: 3,
         selectedServers: [1, 2, 3],
         serverEndpoints,
@@ -178,7 +178,9 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
       const deviceTSSIndexTagged = 2;
       const factorKeyTagged = new BN(generatePrivate());
       const factorPubTagged = getPubKeyPoint(factorKeyTagged);
-      await tssModule.createTaggedTSSShare(tb1, "testTag", factorPubTagged, deviceTSSShareTagged, deviceTSSIndexTagged);
+
+      const tssModuleTag = new TSSModule("modulename", "testTag");
+      await tssModuleTag.createTaggedTSSShare(tb1, factorPubTagged, deviceTSSShareTagged, deviceTSSIndexTagged);
       // {
       //   deviceTSSIndex: deviceTSSIndexTagged,
       //   deviceTSSShare: deviceTSSShareTagged,
@@ -212,7 +214,7 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
 
       // const { tssShare: retrievedTSS, tssIndex: retrievedTSSIndex } = await tssModule3.getTSSShare(tb2, factorKeyTagged, { tssTag: "testTag" });
       const { tssShare: retrievedTSS3, tssIndex: retrievedTSSIndex3 } = await tssModule3.getTSSShare(tb2, factorKeyTagged);
-      const tssCommits3 = tssModule3.getTSSCommits(tb2, "testTag");
+      const tssCommits3 = tssModule3.getTSSCommits(tb2);
 
       const tssPrivKey3 = getLagrangeCoeffs([1, retrievedTSSIndex3], 1)
         .mul(s1dkg[0])
@@ -229,7 +231,7 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
 
       const factorPubs = [factorPub, factorPub2];
       const { serverEndpoints, serverPubKeys } = await sp.getRSSNodeDetails();
-      await tssModule2._refreshTSSShares(tb2, true, retrievedTSS, retrievedTSSIndex, factorPubs, [2, 3], testId, "superTag", {
+      await tssModule2._refreshTSSShares(tb2, true, retrievedTSS, retrievedTSSIndex, factorPubs, [2, 3], testId, {
         serverThreshold: 3,
         selectedServers: [1, 2, 3],
         serverEndpoints,
@@ -423,7 +425,7 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
       const factorPubs = [factorPub, factorPub2];
       const { serverEndpoints, serverPubKeys } = await sp.getRSSNodeDetails();
 
-      await tssModule._refreshTSSShares(tb1, true, retrievedTSS, retrievedTSSIndex, factorPubs, [2, 3], testId, tssModule.tssTag, {
+      await tssModule._refreshTSSShares(tb1, true, retrievedTSS, retrievedTSSIndex, factorPubs, [2, 3], testId, {
         serverThreshold: 3,
         selectedServers: [1, 2, 3],
         serverEndpoints,
@@ -457,7 +459,7 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
 
       const tb2 = await ThresholdKey.fromJSON(JSON.parse(serialized2), { serviceProvider: sp, storageLayer, manualSync: mode });
       {
-        const { tssShare: newTSS2 } = await tb2.getTSSShare(factorKey);
+        const { tssShare: newTSS2 } = await tssModule.getTSSShare(tb2, factorKey);
         const newTSSPrivKey = getLagrangeCoeffs([1, 2], 1)
           .mul(new BN(serverDKGPrivKeys[1], "hex"))
           .add(getLagrangeCoeffs([1, 2], 2).mul(newTSS2))
@@ -466,7 +468,7 @@ export const tssSharedTests = (mode, torusSP, storageLayer, MOCK_RSS) => {
       }
 
       {
-        const { tssShare: newTSS2 } = await tb2.getTSSShare(factorKey2);
+        const { tssShare: newTSS2 } = await tssModule.getTSSShare(tb2, factorKey2);
         const newTSSPrivKey = getLagrangeCoeffs([1, 3], 1)
           .mul(new BN(serverDKGPrivKeys[1], "hex"))
           .add(getLagrangeCoeffs([1, 3], 3).mul(newTSS2))
