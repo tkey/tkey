@@ -466,6 +466,9 @@ class ThresholdKey implements ITKey {
 
   async createTaggedTSSShare(tssTag: string, factorPub: Point, tssShare: BN, tssIndex: number) {
     if (!this.privKey) throw CoreError.default("tkey must be reconstructed");
+    if (!this.metadata) throw CoreError.metadataUndefined();
+    if (this.metadata.factorPubs[tssTag]) throw CoreError.default(`tssTag ${tssTag} already exists`);
+
     const { factorEncs, factorPubs, tssPolyCommits } = await this._initializeNewTSSKey(tssTag, tssShare, factorPub, tssIndex);
     await this.metadata.addTSSData({
       tssTag,
