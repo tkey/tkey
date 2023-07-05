@@ -30,7 +30,7 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: "npm"
 
-      - name: Install dependencies, bootstrap, pack
+      - name: Install dependencies, pack
         run: |
           cd ./tkey
           npm ci

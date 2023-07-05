@@ -10,6 +10,7 @@ import CustomAuth, {
   TorusHybridAggregateLoginResponse,
   TorusLoginResponse,
 } from "@toruslabs/customauth";
+import Torus from "@toruslabs/torus.js";
 import BN from "bn.js";
 
 class TorusServiceProvider extends ServiceProviderBase {
@@ -43,21 +44,24 @@ class TorusServiceProvider extends ServiceProviderBase {
 
   async triggerLogin(params: SubVerifierDetails): Promise<TorusLoginResponse> {
     const obj = await this.directWeb.triggerLogin(params);
-    this.postboxKey = new BN(obj.privateKey, "hex");
+    const localPrivKey = Torus.getPostboxKey(obj);
+    this.postboxKey = new BN(localPrivKey, "hex");
     return obj;
   }
 
   async triggerAggregateLogin(params: AggregateLoginParams): Promise<TorusAggregateLoginResponse> {
     const obj = await this.directWeb.triggerAggregateLogin(params);
-    this.postboxKey = new BN(obj.privateKey, "hex");
+    const localPrivKey = Torus.getPostboxKey(obj);
+    this.postboxKey = new BN(localPrivKey, "hex");
     return obj;
   }
 
   async triggerHybridAggregateLogin(params: HybridAggregateLoginParams): Promise<TorusHybridAggregateLoginResponse> {
     const obj = await this.directWeb.triggerHybridAggregateLogin(params);
-    const aggregateLoginKey = obj.aggregateLogins[0].privateKey;
+    const aggregateLoginKey = Torus.getPostboxKey(obj.aggregateLogins[0]);
+    const singleLoginKey = Torus.getPostboxKey(obj.singleLogin);
     this.postboxKey = new BN(aggregateLoginKey, "hex");
-    this.singleLoginKey = new BN(obj.singleLogin.privateKey, "hex");
+    this.singleLoginKey = new BN(singleLoginKey, "hex");
     return obj;
   }
 

@@ -10,6 +10,7 @@ const torusSp = new ServiceProviderTorus({
   customAuthArgs: {
     baseUrl: "http://localhost:3000",
     web3AuthClientId: "test",
+    network: "mainnet",
   },
 });
 const metadataURL = getMetadataUrl();
