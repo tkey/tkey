@@ -29,6 +29,10 @@ jobs:
         with:
           path: tkey
 
+      - name: switch path
+        run: |
+          cd ./tkey
+
       - name: Set up node
         uses: actions/setup-node@v3
         with:
@@ -37,7 +41,6 @@ jobs:
 
       - name: Install dependencies, pack
         run: |
-          cd ./tkey
           npm ci
           npm run pack:lerna
 
