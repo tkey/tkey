@@ -38,6 +38,7 @@ export function getServiceProvider(params) {
         // passing it just to satisfy direct auth checks.
         baseUrl: "http://localhost:3000",
         web3AuthClientId: "test",
+        network: "mainnet",
       },
     });
   }

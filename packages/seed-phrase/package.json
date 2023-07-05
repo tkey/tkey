@@ -43,7 +43,7 @@
   "dependencies": {
     "@tkey/common-types": "^9.0.0",
     "bn.js": "^5.2.1",
-    "ethers": "^6.3.0"
+    "ethers": "^6.6.2"
   },
   "devDependencies": {
     "@types/bn.js": "^5.1.1"

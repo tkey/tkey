@@ -1446,6 +1446,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
           // This url has no effect as postbox key is passed, passing it just to satisfy direct auth checks.
           baseUrl: "http://localhost:3000",
           web3AuthClientId: "test",
+          network: "mainnet",
         },
       });
       const storageLayer2 = new TorusStorageLayer({ hostUrl: getMetadataUrl() });
@@ -1509,6 +1510,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
           // This url has no effect as postbox key is passed, passing it just to satisfy direct auth checks.
           baseUrl: "http://localhost:3000",
           web3AuthClientId: "test",
+          network: "mainnet",
         },
       });
 
@@ -1537,6 +1539,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
           // This url has no effect as postbox key is passed, passing it just to satisfy direct auth checks.
           baseUrl: "http://localhost:3000",
           web3AuthClientId: "test",
+          network: "mainnet",
         },
       });
       await serviceProvider.directWeb.torus.setCustomKey({ torusKeyHex: postboxKeyBN.toString("hex"), customKeyHex: customKey.toString("hex") });

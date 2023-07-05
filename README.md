@@ -63,7 +63,7 @@ For more information, check out the [technical overview](https://hackmd.io/Tej2t
 ### Installation
 
 ```
-npm run bootstrap
+npm install
 npm run pack:lerna
 ```
 

@@ -21,7 +21,7 @@ import TorusServiceProvider from "@tkey/service-provider-torus";
 const customAuthParams = {
   baseUrl: `${window.location.origin}/serviceworker`,
   enableLogging: true,
-  network: "testnet" as any,
+  network: "testnet",
   web3AuthClientId: "test",
 };
 const serviceProvider = new TorusServiceProvider({ customAuthParams });
