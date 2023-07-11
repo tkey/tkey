@@ -354,9 +354,7 @@ class ThresholdKey implements ITKey {
     if (useTSS) {
       if (!this.metadata.tssPolyCommits[this.tssTag]) {
         // if tss shares have not been created for this tssTag, create new tss sharing
-        const { factorEncs, factorPubs, tssPolyCommits } = await this._initializeNewTSSKey(this.tssTag, deviceTSSShare, factorPub, deviceTSSIndex);
-        this.metadata.addTSSData({ tssTag: this.tssTag, tssNonce: 0, tssPolyCommits, factorPubs, factorEncs });
-        await this._syncShareMetadata();
+        await this._initializeNewTSSKey(this.tssTag, deviceTSSShare, factorPub, deviceTSSIndex);
       }
     }
 
