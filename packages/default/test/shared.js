@@ -910,7 +910,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       });
     });
     describe("multi tag tss", function () {
-      it.only("#should be able to refresh with 4 tagged tss shares and refersh from 2/2 -> 2/3 ", async function () {
+      it("#should be able to refresh with 4 tagged tss shares and refersh from 2/2 -> 2/3 ", async function () {
         const sp = customSP;
         if (!sp.useTSS) this.skip();
 
