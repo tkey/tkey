@@ -188,3 +188,9 @@ export async function assignTssDkgKeys(opts) {
     // serverDKGPubKeys,
   };
 }
+
+export async function executeAtomicAsyncTasks(tasks) {
+  for (const task of tasks) {
+    await task(); // Assuming task is an async function
+  }
+}
