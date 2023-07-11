@@ -74,7 +74,7 @@ function compareReconstructedKeys(a, b, message) {
 export const sharedTestCases = (mode, torusSP, storageLayer) => {
   const customSP = torusSP;
   const customSL = storageLayer;
-  describe.only("TSS tests", function () {
+  describe("TSS tests", function () {
     it("#should be able to refresh tss shares", async function () {
       const sp = customSP;
       if (!sp.useTSS) this.skip();
@@ -207,11 +207,9 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const reconstructedKey = await tb1.reconstructKey();
 
       const am1 = tb1.generateAuthMetadata({ input: [tb1.metadata] });
-      console.log("am1 length", JSON.stringify(am1[0]).length);
       await tb1.createTaggedTSSShare(factorPub, deviceTSSShare, deviceTSSIndex);
 
       const am2 = tb1.generateAuthMetadata({ input: [tb1.metadata] });
-      console.log("am2 length", JSON.stringify(am2[0]).length);
 
       const deviceTSSShareTag = new BN(generatePrivate());
       const deviceTSSIndexTag = 2;
@@ -221,7 +219,6 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       await tb1.createTaggedTSSShare(factorPubTag, deviceTSSShareTag, deviceTSSIndexTag);
 
       const amNewTag = tb1.generateAuthMetadata({ input: [tb1.metadata] });
-      console.log("amNewTag length", JSON.stringify(amNewTag[0]).length);
 
       const newShare = await tb1.generateNewShare();
       await tb1.syncLocalMetadataTransitions();
@@ -276,7 +273,6 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       });
 
       const amRefreshed = tb2.generateAuthMetadata({ input: [tb2.metadata] });
-      console.log("amRefreshed length", JSON.stringify(amRefreshed[0]).length);
 
       {
         const { tssShare: newTSS2, tssIndex } = await tb2.getTSSShare(factorKey);
@@ -316,7 +312,6 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       });
 
       const amRefreshed2 = tb2.generateAuthMetadata({ input: [tb2.metadata] });
-      console.log("amRefreshed length", JSON.stringify(amRefreshed2[0]).length);
 
       const factorKey2Tag = new BN(generatePrivate());
       const factorPub2Tag = getPubKeyPoint(factorKey2Tag);
@@ -332,7 +327,6 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       });
 
       const amTagRefreshed = tb2.generateAuthMetadata({ input: [tb2.metadata] });
-      console.log("amTagRefreshed length", JSON.stringify(amTagRefreshed[0]).length);
       {
         const { tssShare: newTSS2, tssIndex } = await tb2.getTSSShare(factorKeyTag);
         const newTSSPrivKey = getLagrangeCoeffs([1, 2], 1)
@@ -915,8 +909,8 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         await tb3.updateSDK();
       });
     });
-    describe.only("multi tag tss", function () {
-      it.only("#should be able to refresh with 4 tagged tss shares and refersh from 2/2 -> 2/3 ", async function () {
+    describe("multi tag tss", function () {
+      it("#should be able to refresh with 4 tagged tss shares and refersh from 2/2 -> 2/3 ", async function () {
         const sp = customSP;
         if (!sp.useTSS) this.skip();
 
@@ -964,14 +958,12 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         const reconstructedKey = await tb1.reconstructKey();
 
         const am1 = tb1.generateAuthMetadata({ input: [tb1.metadata] });
-        console.log("am1 length", JSON.stringify(am1[0]).length);
 
         const tagTasks = tags.map((tag, index) => {
           return async () => {
             tb1.setTssTag(tag);
             await tb1.createTaggedTSSShare(factorPub, deviceTSSShare, deviceTSSIndex);
             const am2 = tb1.generateAuthMetadata({ input: [tb1.metadata] });
-            console.log(`${tag} metadata length`, JSON.stringify(am2[0]).length);
           };
         });
         await executeAtomicAsyncTasks(tagTasks);
@@ -1021,7 +1013,6 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
             });
 
             const amRefreshed = tb2.generateAuthMetadata({ input: [tb2.metadata] });
-            console.log(` Tags tss ${tag} Refreshed length`, JSON.stringify(amRefreshed[0]).length);
 
             {
               const { tssShare: newTSS2, tssIndex } = await tb2.getTSSShare(factorKey);
