@@ -469,7 +469,7 @@ class ThresholdKey implements ITKey {
     if (this.metadata.factorPubs[this.tssTag]) throw CoreError.default(`tssTag ${this.tssTag} already exists`);
 
     const { factorEncs, factorPubs, tssPolyCommits } = await this._initializeNewTSSKey(this.tssTag, tssShare, factorPub, tssIndex);
-    await this.metadata.addTSSData({
+    this.metadata.addTSSData({
       tssTag: this.tssTag,
       tssNonce: 0,
       tssPolyCommits,

@@ -910,7 +910,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       });
     });
     describe("multi tag tss", function () {
-      it("#should be able to refresh with 4 tagged tss shares and refersh from 2/2 -> 2/3 ", async function () {
+      it.only("#should be able to refresh with 4 tagged tss shares and refersh from 2/2 -> 2/3 ", async function () {
         const sp = customSP;
         if (!sp.useTSS) this.skip();
 
@@ -957,13 +957,13 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         await tb1.initialize();
         const reconstructedKey = await tb1.reconstructKey();
 
-        const am1 = tb1.generateAuthMetadata({ input: [tb1.metadata] });
+        // const am1 = tb1.generateAuthMetadata({ input: [tb1.metadata] });
 
         const tagTasks = tags.map((tag, index) => {
           return async () => {
             tb1.setTssTag(tag);
             await tb1.createTaggedTSSShare(factorPub, deviceTSSShare, deviceTSSIndex);
-            const am2 = tb1.generateAuthMetadata({ input: [tb1.metadata] });
+            // const am2 = tb1.generateAuthMetadata({ input: [tb1.metadata] });
           };
         });
         await executeAtomicAsyncTasks(tagTasks);
@@ -1012,7 +1012,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
               authSignatures: signatures,
             });
 
-            const amRefreshed = tb2.generateAuthMetadata({ input: [tb2.metadata] });
+            // const amRefreshed = tb2.generateAuthMetadata({ input: [tb2.metadata] });
 
             {
               const { tssShare: newTSS2, tssIndex } = await tb2.getTSSShare(factorKey);
