@@ -354,7 +354,7 @@ class ThresholdKey implements ITKey {
     if (useTSS) {
       if (!this.metadata.tssPolyCommits[this.tssTag]) {
         // if tss shares have not been created for this tssTag, create new tss sharing
-        await this._initializeNewTSSKey(this.tssTag, deviceTSSShare, factorPub);
+        await this._initializeNewTSSKey(this.tssTag, deviceTSSShare, factorPub, deviceTSSIndex);
       }
     }
 
@@ -456,6 +456,27 @@ class ThresholdKey implements ITKey {
 
   getTSSPub(): Point {
     return this.getTSSCommits()[0];
+  }
+
+  setTssTag(tssTag: string): void {
+    this.tssTag = tssTag;
+  }
+
+  async createTaggedTSSShare(factorPub: Point, tssShare: BN, tssIndex: number) {
+    if (!this.privKey) throw CoreError.default("tkey must be reconstructed");
+    if (!this.metadata) throw CoreError.metadataUndefined();
+    if (!this.tssTag) throw CoreError.default("tssTag must be set");
+    if (this.metadata.factorPubs[this.tssTag]) throw CoreError.default(`tssTag ${this.tssTag} already exists`);
+
+    const { factorEncs, factorPubs, tssPolyCommits } = await this._initializeNewTSSKey(this.tssTag, tssShare, factorPub, tssIndex);
+    this.metadata.addTSSData({
+      tssTag: this.tssTag,
+      tssNonce: 0,
+      tssPolyCommits,
+      factorPubs,
+      factorEncs,
+    });
+    await this._syncShareMetadata();
   }
 
   /**

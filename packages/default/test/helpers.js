@@ -51,13 +51,14 @@ export function getServiceProvider(params) {
   return new ServiceProviderBase({ postboxKey: isEmptyProvider ? null : PRIVATE_KEY });
 }
 
+const MockServers = [new MockServer(), new MockServer(), new MockServer(), new MockServer(), new MockServer()];
 export async function setupTSSMocks(opts) {
-  let { serviceProvider, verifierName, verifierId, maxTSSNonceToSimulate, tssTag } = opts;
+  let { serviceProvider, verifierName, verifierId, maxTSSNonceToSimulate, tssTag, postboxKey } = opts;
   tssTag = tssTag || "default";
   serviceProvider._setVerifierNameVerifierId(verifierName, verifierId);
   const vid = serviceProvider.getVerifierNameVerifierId();
   maxTSSNonceToSimulate = maxTSSNonceToSimulate || 1;
-  const serverEndpoints = [new MockServer(), new MockServer(), new MockServer(), new MockServer(), new MockServer()];
+  const serverEndpoints = MockServers;
   const serverCount = serverEndpoints.length;
   const serverPrivKeys = [];
   for (let i = 0; i < serverCount; i++) {
@@ -96,6 +97,11 @@ export async function setupTSSMocks(opts) {
   }
 
   serviceProvider._setTSSNodeDetails(serverEndpoints, serverPubKeys, serverThreshold);
+  // serviceProvider.rs = { ...serviceProvider.sssEndpoints }
+  if (!postboxKey) {
+    const postboxKeyGenerated = new BN(generatePrivate());
+    serviceProvider.postboxKey = postboxKeyGenerated.toString(16, 64);
+  }
 
   return {
     serverEndpoints,
@@ -181,4 +187,10 @@ export async function assignTssDkgKeys(opts) {
     serverDKGPrivKeys,
     // serverDKGPubKeys,
   };
+}
+
+export async function executeAtomicAsyncTasks(tasks) {
+  for (const task of tasks) {
+    await task(); // Assuming task is an async function
+  }
 }
