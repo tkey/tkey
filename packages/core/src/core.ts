@@ -1455,7 +1455,6 @@ class ThresholdKey implements ITKey {
 
     const shareArray = this.getAllShareStoresForLatestPolynomial().map((x) => x.share.share);
     await this.syncMultipleShareMetadata(shareArray, adjustScopedStore);
-    if (!this.manualSync) await this.syncLocalMetadataTransitions();
   }
 
   async syncMultipleShareMetadata(shares: BN[], adjustScopedStore?: (ss: unknown) => unknown): Promise<void> {
