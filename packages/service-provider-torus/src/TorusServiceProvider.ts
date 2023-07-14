@@ -158,8 +158,8 @@ class TorusServiceProvider extends ServiceProviderBase {
   async triggerAggregateLogin(params: AggregateLoginParams): Promise<TorusAggregateLoginResponse> {
     const obj = await this.directWeb.triggerAggregateLogin(params);
     this.postboxKey = new BN(obj.privateKey, "hex");
-    const { verifier, verifierId } = obj.userInfo[0];
-    this.verifierName = verifier;
+    const { aggregateVerifier, verifierId } = obj.userInfo[0];
+    this.verifierName = aggregateVerifier;
     this.verifierId = verifierId;
     this.verifierType = "aggregate";
     return obj;
