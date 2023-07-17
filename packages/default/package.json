@@ -42,7 +42,7 @@
     "@tkey/share-serialization": "^8.1.0-alpha.0",
     "@tkey/share-transfer": "^8.1.0-alpha.0",
     "@tkey/storage-layer-torus": "^8.1.0-alpha.0",
-    "@toruslabs/eccrypto": "^2.1.1",
+    "@toruslabs/eccrypto": "^3.0.0",
     "@toruslabs/rss-client": "^1.4.1",
     "bn.js": "^5.2.1"
   },

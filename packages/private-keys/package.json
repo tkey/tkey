@@ -42,7 +42,7 @@
   },
   "dependencies": {
     "@tkey/common-types": "^8.1.0-alpha.0",
-    "@toruslabs/tweetnacl-js": "^1.0.3",
+    "@toruslabs/tweetnacl-js": "^1.0.4",
     "bn.js": "^5.2.1",
     "randombytes": "^2.1.0"
   },

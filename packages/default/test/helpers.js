@@ -135,10 +135,16 @@ export async function fetchPostboxKeyAndSigs(opts) {
   const { serviceProvider, verifierName, verifierId } = opts;
   const { serverEndpoints: sssEndpoints } = await serviceProvider.getSSSNodeDetails();
   const token = generateIdToken(verifierId);
-  const retrieveSharesResponse = await serviceProvider.directWeb.torus.retrieveShares(sssEndpoints, verifierName, { verifier_id: verifierId }, token);
+  const retrieveSharesResponse = await serviceProvider.directWeb.torus.retrieveShares(
+    sssEndpoints,
+    [],
+    verifierName,
+    { verifier_id: verifierId },
+    token
+  );
 
   const signatures = [];
-  retrieveSharesResponse.sessionTokenData.filter((session) => {
+  retrieveSharesResponse.sessionData.sessionTokenData.filter((session) => {
     if (session) {
       signatures.push(
         JSON.stringify({
@@ -152,7 +158,7 @@ export async function fetchPostboxKeyAndSigs(opts) {
 
   return {
     signatures,
-    postboxkey: retrieveSharesResponse.privKey.toString(),
+    postboxkey: retrieveSharesResponse.finalKeyData.privKey.toString(),
   };
 }
 // this function is only for testing and will return tss shares only for test verifiers.
@@ -170,11 +176,12 @@ export async function assignTssDkgKeys(opts) {
     const { serverEndpoints: sssEndpoints } = await serviceProvider.getSSSNodeDetails();
     const retrieveSharesResponse = await serviceProvider.directWeb.torus.retrieveShares(
       sssEndpoints,
+      [],
       verifierName,
       { verifier_id: verifierId, extended_verifier_id: extendedVerifierId },
       token
     );
-    serverDKGPrivKeys.push(new BN(retrieveSharesResponse.privKey, "hex"));
+    serverDKGPrivKeys.push(new BN(retrieveSharesResponse.finalKeyData.privKey, "hex"));
   }
 
   return {

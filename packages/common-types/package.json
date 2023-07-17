@@ -43,7 +43,7 @@
     "@babel/runtime": "7.x"
   },
   "dependencies": {
-    "@toruslabs/eccrypto": "^2.1.1",
+    "@toruslabs/eccrypto": "^3.0.0",
     "@toruslabs/rss-client": "^1.4.1",
     "bn.js": "^5.2.1",
     "elliptic": "^6.5.4",
@@ -52,8 +52,8 @@
     "web3-utils": "^1.8.1"
   },
   "devDependencies": {
-    "@toruslabs/customauth": "^14.0.0",
-    "@toruslabs/torus.js": "^9.1.1",
+    "@toruslabs/customauth": "^15.0.2",
+    "@toruslabs/torus.js": "^10.0.4",
     "@types/bn.js": "^5.1.1",
     "@types/elliptic": "^6.4.14"
   },
