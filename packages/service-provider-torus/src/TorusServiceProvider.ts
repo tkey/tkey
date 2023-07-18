@@ -10,7 +10,7 @@ import CustomAuth, {
   TorusHybridAggregateLoginResponse,
   TorusLoginResponse,
 } from "@toruslabs/customauth";
-import { TorusPublicKey } from "@toruslabs/torus.js";
+import Torus, { TorusPublicKey } from "@toruslabs/torus.js";
 import BN from "bn.js";
 
 class TorusServiceProvider extends ServiceProviderBase {
@@ -147,7 +147,8 @@ class TorusServiceProvider extends ServiceProviderBase {
 
   async triggerLogin(params: SubVerifierDetails): Promise<TorusLoginResponse> {
     const obj = await this.directWeb.triggerLogin(params);
-    this.postboxKey = new BN(obj.finalKeyData.privKey, "hex");
+    const localPrivKey = Torus.getPostboxKey(obj);
+    this.postboxKey = new BN(localPrivKey, "hex");
     const { verifier, verifierId } = obj.userInfo;
     this.verifierName = verifier;
     this.verifierId = verifierId;
@@ -157,7 +158,9 @@ class TorusServiceProvider extends ServiceProviderBase {
 
   async triggerAggregateLogin(params: AggregateLoginParams): Promise<TorusAggregateLoginResponse> {
     const obj = await this.directWeb.triggerAggregateLogin(params);
-    this.postboxKey = new BN(obj.finalKeyData.privKey, "hex");
+
+    const localPrivKey = Torus.getPostboxKey(obj);
+    this.postboxKey = new BN(localPrivKey, "hex");
     const { aggregateVerifier, verifierId } = obj.userInfo[0];
     this.verifierName = aggregateVerifier;
     this.verifierId = verifierId;
@@ -167,9 +170,10 @@ class TorusServiceProvider extends ServiceProviderBase {
 
   async triggerHybridAggregateLogin(params: HybridAggregateLoginParams): Promise<TorusHybridAggregateLoginResponse> {
     const obj = await this.directWeb.triggerHybridAggregateLogin(params);
-    const aggregateLoginKey = obj.aggregateLogins[0].finalKeyData.privKey;
+    const aggregateLoginKey = Torus.getPostboxKey(obj.aggregateLogins[0]);
+    const singleLoginKey = Torus.getPostboxKey(obj.singleLogin);
     this.postboxKey = new BN(aggregateLoginKey, "hex");
-    this.singleLoginKey = new BN(obj.singleLogin.finalKeyData.privKey, "hex");
+    this.singleLoginKey = new BN(singleLoginKey, "hex");
     const { verifier, verifierId } = obj.singleLogin.userInfo;
     this.verifierName = verifier;
     this.verifierId = verifierId;

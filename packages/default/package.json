@@ -51,7 +51,8 @@
     "@tkey/seed-phrase": "^8.1.0-alpha.0",
     "@toruslabs/http-helpers": "^4.0.0",
     "jsrsasign": "^10.6.1",
-    "web3-utils": "^1.8.1"
+    "web3-utils": "^1.8.1",
+    "@toruslabs/torus.js": "^10.0.4"
   },
   "peerDependencies": {
     "@babel/runtime": "7.x"

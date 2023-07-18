@@ -4,6 +4,8 @@ import ServiceProviderTorus from "@tkey/service-provider-torus";
 import TorusStorageLayer, { MockStorageLayer } from "@tkey/storage-layer-torus";
 import { generatePrivate } from "@toruslabs/eccrypto";
 import { generatePolynomial, getShare, hexPoint, MockServer, postEndpoint } from "@toruslabs/rss-client";
+// eslint-disable-next-line import/no-extraneous-dependencies
+import Torus from "@toruslabs/torus.js";
 import BN from "bn.js";
 // eslint-disable-next-line import/no-extraneous-dependencies
 import KJUR from "jsrsasign";
@@ -156,9 +158,10 @@ export async function fetchPostboxKeyAndSigs(opts) {
     return null;
   });
 
+  const localPrivKey = Torus.getPostboxKey(retrieveSharesResponse);
   return {
     signatures,
-    postboxkey: retrieveSharesResponse.finalKeyData.privKey.toString(),
+    postboxkey: localPrivKey,
   };
 }
 // this function is only for testing and will return tss shares only for test verifiers.
@@ -181,7 +184,9 @@ export async function assignTssDkgKeys(opts) {
       { verifier_id: verifierId, extended_verifier_id: extendedVerifierId },
       token
     );
-    serverDKGPrivKeys.push(new BN(retrieveSharesResponse.finalKeyData.privKey, "hex"));
+    const localPrivKey = Torus.getPostboxKey(retrieveSharesResponse);
+
+    serverDKGPrivKeys.push(new BN(localPrivKey, "hex"));
   }
 
   return {
