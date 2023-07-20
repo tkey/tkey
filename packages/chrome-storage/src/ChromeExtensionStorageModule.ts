@@ -1,4 +1,4 @@
-import { DeviceShareDescription, IModule, ITKeyApi, ShareStore, StringifiedType } from "@tkey/common-types";
+import { DeviceShareDescription, IModule, ITKeyApi, ShareStore, StringifiedType } from "@tkey-mpc/common-types";
 import { storage } from "webextension-polyfill";
 
 export const CHROME_EXTENSION_STORAGE_MODULE_NAME = "chromeExtensionStorage";

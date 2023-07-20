@@ -1,4 +1,4 @@
-import { getPubKeyPoint, Polynomial } from "@tkey/common-types";
+import { getPubKeyPoint, Polynomial } from "@tkey-mpc/common-types";
 import { generatePrivate } from "@toruslabs/eccrypto";
 import { fail } from "assert";
 import BN from "bn.js";

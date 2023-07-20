@@ -1,5 +1,5 @@
-import { Point, PointHex, StringifiedType, TorusServiceProviderArgs } from "@tkey/common-types";
-import { ServiceProviderBase } from "@tkey/service-provider-base";
+import { Point, PointHex, StringifiedType, TorusServiceProviderArgs } from "@tkey-mpc/common-types";
+import { ServiceProviderBase } from "@tkey-mpc/service-provider-base";
 import CustomAuth, {
   AggregateLoginParams,
   CustomAuthArgs,

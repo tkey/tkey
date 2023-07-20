@@ -1,5 +1,5 @@
 {
-  "name": "@tkey/service-provider-torus",
+  "name": "@tkey-mpc/service-provider-torus",
   "version": "8.1.0-alpha.0",
   "description": "TKey Torus Service Provider Module",
   "author": "Torus Labs",
@@ -38,10 +38,10 @@
     "@babel/runtime": "7.x"
   },
   "dependencies": {
-    "@tkey/common-types": "^8.1.0-alpha.0",
-    "@tkey/service-provider-base": "^8.1.0-alpha.0",
-    "@toruslabs/customauth": "^15.0.2",
-    "@toruslabs/torus.js": "^10.0.4",
+    "@tkey-mpc/common-types": "^8.1.0-alpha.0",
+    "@tkey-mpc/service-provider-base": "^8.1.0-alpha.0",
+    "@toruslabs/customauth": "^15.0.3",
+    "@toruslabs/torus.js": "^10.0.5",
     "bn.js": "^5.2.1",
     "elliptic": "^6.5.4"
   },

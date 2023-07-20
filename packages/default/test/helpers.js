@@ -1,7 +1,7 @@
-import { ecCurve, getPubKeyPoint, Point } from "@tkey/common-types";
-import ServiceProviderBase from "@tkey/service-provider-base";
-import ServiceProviderTorus from "@tkey/service-provider-torus";
-import TorusStorageLayer, { MockStorageLayer } from "@tkey/storage-layer-torus";
+import { ecCurve, getPubKeyPoint, Point } from "@tkey-mpc/common-types";
+import ServiceProviderBase from "@tkey-mpc/service-provider-base";
+import ServiceProviderTorus from "@tkey-mpc/service-provider-torus";
+import TorusStorageLayer, { MockStorageLayer } from "@tkey-mpc/storage-layer-torus";
 import { generatePrivate } from "@toruslabs/eccrypto";
 import { generatePolynomial, getShare, hexPoint, MockServer, postEndpoint } from "@toruslabs/rss-client";
 // eslint-disable-next-line import/no-extraneous-dependencies

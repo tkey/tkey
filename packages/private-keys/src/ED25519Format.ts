@@ -1,4 +1,4 @@
-import { generateID, IPrivateKeyFormat, IPrivateKeyStore } from "@tkey/common-types";
+import { generateID, IPrivateKeyFormat, IPrivateKeyStore } from "@tkey-mpc/common-types";
 import nacl from "@toruslabs/tweetnacl-js";
 import BN from "bn.js";
 

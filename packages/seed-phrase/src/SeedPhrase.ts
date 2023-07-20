@@ -1,4 +1,4 @@
-import { IModule, ISeedPhraseFormat, ISeedPhraseStore, ISeedPhraseStoreWithKeys, ITKeyApi } from "@tkey/common-types";
+import { IModule, ISeedPhraseFormat, ISeedPhraseStore, ISeedPhraseStoreWithKeys, ITKeyApi } from "@tkey-mpc/common-types";
 import BN from "bn.js";
 
 import SeedPhraseError from "./errors";

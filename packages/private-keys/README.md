@@ -1,21 +1,21 @@
 # tKey Private Key Module
 
-[![npm version](https://img.shields.io/npm/v/@tkey/private-keys?label=%22%22)](https://www.npmjs.com/package/@tkey/private-keys/v/latest)                      [![minzip](https://img.shields.io/bundlephobia/minzip/@tkey/private-keys?label=%22%22)](https://bundlephobia.com/result?p=@tkey/private-keys@latest)    
+[![npm version](https://img.shields.io/npm/v/@tkey-mpc/private-keys?label=%22%22)](https://www.npmjs.com/package/@tkey-mpc/private-keys/v/latest)                      [![minzip](https://img.shields.io/bundlephobia/minzip/@tkey-mpc/private-keys?label=%22%22)](https://bundlephobia.com/result?p=@tkey-mpc/private-keys@latest)    
 
 The tKey Private Key Module helps you add or remove the and password as a share for tkey. This module is the part of the [tKey SDK](https://github.com/tkey/tkey/).
 
 ## Installation
 
 ```shell
-npm install --save @tkey/private-keys
+npm install --save @tkey-mpc/private-keys
 ```
 
 ## Initialization
 
-#### Import the `PrivateKeyModule` class from `@tkey/private-keys`
+#### Import the `PrivateKeyModule` class from `@tkey-mpc/private-keys`
 
 ```javascript
-import PrivateKeyModule from "@tkey/private-keys";
+import PrivateKeyModule from "@tkey-mpc/private-keys";
 ```
 
 #### Assign the `PrivateKeyModule` class to a variable

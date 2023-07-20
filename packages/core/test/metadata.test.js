@@ -1,4 +1,4 @@
-import { getPubKeyPoint } from "@tkey/common-types";
+import { getPubKeyPoint } from "@tkey-mpc/common-types";
 import { generatePrivate } from "@toruslabs/eccrypto";
 import { deepStrictEqual } from "assert";
 import BN from "bn.js";

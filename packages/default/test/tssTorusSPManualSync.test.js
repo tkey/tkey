@@ -1,5 +1,5 @@
-// import ServiceProviderBase from "@tkey/service-provider-base";
-import ServiceProviderTorus from "@tkey/service-provider-torus";
+// import ServiceProviderBase from "@tkey-mpc/service-provider-base";
+import ServiceProviderTorus from "@tkey-mpc/service-provider-torus";
 import { generatePrivate } from "@toruslabs/eccrypto";
 
 import { getMetadataUrl, initStorageLayer } from "./helpers";

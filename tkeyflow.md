@@ -9,7 +9,7 @@ const modules = {
 };
 ```
 
-2.  Create tkey instance (using @tkey/default)
+2.  Create tkey instance (using @tkey-mpc/default)
 
 ```js
 const customAuthArgs = {

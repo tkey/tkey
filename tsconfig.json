@@ -15,7 +15,7 @@
     "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
     "paths": {
-      "@tkey/*": ["packages/*/src"]
+      "@tkey-mpc/*": ["packages/*/src"]
     }
   }
 }

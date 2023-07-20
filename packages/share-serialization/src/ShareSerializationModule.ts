@@ -1,4 +1,4 @@
-import { IModule, ITKeyApi } from "@tkey/common-types";
+import { IModule, ITKeyApi } from "@tkey-mpc/common-types";
 import BN from "bn.js";
 
 import { english } from "./english";
