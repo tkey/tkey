@@ -1,5 +1,5 @@
 {
-  "name": "@tkey/chrome-storage",
+  "name": "@tkey-mpc/chrome-storage",
   "version": "8.1.0-alpha.0",
   "description": "TKey Chrome Storage Module",
   "author": "Torus Labs",
@@ -41,12 +41,12 @@
     "@babel/runtime": "7.x"
   },
   "dependencies": {
-    "@tkey/common-types": "^8.1.0-alpha.0",
+    "@tkey-mpc/common-types": "^8.1.0-alpha.0",
     "webextension-polyfill": "^0.10.0"
   },
   "devDependencies": {
-    "@types/chrome": "^0.0.203",
-    "@types/webextension-polyfill": "^0.9.2"
+    "@types/chrome": "^0.0.241",
+    "@types/webextension-polyfill": "^0.10.1"
   },
   "lint-staged": {
     "!(*d).ts": [

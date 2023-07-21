@@ -1,6 +1,6 @@
-import ThresholdKey from "@tkey/core";
-import { ServiceProviderBase } from "@tkey/service-provider-base";
-import { MockStorageLayer, TorusStorageLayer } from "@tkey/storage-layer-torus";
+import ThresholdKey from "@tkey-mpc/core";
+import { ServiceProviderBase } from "@tkey-mpc/service-provider-base";
+import { MockStorageLayer, TorusStorageLayer } from "@tkey-mpc/storage-layer-torus";
 import { deepStrictEqual, strictEqual, throws } from "assert";
 
 import WebStorageModule, { WEB_STORAGE_MODULE_NAME } from "../src/WebStorageModule";

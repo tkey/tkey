@@ -1,21 +1,21 @@
 # tKey Web Storage Module
 
-[![npm version](https://img.shields.io/npm/v/@tkey/web-storage?label=%22%22)](https://www.npmjs.com/package/@tkey/web-storage/v/latest)                       [![minzip](https://img.shields.io/bundlephobia/minzip/@tkey/web-storage?label=%22%22)](https://bundlephobia.com/result?p=@tkey/web-storage@latest)
+[![npm version](https://img.shields.io/npm/v/@tkey-mpc/web-storage?label=%22%22)](https://www.npmjs.com/package/@tkey-mpc/web-storage/v/latest)                       [![minzip](https://img.shields.io/bundlephobia/minzip/@tkey-mpc/web-storage?label=%22%22)](https://bundlephobia.com/result?p=@tkey-mpc/web-storage@latest)
 
 The tKey Web Storage Module helps you store and recall key shares in the from local and file storage. This module is the part of the [tKey SDK](https://github.com/tkey/tkey/).
 
 ## Installation
 
 ```shell
-npm install --save @tkey/web-storage
+npm install --save @tkey-mpc/web-storage
 ```
 
 ## Initialization
 
-#### Import the `WebStorageModule` class from `@tkey/web-storage`
+#### Import the `WebStorageModule` class from `@tkey-mpc/web-storage`
 
 ```javascript
-import WebStorageModule from "@tkey/web-storage";
+import WebStorageModule from "@tkey-mpc/web-storage";
 ```
 
 #### Assign the `WebStorageModule` class to a variable

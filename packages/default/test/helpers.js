@@ -1,9 +1,11 @@
-import { ecCurve, getPubKeyPoint, Point } from "@tkey/common-types";
-import ServiceProviderBase from "@tkey/service-provider-base";
-import ServiceProviderTorus from "@tkey/service-provider-torus";
-import TorusStorageLayer, { MockStorageLayer } from "@tkey/storage-layer-torus";
+import { ecCurve, getPubKeyPoint, Point } from "@tkey-mpc/common-types";
+import ServiceProviderBase from "@tkey-mpc/service-provider-base";
+import ServiceProviderTorus from "@tkey-mpc/service-provider-torus";
+import TorusStorageLayer, { MockStorageLayer } from "@tkey-mpc/storage-layer-torus";
 import { generatePrivate } from "@toruslabs/eccrypto";
 import { generatePolynomial, getShare, hexPoint, MockServer, postEndpoint } from "@toruslabs/rss-client";
+// eslint-disable-next-line import/no-extraneous-dependencies
+import Torus from "@toruslabs/torus.js";
 import BN from "bn.js";
 // eslint-disable-next-line import/no-extraneous-dependencies
 import KJUR from "jsrsasign";
@@ -135,10 +137,16 @@ export async function fetchPostboxKeyAndSigs(opts) {
   const { serviceProvider, verifierName, verifierId } = opts;
   const { serverEndpoints: sssEndpoints } = await serviceProvider.getSSSNodeDetails();
   const token = generateIdToken(verifierId);
-  const retrieveSharesResponse = await serviceProvider.directWeb.torus.retrieveShares(sssEndpoints, verifierName, { verifier_id: verifierId }, token);
+  const retrieveSharesResponse = await serviceProvider.directWeb.torus.retrieveShares(
+    sssEndpoints,
+    [],
+    verifierName,
+    { verifier_id: verifierId },
+    token
+  );
 
   const signatures = [];
-  retrieveSharesResponse.sessionTokenData.filter((session) => {
+  retrieveSharesResponse.sessionData.sessionTokenData.filter((session) => {
     if (session) {
       signatures.push(
         JSON.stringify({
@@ -150,9 +158,10 @@ export async function fetchPostboxKeyAndSigs(opts) {
     return null;
   });
 
+  const localPrivKey = Torus.getPostboxKey(retrieveSharesResponse);
   return {
     signatures,
-    postboxkey: retrieveSharesResponse.privKey.toString(),
+    postboxkey: localPrivKey,
   };
 }
 // this function is only for testing and will return tss shares only for test verifiers.
@@ -170,11 +179,14 @@ export async function assignTssDkgKeys(opts) {
     const { serverEndpoints: sssEndpoints } = await serviceProvider.getSSSNodeDetails();
     const retrieveSharesResponse = await serviceProvider.directWeb.torus.retrieveShares(
       sssEndpoints,
+      [],
       verifierName,
       { verifier_id: verifierId, extended_verifier_id: extendedVerifierId },
       token
     );
-    serverDKGPrivKeys.push(new BN(retrieveSharesResponse.privKey, "hex"));
+    const localPrivKey = Torus.getPostboxKey(retrieveSharesResponse);
+
+    serverDKGPrivKeys.push(new BN(localPrivKey, "hex"));
   }
 
   return {

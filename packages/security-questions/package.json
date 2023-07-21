@@ -1,5 +1,5 @@
 {
-  "name": "@tkey/security-questions",
+  "name": "@tkey-mpc/security-questions",
   "version": "8.1.0-alpha.0",
   "description": "TKey Security Questions Module",
   "author": "Torus Labs",
@@ -41,7 +41,7 @@
     "@babel/runtime": "7.x"
   },
   "dependencies": {
-    "@tkey/common-types": "^8.1.0-alpha.0",
+    "@tkey-mpc/common-types": "^8.1.0-alpha.0",
     "bn.js": "^5.2.1",
     "web3-utils": "^1.8.1"
   },

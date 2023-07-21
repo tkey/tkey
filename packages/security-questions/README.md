@@ -1,21 +1,21 @@
 # tKey Security Questions Module
 
-[![npm version](https://img.shields.io/npm/v/@tkey/security-questions?label=%22%22)](https://www.npmjs.com/package/@tkey/security-questions/v/latest)          [![minzip](https://img.shields.io/bundlephobia/minzip/@tkey/security-questions?label=%22%22)](https://bundlephobia.com/result?p=@tkey/security-questions@latest)
+[![npm version](https://img.shields.io/npm/v/@tkey-mpc/security-questions?label=%22%22)](https://www.npmjs.com/package/@tkey-mpc/security-questions/v/latest)          [![minzip](https://img.shields.io/bundlephobia/minzip/@tkey-mpc/security-questions?label=%22%22)](https://bundlephobia.com/result?p=@tkey-mpc/security-questions@latest)
 
 The tKey Security Questions Module helps you add or remove the and password as a share for tkey. This module is the part of the [tKey SDK](https://github.com/tkey/tkey/).
 
 ## Installation
 
 ```shell
-npm install --save @tkey/security-questions
+npm install --save @tkey-mpc/security-questions
 ```
 
 ## Initialization
 
-#### Import the `SecurityQuestionsModule` class from `@tkey/security-questions`
+#### Import the `SecurityQuestionsModule` class from `@tkey-mpc/security-questions`
 
 ```javascript
-import SecurityQuestionsModule from "@tkey/security-questions";
+import SecurityQuestionsModule from "@tkey-mpc/security-questions";
 ```
 
 #### Assign the `SecurityQuestionsModule` class to a variable

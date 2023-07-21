@@ -3,13 +3,13 @@
 /* eslint-disable mocha/no-exports */
 /* eslint-disable import/no-extraneous-dependencies */
 
-import { ecCurve, getPubKeyPoint, KEY_NOT_FOUND, SHARE_DELETED } from "@tkey/common-types";
-import PrivateKeyModule, { ED25519Format, SECP256K1Format } from "@tkey/private-keys";
-import SecurityQuestionsModule from "@tkey/security-questions";
-import SeedPhraseModule, { MetamaskSeedPhraseFormat } from "@tkey/seed-phrase";
-import TorusServiceProvider from "@tkey/service-provider-torus";
-import ShareTransferModule from "@tkey/share-transfer";
-import TorusStorageLayer from "@tkey/storage-layer-torus";
+import { ecCurve, getPubKeyPoint, KEY_NOT_FOUND, SHARE_DELETED } from "@tkey-mpc/common-types";
+import PrivateKeyModule, { ED25519Format, SECP256K1Format } from "@tkey-mpc/private-keys";
+import SecurityQuestionsModule from "@tkey-mpc/security-questions";
+import SeedPhraseModule, { MetamaskSeedPhraseFormat } from "@tkey-mpc/seed-phrase";
+import TorusServiceProvider from "@tkey-mpc/service-provider-torus";
+import ShareTransferModule from "@tkey-mpc/share-transfer";
+import TorusStorageLayer from "@tkey-mpc/storage-layer-torus";
 import { generatePrivate } from "@toruslabs/eccrypto";
 import { post } from "@toruslabs/http-helpers";
 import { getLagrangeCoeffs } from "@toruslabs/rss-client";
@@ -716,7 +716,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       });
     });
   });
-  describe("tkey", function () {
+  describe("tkey-mpc", function () {
     let tb;
     beforeEach("Setup ThresholdKey", async function () {
       tb = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });

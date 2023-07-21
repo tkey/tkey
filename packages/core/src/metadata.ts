@@ -19,7 +19,7 @@ import {
   ShareStore,
   StringifiedType,
   toPrivKeyECC,
-} from "@tkey/common-types";
+} from "@tkey-mpc/common-types";
 import BN from "bn.js";
 import stringify from "json-stable-stringify";
 

@@ -1,5 +1,5 @@
-import { Point, PointHex, StringifiedType, TorusServiceProviderArgs } from "@tkey/common-types";
-import { ServiceProviderBase } from "@tkey/service-provider-base";
+import { Point, PointHex, StringifiedType, TorusServiceProviderArgs } from "@tkey-mpc/common-types";
+import { ServiceProviderBase } from "@tkey-mpc/service-provider-base";
 import CustomAuth, {
   AggregateLoginParams,
   CustomAuthArgs,
@@ -10,7 +10,7 @@ import CustomAuth, {
   TorusHybridAggregateLoginResponse,
   TorusLoginResponse,
 } from "@toruslabs/customauth";
-import { TorusPublicKey } from "@toruslabs/torus.js";
+import Torus, { TorusPublicKey } from "@toruslabs/torus.js";
 import BN from "bn.js";
 
 class TorusServiceProvider extends ServiceProviderBase {
@@ -131,23 +131,24 @@ class TorusServiceProvider extends ServiceProviderBase {
     const { serverEndpoints: sssNodeEndpoints } = await this.getSSSNodeDetails();
     const tssServerPub = (await this.directWeb.torus.getPublicAddress(
       sssNodeEndpoints,
+      this.sssNodeDetails.serverPubKeys.map((node) => ({ X: node.x, Y: node.y })),
       {
         verifier: this.verifierName,
         verifierId: this.verifierId,
         extendedVerifierId: `${this.verifierId}\u0015${tssTag || "default"}\u0016${tssNonce || 0}`,
-      },
-      true
+      }
     )) as TorusPublicKey;
 
     return {
-      pubKey: new Point(tssServerPub.X, tssServerPub.Y),
-      nodeIndexes: tssServerPub.nodeIndexes || [],
+      pubKey: new Point(tssServerPub.finalKeyData.X, tssServerPub.finalKeyData.Y),
+      nodeIndexes: tssServerPub.nodesData.nodeIndexes || [],
     };
   }
 
   async triggerLogin(params: SubVerifierDetails): Promise<TorusLoginResponse> {
     const obj = await this.directWeb.triggerLogin(params);
-    this.postboxKey = new BN(obj.privateKey, "hex");
+    const localPrivKey = Torus.getPostboxKey(obj);
+    this.postboxKey = new BN(localPrivKey, "hex");
     const { verifier, verifierId } = obj.userInfo;
     this.verifierName = verifier;
     this.verifierId = verifierId;
@@ -157,7 +158,9 @@ class TorusServiceProvider extends ServiceProviderBase {
 
   async triggerAggregateLogin(params: AggregateLoginParams): Promise<TorusAggregateLoginResponse> {
     const obj = await this.directWeb.triggerAggregateLogin(params);
-    this.postboxKey = new BN(obj.privateKey, "hex");
+
+    const localPrivKey = Torus.getPostboxKey(obj);
+    this.postboxKey = new BN(localPrivKey, "hex");
     const { aggregateVerifier, verifierId } = obj.userInfo[0];
     this.verifierName = aggregateVerifier;
     this.verifierId = verifierId;
@@ -167,9 +170,10 @@ class TorusServiceProvider extends ServiceProviderBase {
 
   async triggerHybridAggregateLogin(params: HybridAggregateLoginParams): Promise<TorusHybridAggregateLoginResponse> {
     const obj = await this.directWeb.triggerHybridAggregateLogin(params);
-    const aggregateLoginKey = obj.aggregateLogins[0].privateKey;
+    const aggregateLoginKey = Torus.getPostboxKey(obj.aggregateLogins[0]);
+    const singleLoginKey = Torus.getPostboxKey(obj.singleLogin);
     this.postboxKey = new BN(aggregateLoginKey, "hex");
-    this.singleLoginKey = new BN(obj.singleLogin.privateKey, "hex");
+    this.singleLoginKey = new BN(singleLoginKey, "hex");
     const { verifier, verifierId } = obj.singleLogin.userInfo;
     this.verifierName = verifier;
     this.verifierId = verifierId;

@@ -1,5 +1,5 @@
 {
-  "name": "@tkey/share-transfer",
+  "name": "@tkey-mpc/share-transfer",
   "version": "8.1.0-alpha.0",
   "description": "TKey Share Transfer Module",
   "author": "Torus Labs",
@@ -38,8 +38,8 @@
     "@babel/runtime": "7.x"
   },
   "dependencies": {
-    "@tkey/common-types": "^8.1.0-alpha.0",
-    "@toruslabs/eccrypto": "^2.1.1",
+    "@tkey-mpc/common-types": "^8.1.0-alpha.0",
+    "@toruslabs/eccrypto": "^3.0.0",
     "@toruslabs/http-helpers": "^4.0.0",
     "bn.js": "^5.2.1"
   },
