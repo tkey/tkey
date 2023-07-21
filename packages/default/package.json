@@ -79,7 +79,7 @@
     "torus nodes",
     "torus-embed",
     "direct auth",
-    "tkey"
+    "tkey-mpc"
   ],
   "gitHead": "9967ce9f795f495f28ef0da1fc50acde31dcc258"
 }

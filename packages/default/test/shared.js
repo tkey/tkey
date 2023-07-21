@@ -716,7 +716,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       });
     });
   });
-  describe("tkey", function () {
+  describe("tkey-mpc", function () {
     let tb;
     beforeEach("Setup ThresholdKey", async function () {
       tb = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
