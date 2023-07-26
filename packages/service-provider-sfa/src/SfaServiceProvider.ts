@@ -34,7 +34,7 @@ class SfaServiceProvider extends ServiceProviderBase {
 
   async connect(params: LoginParams): Promise<SafeEventEmitterProvider> {
     const provider = await this.web3AuthInstance.connect(params);
-    const localPrivKey = await provider.request<string>({ method: "eth_private_key" });
+    const localPrivKey = await provider.request<string>({ method: "private_key" });
     this.postboxKey = new BN(localPrivKey, "hex");
     return provider;
   }
