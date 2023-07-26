@@ -1,4 +1,5 @@
 import type { CustomAuthArgs } from "@toruslabs/customauth";
+import type { Web3AuthOptions } from "@web3auth/single-factor-auth";
 import BN from "bn.js";
 import type { curve } from "elliptic";
 
@@ -24,6 +25,9 @@ export interface ServiceProviderArgs {
 
 export interface TorusServiceProviderArgs extends ServiceProviderArgs {
   customAuthArgs: CustomAuthArgs;
+}
+export interface SfaServiceProviderArgs extends ServiceProviderArgs {
+  web3AuthOptions: Web3AuthOptions;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
