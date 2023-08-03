@@ -5,6 +5,7 @@ import { TorusServiceProvider } from "@tkey-mpc/service-provider-torus";
 import { SHARE_SERIALIZATION_MODULE_NAME, ShareSerializationModule } from "@tkey-mpc/share-serialization";
 import { SHARE_TRANSFER_MODULE_NAME, ShareTransferModule } from "@tkey-mpc/share-transfer";
 import { MockStorageLayer, TorusStorageLayer } from "@tkey-mpc/storage-layer-torus";
+import { SfaServiceProvider } from "@tkey/service-provider-sfa";
 
 class ThresholdKey extends TKey {
   constructor(args?: TKeyArgs) {
