@@ -87,5 +87,8 @@
     "hooks": {
       "pre-commit": "lerna run pre-commit --concurrency 1 --since HEAD"
     }
+  },
+  "dependencies": {
+    "@tkey/service-provider-torus": "^10.1.0"
   }
 }

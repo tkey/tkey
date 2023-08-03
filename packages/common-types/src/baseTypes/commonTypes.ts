@@ -1,5 +1,6 @@
 import type { CustomAuthArgs } from "@toruslabs/customauth";
 import { PointHex } from "@toruslabs/rss-client";
+import type { Web3AuthOptions } from "@web3auth/single-factor-auth";
 import BN from "bn.js";
 import type { curve } from "elliptic";
 
@@ -37,6 +38,10 @@ export interface ServiceProviderArgs {
   enableLogging?: boolean;
   postboxKey?: string;
   useTSS?: boolean;
+}
+
+export interface SfaServiceProviderArgs extends ServiceProviderArgs {
+  web3AuthOptions: Web3AuthOptions;
 }
 
 export interface TorusServiceProviderArgs extends ServiceProviderArgs {

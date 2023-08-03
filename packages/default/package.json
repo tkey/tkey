@@ -42,6 +42,7 @@
     "@tkey-mpc/share-serialization": "^8.1.0",
     "@tkey-mpc/share-transfer": "^8.1.0",
     "@tkey-mpc/storage-layer-torus": "^8.1.0",
+    "@tkey-mpc/service-provider-sfa": "^8.1.0",
     "@toruslabs/eccrypto": "^3.0.0",
     "@toruslabs/rss-client": "^1.4.1",
     "bn.js": "^5.2.1"

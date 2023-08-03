@@ -1,6 +1,7 @@
 import { IServiceProvider, IStorageLayer, StringifiedType, TKeyArgs } from "@tkey-mpc/common-types";
 import TKey from "@tkey-mpc/core";
 import { ServiceProviderBase } from "@tkey-mpc/service-provider-base";
+import { SfaServiceProvider } from "@tkey-mpc/service-provider-sfa";
 import { TorusServiceProvider } from "@tkey-mpc/service-provider-torus";
 import { SHARE_SERIALIZATION_MODULE_NAME, ShareSerializationModule } from "@tkey-mpc/share-serialization";
 import { SHARE_TRANSFER_MODULE_NAME, ShareTransferModule } from "@tkey-mpc/share-transfer";
@@ -39,6 +40,7 @@ class ThresholdKey extends TKey {
     const finalServiceProvider: IServiceProvider =
       serviceProvider ||
       TorusServiceProvider.fromJSON(tempOldServiceProvider) ||
+      SfaServiceProvider.fromJSON(tempOldServiceProvider) ||
       ServiceProviderBase.fromJSON(tempOldServiceProvider) ||
       new TorusServiceProvider({ customAuthArgs });
 
