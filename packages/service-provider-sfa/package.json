@@ -40,7 +40,7 @@
   "dependencies": {
     "@tkey-mpc/common-types": "^8.1.0",
     "@tkey-mpc/service-provider-base": "^8.1.0",
-    "@web3auth/single-factor-auth": "^6.4.1",
+    "@web3auth/single-factor-auth": "^6.5.0",
     "@toruslabs/fetch-node-details": "^12.0.0",
     "bn.js": "^5.2.1"
   },
