@@ -10,7 +10,7 @@ const PRIVATE_KEY = generatePrivate().toString("hex");
 const torusSP = new ServiceProviderTorus({
   postboxKey: PRIVATE_KEY,
   customAuthArgs: {
-    network: "sapphire_mainnet",
+    network: "sapphire_devnet",
 
     web3AuthClientId: "YOUR_CLIENT_ID",
     // this url has no effect as postbox key is passed

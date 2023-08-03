@@ -9,7 +9,6 @@ const PRIVATE_KEY = generatePrivate().toString("hex");
 
 const torusSp = new ServiceProviderTorus({
   postboxKey: PRIVATE_KEY,
-  tssVerifier: "test-tss-verifier",
   useTSS: true,
   // tssPubKey: {
   //   // test key: bc0def03430ddb9d57a5fa2cb18786ee21c55255016c7b5db9616d0463b4b7ed
@@ -17,7 +16,7 @@ const torusSp = new ServiceProviderTorus({
   //   y: new BN("4f3909bf64be23a32887086fccd449e0e57042622a1364e0d670f6eb798238d7", "hex"),
   // },
   customAuthArgs: {
-    network: "sapphire_mainnet",
+    network: "sapphire_devnet",
     web3AuthClientId: "YOUR_CLIENT_ID",
     baseUrl: "http://localhost:3000",
   },

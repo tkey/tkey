@@ -324,7 +324,7 @@ export interface ITKey extends ITKeyApi, ISerializable {
   reconstructLatestPoly(): Polynomial;
 
   importTssKey(
-    params: { tag: string; importKey: BN; newFactorPub: Point; newTSSIndex: number; switchAccount?: boolean },
+    params: { tag: string; importKey: BN; factorPub: Point; newTSSIndex: number },
     serverOpts: {
       serverEndpoints: string[];
       serverPubKeys: PointHex[];

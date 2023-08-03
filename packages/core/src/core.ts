@@ -779,7 +779,7 @@ class ThresholdKey implements ITKey {
   }
 
   async importTssKey(
-    params: { tag: string; importKey: BN; newFactorPub: Point; newTSSIndex: number },
+    params: { tag: string; importKey: BN; factorPub: Point; newTSSIndex: number },
     serverOpts: {
       serverEndpoints: string[];
       serverPubKeys: PointHex[];
@@ -788,10 +788,9 @@ class ThresholdKey implements ITKey {
       authSignatures: string[];
     }
   ): Promise<void> {
-    console.log("importing key");
     const oldTag = this.tssTag;
     try {
-      const { importKey, newFactorPub, newTSSIndex, tag } = params;
+      const { importKey, factorPub, newTSSIndex, tag } = params;
       const { selectedServers = [], authSignatures } = serverOpts || {};
       this.tssTag = tag;
       if (!this.metadata) {
@@ -804,25 +803,21 @@ class ThresholdKey implements ITKey {
         throw new Error("Invalid importedKey");
       }
       if (!tag) throw CoreError.default(`invalid param, tag is required`);
-      if (!newFactorPub) throw CoreError.default(`invalid param, newFactorPub is required`);
+      if (!factorPub) throw CoreError.default(`invalid param, newFactorPub is required`);
       if (!newTSSIndex) throw CoreError.default(`invalid param, newTSSIndex is required`);
 
       const existingFactorPubs = this.metadata.factorPubs[tag];
       if (existingFactorPubs?.length > 0) {
         throw CoreError.default(`Duplicate account tag, please use a unique tag for importing key`);
       }
-      const factorKey = new BN(generatePrivate());
-      const factorPub2 = getPubKeyPoint(factorKey);
+      const factorPubs = [factorPub];
 
-      const factorPubs = [factorPub2, newFactorPub];
-
-      const tssIndexes = [2, newTSSIndex];
+      const tssIndexes = [newTSSIndex];
       const existingNonce = this.metadata.tssNonces[this.tssTag];
       const newTssNonce: number = existingNonce && existingNonce > 0 ? existingNonce + 1 : 0;
       const verifierAndVerifierID = this.serviceProvider.getVerifierNameVerifierId();
       const label = `${verifierAndVerifierID}\u0015${this.tssTag}\u0016${newTssNonce}`;
-      console.log("label", label);
-      const tssPubKey = ecCurve.g.mul(importKey);
+      const tssPubKey = hexPoint(ecCurve.g.mul(importKey));
       const rssNodeDetails = await this._getRssNodeDetails();
       const { pubKey: newTSSServerPub, nodeIndexes } = await this.serviceProvider.getTSSPubKey(this.tssTag, newTssNonce);
       let finalSelectedServers = selectedServers;
@@ -837,13 +832,12 @@ class ThresholdKey implements ITKey {
       }
 
       const { serverEndpoints, serverPubKeys, serverThreshold } = rssNodeDetails;
-      // console.log("serverEndpoints", serverEndpoints, serverPubKeys, serverThreshold, tssPubKey, newTSSServerPub);
 
       const rssClient = new RSSClient({
         serverEndpoints,
         serverPubKeys,
         serverThreshold,
-        tssPubKey: hexPoint(tssPubKey),
+        tssPubKey,
       });
 
       const refreshResponses = await rssClient.import({
@@ -855,7 +849,6 @@ class ThresholdKey implements ITKey {
         newLabel: label,
         sigs: authSignatures,
       });
-      console.log("refreshResponses", refreshResponses);
       const secondCommit = ecPoint(hexPoint(newTSSServerPub)).add(ecPoint(tssPubKey).neg());
       const newTSSCommits = [
         Point.fromJSON(tssPubKey),
@@ -875,14 +868,13 @@ class ThresholdKey implements ITKey {
       }
 
       this.metadata.addTSSData({
-        tssTag: tag,
+        tssTag: this.tssTag,
         tssNonce: newTssNonce,
         tssPolyCommits: newTSSCommits,
         factorPubs,
         factorEncs,
       });
     } catch (error) {
-      console.log("error while importing", error);
       this.tssTag = oldTag;
       throw error;
     }
@@ -935,8 +927,6 @@ class ThresholdKey implements ITKey {
     if (nodeIndexes?.length > 0) {
       finalSelectedServers = nodeIndexes.slice(0, Math.min(selectedServers.length, nodeIndexes.length));
     }
-    // eslint-disable-next-line no-console
-    console.log("newTSSServerPub", finalSelectedServers, nodeIndexes, newTSSServerPub.x.toString("hex"), this.tssTag, tssNonce + 1);
     const refreshResponses = await rssClient.refresh({
       factorPubs: factorPubs.map((f) => hexPoint(f)),
       targetIndexes,
