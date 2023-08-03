@@ -1,7 +1,8 @@
 import { DeviceShareDescription, IModule, ITKeyApi, ShareStore, StringifiedType } from "@tkey/common-types";
+
+import KeyStore from "./KeyStore";
 import { EncryptedStorage } from "./types/IEncryptedStorage";
 import { SecureStore } from "./types/IExpoSecureStore";
-import KeyStore from "./KeyStore";
 
 export const REACT_NATIVE_STORAGE_MODULE_NAME = "reactNativeStorage";
 
@@ -48,7 +49,7 @@ export default class ReactNativeStorageModule implements IModule {
     const metadata = this.tbSDK.getMetadata();
     const key = metadata.pubKey.x.toString("hex"); // tbkey public
     const result = await this.keyStore.get(key);
-    const verifierIdObj: ShareStore = JSON.parse(result[key]);
+    const verifierIdObj: ShareStore = JSON.parse(result);
     await this.tbSDK.inputShareStoreSafe(verifierIdObj);
     return verifierIdObj;
   }
