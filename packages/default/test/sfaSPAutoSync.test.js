@@ -1,4 +1,4 @@
-import { SfaServiceProvider } from "@tkey/service-provider-sfa";
+import { SfaServiceProvider } from "@tkey-mpc/service-provider-sfa";
 import { generatePrivate } from "@toruslabs/eccrypto";
 
 import { getMetadataUrl, initStorageLayer } from "./helpers";
@@ -8,12 +8,12 @@ const MANUAL_SYNC = false;
 const metadataURL = getMetadataUrl();
 const PRIVATE_KEY = generatePrivate().toString("hex");
 const sfaSP = new SfaServiceProvider({
-    postboxKey: PRIVATE_KEY,
-    web3AuthOptions: {
-      clientId: "YOUR_CLIENT_ID",
-    },
-  });
-  
+  postboxKey: PRIVATE_KEY,
+  web3AuthOptions: {
+    clientId: "YOUR_CLIENT_ID",
+  },
+});
+
 const sfaSL = initStorageLayer({ hostUrl: metadataURL });
 
 describe(`SfaServiceProvider with manualSync: ${MANUAL_SYNC}`, function () {

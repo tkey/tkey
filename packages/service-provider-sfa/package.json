@@ -1,6 +1,6 @@
 {
   "name": "@tkey-mpc/service-provider-sfa",
-  "version": "10.1.0",
+  "version": "8.1.0",
   "description": "TKey Torus Service Provider Module",
   "author": "Torus Labs",
   "homepage": "https://github.com/tkey/tkey#readme",
@@ -38,9 +38,10 @@
     "@babel/runtime": "7.x"
   },
   "dependencies": {
-    "@tkey/common-types": "^10.1.0",
-    "@tkey/service-provider-base": "^10.1.0",
+    "@tkey-mpc/common-types": "^8.1.0",
+    "@tkey-mpc/service-provider-base": "^8.1.0",
     "@web3auth/single-factor-auth": "^6.4.1",
+    "@toruslabs/fetch-node-details": "^12.0.0",
     "bn.js": "^5.2.1"
   },
   "devDependencies": {
