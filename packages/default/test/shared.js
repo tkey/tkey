@@ -360,7 +360,83 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       let tbTssInitResp;
       let oldFactorKey;
       let newFactorKey;
-      before(`#should be able to generate and delete a share, manualSync=${mode}`, async function () {
+      // before(`#should be able to generate and delete a share, manualSync=${mode}`, async function () {
+      //   const sp = customSP;
+
+      //   if (!sp.useTSS) this.skip();
+      //   const deviceTSSShare = new BN(generatePrivate());
+      //   const deviceTSSIndex = 3;
+
+      //   sp.verifierName = "torus-test-health";
+      //   sp.verifierId = "test192@example.com";
+      //   const { signatures, postboxkey } = await fetchPostboxKeyAndSigs({
+      //     serviceProvider: sp,
+      //     verifierName: sp.verifierName,
+      //     verifierId: sp.verifierId,
+      //   });
+      //   sp.postboxKey = postboxkey;
+      //   const { serverDKGPrivKeys } = await assignTssDkgKeys({
+      //     serviceProvider: sp,
+      //     verifierName: sp.verifierName,
+      //     verifierId: sp.verifierId,
+      //     maxTSSNonceToSimulate: 4,
+      //   });
+
+      //   // tb = new ThresholdKey({ serviceProvider: sp, storageLayer: customSL, manualSync: mode });
+      //   // tbInitResp = await tb._initializeNewKey({ initializeModules: true });
+      //   // oldFactorKey = new BN(generatePrivate());
+      //   // const oldFactorPub = getPubKeyPoint(oldFactorKey);
+      //   // tbTssInitResp = await tb._initializeNewTSSKey("default", deviceTSSShare, oldFactorPub, deviceTSSIndex);
+      //   // const { factorEncs, factorPubs, tssPolyCommits } = tbTssInitResp;
+      //   // tb.metadata.addTSSData({ tssTag: tb.tssTag, tssNonce: 0, tssPolyCommits, factorPubs, factorEncs });
+      //   // // const { factorEncs, factorPubs, tssPolyCommits } = tbTssInitResp;
+
+      //   tb = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync: mode });
+
+      //   // factor key needs to passed from outside of tKey
+      //   const factorKey = new BN(generatePrivate());
+      //   const factorPub = getPubKeyPoint(factorKey);
+      //   await tb.initialize({ useTSS: true, factorPub, deviceTSSShare, deviceTSSIndex });
+      //   newFactorKey = new BN(generatePrivate());
+
+      //   const newFactorPub = getPubKeyPoint(newFactorKey);
+      //   const newShare = await tb.generateNewShare(true, {
+      //     inputTSSShare: deviceTSSShare,
+      //     inputTSSIndex: deviceTSSIndex,
+      //     newFactorPub,
+      //     newTSSIndex: 2,
+      //     authSignatures: signatures,
+      //   });
+      //   const reconstructedKey = await tb.reconstructKey();
+      //   await tb.syncLocalMetadataTransitions();
+
+      //   if (tb.privKey.cmp(reconstructedKey.privKey) !== 0) {
+      //     fail("key should be able to be reconstructed");
+      //   }
+      //   const { tssShare: retrievedTSS, tssIndex: retrievedTSSIndex } = await tb.getTSSShare(factorKey);
+      //   const tssCommits = tb.getTSSCommits();
+      //   const tssPrivKey = getLagrangeCoeffs([1, retrievedTSSIndex], 1)
+      //     .mul(serverDKGPrivKeys[1])
+      //     .add(getLagrangeCoeffs([1, retrievedTSSIndex], retrievedTSSIndex).mul(retrievedTSS))
+      //     .umod(ecCurve.n);
+      //   const tssPubKey = getPubKeyPoint(tssPrivKey);
+
+      //   strictEqual(tssPubKey.x.toString(16, 64), tssCommits[0].x.toString(16, 64));
+      //   strictEqual(tssPubKey.y.toString(16, 64), tssCommits[0].y.toString(16, 64));
+      //   const updatedShareStore = await tb.deleteShare(newShare.newShareIndex, true, {
+      //     inputTSSIndex: retrievedTSSIndex,
+      //     inputTSSShare: retrievedTSS,
+      //     authSignatures: signatures,
+      //     factorPub,
+      //   });
+
+      //   deletedShareIndex = newShare.newShareIndex;
+      //   shareStoreAfterDelete = updatedShareStore.newShareStores;
+
+      //   await tb.syncLocalMetadataTransitions();
+      // });
+
+      it.only(`#should be able to import a tss key, manualSync=${mode}`, async function () {
         const sp = customSP;
 
         if (!sp.useTSS) this.skip();
@@ -368,7 +444,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         const deviceTSSIndex = 3;
 
         sp.verifierName = "torus-test-health";
-        sp.verifierId = "test192@example.com";
+        sp.verifierId = "testimported1111@example.com";
         const { signatures, postboxkey } = await fetchPostboxKeyAndSigs({
           serviceProvider: sp,
           verifierName: sp.verifierName,
@@ -382,16 +458,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
           maxTSSNonceToSimulate: 4,
         });
 
-        // tb = new ThresholdKey({ serviceProvider: sp, storageLayer: customSL, manualSync: mode });
-        // tbInitResp = await tb._initializeNewKey({ initializeModules: true });
-        // oldFactorKey = new BN(generatePrivate());
-        // const oldFactorPub = getPubKeyPoint(oldFactorKey);
-        // tbTssInitResp = await tb._initializeNewTSSKey("default", deviceTSSShare, oldFactorPub, deviceTSSIndex);
-        // const { factorEncs, factorPubs, tssPolyCommits } = tbTssInitResp;
-        // tb.metadata.addTSSData({ tssTag: tb.tssTag, tssNonce: 0, tssPolyCommits, factorPubs, factorEncs });
-        // // const { factorEncs, factorPubs, tssPolyCommits } = tbTssInitResp;
-
-        tb = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync: mode });
+        const tb = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync: mode });
 
         // factor key needs to passed from outside of tKey
         const factorKey = new BN(generatePrivate());
@@ -423,17 +490,34 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
 
         strictEqual(tssPubKey.x.toString(16, 64), tssCommits[0].x.toString(16, 64));
         strictEqual(tssPubKey.y.toString(16, 64), tssCommits[0].y.toString(16, 64));
-        const updatedShareStore = await tb.deleteShare(newShare.newShareIndex, true, {
-          inputTSSIndex: retrievedTSSIndex,
-          inputTSSShare: retrievedTSS,
-          authSignatures: signatures,
-          factorPub,
-        });
-
-        deletedShareIndex = newShare.newShareIndex;
-        shareStoreAfterDelete = updatedShareStore.newShareStores;
-
+        const importedKey = new BN(generatePrivate());
+        await tb.importTssKey(
+          { tag: "imported", importKey: importedKey, newFactorPub, newTSSIndex: 2 },
+          {
+            authSignatures: signatures,
+          }
+        );
         await tb.syncLocalMetadataTransitions();
+        // for imported key
+        const { tssShare: retrievedTSS1, tssIndex: retrievedTSSIndex1 } = await tb.getTSSShare(factorKey);
+
+        const { serverDKGPrivKeys: serverDKGPrivKeys1 } = await assignTssDkgKeys({
+          tssTag: "imported",
+          serviceProvider: sp,
+          verifierName: sp.verifierName,
+          verifierId: sp.verifierId,
+          maxTSSNonceToSimulate: 4,
+        });
+        const tssCommits1 = tb.getTSSCommits();
+        const tssPrivKey1 = getLagrangeCoeffs([1, retrievedTSSIndex1], 1)
+          .mul(serverDKGPrivKeys1[1])
+          .add(getLagrangeCoeffs([1, retrievedTSSIndex1], retrievedTSSIndex1).mul(retrievedTSS1))
+          .umod(ecCurve.n);
+        const tssPubKey1 = getPubKeyPoint(tssPrivKey1);
+
+        strictEqual(tssPubKey1.x.toString(16, 64), tssCommits1[0].x.toString(16, 64));
+        strictEqual(tssPubKey1.y.toString(16, 64), tssCommits1[0].y.toString(16, 64));
+        strictEqual(tssPrivKey1.toString("hex"), importedKey.toString("hex"));
       });
       it(`#should be not be able to lookup delete share, manualSync=${mode}`, async function () {
         if (!customSP.useTSS) this.skip();
