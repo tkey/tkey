@@ -1,6 +1,5 @@
 import { SfaServiceProviderArgs, StringifiedType } from "@tkey/common-types";
 import { ServiceProviderBase } from "@tkey/service-provider-base";
-import type { SafeEventEmitterProvider } from "@web3auth/base";
 import { LoginParams, PrivateKeyProvider, Web3Auth, Web3AuthOptions } from "@web3auth/single-factor-auth";
 import BN from "bn.js";
 
@@ -32,11 +31,10 @@ class SfaServiceProvider extends ServiceProviderBase {
     return this.web3AuthInstance.init(params);
   }
 
-  async connect(params: LoginParams): Promise<SafeEventEmitterProvider> {
-    const provider = await this.web3AuthInstance.connect(params);
-    const localPrivKey = await provider.request<string>({ method: "private_key" });
-    this.postboxKey = new BN(localPrivKey, "hex");
-    return provider;
+  async connect(params: LoginParams): Promise<BN> {
+    const privKey = await this.web3AuthInstance.getPostboxKey(params);
+    this.postboxKey = new BN(privKey, "hex");
+    return this.postboxKey;
   }
 
   toJSON(): StringifiedType {

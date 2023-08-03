@@ -40,7 +40,7 @@
   "dependencies": {
     "@tkey/common-types": "^10.1.0",
     "@tkey/service-provider-base": "^10.1.0",
-    "@web3auth/single-factor-auth": "^6.4.1",
+    "@web3auth/single-factor-auth": "^6.5.0",
     "bn.js": "^5.2.1"
   },
   "devDependencies": {
