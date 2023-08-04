@@ -326,10 +326,7 @@ export interface ITKey extends ITKeyApi, ISerializable {
   importTssKey(
     params: { tag: string; importKey: BN; factorPub: Point; newTSSIndex: number },
     serverOpts: {
-      serverEndpoints: string[];
-      serverPubKeys: PointHex[];
-      serverThreshold: number;
-      selectedServers: number[];
+      selectedServers?: number[];
       authSignatures: string[];
     }
   ): Promise<void>;

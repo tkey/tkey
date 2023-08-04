@@ -272,7 +272,9 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       // factor key needs to passed from outside of tKey
       const factorKey = new BN(generatePrivate());
       const factorPub = getPubKeyPoint(factorKey);
+      // 2/2
       await tb.initialize({ useTSS: true, factorPub, deviceTSSShare, deviceTSSIndex });
+      const newShare = await tb.generateNewShare();
 
       const reconstructedKey = await tb.reconstructKey();
       await tb.syncLocalMetadataTransitions();
@@ -306,6 +308,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
           authSignatures: signatures,
         }
       );
+      // tag is switched to imported
       await tb.syncLocalMetadataTransitions();
       // for imported key
       const { tssShare: retrievedTSS1, tssIndex: retrievedTSSIndex1 } = await tb.getTSSShare(factorKey);
@@ -320,6 +323,37 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       strictEqual(tssPubKey1.x.toString(16, 64), tssCommits1[0].x.toString(16, 64));
       strictEqual(tssPubKey1.y.toString(16, 64), tssCommits1[0].y.toString(16, 64));
       strictEqual(tssPrivKey1.toString("hex"), importedKey.toString("hex"));
+
+      const tb2 = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync: mode });
+
+      await tb2.initialize({ useTSS: true, factorPub });
+      tb2.inputShareStore(newShare.newShareStores[newShare.newShareIndex.toString("hex")]);
+      const reconstructedKey2 = await tb2.reconstructKey();
+      await tb2.syncLocalMetadataTransitions();
+
+      if (tb2.privKey.cmp(reconstructedKey2.privKey) !== 0) {
+        fail("key should be able to be reconstructed");
+      }
+      const tssCommits2 = tb2.getTSSCommits();
+      strictEqual(tssPubKey.x.toString(16, 64), tssCommits2[0].x.toString(16, 64));
+      strictEqual(tssPubKey.y.toString(16, 64), tssCommits2[0].y.toString(16, 64));
+
+      // switch to imported account
+      tb2.tssTag = "imported";
+      const { tssShare: retrievedTSSImported, tssIndex: retrievedTSSIndexImported } = await tb2.getTSSShare(factorKey);
+
+      const tssCommitsImported = tb2.getTSSCommits();
+
+      const tssPrivKeyImported = getLagrangeCoeffs([1, retrievedTSSIndexImported], 1)
+        .mul(serverDKGPrivKeys1[0])
+        .add(getLagrangeCoeffs([1, retrievedTSSIndexImported], retrievedTSSIndexImported).mul(retrievedTSSImported))
+        .umod(ecCurve.n);
+
+      const tssPubKeyImported = getPubKeyPoint(tssPrivKeyImported);
+
+      strictEqual(tssPubKeyImported.x.toString(16, 64), tssCommitsImported[0].x.toString(16, 64));
+      strictEqual(tssPubKeyImported.y.toString(16, 64), tssCommitsImported[0].y.toString(16, 64));
+      strictEqual(tssPrivKeyImported.toString("hex"), importedKey.toString("hex"));
     });
     it("#should be able to serialize and deserialize with tss even with rss", async function () {
       const sp = customSP;

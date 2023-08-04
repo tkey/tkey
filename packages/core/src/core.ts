@@ -781,17 +781,14 @@ class ThresholdKey implements ITKey {
   async importTssKey(
     params: { tag: string; importKey: BN; factorPub: Point; newTSSIndex: number },
     serverOpts: {
-      serverEndpoints: string[];
-      serverPubKeys: PointHex[];
-      serverThreshold: number;
-      selectedServers: number[];
+      selectedServers?: number[];
       authSignatures: string[];
     }
   ): Promise<void> {
     const oldTag = this.tssTag;
     try {
       const { importKey, factorPub, newTSSIndex, tag } = params;
-      const { selectedServers = [], authSignatures } = serverOpts || {};
+      const { selectedServers = [], authSignatures = [] } = serverOpts || {};
       this.tssTag = tag;
       if (!this.metadata) {
         throw CoreError.metadataUndefined();
@@ -805,6 +802,7 @@ class ThresholdKey implements ITKey {
       if (!tag) throw CoreError.default(`invalid param, tag is required`);
       if (!factorPub) throw CoreError.default(`invalid param, newFactorPub is required`);
       if (!newTSSIndex) throw CoreError.default(`invalid param, newTSSIndex is required`);
+      if (authSignatures.length === 0) throw CoreError.default(`invalid param, authSignatures is required`);
 
       const existingFactorPubs = this.metadata.factorPubs[tag];
       if (existingFactorPubs?.length > 0) {
@@ -866,7 +864,6 @@ class ThresholdKey implements ITKey {
           serverEncs: refreshResponse.serverFactorEncs,
         };
       }
-
       this.metadata.addTSSData({
         tssTag: this.tssTag,
         tssNonce: newTssNonce,
@@ -874,6 +871,7 @@ class ThresholdKey implements ITKey {
         factorPubs,
         factorEncs,
       });
+      await this._syncShareMetadata();
     } catch (error) {
       this.tssTag = oldTag;
       throw error;
