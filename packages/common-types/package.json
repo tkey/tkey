@@ -44,7 +44,7 @@
   },
   "dependencies": {
     "@toruslabs/eccrypto": "^3.0.0",
-    "@toruslabs/rss-client": "file:./toruslabs-rss-client-1.4.2.tgz",
+    "@toruslabs/rss-client": "^1.5.0",
     "bn.js": "^5.2.1",
     "elliptic": "^6.5.4",
     "serialize-error": "^8.1.0",
