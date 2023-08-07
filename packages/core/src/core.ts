@@ -953,7 +953,7 @@ class ThresholdKey implements ITKey {
     await this._syncShareMetadata();
   };
 
-  async _UNSAFE_exportTssKey(tssOptions: { factorKey: BN; selectedServers?: number[]; authSignatures: string[] }): Promise<BN> {
+  async _UNSAFE_exportTssKey(tssOptions: { factorKey: BN; selectedServers: number[]; authSignatures: string[] }): Promise<BN> {
     if (!this.metadata) throw CoreError.metadataUndefined("metadata is undefined");
     if (!this.privKey) throw new Error("Tkey is not reconstructed");
     if (!this.metadata.tssPolyCommits[this.tssTag]) throw new Error(`tss key has not been initialized for tssTag ${this.tssTag}`);
