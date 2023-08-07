@@ -878,8 +878,9 @@ class ThresholdKey implements ITKey {
     }
   }
 
-  async generateNewTssShare(tssOptions: {
-    factorKey: BN;
+  // generate Tss Share linked to Factor Pub
+  async addFactorPub(tssOptions: {
+    existingFactorKey: BN;
     newFactorPub: Point;
     newTSSIndex: number;
     selectedServers: number[];
@@ -888,9 +889,9 @@ class ThresholdKey implements ITKey {
     if (!this.metadata) throw CoreError.metadataUndefined("metadata is undefined");
     if (!this.privKey) throw new Error("Tkey is not reconstructed");
     if (!this.metadata.tssPolyCommits[this.tssTag]) throw new Error(`tss key has not been initialized for tssTag ${this.tssTag}`);
-    const { factorKey, newFactorPub, newTSSIndex, selectedServers, authSignatures } = tssOptions;
+    const { existingFactorKey, newFactorPub, newTSSIndex, selectedServers, authSignatures } = tssOptions;
 
-    const { tssShare, tssIndex } = await this.getTSSShare(factorKey);
+    const { tssShare, tssIndex } = await this.getTSSShare(existingFactorKey);
     const existingFactorPubs = this.metadata.factorPubs[this.tssTag];
     const updatedFactorPubs = existingFactorPubs.concat([newFactorPub]);
 
@@ -923,18 +924,19 @@ class ThresholdKey implements ITKey {
     await this._syncShareMetadata();
   }
 
-  deleteTssShare = async (tssOptions: { factorKey: BN; factorPub: Point; selectedServers: number[]; authSignatures: string[] }): Promise<void> => {
+  // Delete Tss Share linked to Factor Pub
+  async deleteFactorPub(tssOptions: { factorKey: BN; deleteFactorPub: Point; selectedServers: number[]; authSignatures: string[] }): Promise<void> {
     if (!this.metadata) throw CoreError.metadataUndefined("metadata is undefined");
     if (!this.privKey) throw new Error("Tkey is not reconstructed");
     if (!this.metadata.tssPolyCommits[this.tssTag]) throw new Error(`tss key has not been initialized for tssTag ${this.tssTag}`);
-    const { factorKey, factorPub, selectedServers, authSignatures } = tssOptions;
+    const { factorKey, deleteFactorPub, selectedServers, authSignatures } = tssOptions;
     const existingFactorPubs = this.metadata.factorPubs[this.tssTag];
     const { tssShare, tssIndex } = await this.getTSSShare(factorKey);
 
-    const found = existingFactorPubs.filter((f) => f.x.eq(factorPub.x) && f.y.eq(factorPub.y));
+    const found = existingFactorPubs.filter((f) => f.x.eq(deleteFactorPub.x) && f.y.eq(deleteFactorPub.y));
     if (found.length === 0) throw CoreError.default("could not find factorPub to delete");
     if (found.length > 1) throw CoreError.default("found two or more factorPubs that match, error in metadata");
-    const updatedFactorPubs = existingFactorPubs.filter((f) => !f.x.eq(factorPub.x) || !f.y.eq(factorPub.y));
+    const updatedFactorPubs = existingFactorPubs.filter((f) => !f.x.eq(deleteFactorPub.x) || !f.y.eq(deleteFactorPub.y));
     this.metadata.addTSSData({ tssTag: this.tssTag, factorPubs: updatedFactorPubs });
     const rssNodeDetails = await this._getRssNodeDetails();
     const randomSelectedServers = randomSelection(
@@ -951,7 +953,7 @@ class ThresholdKey implements ITKey {
       authSignatures,
     });
     await this._syncShareMetadata();
-  };
+  }
 
   async _UNSAFE_exportTssKey(tssOptions: { factorKey: BN; selectedServers: number[]; authSignatures: string[] }): Promise<BN> {
     if (!this.metadata) throw CoreError.metadataUndefined("metadata is undefined");
@@ -961,14 +963,14 @@ class ThresholdKey implements ITKey {
     const { factorKey, selectedServers, authSignatures } = tssOptions;
 
     const { tssIndex } = await this.getTSSShare(factorKey);
-    // Assumption that there is only index 2 and 3 for tss shares
+    // Assumption that there are only index 2 and 3 for tss shares
     // create complement index share
     const tempShareIndex = tssIndex === 2 ? 3 : 2;
     const tempFactorKey = new BN(generatePrivate());
     const tempFactorPub = getPubKeyPoint(tempFactorKey);
 
-    await this.generateNewTssShare({
-      factorKey,
+    await this.addFactorPub({
+      existingFactorKey: factorKey,
       newFactorPub: tempFactorPub,
       newTSSIndex: tempShareIndex,
       authSignatures,
@@ -978,13 +980,13 @@ class ThresholdKey implements ITKey {
     const { tssShare: factorShare, tssIndex: factorIndex } = await this.getTSSShare(factorKey);
     const { tssShare: tempShare, tssIndex: tempIndex } = await this.getTSSShare(tempFactorKey);
 
-    // // reconstruct final key using sss
+    // reconstruct final key using sss
     const finalKey = lagrangeInterpolation([tempShare, factorShare], [new BN(tempIndex), new BN(factorIndex)]);
 
     // deleted created tss share
-    await this.deleteTssShare({
+    await this.deleteFactorPub({
       factorKey,
-      factorPub: tempFactorPub,
+      deleteFactorPub: tempFactorPub,
       authSignatures,
       selectedServers,
     });
