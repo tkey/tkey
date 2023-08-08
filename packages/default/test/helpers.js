@@ -176,6 +176,8 @@ export async function assignTssDkgKeys(opts) {
   for (let j = 0; j < maxTSSNonceToSimulate; j++) {
     const token = generateIdToken(verifierId);
     const extendedVerifierId = `${verifierId}\u0015${tssTag}\u0016${j}`;
+    console.log("extendedVerifierId", extendedVerifierId);
+
     const { serverEndpoints: sssEndpoints } = await serviceProvider.getSSSNodeDetails();
     const retrieveSharesResponse = await serviceProvider.directWeb.torus.retrieveShares(
       sssEndpoints,
