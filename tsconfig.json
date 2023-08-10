@@ -1,21 +1,10 @@
 {
+  "extends": "@toruslabs/config/tsconfig.default.json",
   "compilerOptions": {
-    "moduleResolution": "node",
     "rootDir": ".",
-    "baseUrl": ".",
-    "strict": false,
-    "module": "es6",
-    "target": "es6",
-    "lib": ["ES2020", "DOM"],
-    "sourceMap": true,
-    "esModuleInterop": true,
-    "noImplicitThis": true,
-    "declaration": true,
-    "declarationDir": "./types",
-    "allowSyntheticDefaultImports": true,
-    "skipLibCheck": true,
+    "baseUrl": "./",
     "paths": {
-      "@tkey/*": ["packages/*/src"]
+      "@tkey/*": ["packages/*"]
     }
   }
 }

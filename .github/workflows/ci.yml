@@ -6,7 +6,7 @@ jobs:
   test:
     strategy:
       matrix:
-        node: ["18.x"]
+        node: ["20.x"]
         os: [ubuntu-latest]
 
     runs-on: ${{ matrix.os }}
@@ -25,10 +25,10 @@ jobs:
         run: npm ci
 
       - name: Build & Lint
-        run: yarn run build
+        run: npm run build
 
       - name: Test Development
-        run: yarn run test
+        run: npm run test
 
       - name: Test Production
-        run: yarn run test-production
+        run: npm run test-production

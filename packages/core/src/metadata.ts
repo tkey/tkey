@@ -79,7 +79,7 @@ class Metadata implements IMetadata {
       const secondHalf = arrPolyID.slice(zeroIndex + 1, arrPolyID.length);
       // for publicPolynomials
       const pubPolyID = firstHalf.join("|");
-      const pointCommitments = [];
+      const pointCommitments: Point[] = [];
       firstHalf.forEach((compressedCommitment) => {
         pointCommitments.push(Point.fromCompressedPub(compressedCommitment));
       });
@@ -169,7 +169,7 @@ class Metadata implements IMetadata {
 
   async getEncryptedShare(shareStore: ShareStore): Promise<ShareStore> {
     const pubShare = shareStore.share.getPublicShare();
-    const encryptedShareStore = this.scopedStore.encryptedShares;
+    const encryptedShareStore = this.scopedStore.encryptedShares as Record<string, unknown>;
     if (!encryptedShareStore) {
       throw CoreError.encryptedShareStoreUnavailable(`${shareStore}`);
     }
@@ -186,7 +186,7 @@ class Metadata implements IMetadata {
   }
 
   addShareDescription(shareIndex: string, description: string): void {
-    const currentSD = this.getGeneralStoreDomain("shareDescriptions") || {};
+    const currentSD = (this.getGeneralStoreDomain("shareDescriptions") || {}) as Record<string, string[]>;
     if (currentSD[shareIndex]) {
       currentSD[shareIndex].push(description);
     } else {
@@ -196,7 +196,7 @@ class Metadata implements IMetadata {
   }
 
   deleteShareDescription(shareIndex: string, description: string): void {
-    const currentSD = this.getGeneralStoreDomain("shareDescriptions");
+    const currentSD = this.getGeneralStoreDomain("shareDescriptions") as Record<string, string[]>;
     const index = currentSD[shareIndex].indexOf(description);
     if (index > -1) {
       currentSD[shareIndex].splice(index, 1);
@@ -207,7 +207,7 @@ class Metadata implements IMetadata {
   }
 
   updateShareDescription(shareIndex: string, oldDescription: string, newDescription: string): void {
-    const currentSD = this.getGeneralStoreDomain("shareDescriptions");
+    const currentSD = this.getGeneralStoreDomain("shareDescriptions") as Record<string, string[]>;
     const index = currentSD[shareIndex].indexOf(oldDescription);
     if (index > -1) {
       currentSD[shareIndex][index] = newDescription;

@@ -124,9 +124,9 @@ export function generateRandomPolynomial(degree: number, secret?: BN, determinis
   if (deterministicShares.length > degree) {
     throw CoreError.default("deterministicShares in generateRandomPolynomial should be less or equal than degree to ensure an element of randomness");
   }
-  const points = {};
+  const points: Record<string, Point> = {};
   deterministicShares.forEach((share) => {
-    points[share.shareIndex.toString("hex")] = new Point(share.shareIndex, share.share);
+    points[share.shareIndex.toString("hex") as string] = new Point(share.shareIndex, share.share);
   });
   for (let i = 0; i < degree - deterministicShares.length; i += 1) {
     let shareIndex = generatePrivateExcludingIndexes([new BN(0)]);

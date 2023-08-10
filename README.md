@@ -58,7 +58,7 @@ For more information, check out the [technical overview](https://hackmd.io/Tej2t
 ### Requirements
 
 - This package requires a peer dependency of `@babel/runtime`
-- Node 14+
+- Node 18+
 
 ### Installation
 
