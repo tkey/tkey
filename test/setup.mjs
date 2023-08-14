@@ -1,5 +1,4 @@
 import Register from "@babel/register";
-import FormData from "form-data";
 import JSDOM from "jsdom-global";
 import path from "path";
 import { register } from "ts-node";
@@ -19,4 +18,14 @@ Register({
   rootMode: "upward",
 });
 
-globalThis.FormData = FormData;
+
+const storeFn = {
+  getItem(key) {
+    return this[key]
+  },
+  setItem(key, value) {
+    this[key] = value
+  },
+}
+globalThis.localStorage = { ...storeFn }
+globalThis.sessionStorage = { ...storeFn }
