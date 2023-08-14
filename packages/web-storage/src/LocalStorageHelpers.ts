@@ -7,7 +7,7 @@ function storageAvailable(type: string): boolean {
   const win = getWindow();
   let storage: Storage;
   try {
-    storage = win[type];
+    storage = win[type as "sessionStorage" | "localStorage"];
     const x = "__storage_test__";
     storage.setItem(x, x);
     storage.removeItem(x);

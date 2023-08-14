@@ -116,9 +116,10 @@ class ShareTransferModule implements IModule {
               this._cleanUpCurrentRequest();
               callback(ShareTransferError.userCancelledRequest());
             }
-          } catch (error) {
+          } catch (error: unknown) {
+            const err = error as ITkeyError;
             this._cleanUpCurrentRequest();
-            callback(error);
+            callback(err);
           }
         }, this.requestStatusCheckInterval)
       );

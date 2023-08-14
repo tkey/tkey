@@ -107,10 +107,11 @@ class TorusStorageLayer implements IStorageLayer {
         privKey
       );
       return await post<{ message: string }>(`${this.hostUrl}/set`, metadataParams);
-    } catch (error) {
+    } catch (error: unknown) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let apiError: any;
       try {
-        apiError = await error.json();
+        apiError = await (error as Response).json();
       } catch (error2) {
         // ignore error2. it means not an api error
         throw error;
@@ -151,9 +152,10 @@ class TorusStorageLayer implements IStorageLayer {
       };
       return await post<{ message: string }>(`${this.hostUrl}/bulk_set_stream`, FD, options, customOptions);
     } catch (error) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let apiError: any;
       try {
-        apiError = await error.json();
+        apiError = await (error as Response).json();
       } catch (error2) {
         // ignore error2. it means not an api error
         throw error;
