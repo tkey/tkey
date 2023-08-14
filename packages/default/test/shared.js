@@ -1532,7 +1532,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
 
       const { typeOfUser, nonce, pubNonce } = await getOrSetNonce(
         getMetadataUrl(),
-        serviceProvider.customAuthInstance.torus.ec.curve.n,
+        serviceProvider.customAuthInstance.torus.ec,
         0,
         pubKeyPoint.x.toString("hex"),
         pubKeyPoint.y.toString("hex"),
@@ -1558,7 +1558,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         nonce: newNonce,
         pubNonce: newPubNonce,
         upgraded,
-      } = await getOrSetNonce(getMetadataUrl(), serviceProvider.customAuthInstance.torus.ec.curve.n, 0, pubKeyPoint.x.toString("hex"), pubKeyPoint.y.toString("hex"), postboxKeyBN);
+      } = await getOrSetNonce(getMetadataUrl(), serviceProvider.customAuthInstance.torus.ec, 0, pubKeyPoint.x.toString("hex"), pubKeyPoint.y.toString("hex"), postboxKeyBN);
       equal(upgraded, true);
       equal(newTypeOfUser, "v2");
       equal(newNonce, undefined);
@@ -1596,12 +1596,12 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         },
       });
 
-      const res = await getOrSetNonce(metadataUrl, serviceProvider.customAuthInstance.torus.ec.curve.n, 0, pubKeyPoint.x.toString("hex"), pubKeyPoint.y.toString("hex"), postboxKeyBN);
+      const res = await getOrSetNonce(metadataUrl, serviceProvider.customAuthInstance.torus.ec, 0, pubKeyPoint.x.toString("hex"), pubKeyPoint.y.toString("hex"), postboxKeyBN);
       equal(res.typeOfUser, "v1");
 
       const anotherRes = await getOrSetNonce(
         metadataUrl,
-        serviceProvider.customAuthInstance.torus.ec.curve.n,
+        serviceProvider.customAuthInstance.torus.ec,
         0,
         pubKeyPoint.x.toString("hex"),
         pubKeyPoint.y.toString("hex"),
