@@ -4,7 +4,7 @@ on: [push]
 
 env:
   PLAYWRIGHT_BROWSERS_PATH: 0
-  NODE_VERSION: 18
+  NODE_VERSION: 20
   FORCE_COLOR: 3
 
 jobs:
