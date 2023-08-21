@@ -12,7 +12,7 @@ import ShareTransferModule from "@tkey/share-transfer";
 import TorusStorageLayer from "@tkey/storage-layer-torus";
 import { generatePrivate } from "@toruslabs/eccrypto";
 import { post } from "@toruslabs/http-helpers";
-import { keccak256, getOrSetNonce } from "@toruslabs/torus.js";
+import { getOrSetNonce, keccak256 } from "@toruslabs/torus.js";
 import { deepEqual, deepStrictEqual, equal, fail, notEqual, notStrictEqual, strict, strictEqual, throws } from "assert";
 import BN from "bn.js";
 import { JsonRpcProvider } from "ethers";
@@ -1558,7 +1558,14 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         nonce: newNonce,
         pubNonce: newPubNonce,
         upgraded,
-      } = await getOrSetNonce(getMetadataUrl(), serviceProvider.customAuthInstance.torus.ec, 0, pubKeyPoint.x.toString("hex"), pubKeyPoint.y.toString("hex"), postboxKeyBN);
+      } = await getOrSetNonce(
+        getMetadataUrl(),
+        serviceProvider.customAuthInstance.torus.ec,
+        0,
+        pubKeyPoint.x.toString("hex"),
+        pubKeyPoint.y.toString("hex"),
+        postboxKeyBN
+      );
       equal(upgraded, true);
       equal(newTypeOfUser, "v2");
       equal(newNonce, undefined);
@@ -1596,7 +1603,14 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         },
       });
 
-      const res = await getOrSetNonce(metadataUrl, serviceProvider.customAuthInstance.torus.ec, 0, pubKeyPoint.x.toString("hex"), pubKeyPoint.y.toString("hex"), postboxKeyBN);
+      const res = await getOrSetNonce(
+        metadataUrl,
+        serviceProvider.customAuthInstance.torus.ec,
+        0,
+        pubKeyPoint.x.toString("hex"),
+        pubKeyPoint.y.toString("hex"),
+        postboxKeyBN
+      );
       equal(res.typeOfUser, "v1");
 
       const anotherRes = await getOrSetNonce(
