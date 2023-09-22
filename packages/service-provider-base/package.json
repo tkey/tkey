@@ -1,6 +1,6 @@
 {
   "name": "@tkey-mpc/service-provider-base",
-  "version": "8.2.0",
+  "version": "8.2.1",
   "description": "TKey Base Service Provider Module",
   "author": "Torus Labs",
   "homepage": "https://github.com/tkey/tkey#readme",
@@ -43,7 +43,7 @@
     "@babel/runtime": "7.x"
   },
   "dependencies": {
-    "@tkey-mpc/common-types": "^8.2.0",
+    "@tkey-mpc/common-types": "^8.2.1",
     "bn.js": "^5.2.1",
     "elliptic": "^6.5.4"
   },

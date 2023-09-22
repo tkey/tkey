@@ -249,6 +249,8 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const sp = customSP;
 
       if (!sp.useTSS) this.skip();
+      // skip if not mock for now as we need to set key on server to test
+      if (!isMocked) this.skip();
       const deviceTSSShare = new BN(generatePrivate());
       const deviceTSSIndex = 3;
 
@@ -360,6 +362,9 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const sp = customSP;
 
       if (!sp.useTSS) this.skip();
+      // skip if not mock for now as we need to set key on server to test
+      if (!isMocked) this.skip();
+
       const deviceTSSShare = new BN(generatePrivate());
       const deviceTSSIndex = 3;
 
