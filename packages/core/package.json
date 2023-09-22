@@ -1,6 +1,6 @@
 {
   "name": "@tkey-mpc/core",
-  "version": "8.2.1",
+  "version": "8.2.2",
   "description": "TKey Core library",
   "main": "dist/core.cjs.js",
   "module": "dist/core.esm.js",
@@ -34,7 +34,7 @@
     "src"
   ],
   "dependencies": {
-    "@tkey-mpc/common-types": "^8.2.1",
+    "@tkey-mpc/common-types": "^8.2.2",
     "@toruslabs/eccrypto": "^3.0.0",
     "@toruslabs/http-helpers": "^4.0.0",
     "@toruslabs/rss-client": "^1.5.0",
