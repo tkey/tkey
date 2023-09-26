@@ -41,11 +41,12 @@
     "@tkey/common-types": "^11.0.2",
     "@toruslabs/http-helpers": "^5.0.0",
     "bn.js": "^5.2.1",
+    "base64url": "3.0.1",
     "ethereum-cryptography": "^2.1.2",
     "json-stable-stringify": "^1.0.2"
   },
   "devDependencies": {
-    "@types/bn.js": "^5.1.1",
+    "@types/bn.js": "^5.1.2",
     "@types/json-stable-stringify": "^1.0.34"
   },
   "bugs": {

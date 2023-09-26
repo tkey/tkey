@@ -45,8 +45,8 @@
     "webextension-polyfill": "^0.10.0"
   },
   "devDependencies": {
-    "@types/chrome": "^0.0.245",
-    "@types/webextension-polyfill": "^0.10.2"
+    "@types/chrome": "^0.0.246",
+    "@types/webextension-polyfill": "^0.10.4"
   },
   "lint-staged": {
     "!(*d).ts": [
