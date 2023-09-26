@@ -44,14 +44,14 @@
   },
   "dependencies": {
     "@tkey/common-types": "^11.0.2",
-    "@types/bn.js": "^5.1.1",
+    "@types/bn.js": "^5.1.2",
     "bn.js": "^5.2.1"
   },
   "devDependencies": {
     "@tkey/core": "^11.0.2",
     "@tkey/service-provider-base": "^11.0.2",
     "@tkey/storage-layer-torus": "^11.0.2",
-    "@types/filesystem": "^0.0.32"
+    "@types/filesystem": "^0.0.33"
   },
   "bugs": {
     "url": "https://github.com/tkey/tkey/issues"

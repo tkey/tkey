@@ -43,7 +43,7 @@
     "@babel/runtime": "7.x"
   },
   "dependencies": {
-    "@toruslabs/customauth": "^16.0.4",
+    "@toruslabs/customauth": "^16.0.6",
     "@toruslabs/eccrypto": "^4.0.0",
     "@toruslabs/torus.js": "^11.0.5",
     "bn.js": "^5.2.1",
@@ -52,8 +52,8 @@
     "ts-custom-error": "^3.3.1"
   },
   "devDependencies": {
-    "@types/bn.js": "^5.1.1",
-    "@types/elliptic": "^6.4.14"
+    "@types/bn.js": "^5.1.2",
+    "@types/elliptic": "^6.4.15"
   },
   "bugs": {
     "url": "https://github.com/tkey/tkey/issues"

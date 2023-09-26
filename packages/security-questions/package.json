@@ -46,7 +46,7 @@
     "ethereum-cryptography": "^2.1.2"
   },
   "devDependencies": {
-    "@types/bn.js": "^5.1.1"
+    "@types/bn.js": "^5.1.2"
   },
   "lint-staged": {
     "!(*d).ts": [
