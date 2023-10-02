@@ -39,7 +39,7 @@
   },
   "dependencies": {
     "@tkey-mpc/common-types": "^8.2.2",
-    "@toruslabs/http-helpers": "^4.0.0",
+    "@toruslabs/http-helpers": "^5.0.0",
     "bn.js": "^5.2.1",
     "json-stable-stringify": "^1.0.2",
     "web3-utils": "^1.8.1"
