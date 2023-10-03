@@ -137,10 +137,9 @@ export const generateIdToken = (email) => {
 
 export async function fetchPostboxKeyAndSigs(opts) {
   const { serviceProvider, verifierName, verifierId } = opts;
-  
+
   const { serverEndpoints: sssEndpoints } = await serviceProvider.getSSSNodeDetails();
   const token = generateIdToken(verifierId);
-console.log("service provider", serviceProvider );
 
   const retrieveSharesResponse = await serviceProvider.customAuthInstance.torus.retrieveShares(
     sssEndpoints,

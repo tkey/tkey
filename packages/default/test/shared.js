@@ -4,6 +4,7 @@
 /* eslint-disable import/no-extraneous-dependencies */
 
 import { ecCurve, getPubKeyPoint, KEY_NOT_FOUND, SHARE_DELETED, ShareStore } from "@tkey-mpc/common-types";
+import { Metadata } from "@tkey-mpc/core";
 import PrivateKeyModule, { ED25519Format, SECP256K1Format } from "@tkey-mpc/private-keys";
 import SecurityQuestionsModule from "@tkey-mpc/security-questions";
 import SeedPhraseModule, { MetamaskSeedPhraseFormat } from "@tkey-mpc/seed-phrase";
@@ -13,11 +14,11 @@ import TorusStorageLayer from "@tkey-mpc/storage-layer-torus";
 import { generatePrivate } from "@toruslabs/eccrypto";
 import { post } from "@toruslabs/http-helpers";
 import { getLagrangeCoeffs } from "@toruslabs/rss-client";
+import { getOrSetNonce, keccak256 } from "@toruslabs/torus.js";
 import { deepEqual, deepStrictEqual, equal, fail, notEqual, notStrictEqual, strict, strictEqual, throws } from "assert";
 import BN from "bn.js";
-import stringify from "json-stable-stringify";
-import { getOrSetNonce, keccak256 } from "@toruslabs/torus.js";
 import { JsonRpcProvider } from "ethers";
+import stringify from "json-stable-stringify";
 import { createSandbox } from "sinon";
 
 import ThresholdKey from "../src/index";
@@ -766,7 +767,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       it(`#should serialize and deserialize correctly without tkeyArgs, manualSync=${mode}`, async function () {
         if (!customSP.useTSS) this.skip();
         const sp = customSP;
-        let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
+        let userInput = new BN(keccak256(Buffer.from("user answer blublu", "utf-8")).slice(2), "hex");
         userInput = userInput.umod(ecCurve.curve.n);
         const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
 
@@ -822,7 +823,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       });
       it(`#should serialize and deserialize correctly with tkeyArgs, manualSync=${mode}`, async function () {
         if (!customSP.useTSS) this.skip();
-        let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
+        let userInput = new BN(keccak256(Buffer.from("user answer blublu", "utf-8")).slice(2), "hex");
         userInput = userInput.umod(ecCurve.curve.n);
         const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
 
@@ -897,7 +898,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
           maxTSSNonceToSimulate: 2,
         });
 
-        let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
+        let userInput = new BN(keccak256(Buffer.from("user answer blublu", "utf-8")).slice(2), "hex");
         userInput = userInput.umod(ecCurve.curve.n);
         const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
 
@@ -926,7 +927,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       });
       it(`#should serialize and deserialize correctly keeping localTransitions afterNewKeyAssign, manualSync=${mode}`, async function () {
         if (!customSP.useTSS) this.skip();
-        let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
+        let userInput = new BN(keccak256(Buffer.from("user answer blublu", "utf-8")).slice(2), "hex");
         userInput = userInput.umod(ecCurve.curve.n);
         const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
         // TODO: tss initialize
