@@ -247,7 +247,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       strictEqual(tssPubKey.y.toString(16, 64), tssCommits[0].y.toString(16, 64));
     });
 
-    it.skip(`#should be able to import a tss key, manualSync=${mode}`, async function () {
+    it(`#should be able to import a tss key, manualSync=${mode}`, async function () {
       const sp = customSP;
 
       if (!sp.useTSS) this.skip();
@@ -360,7 +360,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       strictEqual(tssPrivKeyImported.toString("hex"), importedKey.toString("hex"));
     });
 
-    it.skip(`#should be able to unsafe export final tss key, manualSync=${mode}`, async function () {
+    it(`#should be able to unsafe export final tss key, manualSync=${mode}`, async function () {
       const sp = customSP;
 
       if (!sp.useTSS) this.skip();
