@@ -19,7 +19,7 @@ user three shares: ShareA, ShareB, and ShareC.
 
 Similar to existing 2FA systems, a user needs to prove ownership of at least 2 out of 3 (2/3) shares, in order to retrieve his private key.
 
-For more information, check out the [technical overview](https://hackmd.io/Tej2tf83SZOxZmz70ObEpg). Before integrating you can also check out the example  for [tKey](https://github.com/tkey/tkey-example).
+For more information, check out the [technical overview](https://hackmd.io/Tej2tf83SZOxZmz70ObEpg). Before integrating you can also check out the example for [tKey](https://github.com/tkey/tkey-example).
 
 ### To use the SDK in your application, please refer to our [SDK Reference](https://web3auth.io/docs/sdk/self-host/installation) in Web3Auth Documentation
 
@@ -58,22 +58,21 @@ For more information, check out the [technical overview](https://hackmd.io/Tej2t
 ### Requirements
 
 - This package requires a peer dependency of `@babel/runtime`
-- Node 14+
+- Node 18+
 
 ### Installation
 
 ```
-npm run bootstrap
+npm install
 npm run pack:lerna
 ```
 
 ## Bundling
 
-Each sub package is distributed in 4 formats
+Each sub package is distributed in 3 formats
 
 - `esm` build `dist/<MODULE_NAME>.esm.js` in es6 format
 - `commonjs` build `dist/<MODULE_NAME>.cjs.js` in es5 format
-- `commonjs` build `dist/<MODULE_NAME>-bundled.cjs.js` in es5 format with problematic packages bundled (benfits non-webpack users)
 - `umd` build `dist/<MODULE_NAME>.umd.min.js` in es5 format without polyfilling corejs minified
 
 By default, the appropriate format is used for your specified usecase

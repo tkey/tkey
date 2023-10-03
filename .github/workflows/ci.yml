@@ -6,7 +6,7 @@ jobs:
   test:
     strategy:
       matrix:
-        node: ["16.x"]
+        node: ["20.x"]
         os: [ubuntu-latest]
 
     runs-on: ${{ matrix.os }}
@@ -21,26 +21,14 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: "npm"
 
-      - name: Get npm cache directory
-        id: npm-cache-dir
-        run: |
-          echo "::set-output name=dir::$(npm config get cache)"
-      - uses: actions/cache@v3
-        id: npm-cache # use this to check for `cache-hit` ==> if: steps.npm-cache.outputs.cache-hit != 'true'
-        with:
-          path: ${{ steps.npm-cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-
       - name: Install dependencies
         run: npm ci
 
       - name: Build & Lint
-        run: yarn run build
+        run: npm run build
 
       - name: Test Development
-        run: yarn run test
+        run: npm run test
 
       - name: Test Production
-        run: yarn run test-production
+        run: npm run test-production

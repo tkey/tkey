@@ -47,6 +47,8 @@ export function getServiceProvider(params) {
         // this url has no effect as postbox key is passed
         // passing it just to satisfy direct auth checks.
         baseUrl: "http://localhost:3000",
+        web3AuthClientId: "test",
+        network: "mainnet",
       },
     });
   }
@@ -135,9 +137,11 @@ export const generateIdToken = (email) => {
 
 export async function fetchPostboxKeyAndSigs(opts) {
   const { serviceProvider, verifierName, verifierId } = opts;
+
   const { serverEndpoints: sssEndpoints } = await serviceProvider.getSSSNodeDetails();
   const token = generateIdToken(verifierId);
-  const retrieveSharesResponse = await serviceProvider.directWeb.torus.retrieveShares(
+
+  const retrieveSharesResponse = await serviceProvider.customAuthInstance.torus.retrieveShares(
     sssEndpoints,
     [],
     verifierName,
@@ -179,7 +183,7 @@ export async function assignTssDkgKeys(opts) {
     console.log("extendedVerifierId", extendedVerifierId);
 
     const { serverEndpoints: sssEndpoints } = await serviceProvider.getSSSNodeDetails();
-    const retrieveSharesResponse = await serviceProvider.directWeb.torus.retrieveShares(
+    const retrieveSharesResponse = await serviceProvider.customAuthInstance.torus.retrieveShares(
       sssEndpoints,
       [],
       verifierName,

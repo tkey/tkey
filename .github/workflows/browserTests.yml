@@ -4,12 +4,13 @@ on: [push]
 
 env:
   PLAYWRIGHT_BROWSERS_PATH: 0
-  NODE_VERSION: 16
+  NODE_VERSION: 20
   FORCE_COLOR: 3
 
 jobs:
   test:
     strategy:
+      max-parallel: 1
       matrix:
         browser: [chromium, firefox]
         # browser: [chromium, firefox, webkit]
@@ -32,41 +33,29 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
 
-      - name: Get npm cache directory
-        id: npm-cache-dir
-        run: |
-          echo "::set-output name=dir::$(npm config get cache)"
-      - uses: actions/cache@v3
-        id: npm-cache # use this to check for `cache-hit` ==> if: steps.npm-cache.outputs.cache-hit != 'true'
-        with:
-          path: ${{ steps.npm-cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-
       - name: Install Node.js dependencies
         run: npm ci
 
       - name: Browser Test Development Chrome (Mocked)
         if: startsWith(matrix.browser, 'chromium')
-        run: yarn run browser-tests:local-mocked-chrome
+        run: npm run browser-tests:local-mocked-chrome
 
       - name: Browser Test Development Firefox (Mocked)
         if: startsWith(matrix.browser, 'firefox')
-        run: yarn run browser-tests:local-mocked-firefox
+        run: npm run browser-tests:local-mocked-firefox
 
       # - name: Browser Test Development webkit (Mocked)
       #   if: startsWith(matrix.browser, 'webkit')
-      #   run: yarn run browser-tests:local-mocked-webkit
+      #   run: npm run browser-tests:local-mocked-webkit
 
       - name: Browser Test Production Chrome (Prod)
         if: startsWith(matrix.browser, 'chromium')
-        run: yarn run browser-tests:local-prod-chrome
+        run: npm run browser-tests:local-prod-chrome
 
       # - name: Browser Test Production Firefox (prod)
       #   if: startsWith(matrix.browser, 'firefox')
-      #   run: yarn run browser-tests:local-prod-firefox
+      #   run: npm run browser-tests:local-prod-firefox
 
       # - name: Browser Test Production webkit (prod)
       #   if: startsWith(matrix.browser, 'webkit')
-      #   run: yarn run browser-tests:local-prod-webkit
+      #   run: npm run browser-tests:local-prod-webkit

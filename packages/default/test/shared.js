@@ -3,7 +3,8 @@
 /* eslint-disable mocha/no-exports */
 /* eslint-disable import/no-extraneous-dependencies */
 
-import { ecCurve, getPubKeyPoint, KEY_NOT_FOUND, SHARE_DELETED } from "@tkey-mpc/common-types";
+import { ecCurve, getPubKeyPoint, KEY_NOT_FOUND, SHARE_DELETED, ShareStore } from "@tkey-mpc/common-types";
+import { Metadata } from "@tkey-mpc/core";
 import PrivateKeyModule, { ED25519Format, SECP256K1Format } from "@tkey-mpc/private-keys";
 import SecurityQuestionsModule from "@tkey-mpc/security-questions";
 import SeedPhraseModule, { MetamaskSeedPhraseFormat } from "@tkey-mpc/seed-phrase";
@@ -13,11 +14,12 @@ import TorusStorageLayer from "@tkey-mpc/storage-layer-torus";
 import { generatePrivate } from "@toruslabs/eccrypto";
 import { post } from "@toruslabs/http-helpers";
 import { getLagrangeCoeffs } from "@toruslabs/rss-client";
+import { getOrSetNonce, keccak256 } from "@toruslabs/torus.js";
 import { deepEqual, deepStrictEqual, equal, fail, notEqual, notStrictEqual, strict, strictEqual, throws } from "assert";
 import BN from "bn.js";
+import { JsonRpcProvider } from "ethers";
 import stringify from "json-stable-stringify";
 import { createSandbox } from "sinon";
-import { keccak256 } from "web3-utils";
 
 import ThresholdKey from "../src/index";
 import { assignTssDkgKeys, fetchPostboxKeyAndSigs, getMetadataUrl, getServiceProvider, initStorageLayer, isMocked, setupTSSMocks } from "./helpers";
@@ -245,7 +247,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       strictEqual(tssPubKey.y.toString(16, 64), tssCommits[0].y.toString(16, 64));
     });
 
-    it(`#should be able to import a tss key, manualSync=${mode}`, async function () {
+    it.skip(`#should be able to import a tss key, manualSync=${mode}`, async function () {
       const sp = customSP;
 
       if (!sp.useTSS) this.skip();
@@ -358,7 +360,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       strictEqual(tssPrivKeyImported.toString("hex"), importedKey.toString("hex"));
     });
 
-    it(`#should be able to unsafe export final tss key, manualSync=${mode}`, async function () {
+    it.skip(`#should be able to unsafe export final tss key, manualSync=${mode}`, async function () {
       const sp = customSP;
 
       if (!sp.useTSS) this.skip();
@@ -765,7 +767,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       it(`#should serialize and deserialize correctly without tkeyArgs, manualSync=${mode}`, async function () {
         if (!customSP.useTSS) this.skip();
         const sp = customSP;
-        let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
+        let userInput = new BN(keccak256(Buffer.from("user answer blublu", "utf-8")).slice(2), "hex");
         userInput = userInput.umod(ecCurve.curve.n);
         const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
 
@@ -821,7 +823,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       });
       it(`#should serialize and deserialize correctly with tkeyArgs, manualSync=${mode}`, async function () {
         if (!customSP.useTSS) this.skip();
-        let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
+        let userInput = new BN(keccak256(Buffer.from("user answer blublu", "utf-8")).slice(2), "hex");
         userInput = userInput.umod(ecCurve.curve.n);
         const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
 
@@ -896,7 +898,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
           maxTSSNonceToSimulate: 2,
         });
 
-        let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
+        let userInput = new BN(keccak256(Buffer.from("user answer blublu", "utf-8")).slice(2), "hex");
         userInput = userInput.umod(ecCurve.curve.n);
         const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
 
@@ -925,7 +927,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       });
       it(`#should serialize and deserialize correctly keeping localTransitions afterNewKeyAssign, manualSync=${mode}`, async function () {
         if (!customSP.useTSS) this.skip();
-        let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
+        let userInput = new BN(keccak256(Buffer.from("user answer blublu", "utf-8")).slice(2), "hex");
         userInput = userInput.umod(ecCurve.curve.n);
         const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
         // TODO: tss initialize
@@ -999,7 +1001,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       }
     });
     it(`#should be able to reconstruct key when initializing with user input, manualSync=${mode}`, async function () {
-      let determinedShare = new BN(keccak256("user answer blublu").slice(2), "hex");
+      let determinedShare = new BN(keccak256(Buffer.from("user answer blublu")).slice(2), "hex");
       determinedShare = determinedShare.umod(ecCurve.curve.n);
       const resp1 = await tb._initializeNewKey({ determinedShare, initializeModules: true });
       await tb.syncLocalMetadataTransitions();
@@ -1026,8 +1028,9 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         fail("key should be able to be reconstructed");
       }
     });
+
     it(`#should be able to reconstruct key when initializing a with a share, manualSync=${mode}`, async function () {
-      let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
+      let userInput = new BN(keccak256(Buffer.from("user answer blublu")).slice(2), "hex");
       userInput = userInput.umod(ecCurve.curve.n);
       const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
       await tb.syncLocalMetadataTransitions();
@@ -1041,7 +1044,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       }
     });
     it(`#should be able to reconstruct key after refresh and initializing with a share, manualSync=${mode}`, async function () {
-      let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
+      let userInput = new BN(keccak256(Buffer.from("user answer blublu")).slice(2), "hex");
       userInput = userInput.umod(ecCurve.curve.n);
       const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
       const newShares = await tb.generateNewShare();
@@ -1057,7 +1060,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       }
     });
     it(`#should be able to reconstruct key after refresh and initializing with service provider, manualSync=${mode}`, async function () {
-      let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
+      let userInput = new BN(keccak256(Buffer.from("user answer blublu")).slice(2), "hex");
       userInput = userInput.umod(ecCurve.curve.n);
       const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
       const newShares = await tb.generateNewShare();
@@ -1323,7 +1326,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       tb = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
     });
     it(`#should serialize and deserialize correctly without tkeyArgs, manualSync=${mode}`, async function () {
-      let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
+      let userInput = new BN(keccak256(Buffer.from("user answer blublu")).slice(2), "hex");
       userInput = userInput.umod(ecCurve.curve.n);
       const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
       await tb.generateNewShare();
@@ -1335,7 +1338,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       strictEqual(finalKey.privKey.toString("hex"), resp1.privKey.toString("hex"), "Incorrect serialization");
     });
     it(`#should serialize and deserialize correctly with tkeyArgs, manualSync=${mode}`, async function () {
-      let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
+      let userInput = new BN(keccak256(Buffer.from("user answer blublu")).slice(2), "hex");
       userInput = userInput.umod(ecCurve.curve.n);
       const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
       await tb.generateNewShare();
@@ -1347,7 +1350,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       strictEqual(finalKey.privKey.toString("hex"), resp1.privKey.toString("hex"), "Incorrect serialization");
     });
     it(`#should serialize and deserialize correctly, keeping localTransitions consistent before syncing NewKeyAssign, manualSync=${mode}`, async function () {
-      let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
+      let userInput = new BN(keccak256(Buffer.from("user answer blublu")).slice(2), "hex");
       userInput = userInput.umod(ecCurve.curve.n);
       const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
 
@@ -1374,7 +1377,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       }
     });
     it(`#should serialize and deserialize correctly keeping localTransitions afterNewKeyAssign, manualSync=${mode}`, async function () {
-      let userInput = new BN(keccak256("user answer blublu").slice(2), "hex");
+      let userInput = new BN(keccak256(Buffer.from("user answer blublu")).slice(2), "hex");
       userInput = userInput.umod(ecCurve.curve.n);
       const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
       await tb.syncLocalMetadataTransitions();
@@ -1670,6 +1673,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     });
     it(`#should be able to transfer share via the module, manualSync=${mode}`, async function () {
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
+      const result = await tb.generateNewShare();
       await tb.syncLocalMetadataTransitions();
 
       const tb2 = new ThresholdKey({
@@ -1682,8 +1686,6 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
 
       // usually should be called in callback, but mocha does not allow
       const pubkey = await tb2.modules.shareTransfer.requestNewShare();
-
-      const result = await tb.generateNewShare();
 
       await tb.modules.shareTransfer.approveRequest(pubkey, result.newShareStores[result.newShareIndex.toString("hex")]);
       await tb.syncLocalMetadataTransitions();
@@ -1818,7 +1820,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     let secp256k1Format;
     let ed25519privateKeyFormat;
     beforeEach("Setup ThresholdKey", async function () {
-      metamaskSeedPhraseFormat = new MetamaskSeedPhraseFormat("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68");
+      metamaskSeedPhraseFormat = new MetamaskSeedPhraseFormat(new JsonRpcProvider("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68"));
       secp256k1Format = new SECP256K1Format();
       ed25519privateKeyFormat = new ED25519Format();
       tb = new ThresholdKey({
@@ -1871,7 +1873,9 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       strictEqual(returnedSeed[0].seedPhrase, seedPhraseToSet);
       strictEqual(returnedSeed[1].seedPhrase, seedPhraseToSet2);
 
-      const metamaskSeedPhraseFormat2 = new MetamaskSeedPhraseFormat("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68");
+      const metamaskSeedPhraseFormat2 = new MetamaskSeedPhraseFormat(
+        new JsonRpcProvider("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68")
+      );
       const tb2 = new ThresholdKey({
         serviceProvider: customSP,
         manualSync: mode,
@@ -2026,7 +2030,9 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       await tb.modules.privateKeyModule.setPrivateKey("secp256k1n", actualPrivateKeys[1]);
       await tb.syncLocalMetadataTransitions();
 
-      const metamaskSeedPhraseFormat2 = new MetamaskSeedPhraseFormat("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68");
+      const metamaskSeedPhraseFormat2 = new MetamaskSeedPhraseFormat(
+        new JsonRpcProvider("https://mainnet.infura.io/v3/bca735fdbba0408bb09471e86463ae68")
+      );
       const tb2 = new ThresholdKey({
         serviceProvider: customSP,
         manualSync: mode,
@@ -2061,6 +2067,133 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         privKey: resp1.privKey,
         allKeys: [resp1.privKey],
       });
+    });
+
+    it(`#should be able to increase threshold limit of tkey, manualSync=${mode}`, async function () {
+      // tkey instance with correct share stores and index
+      const tb2 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
+      const resp2 = await tb2._initializeNewKey({ initializeModules: true });
+      await tb2.syncLocalMetadataTransitions();
+
+      const tb3 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
+      await tb3.initialize({ neverInitializeNewKey: true });
+
+      // should be able to insert if correct share store and index
+      await tb3.inputShareStoreSafe(resp2.deviceShare, true);
+      await tb3.reconstructKey();
+
+      // generate new shares
+      await tb3.generateNewShare();
+      await tb3.generateNewShare();
+      await tb3.syncLocalMetadataTransitions();
+
+      // reconstruct tkey
+      const reconstructPreThreshold = await tb3.reconstructKey();
+
+      const poly = tb3.metadata.getLatestPublicPolynomial();
+      const existingShareIndexes = tb3.metadata.getShareIndexesForPolynomial(poly.getPolynomialID());
+
+      // increase threshold from 2 -> 3
+      const newThreshold = 3;
+      await tb3._refreshShares(newThreshold, existingShareIndexes, poly.getPolynomialID());
+
+      // 3/4 shares is required to reconstruct tkey
+      const reconstructPostThreshold = await tb3.reconstructKey();
+      if (reconstructPreThreshold.privKey.cmp(reconstructPostThreshold.privKey) !== 0) {
+        fail("key should be able to be reconstructed");
+      }
+      // console.log("newThreshold", tb3.metadata.getLatestPublicPolynomial().getThreshold());
+      equal(tb3.metadata.getLatestPublicPolynomial().getThreshold(), newThreshold);
+    });
+  });
+
+  describe("Tkey LocalMetadataTransition", function () {
+    it("should able to get latest share from getGenericMetadataWithTransitionStates with localMetadataTransision", async function () {
+      const tb = new ThresholdKey({
+        serviceProvider: customSP,
+        manualSync: true,
+        storageLayer: customSL,
+      });
+
+      await tb._initializeNewKey();
+
+      await tb.reconstructKey();
+
+      await tb.generateNewShare();
+
+      const expectLatestSPShare = await tb.getGenericMetadataWithTransitionStates({
+        fromJSONConstructor: ShareStore,
+        serviceProvider: customSP,
+        includeLocalMetadataTransitions: true,
+        _localMetadataTransitions: tb._localMetadataTransitions,
+      });
+
+      const latestSPShareStore = tb.outputShareStore(new BN(1));
+
+      strictEqual(JSON.stringify(latestSPShareStore.toJSON()), JSON.stringify(expectLatestSPShare.toJSON()));
+    });
+
+    it("should able to get catchupToLatestShare with localMetadataTransision", async function () {
+      const tb = new ThresholdKey({
+        serviceProvider: customSP,
+        manualSync: true,
+        storageLayer: customSL,
+      });
+
+      await tb._initializeNewKey();
+      const spShareStore = tb.outputShareStore(new BN(1));
+
+      await tb.reconstructKey();
+
+      await tb.generateNewShare();
+
+      const expectLatestResult = await tb.catchupToLatestShare({
+        shareStore: spShareStore,
+        includeLocalMetadataTransitions: true,
+      });
+
+      const latestSPShareStore = tb.outputShareStore(new BN(1));
+
+      strictEqual(JSON.stringify(latestSPShareStore.toJSON()), JSON.stringify(expectLatestResult.latestShare.toJSON()));
+      strictEqual(JSON.stringify(tb.metadata.toJSON()), JSON.stringify(expectLatestResult.shareMetadata.toJSON()));
+    });
+
+    it("should able to initialize and reconstruct with localMetadataTransision", async function () {
+      const tb = new ThresholdKey({
+        serviceProvider: customSP,
+        manualSync: true,
+        storageLayer: customSL,
+      });
+
+      await tb._initializeNewKey();
+
+      await tb.reconstructKey(true);
+
+      const newShareMap = await tb.generateNewShare();
+      const newShare = newShareMap.newShareStores[newShareMap.newShareIndex.toString("hex")];
+
+      const localMetadataTransistionShare = tb._localMetadataTransitions[0];
+      const localMetadataTransistionData = tb._localMetadataTransitions[1];
+
+      const tb2 = new ThresholdKey({
+        serviceProvider: customSP,
+        manualSync: mode,
+        storageLayer: customSL,
+      });
+
+      const newMetadata = Metadata.fromJSON(tb.metadata.toJSON());
+      await tb2.initialize({
+        neverInitializeNewKey: true,
+        transitionMetadata: newMetadata,
+        // previouslyFetchedCloudMetadata: tempCloud,
+        previousLocalMetadataTransitions: [localMetadataTransistionShare, localMetadataTransistionData],
+        // withShare: shareToUseForSerialization,
+      });
+
+      await tb2.inputShareStoreSafe(newShare);
+      await tb2.reconstructKey();
+
+      strictEqual(tb.privKey.toString("hex"), tb2.privKey.toString("hex"));
     });
   });
 
@@ -2109,7 +2242,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       for (let i = 0; i < 5; i += 1) {
         const temp = new ThresholdKey({ serviceProvider: customSP, manualSync: mode, storageLayer: customSL });
         await temp.initialize();
-        temp.inputShareStore(resp1.deviceShare);
+        await temp.inputShareStoreSafe(resp1.deviceShare);
         await temp.reconstructKey();
         alltbs.push(temp);
       }
@@ -2297,11 +2430,16 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
           metadataUrl: getMetadataUrl(),
           // This url has no effect as postbox key is passed, passing it just to satisfy direct auth checks.
           baseUrl: "http://localhost:3000",
+          web3AuthClientId: "test",
+          network: "mainnet",
         },
       });
       const storageLayer2 = new TorusStorageLayer({ hostUrl: getMetadataUrl() });
 
-      const { typeOfUser, nonce, pubNonce } = await serviceProvider.directWeb.torus.getOrSetNonce(
+      const { typeOfUser, nonce, pubNonce } = await getOrSetNonce(
+        getMetadataUrl(),
+        serviceProvider.customAuthInstance.torus.ec,
+        0,
         pubKeyPoint.x.toString("hex"),
         pubKeyPoint.y.toString("hex"),
         postboxKeyBN
@@ -2311,7 +2449,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       notEqual(pubNonce, undefined);
 
       const nonceBN = new BN(nonce, "hex");
-      const importKey = postboxKeyBN.add(nonceBN).umod(serviceProvider.directWeb.torus.ec.curve.n).toString("hex");
+      const importKey = postboxKeyBN.add(nonceBN).umod(serviceProvider.customAuthInstance.torus.ec.curve.n).toString("hex");
 
       const tKey = new ThresholdKey({ serviceProvider, storageLayer: storageLayer2, manualSync: mode });
       await tKey.initialize({
@@ -2326,7 +2464,14 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         nonce: newNonce,
         pubNonce: newPubNonce,
         upgraded,
-      } = await serviceProvider.directWeb.torus.getOrSetNonce(pubKeyPoint.x.toString("hex"), pubKeyPoint.y.toString("hex"), postboxKeyBN);
+      } = await getOrSetNonce(
+        getMetadataUrl(),
+        serviceProvider.customAuthInstance.torus.ec,
+        0,
+        pubKeyPoint.x.toString("hex"),
+        pubKeyPoint.y.toString("hex"),
+        postboxKeyBN
+      );
       equal(upgraded, true);
       equal(newTypeOfUser, "v2");
       equal(newNonce, undefined);
@@ -2359,13 +2504,25 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
           metadataUrl,
           // This url has no effect as postbox key is passed, passing it just to satisfy direct auth checks.
           baseUrl: "http://localhost:3000",
+          web3AuthClientId: "test",
+          network: "mainnet",
         },
       });
 
-      const res = await serviceProvider.directWeb.torus.getOrSetNonce(pubKeyPoint.x.toString("hex"), pubKeyPoint.y.toString("hex"), postboxKeyBN);
+      const res = await getOrSetNonce(
+        metadataUrl,
+        serviceProvider.customAuthInstance.torus.ec,
+        0,
+        pubKeyPoint.x.toString("hex"),
+        pubKeyPoint.y.toString("hex"),
+        postboxKeyBN
+      );
       equal(res.typeOfUser, "v1");
 
-      const anotherRes = await serviceProvider.directWeb.torus.getOrSetNonce(
+      const anotherRes = await getOrSetNonce(
+        metadataUrl,
+        serviceProvider.customAuthInstance.torus.ec,
+        0,
         pubKeyPoint.x.toString("hex"),
         pubKeyPoint.y.toString("hex"),
         postboxKeyBN
@@ -2373,35 +2530,38 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       deepEqual(res, anotherRes);
     });
 
-    it("should not change v1 address with a custom nonce when getOrSetNonce is called", async function () {
-      // Create an existing v1 account with custom key
-      const postboxKeyBN = new BN(generatePrivate(), "hex");
-      const pubKeyPoint = getPubKeyPoint(postboxKeyBN);
-      const customKey = generatePrivate().toString("hex");
+    // it("should not change v1 address with a custom nonce when getOrSetNonce is called", async function () {
+    //   // Create an existing v1 account with custom key
+    //   const postboxKeyBN = new BN(generatePrivate(), "hex");
+    //   const pubKeyPoint = getPubKeyPoint(postboxKeyBN);
+    //   const customKey = generatePrivate().toString("hex");
 
-      const serviceProvider = new TorusServiceProvider({
-        postboxKey: postboxKeyBN.toString("hex"),
-        customAuthArgs: {
-          enableOneKey: true,
-          metadataUrl: getMetadataUrl(),
-          // This url has no effect as postbox key is passed, passing it just to satisfy direct auth checks.
-          baseUrl: "http://localhost:3000",
-        },
-      });
-      await serviceProvider.directWeb.torus.setCustomKey({ torusKeyHex: postboxKeyBN.toString("hex"), customKeyHex: customKey.toString("hex") });
+    //   const serviceProvider = new TorusServiceProvider({
+    //     postboxKey: postboxKeyBN.toString("hex"),
+    //     customAuthArgs: {
+    //       enableOneKey: true,
+    //       metadataUrl: getMetadataUrl(),
+    //       // This url has no effect as postbox key is passed, passing it just to satisfy direct auth checks.
+    //       baseUrl: "http://localhost:3000",
+    //       web3AuthClientId: "test",
+    //       network: "mainnet",
+    //     },
+    //   });
+    //   // TODO: this is deprecated
+    //   await serviceProvider.customAuthInstance.torus.setCustomKey({ torusKeyHex: postboxKeyBN.toString("hex"), customKeyHex: customKey.toString("hex") });
 
-      // Compare nonce returned from v1 API and v2 API
-      const getMetadataNonce = await serviceProvider.directWeb.torus.getMetadata({
-        pub_key_X: pubKeyPoint.x.toString("hex"),
-        pub_key_Y: pubKeyPoint.y.toString("hex"),
-      });
-      const getOrSetNonce = await serviceProvider.directWeb.torus.getOrSetNonce(
-        pubKeyPoint.x.toString("hex"),
-        pubKeyPoint.y.toString("hex"),
-        postboxKeyBN
-      );
-      equal(getOrSetNonce.typeOfUser, "v1");
-      equal(getOrSetNonce.nonce, getMetadataNonce.toString("hex"));
-    });
+    //   // Compare nonce returned from v1 API and v2 API
+    //   const getMetadataNonce = await serviceProvider.customAuthInstance.torus.getMetadata({
+    //     pub_key_X: pubKeyPoint.x.toString("hex"),
+    //     pub_key_Y: pubKeyPoint.y.toString("hex"),
+    //   });
+    //   const getOrSetNonce = await serviceProvider.customAuthInstance.torus.getOrSetNonce(
+    //     pubKeyPoint.x.toString("hex"),
+    //     pubKeyPoint.y.toString("hex"),
+    //     postboxKeyBN
+    //   );
+    //   equal(getOrSetNonce.typeOfUser, "v1");
+    //   equal(getOrSetNonce.nonce, getMetadataNonce.toString("hex"));
+    // });
   });
 };

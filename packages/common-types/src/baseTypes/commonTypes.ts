@@ -1,10 +1,11 @@
-import type { CustomAuthArgs } from "@toruslabs/customauth";
+import { CustomAuthArgs } from "@toruslabs/customauth";
 import { PointHex } from "@toruslabs/rss-client";
 import BN from "bn.js";
 import type { curve } from "elliptic";
 
 import Point from "../base/Point";
-export { ecPoint, hexPoint, PointHex, randomSelection, RSSClient } from "@toruslabs/rss-client";
+export type { PointHex } from "@toruslabs/rss-client";
+export { ecPoint, hexPoint, randomSelection, RSSClient } from "@toruslabs/rss-client";
 
 export type PubKeyType = "ecc";
 
@@ -119,6 +120,7 @@ export type TorusStorageLayerArgs = {
 export type MockStorageLayerArgs = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   dataMap: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   lockMap: any;
 };
 
@@ -127,6 +129,7 @@ export type ShareDescriptionMap = {
 };
 
 export type FromJSONConstructor = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   fromJSON(value: StringifiedType): any;
 };
 

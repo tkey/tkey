@@ -102,8 +102,10 @@ class ThresholdKey implements ITKey {
 
   haveWriteMetadataLock: string;
 
+  serverTimeOffset?: number = 0;
+
   constructor(args?: TKeyArgs) {
-    const { enableLogging = false, modules = {}, serviceProvider, storageLayer, manualSync = false, tssTag } = args || {};
+    const { enableLogging = false, modules = {}, serviceProvider, storageLayer, manualSync = false, tssTag, serverTimeOffset } = args || {};
     this.enableLogging = enableLogging;
     this.serviceProvider = serviceProvider;
     this.storageLayer = storageLayer;
@@ -119,10 +121,13 @@ class ThresholdKey implements ITKey {
     this.setModuleReferences(); // Providing ITKeyApi access to modules
     this.haveWriteMetadataLock = "";
     this.tssTag = tssTag || "default";
+    this.serverTimeOffset = serverTimeOffset;
   }
 
   static async fromJSON(value: StringifiedType, args: TKeyArgs): Promise<ThresholdKey> {
-    const { enableLogging, privKey, metadata, shares, _localMetadataTransitions, manualSync, lastFetchedCloudMetadata, tssTag } = value;
+    const { enableLogging, privKey, metadata, shares, _localMetadataTransitions, manualSync, lastFetchedCloudMetadata, tssTag, serverTimeOffset } =
+      value;
+
     const { storageLayer, serviceProvider, modules } = args;
 
     const tb = new ThresholdKey({
@@ -132,6 +137,7 @@ class ThresholdKey implements ITKey {
       serviceProvider,
       modules,
       manualSync,
+      serverTimeOffset,
     });
     if (privKey) tb.privKey = new BN(privKey, "hex");
 
@@ -157,7 +163,7 @@ class ThresholdKey implements ITKey {
     const localTransitionShares: LocalTransitionShares = [];
     const localTransitionData: LocalTransitionData = [];
 
-    _localMetadataTransitions[0].forEach((x, index) => {
+    _localMetadataTransitions[0].forEach((x: string, index: number) => {
       if (x) {
         localTransitionShares.push(new BN(x, "hex"));
       } else {
@@ -312,9 +318,10 @@ class ThresholdKey implements ITKey {
     let latestShareDetails: CatchupToLatestShareResult;
     try {
       latestShareDetails = await this.catchupToLatestShare({ shareStore });
-    } catch (err) {
+    } catch (error: unknown) {
       // check if error is not the undefined error
       // if so we don't throw immediately incase there is valid transition metadata
+      const err = error as Error & { code?: number };
       const noMetadataExistsForShare = err.code === 1503;
       if (!noMetadataExistsForShare || !reinitializing) {
         throw err;
@@ -472,8 +479,9 @@ class ThresholdKey implements ITKey {
     let shareMetadata: Metadata;
     try {
       shareMetadata = await this.getAuthMetadata({ privKey: shareStore.share.share, includeLocalMetadataTransitions });
-    } catch (err) {
+    } catch (error: unknown) {
       // delete share error
+      const err = error as Error & { code?: number };
       if ((err as CoreError) && err.code === 1308) {
         throw err;
       }
@@ -489,8 +497,9 @@ class ThresholdKey implements ITKey {
       }
       const nextShare = await shareMetadata.getEncryptedShare(shareStore);
       return await this.catchupToLatestShare({ shareStore: nextShare, polyID, includeLocalMetadataTransitions });
-    } catch (err) {
+    } catch (error: unknown) {
       // delete share error
+      const err = error as Error & { code?: number };
       if ((err as CoreError) && err.code === 1308) {
         throw err;
       }
@@ -511,7 +520,7 @@ class ThresholdKey implements ITKey {
     // we don't just check the latest poly but
     // we check if the shares on previous polynomials in our stores have the share indexes we require
     const fullShareList = this.metadata.getShareIndexesForPolynomial(pubPolyID);
-    const shareIndexesRequired = {};
+    const shareIndexesRequired: Record<string, boolean> = {};
     for (let i = 0; i < fullShareList.length; i += 1) {
       shareIndexesRequired[fullShareList[i]] = true;
     }
@@ -568,24 +577,23 @@ class ThresholdKey implements ITKey {
     }
     this._setKey(privKey);
 
-    const returnObject = {
-      privKey,
+    const returnObject: Omit<ReconstructedKeyResult, "privKey"> = {
       allKeys: [privKey],
     };
 
     if (_reconstructKeyMiddleware && Object.keys(this._reconstructKeyMiddleware).length > 0) {
       // retireve/reconstruct extra keys that live on metadata
       await Promise.all(
-        Object.keys(this._reconstructKeyMiddleware).map(async (x) => {
+        Object.keys(this._reconstructKeyMiddleware).map(async (x: string) => {
           if (Object.prototype.hasOwnProperty.call(this._reconstructKeyMiddleware, x)) {
             const extraKeys = await this._reconstructKeyMiddleware[x]();
-            returnObject[x] = extraKeys;
-            returnObject.allKeys.push(...extraKeys);
+            returnObject[x as keyof Omit<ReconstructedKeyResult, "privKey">] = extraKeys;
+            (returnObject.allKeys as BN[]).push(...extraKeys);
           }
         })
       );
     }
-    return returnObject;
+    return { privKey, ...returnObject };
   }
 
   reconstructLatestPoly(): Polynomial {
@@ -640,7 +648,7 @@ class ThresholdKey implements ITKey {
     const pubPoly = this.metadata.getLatestPublicPolynomial();
     const previousPolyID = pubPoly.getPolynomialID();
     const existingShareIndexes = this.metadata.getShareIndexesForPolynomial(previousPolyID);
-    const newShareIndexes = [];
+    const newShareIndexes: string[] = [];
     existingShareIndexes.forEach((el) => {
       const bn = new BN(el, "hex");
       if (bn.cmp(shareIndexToDelete) !== 0) {
@@ -1128,8 +1136,8 @@ class ThresholdKey implements ITKey {
     this.metadata.addFromPolynomialAndShares(poly, shares);
 
     // change to share stores for public storing
-    const oldShareStores = {};
-    const newShareStores = {};
+    const oldShareStores: Record<string, ShareStore> = {};
+    const newShareStores: Record<string, ShareStore> = {};
     const polyID = poly.getPolynomialID();
     newShareIndexes.forEach((shareIndexHex) => {
       newShareStores[shareIndexHex] = new ShareStore(shares[shareIndexHex], polyID);
@@ -1138,7 +1146,7 @@ class ThresholdKey implements ITKey {
     // evaluate oldPoly for old shares and set new metadata with encrypted share for new polynomial
 
     const m = this.metadata.clone();
-    const newScopedStore = {};
+    const newScopedStore: Record<string, EncryptedMessage> = {};
     const sharesToPush = await Promise.all(
       shareIndexesNeedingEncryption.map(async (shareIndex) => {
         const oldShare = oldPoly.polyEval(new BN(shareIndex, "hex"));
@@ -1165,7 +1173,7 @@ class ThresholdKey implements ITKey {
       }
     }
 
-    const newShareMetadataToPush = [];
+    const newShareMetadataToPush: Metadata[] = [];
     const newShareStoreSharesToPush = newShareIndexes.map((shareIndex) => {
       const me = this.metadata.clone();
       newShareMetadataToPush.push(me);
@@ -1190,7 +1198,7 @@ class ThresholdKey implements ITKey {
     return { shareStores: newShareStores };
   }
 
-  async _initializeNewTSSKey(tssTag: string, deviceTSSShare, factorPub, deviceTSSIndex?): Promise<InitializeNewTSSKeyResult> {
+  async _initializeNewTSSKey(tssTag: string, deviceTSSShare: BN, factorPub: Point, deviceTSSIndex?: number): Promise<InitializeNewTSSKeyResult> {
     let tss2: BN;
     const _tssIndex = deviceTSSIndex || 2; // TODO: fix
     if (deviceTSSShare) {
@@ -1286,7 +1294,7 @@ class ThresholdKey implements ITKey {
       await this.initializeModules();
     }
 
-    const metadataToPush = [];
+    const metadataToPush: Metadata[] = [];
     const sharesToPush = shareIndexes.map((shareIndex) => {
       metadataToPush.push(this.metadata);
       return shares[shareIndex.toString("hex")].share;
@@ -1312,7 +1320,7 @@ class ThresholdKey implements ITKey {
       await this.storeDeviceShare(new ShareStore(shares[shareIndexes[1].toString("hex")], poly.getPolynomialID()));
     }
 
-    const result = {
+    const result: InitializeNewKeyResult = {
       privKey: this.privKey,
       deviceShare: new ShareStore(shares[shareIndexes[1].toString("hex")], poly.getPolynomialID()),
       userShare: undefined,
@@ -1353,8 +1361,8 @@ class ThresholdKey implements ITKey {
         privKey: this._localMetadataTransitions[0],
         serviceProvider: this.serviceProvider,
       });
-    } catch (error) {
-      throw CoreError.metadataPostFailed(prettyPrintError(error));
+    } catch (error: unknown) {
+      throw CoreError.metadataPostFailed(prettyPrintError(error as Error));
     }
 
     this._localMetadataTransitions = [[], []];
@@ -1375,13 +1383,13 @@ class ThresholdKey implements ITKey {
 
     try {
       await tb.initialize({ neverInitializeNewKey: true, withShare: params && params.withShare }); // TODO: need to modify for TSS
-    } catch (err) {
-      throw CoreError.fromCode(1103, `${err.message}`);
+    } catch (err: unknown) {
+      throw CoreError.fromCode(1103, `${(err as Error).message}`);
     }
 
     // Delete unnecessary polyIDs and shareStores
     const allPolyIDList = tb.metadata.polyIDList;
-    let lastValidPolyID;
+    let lastValidPolyID: string;
 
     Object.keys(this.shares).forEach((x) => {
       if (allPolyIDList.find((id) => id[0] === x)) {
@@ -1513,7 +1521,7 @@ class ThresholdKey implements ITKey {
     let shareDescriptions = this.metadata.getShareDescription();
     if (shareDescriptions) {
       const existingShareIndexes = this.metadata.getShareIndexesForPolynomial(previousPolyID);
-      shareDescriptions = Object.keys(shareDescriptions).reduce((acc, index) => {
+      shareDescriptions = Object.keys(shareDescriptions).reduce((acc: Record<string, string[]>, index: string) => {
         if (existingShareIndexes.indexOf(index) >= 0) acc[index] = shareDescriptions[index];
         return acc;
       }, {});
@@ -1585,6 +1593,7 @@ class ThresholdKey implements ITKey {
         const x = transitions[0][i];
         if (params.privKey && x && x.cmp(params.privKey) === 0) index = i;
         else if (params.serviceProvider && !x) index = i;
+        if (index !== null) break;
       }
       if (index !== null) {
         return transitions[1][index];
@@ -1593,8 +1602,8 @@ class ThresholdKey implements ITKey {
     let raw: IMessageMetadata;
     try {
       raw = await this.storageLayer.getMetadata(params);
-    } catch (err) {
-      throw CoreError.metadataGetFailed(`${prettyPrintError(err)}`);
+    } catch (err: unknown) {
+      throw CoreError.metadataGetFailed(`${prettyPrintError(err as Error)}`);
     }
     if ((raw as IMessageMetadata).message === SHARE_DELETED) {
       throw CoreError.fromCode(1308);
@@ -1669,17 +1678,17 @@ class ThresholdKey implements ITKey {
     this.metadata.nonce += 1;
 
     const newMetadataPromise = shares.map(async (share) => {
-      const newMetadata = this.metadata.clone();
+      const newMetadata: Metadata = this.metadata.clone();
       let specificShareMetadata: Metadata;
       try {
         specificShareMetadata = await this.getAuthMetadata({ privKey: share, includeLocalMetadataTransitions: true });
-      } catch (err) {
-        throw CoreError.authMetadataGetUnavailable(`${prettyPrintError(err)}`);
+      } catch (err: unknown) {
+        throw CoreError.authMetadataGetUnavailable(`${prettyPrintError(err as Error)}`);
       }
 
-      let scopedStoreToBeSet;
+      let scopedStoreToBeSet: Record<string, unknown>;
       if (adjustScopedStore) {
-        scopedStoreToBeSet = adjustScopedStore(specificShareMetadata.scopedStore);
+        scopedStoreToBeSet = adjustScopedStore(specificShareMetadata.scopedStore) as Record<string, unknown>;
       } else {
         scopedStoreToBeSet = specificShareMetadata.scopedStore;
       }

@@ -124,9 +124,9 @@ export function generateRandomPolynomial(degree: number, secret?: BN, determinis
   if (deterministicShares.length > degree) {
     throw CoreError.default("deterministicShares in generateRandomPolynomial should be less or equal than degree to ensure an element of randomness");
   }
-  const points = {};
+  const points: Record<string, Point> = {};
   deterministicShares.forEach((share) => {
-    points[share.shareIndex.toString("hex")] = new Point(share.shareIndex, share.share);
+    points[share.shareIndex.toString("hex") as string] = new Point(share.shareIndex, share.share);
   });
   for (let i = 0; i < degree - deterministicShares.length; i += 1) {
     let shareIndex = generatePrivateExcludingIndexes([new BN(0)]);
@@ -200,7 +200,7 @@ export const kCombinations = (s: number | number[], k: number): number[][] => {
   return combs;
 };
 
-export function getLagrangeCoeffs(_allIndexes, _myIndex, _target = 0) {
+export function getLagrangeCoeffs(_allIndexes: number[], _myIndex: number, _target = 0) {
   const allIndexes = _allIndexes.map((i) => new BN(i));
   const myIndex = new BN(_myIndex);
   const target = new BN(_target);
