@@ -1,6 +1,6 @@
 {
-  "name": "@tkey/share-serialization",
-  "version": "11.0.3",
+  "name": "@tkey-mpc/share-serialization",
+  "version": "8.2.2",
   "description": "TKey share serialization module",
   "author": "Torus Labs",
   "homepage": "https://github.com/tkey/tkey#readme",
@@ -43,7 +43,8 @@
     "@babel/runtime": "7.x"
   },
   "dependencies": {
-    "@tkey/common-types": "^11.0.3",
+    "@tkey-mpc/common-types": "^8.2.2",
+    "@types/create-hash": "1.2.2",
     "bn.js": "^5.2.1",
     "ethereum-cryptography": "^2.1.2"
   },

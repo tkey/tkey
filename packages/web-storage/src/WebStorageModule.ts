@@ -1,4 +1,4 @@
-import { BNString, DeviceShareDescription, IModule, ITKeyApi, prettyPrintError, ShareStore, StringifiedType } from "@tkey/common-types";
+import { BNString, DeviceShareDescription, IModule, ITKeyApi, prettyPrintError, ShareStore, StringifiedType } from "@tkey-mpc/common-types";
 import BN from "bn.js";
 
 import WebStorageError from "./errors";

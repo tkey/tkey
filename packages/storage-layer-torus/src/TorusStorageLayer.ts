@@ -16,7 +16,7 @@ import {
   toPrivKeyECC,
   TorusStorageLayerAPIParams,
   TorusStorageLayerArgs,
-} from "@tkey/common-types";
+} from "@tkey-mpc/common-types";
 import { post } from "@toruslabs/http-helpers";
 import base64url from "base64url";
 import BN from "bn.js";

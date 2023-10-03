@@ -1,21 +1,21 @@
 # tKey Chrome Storage Module
 
-[![npm version](https://img.shields.io/npm/v/@tkey/chrome-storage?label=%22%22)](https://www.npmjs.com/package/@tkey/chrome-storage/v/latest)                  [![minzip](https://img.shields.io/bundlephobia/minzip/@tkey/chrome-storage?label=%22%22)](https://bundlephobia.com/result?p=@tkey/chrome-storage@latest) 
+[![npm version](https://img.shields.io/npm/v/@tkey-mpc/chrome-storage?label=%22%22)](https://www.npmjs.com/package/@tkey-mpc/chrome-storage/v/latest)                  [![minzip](https://img.shields.io/bundlephobia/minzip/@tkey-mpc/chrome-storage?label=%22%22)](https://bundlephobia.com/result?p=@tkey-mpc/chrome-storage@latest) 
 
 The tKey Chrome Storage Module helps you store and recall key shares in the chrome extension storage. This module is the part of the [tKey SDK](https://github.com/tkey/tkey/).
 
 ## Installation
 
 ```shell
-npm install --save @tkey/chrome-storage
+npm install --save @tkey-mpc/chrome-storage
 ```
 
 ## Initialization
 
-#### Import the `ChromeExtensionStorageModule` class from `@tkey/chrome-storage`
+#### Import the `ChromeExtensionStorageModule` class from `@tkey-mpc/chrome-storage`
 
 ```javascript
-import ChromeExtensionStorageModule from "@tkey/chrome-storage";
+import ChromeExtensionStorageModule from "@tkey-mpc/chrome-storage";
 ```
 
 #### Assign the `ChromeExtensionStorageModule` class to a variable

@@ -1,6 +1,12 @@
-import type { CustomAuthArgs } from "@toruslabs/customauth";
+import type { TORUS_SAPPHIRE_NETWORK_TYPE } from "@toruslabs/constants";
+import { CustomAuthArgs } from "@toruslabs/customauth";
+import { PointHex } from "@toruslabs/rss-client";
 import BN from "bn.js";
 import type { curve } from "elliptic";
+
+import Point from "../base/Point";
+export type { PointHex } from "@toruslabs/rss-client";
+export { ecPoint, hexPoint, randomSelection, RSSClient } from "@toruslabs/rss-client";
 
 export type PubKeyType = "ecc";
 
@@ -17,13 +23,28 @@ export interface EncryptedMessage {
   iv: string;
   mac: string;
 }
+
+// if "direct", no serverEncs (empty array), and the tssShare is just the decryption of userEnc
+// if "hierarchical", there are serverEncs, and the tssShare is hierarchically stored
+// and requires userEnc and threshold number of serverEncs to recover the tssShare
+export type FactorEncType = "direct" | "hierarchical";
+
+export type FactorEnc = {
+  tssIndex: number;
+  type: FactorEncType;
+  userEnc: EncryptedMessage;
+  serverEncs: EncryptedMessage[];
+};
 export interface ServiceProviderArgs {
   enableLogging?: boolean;
   postboxKey?: string;
+  useTSS?: boolean;
 }
 
 export interface TorusServiceProviderArgs extends ServiceProviderArgs {
-  customAuthArgs: CustomAuthArgs;
+  customAuthArgs: CustomAuthArgs & { network: TORUS_SAPPHIRE_NETWORK_TYPE };
+  nodeEndpoints?: string[];
+  nodePubKeys?: PointHex[];
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -50,6 +71,23 @@ export interface IServiceProvider extends ISerializable {
   decrypt(msg: EncryptedMessage): Promise<Buffer>;
   retrievePubKey(type: PubKeyType): Buffer;
   retrievePubKeyPoint(): curve.base.BasePoint;
+  getVerifierNameVerifierId(): string;
+  getTSSNodeDetails(): Promise<{
+    serverEndpoints: string[];
+    serverPubKeys: PointHex[];
+    serverThreshold: number;
+  }>;
+  getRSSNodeDetails(): Promise<{
+    serverEndpoints: string[];
+    serverPubKeys: PointHex[];
+    serverThreshold: number;
+  }>;
+  getSSSNodeDetails(): Promise<{
+    serverEndpoints: string[];
+    serverPubKeys: PointHex[];
+    serverThreshold: number;
+  }>;
+  getTSSPubKey(tssTag: string, tssNonce: number): Promise<{ pubKey: Point; nodeIndexes?: number[] }>;
   sign(msg: BNString): string;
 }
 export type TorusStorageLayerAPIParams = {
@@ -97,3 +135,12 @@ export type FromJSONConstructor = {
 };
 
 export type DeviceShareDescription = { module: string; userAgent: string; dateAdded: number; customDeviceInfo?: string };
+
+export type InitializeNewTSSKeyResult = {
+  tss2: BN;
+  tssPolyCommits: Point[];
+  factorPubs: Point[];
+  factorEncs: {
+    [factorPubID: string]: FactorEnc;
+  };
+};

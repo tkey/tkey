@@ -1,4 +1,4 @@
-import { IModule, IPrivateKeyFormat, IPrivateKeyStore, ITKeyApi } from "@tkey/common-types";
+import { IModule, IPrivateKeyFormat, IPrivateKeyStore, ITKeyApi } from "@tkey-mpc/common-types";
 import BN from "bn.js";
 
 import PrivateKeysError from "./errors";

@@ -1,5 +1,5 @@
 {
-  "name": "tkey",
+  "name": "tkey-mpc",
   "private": true,
   "workspaces": [
     "packages/*"

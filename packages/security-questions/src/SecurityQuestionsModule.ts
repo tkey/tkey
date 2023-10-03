@@ -9,7 +9,7 @@ import {
   Share,
   ShareStore,
   ShareStoreMap,
-} from "@tkey/common-types";
+} from "@tkey-mpc/common-types";
 import BN from "bn.js";
 import { keccak256 } from "ethereum-cryptography/keccak";
 
@@ -69,6 +69,7 @@ class SecurityQuestionsModule implements IModule {
 
   async generateNewShareWithSecurityQuestions(answerString: string, questions: string): Promise<GenerateNewShareResult> {
     const metadata = this.tbSDK.getMetadata();
+    // TODO: throw in case of TSS
     const rawSqStore = metadata.getGeneralStoreDomain(this.moduleName);
     if (rawSqStore) throw SecurityQuestionsError.unableToReplace();
     const newSharesDetails = await this.tbSDK.generateNewShare();

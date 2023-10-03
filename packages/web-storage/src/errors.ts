@@ -1,4 +1,4 @@
-import { ErrorCodes, ITkeyError, TkeyError } from "@tkey/common-types";
+import { ErrorCodes, ITkeyError, TkeyError } from "@tkey-mpc/common-types";
 
 class WebStorageError extends TkeyError {
   protected static messages: ErrorCodes = {

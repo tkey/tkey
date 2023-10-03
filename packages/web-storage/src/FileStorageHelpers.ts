@@ -1,4 +1,4 @@
-import { ShareStore } from "@tkey/common-types";
+import { ShareStore } from "@tkey-mpc/common-types";
 
 import WebStorageError from "./errors";
 import { getWindow } from "./utils";

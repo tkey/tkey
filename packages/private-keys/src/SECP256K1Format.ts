@@ -1,4 +1,4 @@
-import { ecCurve, generateID, IPrivateKeyFormat, IPrivateKeyStore } from "@tkey/common-types";
+import { ecCurve, generateID, IPrivateKeyFormat, IPrivateKeyStore } from "@tkey-mpc/common-types";
 import BN from "bn.js";
 import nodeCrypto from "crypto";
 

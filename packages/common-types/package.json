@@ -1,6 +1,6 @@
 {
-  "name": "@tkey/common-types",
-  "version": "11.0.3",
+  "name": "@tkey-mpc/common-types",
+  "version": "8.2.2",
   "description": "TKey common types",
   "author": "Torus Labs",
   "homepage": "https://github.com/tkey/tkey#readme",
@@ -43,6 +43,7 @@
     "@babel/runtime": "7.x"
   },
   "dependencies": {
+    "@toruslabs/rss-client": "^1.5.0",
     "@toruslabs/customauth": "^16.0.6",
     "@toruslabs/eccrypto": "^4.0.0",
     "@toruslabs/torus.js": "^11.0.5",

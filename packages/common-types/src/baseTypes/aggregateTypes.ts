@@ -1,4 +1,6 @@
+import type { TORUS_SAPPHIRE_NETWORK_TYPE } from "@toruslabs/constants";
 import type { CustomAuthArgs } from "@toruslabs/customauth";
+import { PointHex } from "@toruslabs/rss-client";
 import BN from "bn.js";
 
 import {
@@ -17,6 +19,7 @@ import {
 import {
   BNString,
   EncryptedMessage,
+  FactorEnc,
   ISerializable,
   IServiceProvider,
   IStorageLayer,
@@ -78,6 +81,15 @@ export interface IMetadata extends ISerializable {
 
   getShareIndexesForPolynomial(polyID: PolynomialID): string[];
   getLatestPublicPolynomial(): PublicPolynomial;
+  addTSSData(tssData: {
+    tssTag?: string;
+    tssNonce?: number;
+    tssPolyCommits?: Point[];
+    factorPubs?: Point[];
+    factorEncs?: {
+      [factorPubID: string]: FactorEnc;
+    };
+  }): void;
   addPublicShare(polynomialID: PolynomialID, publicShare: PublicShare): void;
   setGeneralStoreDomain(key: string, obj: unknown): void;
   getGeneralStoreDomain(key: string): unknown;
@@ -138,9 +150,10 @@ export type TKeyArgs = {
   modules?: ModuleMap;
   serviceProvider?: IServiceProvider;
   storageLayer?: IStorageLayer;
-  customAuthArgs?: CustomAuthArgs;
+  customAuthArgs?: CustomAuthArgs & { network: TORUS_SAPPHIRE_NETWORK_TYPE };
   manualSync?: boolean;
   serverTimeOffset?: number;
+  tssTag?: string;
 };
 
 export interface SecurityQuestionStoreArgs {
@@ -260,12 +273,21 @@ export interface ITKeyApi {
     serialize: (share: BN, type: string) => Promise<unknown>,
     deserialize: (serializedShare: unknown, type: string) => Promise<BN>
   ): void;
-  generateNewShare(): Promise<GenerateNewShareResult>;
+  generateNewShare(
+    useTSS?: boolean,
+    tssOptions?: {
+      inputTSSShare: BN;
+      inputTSSIndex: number;
+      newFactorPub: Point;
+      newTSSIndex: number;
+      selectedServers?: number[];
+    }
+  ): Promise<GenerateNewShareResult>;
   outputShareStore(shareIndex: BNString, polyID?: string): ShareStore;
   inputShare(share: unknown, type?: string): Promise<void>;
   outputShare(shareIndex: BNString, type?: string): Promise<unknown>;
   inputShareStore(shareStore: ShareStore): void;
-  deleteShare(shareIndex: BNString): Promise<DeleteShareResult>;
+  deleteShare(shareIndex: BNString, useTSS?: boolean): Promise<DeleteShareResult>;
   encrypt(data: Buffer): Promise<EncryptedMessage>;
   decrypt(encryptedMesage: EncryptedMessage): Promise<Buffer>;
 
@@ -301,6 +323,31 @@ export interface ITKey extends ITKeyApi, ISerializable {
   reconstructKey(): Promise<ReconstructedKeyResult>;
 
   reconstructLatestPoly(): Polynomial;
+
+  importTssKey(
+    params: { tag: string; importKey: BN; factorPub: Point; newTSSIndex: number },
+    serverOpts: {
+      selectedServers?: number[];
+      authSignatures: string[];
+    }
+  ): Promise<void>;
+
+  _getTSSNodeDetails(): Promise<{ serverEndpoints: string[]; serverPubKeys: PointHex[]; serverThreshold: number }>;
+
+  _refreshTSSShares(
+    updateMetadata: boolean,
+    deviceTSSShare: BN,
+    deviceTSSIndex: number,
+    factorPubs: Point[],
+    targetIndexes: number[],
+    vid: string,
+    serverOpts: {
+      serverEndpoints: string[];
+      serverPubKeys: PointHex[];
+      serverThreshold: number;
+      selectedServers: number[];
+    }
+  ): Promise<void>;
 
   _refreshShares(threshold: number, newShareIndexes: Array<string>, previousPolyID: PolynomialID): Promise<RefreshSharesResult>;
 
