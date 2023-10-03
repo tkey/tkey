@@ -821,7 +821,11 @@ class ThresholdKey implements ITKey {
       let finalSelectedServers = selectedServers;
 
       if (nodeIndexes?.length > 0) {
-        finalSelectedServers = nodeIndexes.slice(0, Math.min(selectedServers.length, nodeIndexes.length));
+        if (selectedServers.length) {
+          finalSelectedServers = nodeIndexes.slice(0, Math.min(selectedServers.length, nodeIndexes.length));
+        } else {
+          finalSelectedServers = nodeIndexes.slice(0, 3);
+        }
       } else if (selectedServers?.length === 0) {
         finalSelectedServers = randomSelection(
           new Array(rssNodeDetails.serverEndpoints.length).fill(null).map((_, i) => i + 1),
