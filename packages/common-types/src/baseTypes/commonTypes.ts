@@ -1,3 +1,4 @@
+import type { TORUS_SAPPHIRE_NETWORK_TYPE } from "@toruslabs/constants";
 import { CustomAuthArgs } from "@toruslabs/customauth";
 import { PointHex } from "@toruslabs/rss-client";
 import BN from "bn.js";
@@ -41,7 +42,7 @@ export interface ServiceProviderArgs {
 }
 
 export interface TorusServiceProviderArgs extends ServiceProviderArgs {
-  customAuthArgs: CustomAuthArgs;
+  customAuthArgs: CustomAuthArgs & { network: TORUS_SAPPHIRE_NETWORK_TYPE };
   nodeEndpoints?: string[];
   nodePubKeys?: PointHex[];
 }

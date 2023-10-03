@@ -1,3 +1,4 @@
+import type { TORUS_SAPPHIRE_NETWORK_TYPE } from "@toruslabs/constants";
 import type { CustomAuthArgs } from "@toruslabs/customauth";
 import { PointHex } from "@toruslabs/rss-client";
 import BN from "bn.js";
@@ -149,7 +150,7 @@ export type TKeyArgs = {
   modules?: ModuleMap;
   serviceProvider?: IServiceProvider;
   storageLayer?: IStorageLayer;
-  customAuthArgs?: CustomAuthArgs;
+  customAuthArgs?: CustomAuthArgs & { network: TORUS_SAPPHIRE_NETWORK_TYPE };
   manualSync?: boolean;
   serverTimeOffset?: number;
   tssTag?: string;

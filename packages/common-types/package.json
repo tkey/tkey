@@ -53,7 +53,6 @@
     "ts-custom-error": "^3.3.1"
   },
   "devDependencies": {
-    "@toruslabs/torus.js": "^10.0.5",
     "@types/bn.js": "^5.1.2",
     "@types/elliptic": "^6.4.15"
   },

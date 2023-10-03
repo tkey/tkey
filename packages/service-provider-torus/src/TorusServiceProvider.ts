@@ -1,5 +1,6 @@
 import { Point, PointHex, StringifiedType, TorusServiceProviderArgs } from "@tkey-mpc/common-types";
 import { ServiceProviderBase } from "@tkey-mpc/service-provider-base";
+import type { TORUS_SAPPHIRE_NETWORK_TYPE } from "@toruslabs/constants";
 import CustomAuth, {
   AggregateLoginParams,
   CustomAuthArgs,
@@ -18,7 +19,7 @@ class TorusServiceProvider extends ServiceProviderBase {
 
   singleLoginKey: BN;
 
-  customAuthArgs: CustomAuthArgs;
+  customAuthArgs: CustomAuthArgs & { network: TORUS_SAPPHIRE_NETWORK_TYPE };
 
   verifierType?: "normal" | "aggregate" | "hybrid";
 
