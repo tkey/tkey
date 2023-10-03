@@ -80,17 +80,17 @@ class WebStorageModule implements IModule {
       if (this.canUseFileStorage) {
         try {
           shareStore = await getShareFromFileStorage(tkeypubx);
-        } catch (fileErr) {
-          if (fileErr?.message?.includes("storage quota")) {
+        } catch (fileErr: unknown) {
+          if ((fileErr as Error)?.message?.includes("storage quota")) {
             // User has denied access to storage. stop asking for every share
             this.canUseFileStorage = false;
           }
           throw WebStorageError.unableToReadFromStorage(
-            `Error inputShareFromWebStorage: ${prettyPrintError(localErr)} and ${prettyPrintError(fileErr)}`
+            `Error inputShareFromWebStorage: ${prettyPrintError(localErr as Error)} and ${prettyPrintError(fileErr as Error)}`
           );
         }
       }
-      throw WebStorageError.unableToReadFromStorage(`Error inputShareFromWebStorage: ${prettyPrintError(localErr)}`);
+      throw WebStorageError.unableToReadFromStorage(`Error inputShareFromWebStorage: ${prettyPrintError(localErr as Error)}`);
     }
     return shareStore;
   }

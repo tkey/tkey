@@ -1,30 +1,24 @@
-import ServiceProviderTorus from "@tkey-mpc/service-provider-torus";
+import ServiceProviderTorus from "@tkey/service-provider-torus";
 import { generatePrivate } from "@toruslabs/eccrypto";
 
 import { getMetadataUrl, initStorageLayer } from "./helpers";
 import { sharedTestCases } from "./shared";
 
-const metadataURL = getMetadataUrl();
-
 const PRIVATE_KEY = generatePrivate().toString("hex");
-const torusSP = new ServiceProviderTorus({
+const torusSp = new ServiceProviderTorus({
   postboxKey: PRIVATE_KEY,
   customAuthArgs: {
-    network: "sapphire_devnet",
-
-    web3AuthClientId: "YOUR_CLIENT_ID",
-    // this url has no effect as postbox key is passed
-    // passing it just to satisfy direct auth checks.
     baseUrl: "http://localhost:3000",
     web3AuthClientId: "test",
     network: "mainnet",
   },
 });
+const metadataURL = getMetadataUrl();
 
 const torusSL = initStorageLayer({ hostUrl: metadataURL });
 
-const MANUAL_SYNC = false;
+const MANUAL_SYNC = true;
 describe(`TorusServiceProvider with manualSync: ${MANUAL_SYNC}`, function () {
   // eslint-disable-next-line mocha/no-setup-in-describe
-  sharedTestCases(MANUAL_SYNC, torusSP, torusSL);
+  sharedTestCases(MANUAL_SYNC, torusSp, torusSL);
 });

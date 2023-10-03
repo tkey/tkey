@@ -14,7 +14,7 @@ import Torus, { TorusPublicKey } from "@toruslabs/torus.js";
 import BN from "bn.js";
 
 class TorusServiceProvider extends ServiceProviderBase {
-  directWeb: CustomAuth;
+  customAuthInstance: CustomAuth;
 
   singleLoginKey: BN;
 
@@ -25,8 +25,7 @@ class TorusServiceProvider extends ServiceProviderBase {
   constructor({ enableLogging = false, postboxKey, customAuthArgs, useTSS }: TorusServiceProviderArgs) {
     super({ enableLogging, postboxKey, useTSS });
     this.customAuthArgs = customAuthArgs;
-    this.directWeb = new CustomAuth(customAuthArgs);
-
+    this.customAuthInstance = new CustomAuth(customAuthArgs);
     this.serviceProviderName = "TorusServiceProvider";
   }
 
@@ -42,7 +41,7 @@ class TorusServiceProvider extends ServiceProviderBase {
   }
 
   async init(params: InitParams): Promise<void> {
-    return this.directWeb.init(params);
+    return this.customAuthInstance.init(params);
   }
 
   _setTSSPubKey(tssTag: string, tssNonce: number, tssPubKey: Point): void {
@@ -146,7 +145,7 @@ class TorusServiceProvider extends ServiceProviderBase {
   }
 
   async triggerLogin(params: SubVerifierDetails): Promise<TorusLoginResponse> {
-    const obj = await this.directWeb.triggerLogin(params);
+    const obj = await this.customAuthInstance.triggerLogin(params);
     const localPrivKey = Torus.getPostboxKey(obj);
     this.postboxKey = new BN(localPrivKey, "hex");
     const { verifier, verifierId } = obj.userInfo;
@@ -157,7 +156,7 @@ class TorusServiceProvider extends ServiceProviderBase {
   }
 
   async triggerAggregateLogin(params: AggregateLoginParams): Promise<TorusAggregateLoginResponse> {
-    const obj = await this.directWeb.triggerAggregateLogin(params);
+    const obj = await this.customAuthInstance.triggerAggregateLogin(params);
 
     const localPrivKey = Torus.getPostboxKey(obj);
     this.postboxKey = new BN(localPrivKey, "hex");
@@ -169,7 +168,7 @@ class TorusServiceProvider extends ServiceProviderBase {
   }
 
   async triggerHybridAggregateLogin(params: HybridAggregateLoginParams): Promise<TorusHybridAggregateLoginResponse> {
-    const obj = await this.directWeb.triggerHybridAggregateLogin(params);
+    const obj = await this.customAuthInstance.triggerHybridAggregateLogin(params);
     const aggregateLoginKey = Torus.getPostboxKey(obj.aggregateLogins[0]);
     const singleLoginKey = Torus.getPostboxKey(obj.singleLogin);
     this.postboxKey = new BN(aggregateLoginKey, "hex");

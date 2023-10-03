@@ -1,14 +1,15 @@
+/* eslint-disable import/extensions */
 /* eslint-disable import/no-extraneous-dependencies */
 /* eslint-disable @typescript-eslint/no-var-requires */
 const pkg = require("./package.json");
-const generateWebpackConfig = require("@toruslabs/torus-scripts/config/webpack.config");
-const torusConfig = require("@toruslabs/torus-scripts/config/torus.config");
 const pkgName = pkg.name.split("/")[1];
 
-const webpackConfig = generateWebpackConfig(torusConfig.name);
 const { localBrowserConfig, browserStackConfig } = require("../../karmaBaseConfig");
 
-module.exports = (config) => {
+module.exports = async (config) => {
+  const generateWebpackConfig = await import("@toruslabs/torus-scripts/config/webpack.config.js");
+  const torusConfig = (await import("@toruslabs/torus-scripts/config/torus.config.js")).default;
+  const webpackConfig = generateWebpackConfig.default(torusConfig.name);
   if (process.env.INFRA === "LOCAL") {
     config.set({ ...localBrowserConfig(webpackConfig, config, { args: [process.env.MOCKED] }) });
   } else if (process.env.INFRA === "CLOUD") {

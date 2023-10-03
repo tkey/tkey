@@ -3,7 +3,7 @@
 [![npm version](https://img.shields.io/npm/v/@tkey-mpc/service-provider-torus?label=%22%22)](https://www.npmjs.com/package/@tkey-mpc/service-provider-torus/v/latest) [![minzip](https://img.shields.io/bundlephobia/minzip/@tkey-mpc/service-provider-torus?label=%22%22)](https://bundlephobia.com/result?p=@tkey-mpc/service-provider-torus@latest)
 
 Service Provider in `tKey` is used for generating a social login share of the private key share managed by a wallet service provider via
-their own authentication flows. 
+their own authentication flows.
 
 ## Installation
 
@@ -21,7 +21,8 @@ import TorusServiceProvider from "@tkey-mpc/service-provider-torus";
 const customAuthParams = {
   baseUrl: `${window.location.origin}/serviceworker`,
   enableLogging: true,
-  network: "testnet" as any,
+  network: "testnet",
+  web3AuthClientId: "test",
 };
 const serviceProvider = new TorusServiceProvider({ customAuthParams });
 ```

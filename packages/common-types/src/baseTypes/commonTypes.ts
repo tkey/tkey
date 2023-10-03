@@ -119,6 +119,7 @@ export type TorusStorageLayerArgs = {
 export type MockStorageLayerArgs = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   dataMap: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   lockMap: any;
 };
 
@@ -127,6 +128,7 @@ export type ShareDescriptionMap = {
 };
 
 export type FromJSONConstructor = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   fromJSON(value: StringifiedType): any;
 };
 
