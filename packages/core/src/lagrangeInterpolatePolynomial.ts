@@ -200,7 +200,7 @@ export const kCombinations = (s: number | number[], k: number): number[][] => {
   return combs;
 };
 
-export function getLagrangeCoeffs(_allIndexes, _myIndex, _target = 0) {
+export function getLagrangeCoeffs(_allIndexes: number[], _myIndex: number, _target = 0) {
   const allIndexes = _allIndexes.map((i) => new BN(i));
   const myIndex = new BN(_myIndex);
   const target = new BN(_target);

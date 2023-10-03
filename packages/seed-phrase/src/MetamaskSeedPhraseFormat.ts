@@ -1,5 +1,5 @@
-import { generateAddressFromPublicKey, generateID, ISeedPhraseFormat, ISeedPhraseStore, MetamaskSeedPhraseStore } from "@tkey-mpc/common-types";
-import { generateMnemonic, mnemonicToSeed, validateMnemonic } from "bip39";
+import { generateID, ISeedPhraseFormat, ISeedPhraseStore, MetamaskSeedPhraseStore } from "@tkey-mpc/common-types";
+// import { generateMnemonic, mnemonicToSeed, validateMnemonic } from "bip39";
 import BN from "bn.js";
 import { HDNodeWallet, Mnemonic, Provider, randomBytes } from "ethers";
 

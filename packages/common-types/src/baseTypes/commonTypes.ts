@@ -1,10 +1,11 @@
-import type { CustomAuthArgs } from "@toruslabs/customauth";
+import { CustomAuthArgs } from "@toruslabs/customauth";
 import { PointHex } from "@toruslabs/rss-client";
 import BN from "bn.js";
 import type { curve } from "elliptic";
 
 import Point from "../base/Point";
-export { ecPoint, hexPoint, PointHex, randomSelection, RSSClient } from "@toruslabs/rss-client";
+export type { PointHex } from "@toruslabs/rss-client";
+export { ecPoint, hexPoint, randomSelection, RSSClient } from "@toruslabs/rss-client";
 
 export type PubKeyType = "ecc";
 

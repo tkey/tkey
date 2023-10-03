@@ -137,9 +137,12 @@ export const generateIdToken = (email) => {
 
 export async function fetchPostboxKeyAndSigs(opts) {
   const { serviceProvider, verifierName, verifierId } = opts;
+  
   const { serverEndpoints: sssEndpoints } = await serviceProvider.getSSSNodeDetails();
   const token = generateIdToken(verifierId);
-  const retrieveSharesResponse = await serviceProvider.directWeb.torus.retrieveShares(
+console.log("service provider", serviceProvider );
+
+  const retrieveSharesResponse = await serviceProvider.customAuthInstance.torus.retrieveShares(
     sssEndpoints,
     [],
     verifierName,
@@ -181,7 +184,7 @@ export async function assignTssDkgKeys(opts) {
     console.log("extendedVerifierId", extendedVerifierId);
 
     const { serverEndpoints: sssEndpoints } = await serviceProvider.getSSSNodeDetails();
-    const retrieveSharesResponse = await serviceProvider.directWeb.torus.retrieveShares(
+    const retrieveSharesResponse = await serviceProvider.customAuthInstance.torus.retrieveShares(
       sssEndpoints,
       [],
       verifierName,

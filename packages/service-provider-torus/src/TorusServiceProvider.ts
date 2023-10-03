@@ -61,7 +61,7 @@ class TorusServiceProvider extends ServiceProviderBase {
     if (!this.verifierId) throw new Error("no verifierId, not logged in");
     if (!this.verifierName) throw new Error("no verifierName, not logged in");
 
-    const { torusNodeTSSEndpoints: tssNodeEndpoints, torusNodePub: torusPubKeys } = await this.directWeb.nodeDetailManager.getNodeDetails({
+    const { torusNodeTSSEndpoints: tssNodeEndpoints, torusNodePub: torusPubKeys } = await this.customAuthInstance.nodeDetailManager.getNodeDetails({
       verifier: this.verifierName,
       verifierId: this.verifierId,
     });
@@ -82,7 +82,7 @@ class TorusServiceProvider extends ServiceProviderBase {
     if (!this.verifierId) throw new Error("no verifierId, not logged in");
     if (!this.verifierName) throw new Error("no verifierName, not logged in");
 
-    const { torusNodeSSSEndpoints: tssNodeEndpoints, torusNodePub: torusPubKeys } = await this.directWeb.nodeDetailManager.getNodeDetails({
+    const { torusNodeSSSEndpoints: tssNodeEndpoints, torusNodePub: torusPubKeys } = await this.customAuthInstance.nodeDetailManager.getNodeDetails({
       verifier: this.verifierName,
       verifierId: this.verifierId,
     });
@@ -102,7 +102,7 @@ class TorusServiceProvider extends ServiceProviderBase {
     if (!this.verifierId) throw new Error("no verifierId, not logged in");
     if (!this.verifierName) throw new Error("no verifierName, not logged in");
 
-    const { torusNodeRSSEndpoints: tssNodeEndpoints, torusNodePub: torusPubKeys } = await this.directWeb.nodeDetailManager.getNodeDetails({
+    const { torusNodeRSSEndpoints: tssNodeEndpoints, torusNodePub: torusPubKeys } = await this.customAuthInstance.nodeDetailManager.getNodeDetails({
       verifier: this.verifierName,
       verifierId: this.verifierId,
     });
@@ -128,7 +128,7 @@ class TorusServiceProvider extends ServiceProviderBase {
   }> {
     if (!this.verifierName || !this.verifierId) throw new Error("verifier userinfo not found, not logged in yet");
     const { serverEndpoints: sssNodeEndpoints } = await this.getSSSNodeDetails();
-    const tssServerPub = (await this.directWeb.torus.getPublicAddress(
+    const tssServerPub = (await this.customAuthInstance.torus.getPublicAddress(
       sssNodeEndpoints,
       this.sssNodeDetails.serverPubKeys.map((node) => ({ X: node.x, Y: node.y })),
       {

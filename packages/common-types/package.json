@@ -53,10 +53,9 @@
     "ts-custom-error": "^3.3.1"
   },
   "devDependencies": {
-    "@toruslabs/customauth": "^15.0.3",
     "@toruslabs/torus.js": "^10.0.5",
     "@types/bn.js": "^5.1.2",
-    "@types/elliptic": "^6.5.4"
+    "@types/elliptic": "^6.4.15"
   },
   "bugs": {
     "url": "https://github.com/tkey/tkey/issues"

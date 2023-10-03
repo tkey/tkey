@@ -96,7 +96,7 @@ class Metadata implements IMetadata {
     if (tssPolyCommits) {
       metadata.tssPolyCommits = {};
       for (const key in tssPolyCommits) {
-        metadata.tssPolyCommits[key] = tssPolyCommits[key].map((obj) => new Point(obj.x, obj.y));
+        metadata.tssPolyCommits[key] = (tssPolyCommits as Record<string, Point[]>)[key].map((obj) => new Point(obj.x, obj.y));
       }
     }
     if (tssNonces) {
@@ -108,7 +108,7 @@ class Metadata implements IMetadata {
     if (factorPubs) {
       metadata.factorPubs = {};
       for (const key in factorPubs) {
-        metadata.factorPubs[key] = factorPubs[key].map((obj) => new Point(obj.x, obj.y));
+        metadata.factorPubs[key] = (factorPubs as Record<string, Point[]>)[key].map((obj) => new Point(obj.x, obj.y));
       }
     }
     if (factorEncs) metadata.factorEncs = factorEncs;

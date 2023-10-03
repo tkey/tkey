@@ -121,13 +121,14 @@ class ThresholdKey implements ITKey {
     this.setModuleReferences(); // Providing ITKeyApi access to modules
     this.haveWriteMetadataLock = "";
     this.tssTag = tssTag || "default";
+    this.serverTimeOffset = serverTimeOffset;
   }
 
-
   static async fromJSON(value: StringifiedType, args: TKeyArgs): Promise<ThresholdKey> {
-    const { enableLogging, privKey, metadata, shares, _localMetadataTransitions, manualSync, lastFetchedCloudMetadata, tssTag, serverTimeOffset } = value;
+    const { enableLogging, privKey, metadata, shares, _localMetadataTransitions, manualSync, lastFetchedCloudMetadata, tssTag, serverTimeOffset } =
+      value;
+
     const { storageLayer, serviceProvider, modules } = args;
-    this.serverTimeOffset = serverTimeOffset;
 
     const tb = new ThresholdKey({
       tssTag,
@@ -1197,7 +1198,7 @@ class ThresholdKey implements ITKey {
     return { shareStores: newShareStores };
   }
 
-  async _initializeNewTSSKey(tssTag: string, deviceTSSShare, factorPub, deviceTSSIndex?): Promise<InitializeNewTSSKeyResult> {
+  async _initializeNewTSSKey(tssTag: string, deviceTSSShare: BN, factorPub: Point, deviceTSSIndex?: number): Promise<InitializeNewTSSKeyResult> {
     let tss2: BN;
     const _tssIndex = deviceTSSIndex || 2; // TODO: fix
     if (deviceTSSShare) {
