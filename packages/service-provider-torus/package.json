@@ -1,6 +1,6 @@
 {
   "name": "@tkey-mpc/service-provider-torus",
-  "version": "9.0.2",
+  "version": "9.0.3",
   "description": "TKey Torus Service Provider Module",
   "author": "Torus Labs",
   "homepage": "https://github.com/tkey/tkey#readme",
