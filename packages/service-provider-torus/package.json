@@ -1,6 +1,6 @@
 {
   "name": "@tkey/service-provider-torus",
-  "version": "11.0.3",
+  "version": "12.0.0",
   "description": "TKey Torus Service Provider Module",
   "author": "Torus Labs",
   "homepage": "https://github.com/tkey/tkey#readme",
@@ -38,8 +38,8 @@
     "@babel/runtime": "7.x"
   },
   "dependencies": {
-    "@tkey/common-types": "^11.0.3",
-    "@tkey/service-provider-base": "^11.0.3",
+    "@tkey/common-types": "^12.0.0",
+    "@tkey/service-provider-base": "^12.0.0",
     "@toruslabs/customauth": "^17.0.0",
     "@toruslabs/torus.js": "^12.0.1",
     "bn.js": "^5.2.1",
