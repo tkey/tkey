@@ -50,7 +50,7 @@
     "@tkey-mpc/seed-phrase": "^9.0.1",
     "@toruslabs/eccrypto": "^4.0.0",
     "@toruslabs/http-helpers": "^5.0.0",
-    "@toruslabs/torus.js": "^10.0.5",
+    "@toruslabs/torus.js": "^11.0.6",
     "jsrsasign": "^10.6.1",
     "web3-utils": "^1.8.1"
   },
