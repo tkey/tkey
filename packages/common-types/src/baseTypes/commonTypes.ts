@@ -1,4 +1,4 @@
-import type { CustomAuthArgs } from "@toruslabs/customauth";
+import type { CustomAuthArgs } from "@oraichain/customauth";
 import BN from "bn.js";
 import type { curve } from "elliptic";
 
@@ -22,8 +22,13 @@ export interface ServiceProviderArgs {
   postboxKey?: string;
 }
 
+export interface IBlsdkgSignable {
+  sign(privateKey: Uint8Array, message: Uint8Array): Uint8Array | undefined;
+}
+
 export interface TorusServiceProviderArgs extends ServiceProviderArgs {
-  directParams: CustomAuthArgs;
+  customAuthArgs: CustomAuthArgs;
+  blsDkgPackage?: IBlsdkgSignable;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

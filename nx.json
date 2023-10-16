@@ -1,0 +1,22 @@
+{
+  "tasksRunnerOptions": {
+    "default": {
+      "runner": "nx-cloud",
+      "options": {
+        "cacheableOperations": [],
+        "cacheDirectory": "node_modules/.cache",
+        "accessToken": "ZTljMDJhM2QtYmNjOC00NmJkLWI5NjQtNDM4MTVhMmU4NWVifHJlYWQtd3JpdGU="
+      }
+    }
+  },
+  "targetDefaults": {
+    "build": {
+      "dependsOn": [
+        "^build"
+      ]
+    },
+    "cli": {
+      "packageManager": "yarn"
+    }
+  }
+}

@@ -1,3 +1,4 @@
+/* eslint-disable */
 import {
   decrypt,
   ecCurve,
@@ -18,7 +19,7 @@ import {
   ShareStore,
   StringifiedType,
   toPrivKeyECC,
-} from "@tkey/common-types";
+} from "@oraichain/common-types";
 import BN from "bn.js";
 import stringify from "json-stable-stringify";
 

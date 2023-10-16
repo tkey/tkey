@@ -1,4 +1,4 @@
-import { ErrorCodes, ITkeyError, TkeyError } from "@tkey/common-types";
+import { ErrorCodes, ITkeyError, TkeyError } from "@oraichain/common-types";
 
 class ShareTransferError extends TkeyError {
   protected static messages: ErrorCodes = {
@@ -8,10 +8,6 @@ class ShareTransferError extends TkeyError {
     8011: "Current request already exists",
     8012: "User cancelled request",
   };
-
-  code: number;
-
-  message: string;
 
   public constructor(code: number, message?: string) {
     // takes care of stack and proto

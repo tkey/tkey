@@ -1,4 +1,4 @@
-import { ErrorCodes, ITkeyError, TkeyError } from "@tkey/common-types";
+import { ErrorCodes, ITkeyError, TkeyError } from "@oraichain/common-types";
 
 class SeedPhraseError extends TkeyError {
   protected static messages: ErrorCodes = {
@@ -8,10 +8,6 @@ class SeedPhraseError extends TkeyError {
     6011: "validation failed",
     6012: "Seed phrase is invalid for ",
   };
-
-  code: number;
-
-  message: string;
 
   public constructor(code: number, message?: string) {
     // takes care of stack and proto

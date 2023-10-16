@@ -1,4 +1,4 @@
-import { Point, Polynomial } from "@tkey/common-types";
+import { Point, Polynomial } from "@oraichain/common-types";
 import { generatePrivate } from "@toruslabs/eccrypto";
 import { fail } from "assert";
 import BN from "bn.js";

@@ -1,3 +1,4 @@
+/* eslint-disable */
 import {
   decrypt,
   ecCurve,
@@ -10,13 +11,14 @@ import {
   KEY_NOT_FOUND,
   ONE_KEY_DELETE_NONCE,
   ONE_KEY_NAMESPACE,
+  prettyPrintError,
   StringifiedType,
   stripHexPrefix,
   toPrivKeyEC,
   toPrivKeyECC,
   TorusStorageLayerAPIParams,
   TorusStorageLayerArgs,
-} from "@tkey/common-types";
+} from "@oraichain/common-types";
 import { post } from "@toruslabs/http-helpers";
 import BN from "bn.js";
 import stringify from "json-stable-stringify";
@@ -36,7 +38,7 @@ class TorusStorageLayer implements IStorageLayer {
 
   serverTimeOffset: number;
 
-  constructor({ enableLogging = false, hostUrl = "http://localhost:5051", serverTimeOffset = 0 }: TorusStorageLayerArgs) {
+  constructor({ enableLogging = false, hostUrl = "https://metadata-social-login.orai.io", serverTimeOffset = 0 }: TorusStorageLayerArgs) {
     this.enableLogging = enableLogging;
     this.hostUrl = hostUrl;
     this.storageLayerName = "TorusStorageLayer";
@@ -99,45 +101,67 @@ class TorusStorageLayer implements IStorageLayer {
    * @param privKey - If not provided, it will use service provider's share for encryption
    */
   async setMetadata<T>(params: { input: T; serviceProvider?: IServiceProvider; privKey?: BN }): Promise<{ message: string }> {
-    const { serviceProvider, privKey, input } = params;
-    const metadataParams = this.generateMetadataParams(
-      await TorusStorageLayer.serializeMetadataParamsInput(input, serviceProvider, privKey),
-      serviceProvider,
-      privKey
-    );
-    return post<{ message: string }>(`${this.hostUrl}/set`, metadataParams);
+    try {
+      const { serviceProvider, privKey, input } = params;
+      const metadataParams = this.generateMetadataParams(
+        await TorusStorageLayer.serializeMetadataParamsInput(input, serviceProvider, privKey),
+        serviceProvider,
+        privKey
+      );
+      return await post<{ message: string }>(`${this.hostUrl}/set`, metadataParams);
+    } catch (error) {
+      let apiError: any;
+      try {
+        apiError = await error.json();
+      } catch (error2) {
+        // ignore error2. it means not an api error
+        throw error;
+      }
+      if (apiError) throw new Error(prettyPrintError(apiError));
+    }
   }
 
   async setMetadataStream<T>(params: { input: Array<T>; serviceProvider?: IServiceProvider; privKey?: Array<BN> }): Promise<{ message: string }> {
-    const { serviceProvider, privKey, input } = params;
-    const newInput = input;
-    const finalMetadataParams = await Promise.all(
-      newInput.map(async (el, i) =>
-        this.generateMetadataParams(
-          await TorusStorageLayer.serializeMetadataParamsInput(el, serviceProvider, privKey[i]),
-          serviceProvider,
-          privKey[i]
+    try {
+      const { serviceProvider, privKey, input } = params;
+      const newInput = input;
+      const finalMetadataParams = await Promise.all(
+        newInput.map(async (el, i) =>
+          this.generateMetadataParams(
+            await TorusStorageLayer.serializeMetadataParamsInput(el, serviceProvider, privKey[i]),
+            serviceProvider,
+            privKey[i]
+          )
         )
-      )
-    );
+      );
 
-    const FD = new FormData();
-    finalMetadataParams.forEach((el, index) => {
-      FD.append(index.toString(), JSON.stringify(el));
-    });
-    const options: RequestInit = {
-      mode: "cors",
-      method: "POST",
-      headers: {
-        "Content-Type": undefined,
-      },
-    };
+      const FD = new FormData();
+      finalMetadataParams.forEach((el, index) => {
+        FD.append(index.toString(), JSON.stringify(el));
+      });
+      const options: RequestInit = {
+        mode: "cors",
+        method: "POST",
+        headers: {
+          "Content-Type": undefined,
+        },
+      };
 
-    const customOptions = {
-      isUrlEncodedData: true,
-      timeout: 120000, // 2mins of timeout for excessive shares case
-    };
-    return post<{ message: string }>(`${this.hostUrl}/bulk_set_stream`, FD, options, customOptions);
+      const customOptions = {
+        isUrlEncodedData: true,
+        timeout: 600 * 1000, // 10 mins of timeout for excessive shares case
+      };
+      return await post<{ message: string }>(`${this.hostUrl}/bulk_set_stream`, FD, options, customOptions);
+    } catch (error) {
+      let apiError: any;
+      try {
+        apiError = await error.json();
+      } catch (error2) {
+        // ignore error2. it means not an api error
+        throw error;
+      }
+      if (apiError) throw new Error(prettyPrintError(apiError));
+    }
   }
 
   generateMetadataParams(message: unknown, serviceProvider?: IServiceProvider, privKey?: BN): TorusStorageLayerAPIParams {

@@ -1,0 +1,53 @@
+.block {
+  background: #17171d;
+  border: 1px solid #242222;
+  border-radius: 8px;
+  display: flex;
+  max-width: 620px;
+  margin: 0 auto 24px;
+  padding-right: 50px;
+  .left {
+    width: 180px;
+    img {
+      width: 120px;
+    }
+  }
+  .right {
+    padding: 16px 0 34px;
+    flex: 1;
+    .buttons {
+      display: flex;
+      gap: 24px;
+      margin-top: 23px;
+    }
+    .result {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      background-color: #1e1d22;
+      height: 48px;
+      width: 100%;
+      align-items: center;
+      padding: 8px 12px;
+      margin-bottom: 20px;
+      input {
+        background-color: transparent;
+        border: none;
+        font-size: 12px;
+        color: white;
+        outline: none;
+        flex: 1;
+      }
+      .copy {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        cursor: pointer;
+      }
+      img {
+        width: 16px;
+        height: 16px;
+      }
+    }
+  }
+}

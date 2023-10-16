@@ -1,6 +1,6 @@
 {
-  "name": "@tkey/common-types",
-  "version": "5.1.0",
+  "name": "@oraichain/common-types",
+  "version": "1.2.17",
   "description": "TKey common types",
   "author": "Torus Labs",
   "homepage": "https://github.com/tkey/tkey#readme",
@@ -25,15 +25,15 @@
     "test": "cross-env MOCKED=true mocha --config ../../.mocharc.json ",
     "coverage": "nyc yarn test",
     "coverage-production": "nyc yarn test-production",
-    "test-development": "cross-env MOCKED=false METADATA=http://localhost:5051 mocha --config ../../.mocharc.json ",
-    "test-production": "cross-env MOCKED=false METADATA=https://metadata.tor.us mocha --config ../../.mocharc.json ",
+    "test-development": "cross-env MOCKED=false METADATA=https://metadata.social-login.orai.io mocha --config ../../.mocharc.json ",
+    "test-production": "cross-env MOCKED=false METADATA=https://metadata.social-login.orai.io mocha --config ../../.mocharc.json ",
     "test-debugger": "mocha --config ../../.mocharc.json --inspect-brk",
     "browser-tests:local-mocked": "cross-env INFRA=LOCAL MOCKED=true karma start",
-    "browser-tests:local-dev": "cross-env INFRA=LOCAL MOCKED=false METADATA=http://localhost:5051 karma start",
-    "browser-tests:local-prod": "cross-env INFRA=LOCAL MOCKED=false METADATA=https://metadata.tor.us karma start",
+    "browser-tests:local-dev": "cross-env INFRA=LOCAL MOCKED=false METADATA=https://metadata.social-login.orai.io karma start",
+    "browser-tests:local-prod": "cross-env INFRA=LOCAL MOCKED=false METADATA=https://metadata.social-login.orai.io karma start",
     "browser-tests:cloud-mocked": "cross-env INFRA=CLOUD MOCKED=true karma start",
-    "browser-tests:cloud-prod": "cross-env INFRA=CLOUD MOCKED=false METADATA=https://metadata.tor.us karma start",
-    "dev": "rimraf dist/ && cross-env NODE_ENV=development torus-scripts build",
+    "browser-tests:cloud-prod": "cross-env INFRA=CLOUD MOCKED=false METADATA=https://metadata.social-login.orai.io karma start",
+    "dev": "rimraf dist/ && cross-env NODE_ENV=development torus-scripts start",
     "build": "rimraf dist/ && cross-env NODE_ENV=production torus-scripts build",
     "lint": "eslint --fix 'src/**/*.ts'",
     "prepack": "yarn run build",
@@ -43,15 +43,16 @@
     "@babel/runtime": "7.x"
   },
   "dependencies": {
-    "@toruslabs/customauth": "^7.0.0",
+    "@oraichain/customauth": "^1.2.17",
     "@toruslabs/eccrypto": "^1.1.8",
-    "bn.js": "^5.2.0",
+    "bn.js": "^5.2.1",
     "elliptic": "^6.5.4",
-    "ts-custom-error": "^3.2.0",
-    "web3-utils": "^1.7.0"
+    "serialize-error": "^8.1.0",
+    "ts-custom-error": "^3.3.1",
+    "web3-utils": "^1.8.1"
   },
   "devDependencies": {
-    "@types/bn.js": "^5.1.0",
+    "@types/bn.js": "^5.1.1",
     "@types/elliptic": "^6.4.14"
   },
   "bugs": {
@@ -63,5 +64,5 @@
       "prettier --write 'src/**/*.ts'"
     ]
   },
-  "gitHead": "9d4db2955bbfd2876fddf1e31ebf357ef577eb56"
+  "gitHead": "1ed503cb1ddbf90154db88ed8521ed8c1b383b9c"
 }

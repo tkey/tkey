@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<head>
+  Test Torus.js
+</head>
+<body>
+  <script src="https://cdn.jsdelivr.net/npm/@toruslabs/fetch-node-details"></script>
+  <script src="../dist/torusUtils.umd.min.js"></script>
+  <script>
+    const fetchNodeDetails = new FetchNodeDetails.default();
+    const torus = new TorusUtils.default({ network: "mainnet" });
+    const verifier = "google"; // any verifier
+    const verifierId = "hello@tor.us"; // any verifier id
+    fetchNodeDetails
+      .getNodeDetails({ verifier, verifierId })
+      .then(function ({ torusNodeEndpoints, torusNodePub }) {
+        console.log(arguments);
+        return torus.getPublicAddress(torusNodeEndpoints, torusNodePub, { verifier, verifierId });
+      })
+      .then((publicAddress) => console.log(publicAddress));
+  </script>
+</body>

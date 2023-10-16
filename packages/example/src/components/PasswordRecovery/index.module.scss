@@ -1,0 +1,35 @@
+.block {
+  background: #17171d;
+  border: 1px solid #242222;
+  border-radius: 8px;
+  display: flex;
+  align-items:flex-start;
+  max-width: 620px;
+  margin: 0 auto 24px;
+  padding-right: 50px;
+  .left {
+    width: 180px;
+    margin-top: 20px;
+    img {
+      width: 120px;
+    }
+  }
+  .right {
+    padding: 16px 0 34px;
+    flex: 1;
+    .input {
+      background: #1e1d22;
+      border-radius: 6px;
+      color: white;
+      font-size: 14px;
+    }
+    .root {
+      width: 100%;
+      background: #1e1d22;
+      margin-top: 20px;
+    }
+    .notchedOutline {
+      display: none;
+    }
+  }
+}

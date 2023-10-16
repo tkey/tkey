@@ -1,0 +1,23 @@
+{
+  "name": "@oraichain/blsdkg",
+  "version": "1.2.17",
+  "main": "pkg/blsdkg.js",
+  "types": "pkg/blsdkg.d.ts",
+  "private": true,
+  "scripts": {
+    "dev": "rimraf pkg/ && wasm-pack build --target web",
+    "build": "wasm-pack build --target web --scope oraichain",
+    "prepack": "wasm-pack pack"
+  },
+  "files": [
+    "pkg",
+    "src",
+    "Cargo.lock",
+    "Cargo.toml"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.17.0",
+    "npm": ">=6.x"
+  }
+}

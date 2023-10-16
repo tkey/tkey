@@ -1,4 +1,5 @@
-import { BNString, DeviceShareDescription, IModule, ITKeyApi, prettyPrintError, ShareStore, StringifiedType } from "@tkey/common-types";
+/* eslint-disable */
+import { BNString, DeviceShareDescription, IModule, ITKeyApi, prettyPrintError, ShareStore, StringifiedType } from "@oraichain/common-types";
 import BN from "bn.js";
 
 import WebStorageError from "./errors";
@@ -49,7 +50,7 @@ class WebStorageModule implements IModule {
   async initialize(): Promise<void> {}
 
   async storeDeviceShare(deviceShareStore: ShareStore, customDeviceInfo?: StringifiedType): Promise<void> {
-    const metadata = this.tbSDK.getMetadata();
+    const metadata = this.tbSDK.getMetadata(); // why this.tbSDK.getMetadata doesn't update latest metadata, got undefined
     const tkeypubx = metadata.pubKey.x.toString("hex");
     await storeShareOnLocalStorage(deviceShareStore, tkeypubx);
     const shareDescription: DeviceShareDescription = {

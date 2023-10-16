@@ -10,8 +10,8 @@ class Share implements ISerializable {
   shareIndex: BN;
 
   constructor(shareIndex: BNString, share: BNString) {
-    this.share = new BN(share, "hex");
     this.shareIndex = new BN(shareIndex, "hex");
+    this.share = new BN(share, "hex");
   }
 
   static fromJSON(value: StringifiedType): Share {

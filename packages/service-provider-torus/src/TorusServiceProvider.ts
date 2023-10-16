@@ -1,75 +1,114 @@
-import { StringifiedType, TorusServiceProviderArgs } from "@tkey/common-types";
-import { ServiceProviderBase } from "@tkey/service-provider-base";
+import { IBlsdkgSignable, StringifiedType, TorusServiceProviderArgs } from "@oraichain/common-types";
 import CustomAuth, {
-  AggregateLoginParams,
   CustomAuthArgs,
-  HybridAggregateLoginParams,
   InitParams,
+  MapNewVerifierParams,
   SubVerifierDetails,
-  TorusAggregateLoginResponse,
-  TorusHybridAggregateLoginResponse,
   TorusLoginResponse,
-} from "@toruslabs/customauth";
+  TorusVerifierResponse,
+} from "@oraichain/customauth";
+import { ServiceProviderBase } from "@oraichain/service-provider-base";
 import BN from "bn.js";
+import { keccak256 } from "web3-utils";
 
 class TorusServiceProvider extends ServiceProviderBase {
   directWeb: CustomAuth;
 
   singleLoginKey: BN;
 
-  directParams: CustomAuthArgs;
+  customAuthArgs: CustomAuthArgs;
 
-  serviceProviderName: string;
+  blsDkgPackage?: IBlsdkgSignable;
 
-  constructor({ enableLogging = false, postboxKey, directParams }: TorusServiceProviderArgs) {
+  currentUser?: { verifier: string; verifierId: string };
+
+  constructor({ enableLogging = false, postboxKey, customAuthArgs, blsDkgPackage }: TorusServiceProviderArgs) {
     super({ enableLogging, postboxKey });
-    this.directParams = directParams;
-    this.directWeb = new CustomAuth(directParams);
+    this.customAuthArgs = customAuthArgs;
+    this.directWeb = new CustomAuth(customAuthArgs);
     this.serviceProviderName = "TorusServiceProvider";
+    this.blsDkgPackage = blsDkgPackage;
   }
 
   static fromJSON(value: StringifiedType): TorusServiceProvider {
-    const { enableLogging, postboxKey, directParams, serviceProviderName } = value;
+    const { enableLogging, postboxKey, customAuthArgs, serviceProviderName, blsDkgPackage, currentUser } = value;
     if (serviceProviderName !== "TorusServiceProvider") return undefined;
 
-    return new TorusServiceProvider({
+    const torusProvider = new TorusServiceProvider({
       enableLogging,
       postboxKey,
-      directParams,
+      customAuthArgs,
+      blsDkgPackage,
+    });
+    torusProvider.setCurrentUser(currentUser.verifier, currentUser.verifierId);
+    return torusProvider;
+  }
+
+  signByBlsdkg(message: string): string {
+    if (!this.blsDkgPackage) throw new Error("blsDkgPackage is not set");
+    if (!this.postboxKey) {
+      throw new Error("postboxKey is not set");
+    }
+    const msgToBuffer = Buffer.from(message.replace("0x", ""), "hex");
+    return Buffer.from(this.blsDkgPackage.sign(this.postboxKey.toArrayLike(Buffer, "be", 32), msgToBuffer)).toString("base64");
+  }
+
+  mapNewVerifierId(mapNewVerifierIdParams: MapNewVerifierParams) {
+    if (!(this.currentUser.verifier && this.currentUser.verifierId)) {
+      throw new Error("Current user is not set");
+    }
+    const msg = `${this.currentUser.verifier}${keccak256(this.currentUser.verifierId)}${mapNewVerifierIdParams.newVerifier}${keccak256(
+      mapNewVerifierIdParams.newVerifierId
+    )}`;
+
+    const hash = keccak256(msg);
+
+    const signature = this.signByBlsdkg(hash);
+
+    return this.directWeb.mapNewVerifierId({
+      ...mapNewVerifierIdParams,
+      verifier: this.currentUser.verifier,
+      verifierId: this.currentUser.verifierId,
+      signature,
     });
   }
 
-  async init(params: InitParams): Promise<void> {
+  async init(params?: InitParams): Promise<void> {
     return this.directWeb.init(params);
   }
 
   async triggerLogin(params: SubVerifierDetails): Promise<TorusLoginResponse> {
     const obj = await this.directWeb.triggerLogin(params);
-    this.postboxKey = new BN(obj.privateKey, "hex");
+    this.setPostboxKey(new BN(obj.privateKey, "hex"));
+    this.setCurrentUser(params.verifier, obj.userInfo.verifierId);
     return obj;
   }
 
-  async triggerAggregateLogin(params: AggregateLoginParams): Promise<TorusAggregateLoginResponse> {
-    const obj = await this.directWeb.triggerAggregateLogin(params);
-    this.postboxKey = new BN(obj.privateKey, "hex");
+  async triggerLoginMobile(params: SubVerifierDetails): Promise<{
+    sharesIndexes: Buffer[];
+    shares: Buffer[];
+    userInfo?: TorusVerifierResponse;
+  }> {
+    const obj = await this.directWeb.triggerLoginMobile(params);
+    this.setCurrentUser(params.verifier, obj.userInfo.verifierId);
     return obj;
   }
 
-  async triggerHybridAggregateLogin(params: HybridAggregateLoginParams): Promise<TorusHybridAggregateLoginResponse> {
-    const obj = await this.directWeb.triggerHybridAggregateLogin(params);
-    const aggregateLoginKey = obj.aggregateLogins[0].privateKey;
-    this.postboxKey = new BN(aggregateLoginKey, "hex");
-    this.singleLoginKey = new BN(obj.singleLogin.privateKey, "hex");
-    return obj;
+  setPostboxKey(key: BN) {
+    this.postboxKey = key;
+  }
+
+  setCurrentUser(verifier: string, verifierId: string) {
+    this.currentUser = { verifier, verifierId };
   }
 
   toJSON(): StringifiedType {
     return {
       ...super.toJSON(),
       serviceProviderName: this.serviceProviderName,
-      directParams: this.directParams,
+      customAuthArgs: this.customAuthArgs,
+      curentUser: this.currentUser,
     };
   }
 }
-
 export default TorusServiceProvider;

@@ -1,0 +1,103 @@
+{
+  "name": "@oraichain/customauth",
+  "version": "1.2.17",
+  "description": "CustomAuth login with torus to get user private key",
+  "main": "dist/customauth.cjs.js",
+  "module": "dist/customauth.esm.js",
+  "unpkg": "dist/customauth.umd.min.js",
+  "jsdelivr": "dist/customauth.umd.min.js",
+  "types": "dist/types/index.d.ts",
+  "scripts": {
+    "build": "torus-scripts build",
+    "dev": "rimraf dist/ && cross-env NODE_ENV=development torus-scripts start",
+    "release": "torus-scripts release",
+    "lint:ts": "eslint --fix 'src/**/*.ts'",
+    "prepack": "npm run build",
+    "test": "jest -i --colors --verbose --detectOpenHandles"
+  },
+  "files": [
+    "dist",
+    "src",
+    "serviceworker"
+  ],
+  "peerDependencies": {
+    "@babel/runtime": "^7.x"
+  },
+  "peerDependenciesMeta": {
+    "@sentry/types": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@chaitanyapotti/register-service-worker": "^1.7.3",
+    "@oraichain/torus.js": "^1.2.17",
+    "@toruslabs/broadcast-channel": "^6.2.0",
+    "@toruslabs/eccrypto": "^2.0.0",
+    "@toruslabs/http-helpers": "^3.3.0",
+    "@toruslabs/metadata-helpers": "^3.1.0",
+    "bowser": "^2.11.0",
+    "events": "^3.3.0",
+    "jwt-decode": "^3.1.2",
+    "lodash.merge": "^4.6.2",
+    "loglevel": "^1.8.1",
+    "web3-utils": "^1.8.2"
+  },
+  "devDependencies": {
+    "@toruslabs/eslint-config-typescript": "^1.2.0",
+    "@toruslabs/torus-scripts": "^3.0.4",
+    "@types/jest": "^29.5.4",
+    "@types/lodash.merge": "^4.6.7",
+    "@typescript-eslint/eslint-plugin": "^5.55.0",
+    "@typescript-eslint/parser": "^5.55.0",
+    "eslint": "^8.36.0",
+    "eslint-plugin-import": "^2.27.5",
+    "eslint-plugin-mocha": "^10.1.0",
+    "eslint-plugin-n": "^15.6.1",
+    "eslint-plugin-prettier": "^4.2.1",
+    "eslint-plugin-promise": "^6.1.1",
+    "eslint-plugin-simple-import-sort": "^10.0.0",
+    "eslint-plugin-tsdoc": "^0.2.17",
+    "eslint-plugin-vue": "^9.9.0",
+    "i": "^0.3.7",
+    "jest": "^29.7.0",
+    "jest-websocket-mock": "^2.5.0",
+    "lint-staged": "^13.2.0",
+    "npm": "^10.1.0",
+    "prettier": "^2.8.4",
+    "rimraf": "^4.4.0",
+    "ts-jest": "^29.1.0",
+    "typescript": "^4.9.5"
+  },
+  "author": "Torus Labs",
+  "license": "MIT",
+  "lint-staged": {
+    "!(*d).{js,ts}": [
+      "eslint --cache --fix",
+      "prettier --write"
+    ],
+    "*.{json, md}": [
+      "prettier --write"
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/torusresearch/CustomAuth.git"
+  },
+  "bugs": {
+    "url": "https://github.com/torusresearch/CustomAuth/issues"
+  },
+  "homepage": "https://github.com/torusresearch/CustomAuth#readme",
+  "keywords": [
+    "CustomAuth",
+    "customauth",
+    "torus-direct-auth",
+    "torus nodes",
+    "torus-embed",
+    "direct auth"
+  ],
+  "engines": {
+    "node": ">=14.17.0",
+    "npm": ">=6.x"
+  },
+  "gitHead": "1ed503cb1ddbf90154db88ed8521ed8c1b383b9c"
+}

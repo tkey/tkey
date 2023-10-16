@@ -1,0 +1,34 @@
+// {
+//   "root": true,
+//   "extends": [
+//     "@toruslabs/typescript"
+//   ],
+//   "parser": "@typescript-eslint/parser",
+//   "ignorePatterns": "*.config.js",
+//   "parserOptions": {
+//     "sourceType": "module",
+//     "ecmaVersion": 11,
+//     "project": "./tsconfig.json"
+//   },
+//   "rules": {
+//     "camelcase": 0,
+//     "space-before-function-paren":"off"
+//   },
+//   "overrides": [
+//     {
+//       "files": [
+//         "**/*.spec.ts"
+//       ],
+//       "env": {
+//         "jest": true
+//       },
+//         "rules": {
+//           "no-unused-expressions": "off",
+//           "@typescript-eslint/no-unused-expressions": "off",
+//           "no-confusing-arrow": "off",
+//           "space-before-function-paren":"off"
+//         }
+//       }
+//
+//   ]
+// }

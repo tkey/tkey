@@ -1,4 +1,4 @@
-import { generateAddressFromPublicKey, generateID, ISeedPhraseFormat, ISeedPhraseStore, MetamaskSeedPhraseStore } from "@tkey/common-types";
+import { generateAddressFromPublicKey, generateID, ISeedPhraseFormat, ISeedPhraseStore, MetamaskSeedPhraseStore } from "@oraichain/common-types";
 import { generateMnemonic, mnemonicToSeed, validateMnemonic } from "bip39";
 import BN from "bn.js";
 import HDKey from "hdkey";

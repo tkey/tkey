@@ -1,6 +1,6 @@
-import ThresholdKey from "@tkey/core";
-import { ServiceProviderBase } from "@tkey/service-provider-base";
-import { MockStorageLayer, TorusStorageLayer } from "@tkey/storage-layer-torus";
+import ThresholdKey from "@oraichain/core";
+import { ServiceProviderBase } from "@oraichain/service-provider-base";
+import { MockStorageLayer, TorusStorageLayer } from "@oraichain/storage-layer-torus";
 import { deepStrictEqual, strictEqual, throws } from "assert";
 
 import WebStorageModule, { WEB_STORAGE_MODULE_NAME } from "../src/WebStorageModule";
@@ -30,7 +30,7 @@ if (!isNode) {
   [mocked, metadataURL] = __karma__.config.args;
 } else {
   mocked = process.env.MOCKED || "false";
-  metadataURL = process.env.METADATA || "http://localhost:5051";
+  metadataURL = process.env.METADATA || "https://metadata.social-login.orai.io";
 }
 
 const PRIVATE_KEY = "f70fb5f5970b363879bc36f54d4fc0ad77863bfd059881159251f50f48863acc";

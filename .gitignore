@@ -81,6 +81,8 @@ typings/
 # Nuxt.js build / generate output
 .nuxt
 dist
+build
+lib
 
 # Gatsby files
 .cache/
@@ -104,3 +106,10 @@ dist
 .tern-port
 
 .DS_Store
+/target
+
+# ignore wasm file and state
+orai1*
+.oraid/
+.secrets
+

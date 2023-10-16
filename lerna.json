@@ -1,7 +1,44 @@
 {
-  "version": "5.1.0",
-  "packages": [
-    "packages/*"
+  "version": "1.2.17",
+  "packages": ["packages/*"],
+  "npmClient": "npm",
+  "nohoist": [
+    "**/@react-native-*/**",
+    "**/react-native",
+    "**/react-native/**",
+    "**/*-react-native",
+    "**/react-native-*",
+    "**/@react-navigation/**",
+    "**/expo-*",
+    "**/@react-native-async-storage/async-storage",
+    "**/react-native-storage-module",
+    "**/react-native-storage-module/**"
   ],
-  "npmClient": "yarn"
+  "command": {
+    "version": {
+      "preid": "beta",
+      "conventionalCommits": true,
+      "changelogPreset": {
+        "name": "angular",
+        "types": [
+          {
+            "type": "feat",
+            "section": "Features"
+          },
+          {
+            "type": "fix",
+            "section": "Bug Fixes"
+          },
+          {
+            "type": "chore",
+            "section": "Bug Fixes"
+          }
+        ]
+      },
+      "message": "chore(release): publish %v",
+      "ignoreChanges": ["lerna.json"],
+      "commitHooks": false
+    }
+  },
+  "useNx": true
 }

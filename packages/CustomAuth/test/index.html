@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<head>
+  <title>torus.js</title>
+  <button onclick="loadTorus()">Login</button>
+</head>
+<body>
+  <script src="../dist/CustomAuth.umd.min.js"></script>
+  <script>
+    async function loadTorus() {
+      const torus = new CustomAuth({
+        baseUrl: "http://localhost:3000/serviceworker/",
+        network: "testnet", // details for test net
+      });
+      await torus.init();
+      const userInfo = await torus.triggerLogin({
+        typeOfLogin: "google",
+        verifier: "google-lrc",
+        clientId: "221898609709-obfn3p63741l5333093430j3qeiinaa8.apps.googleusercontent.com",
+      });
+      console.log(userInfo);
+    }
+  </script>
+</body>

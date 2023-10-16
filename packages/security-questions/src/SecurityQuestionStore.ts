@@ -1,4 +1,4 @@
-import { ISerializable, PolynomialID, PublicShare, SecurityQuestionStoreArgs, StringifiedType } from "@tkey/common-types";
+import { ISerializable, PolynomialID, PublicShare, SecurityQuestionStoreArgs, StringifiedType } from "@oraichain/common-types";
 import BN from "bn.js";
 
 class SecurityQuestionStore implements ISerializable {

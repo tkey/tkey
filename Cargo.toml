@@ -1,0 +1,31 @@
+[workspace]
+resolver = '2'
+members = [
+    "packages/blsdkg",
+]
+exclude = [
+  "services/executor"
+]
+
+[workspace.package]
+version = "0.1.0"
+authors = ["Oraichain Labs"]
+edition = "2021"
+description = "Non-custodial magic link wallets Seamless user onboarding into Web3"
+documentation = " https://github.com/kawaii-islands/web3-login.git"
+exclude = [
+  # Those files are rust-optimizer artifacts. You might want to commit them for convenience but they should not be part of the source code publication.
+  "contract.wasm",
+  "hash.txt",
+]
+
+[profile.release]
+opt-level = 3
+debug = false
+rpath = false
+lto = true
+debug-assertions = false
+codegen-units = 1
+panic = 'abort'
+incremental = false
+overflow-checks = true

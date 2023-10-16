@@ -1,0 +1,57 @@
+.stepper {
+  position: fixed;
+  top: 50%;
+  transform: translate(50%, -50%);
+  &Icon {
+    width: 52px;
+    height: 52px;
+    font-size: 16px;
+    border-radius: 50%;
+    border: 1px solid white;
+    margin-left: -17px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    &.active {
+      border-color: #5a32c2;
+    }
+  }
+  &Connector {
+    height: 60px;
+    width: 0.5px;
+    background-color: rgba(255, 255, 255, 0.5);
+    margin-left: 10px;
+    position: relative;
+    &::before {
+      content: " ";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 3px;
+      height: 3px;
+      background-color: rgba(255, 255, 255, 0.5);
+      border-radius: 50%;
+      transform: translateX(-1px);
+    }
+    &::after {
+      content: " ";
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 3px;
+      height: 3px;
+      background-color: rgba(255, 255, 255, 0.5);
+      border-radius: 50%;
+      transform: translateX(-1px);
+    }
+    &.active {
+      background-color: #5a32c2;
+      &::before {
+        background-color: #5a32c2;
+      }
+      &::after {
+        background-color: #5a32c2;
+      }
+    }
+  }
+}

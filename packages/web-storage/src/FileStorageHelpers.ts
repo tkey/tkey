@@ -1,4 +1,4 @@
-import { ShareStore } from "@tkey/common-types";
+import { ShareStore } from "@oraichain/common-types";
 
 import WebStorageError from "./errors";
 import { getWindow } from "./utils";

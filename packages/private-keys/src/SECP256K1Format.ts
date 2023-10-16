@@ -1,8 +1,8 @@
-import { ecCurve, generateID, IPrivateKeyFormat, SECP256k1NStore } from "@tkey/common-types";
+import { ecCurve, generateID, IPrivateKeyFormat, IPrivateKeyStore } from "@oraichain/common-types";
 import BN from "bn.js";
 import randombytes from "randombytes";
 
-class SECP256K1Format implements IPrivateKeyFormat {
+export class SECP256K1Format implements IPrivateKeyFormat {
   privateKey: BN;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -20,13 +20,20 @@ class SECP256K1Format implements IPrivateKeyFormat {
     return privateKey.cmp(this.ecParams.n) < 0 && !privateKey.isZero();
   }
 
-  createPrivateKeyStore(privateKey?: BN): SECP256k1NStore {
-    const finalPrivateKey = privateKey || new BN(randombytes(64));
+  createPrivateKeyStore(privateKey?: BN): IPrivateKeyStore {
+    let privKey: BN;
+    if (!privateKey) {
+      privKey = new BN(randombytes(64));
+    } else {
+      if (!this.validatePrivateKey(privateKey)) {
+        throw Error("Invalid Private Key");
+      }
+      privKey = privateKey;
+    }
     return {
       id: generateID(),
-      privateKey: finalPrivateKey,
+      privateKey: privKey,
       type: this.type,
     };
   }
 }
-export default SECP256K1Format;

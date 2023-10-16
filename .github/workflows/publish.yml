@@ -1,0 +1,65 @@
+name: Publish SDK
+on:
+  # When Release Pull Request is merged
+  workflow_dispatch:
+
+  pull_request:
+    types: [closed]
+    branches:
+      - master
+      - staging
+
+permissions:
+  contents: write # for checkout and tag
+  pull-requests: write # for comments
+  packages: write # for publish
+
+env:
+  NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+jobs:
+  publish:
+    if: github.event.pull_request.merged == true
+    name: Publish
+    strategy:
+      matrix:
+        node: ["18.x"]
+        os: [orai-self-hosted]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Setup Nodejs
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{matrix.node}}
+          cache: npm
+
+      - name: Install yarn global
+        run: npm install -g yarn@1.22.19
+
+      - name: Run install
+        run: yarn
+
+      - name: Run nx reset workspace
+        run: yarn nx reset
+
+      - name: Import GPG key
+        uses: crazy-max/ghaction-import-gpg@v6
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.PASSPHRASE }}
+          git_user_signingkey: true
+          git_commit_gpgsign: true
+
+      - name: Version and publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ ${{ github.base_ref }} = staging ]; then
+            npx lerna version --conventional-prerelease --sign-git-commit --sign-git-tag --yes
+          else
+            npx lerna version --conventional-graduate --sign-git-commit --sign-git-tag --yes
+          fi
+
+          npx lerna publish from-git --yes

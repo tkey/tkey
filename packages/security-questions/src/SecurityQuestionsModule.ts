@@ -9,7 +9,7 @@ import {
   Share,
   ShareStore,
   ShareStoreMap,
-} from "@tkey/common-types";
+} from "@oraichain/common-types";
 import BN from "bn.js";
 import { keccak256 } from "web3-utils";
 

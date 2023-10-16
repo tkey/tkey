@@ -1,4 +1,4 @@
-import { generatePrivateExcludingIndexes, getPubKeyPoint } from "@tkey/common-types";
+import { generatePrivateExcludingIndexes, getPubKeyPoint } from "@oraichain/common-types";
 import { generatePrivate } from "@toruslabs/eccrypto";
 import { deepStrictEqual } from "assert";
 import BN from "bn.js";

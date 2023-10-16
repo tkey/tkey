@@ -1,0 +1,107 @@
+{
+  "name": "@oraichain/torus.js",
+  "version": "1.2.17",
+  "description": "Handle communication with torus nodes",
+  "main": "dist/torusUtils.cjs.js",
+  "module": "dist/torusUtils.esm.js",
+  "unpkg": "dist/torusUtils.umd.min.js",
+  "jsdelivr": "dist/torusUtils.umd.min.js",
+  "types": "dist/types/index.d.ts",
+  "scripts": {
+    "dev": "rimraf dist/ && cross-env NODE_ENV=development torus-scripts start",
+    "build": "torus-scripts build",
+    "release": "torus-scripts release",
+    "prepack": "npm run build",
+    "lint": "eslint --fix 'src/**/*.ts'",
+    "test": "cross-env NODE_ENV=test mocha"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "peerDependencies": {
+    "@babel/runtime": "7.x"
+  },
+  "dependencies": {
+    "@toruslabs/eccrypto": "^2.0.0",
+    "@toruslabs/http-helpers": "^3.3.0",
+    "bn.js": "^5.2.1",
+    "elliptic": "^6.5.4",
+    "json-stable-stringify": "^1.0.2",
+    "keccak": "^3.0.3",
+    "loglevel": "^1.8.1",
+    "web3-utils": "^1.8.2"
+  },
+  "devDependencies": {
+    "@babel/register": "^7.21.0",
+    "@babel/runtime": "^7.21.0",
+    "@toruslabs/eslint-config-typescript": "^1.4.1",
+    "@toruslabs/torus-scripts": "^3.0.4",
+    "@types/chai": "^4.3.4",
+    "@types/elliptic": "^6.4.14",
+    "@types/faker": "^5.5.3",
+    "@types/json-stable-stringify": "^1.0.34",
+    "@types/jsonwebtoken": "^9.0.1",
+    "@types/keccak": "^3.0.1",
+    "@types/mocha": "^10.0.1",
+    "@typescript-eslint/eslint-plugin": "^5.55.0",
+    "@typescript-eslint/parser": "^5.55.0",
+    "@wasm-tool/wasm-pack-plugin": "^1.6.0",
+    "chai": "^4.3.7",
+    "cross-env": "^7.0.3",
+    "dotenv": "^16.0.3",
+    "eslint": "^8.36.0",
+    "eslint-plugin-chai-expect": "^3.0.0",
+    "eslint-plugin-import": "^2.27.5",
+    "eslint-plugin-mocha": "^10.1.0",
+    "eslint-plugin-n": "^15.6.1",
+    "eslint-plugin-prettier": "^4.2.1",
+    "eslint-plugin-promise": "^6.1.1",
+    "eslint-plugin-simple-import-sort": "^10.0.0",
+    "eslint-plugin-tsdoc": "^0.2.17",
+    "faker": "^5.5.3",
+    "jsonwebtoken": "^9.0.0",
+    "lint-staged": "^13.2.0",
+    "mocha": "^10.2.0",
+    "node-fetch": "^3.3.1",
+    "prettier": "^2.8.4",
+    "rimraf": "^4.4.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^4.9.5",
+    "webpack-node-externals": "^3.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/torusresearch/torus.js.git"
+  },
+  "keywords": [
+    "torus.js",
+    "key assign",
+    "get public address",
+    "torus nodes",
+    "torus-embed",
+    "torus-website",
+    "torus-utils",
+    "elliptic"
+  ],
+  "author": "Chaitanya Potti",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/torusresearch/torus.js/issues"
+  },
+  "homepage": "https://github.com/torusresearch/torus.js#readme",
+  "lint-staged": {
+    "!(*d).{js,ts}": [
+      "eslint --cache --fix",
+      "prettier --write"
+    ],
+    "*.{json, md}": [
+      "prettier --write"
+    ]
+  },
+  "engines": {
+    "node": ">=14.17.0",
+    "npm": ">=6.x"
+  },
+  "gitHead": "1ed503cb1ddbf90154db88ed8521ed8c1b383b9c"
+}

@@ -1,0 +1,37 @@
+.blur {
+  opacity: 0.3;
+  pointer-events: none;
+  transition: opacity 0.5s;
+}
+.bigImg {
+  margin: 100px auto 40px;
+}
+.title {
+  margin-bottom: 24px!important;
+}
+.privkey {
+  background-color: #1f263b;
+  display: flex;
+  max-width: 500px;
+  height: 48px;
+  padding: 8px 12px;
+  margin: 0 auto;
+  gap: 16px;
+  input {
+    background-color: transparent;
+    border: none;
+    font-size: 14px;
+    color: white;
+    outline: none;
+    flex: 1;
+  }
+  .blur {
+    filter: blur(2px);
+  }
+  .copy {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+  }
+}

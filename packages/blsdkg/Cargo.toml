@@ -1,0 +1,30 @@
+[package]
+name = "blsdkg"
+version = "1.2.16"
+authors = [
+  "Ian Coleman",
+  "Thanh tu <tu@orai.io>",
+  "Duc Pham <duc@orai.io>",
+  "Duong Nguyen <duong.nt@orai.io>",
+]
+edition = "2018"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+wasm-bindgen = "0.2.78"
+wasm-bindgen-test = "0.3.28"
+serde = { version = "1.0.104", features = ["derive"] }
+blsdkg = { git = "https://github.com/oraichain/oraiwasm.git", branch = "master" }
+rand = { version = "0.7.3", features = ["wasm-bindgen"] }
+js-sys = "0.3.55"
+console_error_panic_hook = "0.1.6"
+pairing = "0.16.0"
+hex = "0.4.3"
+
+[dev-dependencies]
+base64 = "0.13.0"
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false

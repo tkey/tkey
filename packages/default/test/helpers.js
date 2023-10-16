@@ -1,6 +1,6 @@
-import ServiceProviderBase from "@tkey/service-provider-base";
-import ServiceProviderTorus from "@tkey/service-provider-torus";
-import TorusStorageLayer, { MockStorageLayer } from "@tkey/storage-layer-torus";
+import ServiceProviderBase from "@oraichain/service-provider-base";
+import ServiceProviderTorus from "@oraichain/service-provider-torus";
+import TorusStorageLayer, { MockStorageLayer } from "@oraichain/storage-layer-torus";
 import { generatePrivate } from "@toruslabs/eccrypto";
 
 let mocked;
@@ -15,7 +15,7 @@ if (!isNode) {
 export const isMocked = mocked === "true";
 
 export function getMetadataUrl() {
-  let metadataURL = process.env.METADATA || "http://localhost:5051";
+  let metadataURL = process.env.METADATA || "https://metadata.social-login.orai.io";
   if (!isNode) {
     // eslint-disable-next-line no-undef
     [, metadataURL] = __karma__.config.args;
@@ -33,7 +33,7 @@ export function getServiceProvider(params) {
   if (type === "TorusServiceProvider") {
     return new ServiceProviderTorus({
       postboxKey: isEmptyProvider ? null : PRIVATE_KEY,
-      directParams: {
+      customAuthArgs: {
         // this url has no effect as postbox key is passed
         // passing it just to satisfy direct auth checks.
         baseUrl: "http://localhost:3000",

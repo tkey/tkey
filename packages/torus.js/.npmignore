@@ -1,0 +1,41 @@
+examples
+secrets.json
+.DS_Store
+node_modules
+
+embed.min.js
+embed.user.js
+# local env files
+.env.local
+.env.*.local
+
+# Log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw*
+
+disc.html
+
+.vscode
+.editorconfig
+scripts
+test
+.eslintrc.json
+server.js
+.circleci
+.babelrc
+.eslintignore
+.prettierignore
+.prettierrc.yaml
+.github
+src/
+toruslabs-torus.js*

@@ -1,0 +1,21 @@
+.block {
+  display: flex;
+  gap: 34px;
+  max-width: 620px;
+  margin: 36px auto 0;
+  img {
+    width: 60px;
+    height: 60px;
+  }
+  .description {
+    font-weight: 500;
+    font-size: 20px;
+    line-height: 26px;
+    margin: 16px 0 24px;
+  }
+}
+.blur {
+  opacity: 0.3;
+  pointer-events: none;
+  transition: opacity 0.5s;
+}

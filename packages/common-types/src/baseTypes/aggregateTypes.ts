@@ -1,4 +1,4 @@
-import type { CustomAuthArgs } from "@toruslabs/customauth";
+import type { CustomAuthArgs } from "@oraichain/customauth";
 import BN from "bn.js";
 
 import {
@@ -17,6 +17,7 @@ import {
 import {
   BNString,
   EncryptedMessage,
+  IBlsdkgSignable,
   ISerializable,
   IServiceProvider,
   IStorageLayer,
@@ -137,8 +138,9 @@ export type TKeyArgs = {
   enableLogging?: boolean;
   modules?: ModuleMap;
   serviceProvider?: IServiceProvider;
+  blsDkgPackage?: IBlsdkgSignable;
   storageLayer?: IStorageLayer;
-  directParams?: CustomAuthArgs;
+  customAuthArgs?: CustomAuthArgs;
   manualSync?: boolean;
   serverTimeOffset?: number;
 };
@@ -207,8 +209,6 @@ export type IPrivateKeyStore = TkeyStoreItemType & {
   type: string;
 };
 
-export type SECP256k1NStore = IPrivateKeyStore;
-
 export interface ISeedPhraseFormat {
   type: string;
   validateSeedPhrase(seedPhrase: string): boolean;
@@ -220,12 +220,12 @@ export interface IPrivateKeyFormat {
   privateKey: BN;
   type: string;
   validatePrivateKey(privateKey: BN): boolean;
-  createPrivateKeyStore(privateKey: BN): SECP256k1NStore;
+  createPrivateKeyStore(privateKey: BN): IPrivateKeyStore;
 }
 
 export interface IAuthMetadata {
   metadata: IMetadata;
-  privKey: BN;
+  privKey?: BN;
 }
 
 export interface IMessageMetadata {

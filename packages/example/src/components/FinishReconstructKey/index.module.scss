@@ -1,0 +1,45 @@
+.block {
+  display: flex;
+  gap: 34px;
+  max-width: 620px;
+  margin: 36px auto 0;
+  img {
+    width: 60px;
+    height: 60px;
+  }
+  .description {
+    font-weight: 500;
+    font-size: 16px;
+    line-height: 26px;
+    margin: 8px 0 16px;
+    text-align: left;
+  }
+  .result {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    background-color: #1e1d22;
+    height: 48px;
+    width: 100%;
+    align-items: center;
+    padding: 8px 12px;
+    margin-bottom: 20px;
+    input {
+      background-color: transparent;
+      border: none;
+      font-size: 14px;
+      color: white;
+      outline: none;
+      flex: 1;
+    }
+    .blur {
+      filter: blur(2px);
+    }
+    .copy {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+    }
+  }
+}

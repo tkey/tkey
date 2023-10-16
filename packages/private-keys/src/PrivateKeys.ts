@@ -1,4 +1,4 @@
-import { IModule, IPrivateKeyFormat, IPrivateKeyStore, ITKeyApi } from "@tkey/common-types";
+import { IModule, IPrivateKeyFormat, IPrivateKeyStore, ITKeyApi } from "@oraichain/common-types";
 import BN from "bn.js";
 
 import PrivateKeysError from "./errors";
@@ -23,7 +23,7 @@ class PrivateKeyModule implements IModule {
   }
 
   // eslint-disable-next-line
-  async initialize(): Promise<void> {}
+  async initialize(): Promise<void> { }
 
   async setPrivateKey(privateKeyType: string, privateKey?: BN): Promise<void> {
     const format = this.privateKeyFormats.find((el) => el.type === privateKeyType);

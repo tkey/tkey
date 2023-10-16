@@ -1,4 +1,4 @@
-import ServiceProviderBase from "@tkey/service-provider-base";
+import ServiceProviderBase from "@oraichain/service-provider-base";
 import { generatePrivate } from "@toruslabs/eccrypto";
 
 import { getMetadataUrl, initStorageLayer } from "./helpers";

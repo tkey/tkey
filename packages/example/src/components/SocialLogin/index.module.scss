@@ -1,0 +1,25 @@
+.block {
+  background: #17171d;
+  border: 1px solid #242222;
+  border-radius: 8px;
+  display: flex;
+  max-width: 620px;
+  margin: 0 auto 24px;
+  padding-right: 50px;
+  .left {
+    width: 180px;
+    img {
+      width: 120px;
+    }
+  }
+  .right {
+    padding: 16px 0 34px;
+    img {
+      height: 60px;
+      margin-top: 23px;
+      display: block;
+      margin-left: 0;
+      cursor: pointer;
+    }
+  }
+}

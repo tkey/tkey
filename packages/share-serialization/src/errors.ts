@@ -1,4 +1,4 @@
-import { ErrorCodes, ITkeyError, TkeyError } from "@tkey/common-types";
+import { ErrorCodes, ITkeyError, TkeyError } from "@oraichain/common-types";
 
 class ShareSerializationError extends TkeyError {
   protected static messages: ErrorCodes = {
@@ -9,10 +9,6 @@ class ShareSerializationError extends TkeyError {
     7012: "Invalid Checksum",
     7013: "Invalid mnemonic",
   };
-
-  code: number;
-
-  message: string;
 
   public constructor(code: number, message?: string) {
     // takes care of stack and proto

@@ -1,4 +1,4 @@
-import { ecCurve, generatePrivateExcludingIndexes, Point, Polynomial, Share } from "@tkey/common-types";
+import { ecCurve, generatePrivateExcludingIndexes, Point, Polynomial, Share } from "@oraichain/common-types";
 import { generatePrivate } from "@toruslabs/eccrypto";
 import BN from "bn.js";
 import { curve } from "elliptic";

@@ -1,0 +1,13 @@
+.blur {
+  opacity: 0.3;
+  pointer-events: none;
+  transition: opacity 0.5s;
+}
+.bigImg {
+  margin: 100px auto 40px;
+}
+.description {
+  font-weight: 500;
+  font-size: 20px;
+  margin: 10px 0 24px!important;
+}

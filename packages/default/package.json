@@ -1,6 +1,6 @@
 {
-  "name": "@tkey/default",
-  "version": "5.1.0",
+  "name": "@oraichain/default",
+  "version": "1.2.17",
   "description": "TKey default library",
   "main": "dist/default.cjs.js",
   "module": "dist/default.esm.js",
@@ -11,15 +11,15 @@
     "test": "cross-env MOCKED=true mocha --config ../../.mocharc.json ",
     "coverage": "nyc yarn test",
     "coverage-production": "nyc yarn test-production",
-    "test-development": "cross-env MOCKED=false METADATA=http://localhost:5051 mocha ./test/*.test.js --config ../../.mocharc.json",
-    "test-production": "cross-env MOCKED=false METADATA=https://metadata.tor.us mocha ./test/*.test.js --config ../../.mocharc.json --parallel",
+    "test-development": "cross-env MOCKED=false METADATA=https://metadata.social-login.orai.io mocha ./test/*.test.js --config ../../.mocharc.json",
+    "test-production": "cross-env MOCKED=false METADATA=https://metadata.social-login.orai.io mocha ./test/*.test.js --config ../../.mocharc.json --parallel",
     "test-debugger": "cross-env MOCKED=true mocha --config ../../.mocharc.json --inspect-brk",
     "browser-tests:local-mocked": "cross-env INFRA=LOCAL MOCKED=true karma start",
-    "browser-tests:local-dev": "cross-env INFRA=LOCAL MOCKED=false METADATA=http://localhost:5051 karma start",
-    "browser-tests:local-prod": "cross-env INFRA=LOCAL MOCKED=false METADATA=https://metadata.tor.us karma start",
+    "browser-tests:local-dev": "cross-env INFRA=LOCAL MOCKED=false METADATA=https://metadata.social-login.orai.io karma start",
+    "browser-tests:local-prod": "cross-env INFRA=LOCAL MOCKED=false METADATA=https://metadata.social-login.orai.io karma start",
     "browser-tests:cloud-mocked": "cross-env INFRA=CLOUD MOCKED=true karma start",
-    "browser-tests:cloud-prod": "cross-env INFRA=CLOUD MOCKED=false METADATA=https://metadata.tor.us karma start",
-    "dev": "rimraf dist/ && cross-env NODE_ENV=development torus-scripts build",
+    "browser-tests:cloud-prod": "cross-env INFRA=CLOUD MOCKED=false METADATA=https://metadata.social-login.orai.io karma start",
+    "dev": "rimraf dist/ && cross-env NODE_ENV=development torus-scripts start",
     "build": "rimraf dist/ && cross-env NODE_ENV=production torus-scripts build",
     "lint": "eslint --fix 'src/**/*.ts'",
     "prepack": "yarn run build",
@@ -34,22 +34,22 @@
     "src"
   ],
   "dependencies": {
-    "@tkey/common-types": "^5.1.0",
-    "@tkey/core": "^5.1.0",
-    "@tkey/security-questions": "^5.1.0",
-    "@tkey/service-provider-base": "^5.1.0",
-    "@tkey/service-provider-torus": "^5.1.0",
-    "@tkey/share-serialization": "^5.1.0",
-    "@tkey/share-transfer": "^5.1.0",
-    "@tkey/storage-layer-torus": "^5.1.0",
-    "bn.js": "^5.2.0"
+    "@oraichain/common-types": "^1.2.17",
+    "@oraichain/core": "^1.2.17",
+    "@oraichain/security-questions": "^1.2.17",
+    "@oraichain/service-provider-base": "^1.2.17",
+    "@oraichain/service-provider-torus": "^1.2.17",
+    "@oraichain/share-serialization": "^1.2.17",
+    "@oraichain/share-transfer": "^1.2.17",
+    "@oraichain/storage-layer-torus": "^1.2.17",
+    "bn.js": "^5.2.1"
   },
   "devDependencies": {
-    "@tkey/private-keys": "^5.1.0",
-    "@tkey/seed-phrase": "^5.1.0",
+    "@oraichain/private-keys": "^1.2.17",
+    "@oraichain/seed-phrase": "^1.2.17",
     "@toruslabs/eccrypto": "^1.1.8",
-    "@toruslabs/http-helpers": "^2.1.4",
-    "web3-utils": "^1.6.1"
+    "@toruslabs/http-helpers": "^3.2.0",
+    "web3-utils": "^1.8.1"
   },
   "peerDependencies": {
     "@babel/runtime": "7.x"
@@ -78,5 +78,5 @@
     "direct auth",
     "tkey"
   ],
-  "gitHead": "9d4db2955bbfd2876fddf1e31ebf357ef577eb56"
+  "gitHead": "1ed503cb1ddbf90154db88ed8521ed8c1b383b9c"
 }

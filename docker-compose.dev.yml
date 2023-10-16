@@ -1,0 +1,84 @@
+---
+services:
+  # worker
+  rabbitmq:
+    image: rabbitmq:3.12.4-management-alpine
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 15s
+      timeout: 15s
+      retries: 3
+    networks:
+      - executor-tier
+      - worker-tier
+  worker:
+    build:
+      context: $PWD/services/assignkey-consumer/
+      dockerfile: Dockerfile
+      target: dev
+    env_file: $PWD/services/assignkey-consumer/.env
+    volumes:
+      - $PWD/services/assignkey-consumer/:/usr/app
+    restart: always
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - worker-tier
+    command: npx nodemon src/index.ts
+  # Metadata
+  redis:
+    restart: always
+    image: redis
+    env_file:
+      - $PWD/services/metadata/.env
+    ports:
+      - "6379:6379"
+  mariadb:
+    restart: always
+    image: mariadb
+    env_file:
+      - $PWD/services/metadata/.env
+    ports:
+      - "3306:3306"
+  metadata:
+    restart: always
+    depends_on:
+      - mariadb
+      - redis
+    build:
+      context: $PWD/services/metadata/
+      dockerfile: Dockerfile.dev
+    env_file:
+      - $PWD/services/metadata/.env
+    ports:
+      - "5051:5051/tcp"
+    volumes:
+      - $PWD/services/metadata/:/app
+  executor:
+    build:
+      context: $PWD/services/executor/
+      dockerfile: Dockerfile
+      target: dev
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    env_file:
+      - $PWD/services/executor/.env
+    volumes:
+      - $PWD/services/executor/:/usr/src/executor/
+    ports:
+      - "9001:9001"
+      - "9002:9002"
+      - "9003:9003"
+      - "9004:9004"
+      - "9005:9005"
+    networks:
+      - executor-tier
+
+networks:
+  worker-tier:
+  executor-tier:

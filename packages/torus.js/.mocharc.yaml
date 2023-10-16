@@ -1,0 +1,6 @@
+require:
+  - "./test/setup.mjs"
+exit: true
+timeout: 0
+spec: "test/**/*.test.ts"
+extension: "ts"

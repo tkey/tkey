@@ -21,5 +21,9 @@ yarn-debug.log*
 yarn-error.log*
 examples/
 dist/
+pkg/
+react-native*/
 types/
 **/*.d.ts
+karma*
+webpack.config.js

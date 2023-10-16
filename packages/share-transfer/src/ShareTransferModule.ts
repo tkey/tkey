@@ -10,7 +10,7 @@ import {
   ShareStoreMap,
   ShareTransferStorePointerArgs,
   toPrivKeyECC,
-} from "@tkey/common-types";
+} from "@oraichain/common-types";
 import { generatePrivate } from "@toruslabs/eccrypto";
 import BN from "bn.js";
 

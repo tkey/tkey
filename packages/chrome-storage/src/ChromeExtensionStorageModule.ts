@@ -1,5 +1,5 @@
-import { DeviceShareDescription, IModule, ITKeyApi, ShareStore, StringifiedType } from "@tkey/common-types";
-import { browser } from "webextension-polyfill-ts";
+import { DeviceShareDescription, IModule, ITKeyApi, ShareStore, StringifiedType } from "@oraichain/common-types";
+import { storage } from "webextension-polyfill";
 
 export const CHROME_EXTENSION_STORAGE_MODULE_NAME = "chromeExtensionStorage";
 
@@ -36,13 +36,13 @@ export default class ChromeExtensionStorageModule implements IModule {
   async storeShareOnChromeExtensionStorage(share: ShareStore): Promise<void> {
     const metadata = this.tbSDK.getMetadata();
     const key = metadata.pubKey.x.toString("hex"); // tbkey public
-    return browser.storage.sync.set({ [key]: JSON.stringify(share) });
+    return storage.sync.set({ [key]: JSON.stringify(share) });
   }
 
   async getStoreFromChromeExtensionStorage(): Promise<ShareStore> {
     const metadata = this.tbSDK.getMetadata();
     const key = metadata.pubKey.x.toString("hex"); // tbkey public
-    const result = await browser.storage.sync.get(key);
+    const result = await storage.sync.get(key);
     const verifierIdObj: ShareStore = JSON.parse(result[key]);
     await this.tbSDK.inputShareStoreSafe(verifierIdObj);
     return verifierIdObj;

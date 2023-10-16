@@ -6,7 +6,7 @@ import {
   KEY_NOT_FOUND,
   MockStorageLayerArgs,
   StringifiedType,
-} from "@tkey/common-types";
+} from "@oraichain/common-types";
 import BN from "bn.js";
 import stringify from "json-stable-stringify";
 

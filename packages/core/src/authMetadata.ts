@@ -1,4 +1,4 @@
-import { ecCurve, IAuthMetadata, StringifiedType, stripHexPrefix, toPrivKeyEC } from "@tkey/common-types";
+import { ecCurve, IAuthMetadata, StringifiedType, stripHexPrefix, toPrivKeyEC } from "@oraichain/common-types";
 import BN from "bn.js";
 import stringify from "json-stable-stringify";
 import { keccak256 } from "web3-utils";

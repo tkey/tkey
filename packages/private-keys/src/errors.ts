@@ -1,4 +1,4 @@
-import { ErrorCodes, ITkeyError, TkeyError } from "@tkey/common-types";
+import { ErrorCodes, ITkeyError, TkeyError } from "@oraichain/common-types";
 
 class PrivateKeysError extends TkeyError {
   protected static messages: ErrorCodes = {
