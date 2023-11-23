@@ -10,13 +10,15 @@ import CustomAuth, {
   TorusHybridAggregateLoginResponse,
   TorusLoginResponse,
 } from "@toruslabs/customauth";
-import Torus from "@toruslabs/torus.js";
+import Torus, { TorusKey } from "@toruslabs/torus.js";
 import BN from "bn.js";
 
 class TorusServiceProvider extends ServiceProviderBase {
   customAuthInstance: CustomAuth;
 
   singleLoginKey: BN;
+
+  public torusKey: TorusKey;
 
   customAuthArgs: CustomAuthArgs;
 
@@ -51,6 +53,7 @@ class TorusServiceProvider extends ServiceProviderBase {
     // `obj` maybe `null` in redirect mode.
     if (obj) {
       const localPrivKey = Torus.getPostboxKey(obj);
+      this.torusKey = obj;
       this.postboxKey = new BN(localPrivKey, "hex");
     }
 
@@ -66,6 +69,7 @@ class TorusServiceProvider extends ServiceProviderBase {
     // `obj` maybe `null` in redirect mode.
     if (obj) {
       const localPrivKey = Torus.getPostboxKey(obj);
+      this.torusKey = obj;
       this.postboxKey = new BN(localPrivKey, "hex");
     }
     return obj;
@@ -81,6 +85,7 @@ class TorusServiceProvider extends ServiceProviderBase {
     if (obj) {
       const aggregateLoginKey = Torus.getPostboxKey(obj.aggregateLogins[0]);
       const singleLoginKey = Torus.getPostboxKey(obj.singleLogin);
+      this.torusKey = null;
       this.postboxKey = new BN(aggregateLoginKey, "hex");
       this.singleLoginKey = new BN(singleLoginKey, "hex");
     }
