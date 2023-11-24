@@ -22,6 +22,8 @@ class ServiceProviderBase implements IServiceProvider {
 
   serviceProviderName: string;
 
+  migratableKey: BN | null = null;
+
   constructor({ enableLogging = false, postboxKey }: ServiceProviderArgs) {
     this.enableLogging = enableLogging;
     this.postboxKey = new BN(postboxKey, "hex");
