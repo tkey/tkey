@@ -20,6 +20,8 @@ class TorusServiceProvider extends ServiceProviderBase {
 
   public torusKey: TorusKey;
 
+  public migratableKey: BN | null = null;
+
   customAuthArgs: CustomAuthArgs;
 
   constructor({ enableLogging = false, postboxKey, customAuthArgs }: TorusServiceProviderArgs) {
@@ -48,6 +50,13 @@ class TorusServiceProvider extends ServiceProviderBase {
     const obj = await this.customAuthInstance.triggerLogin(params);
     const localPrivKey = Torus.getPostboxKey(obj);
     this.torusKey = obj;
+    const { finalKeyData, oAuthKeyData } = obj;
+    const privKey = finalKeyData.privKey || oAuthKeyData.privKey;
+
+    if (!obj.metadata.upgraded) {
+      this.migratableKey = new BN(privKey, "hex");
+    }
+
     this.postboxKey = new BN(localPrivKey, "hex");
     return obj;
   }
@@ -56,6 +65,13 @@ class TorusServiceProvider extends ServiceProviderBase {
     const obj = await this.customAuthInstance.triggerAggregateLogin(params);
     const localPrivKey = Torus.getPostboxKey(obj);
     this.torusKey = obj;
+    const { finalKeyData, oAuthKeyData } = obj;
+    const privKey = finalKeyData.privKey || oAuthKeyData.privKey;
+
+    if (!obj.metadata.upgraded) {
+      this.migratableKey = new BN(privKey, "hex");
+    }
+    
     this.postboxKey = new BN(localPrivKey, "hex");
     return obj;
   }
