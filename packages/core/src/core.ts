@@ -267,13 +267,29 @@ class ThresholdKey implements ITKey {
         if (neverInitializeNewKey) {
           throw CoreError.default("key has not been generated yet");
         }
+
         // no metadata set, assumes new user
-        await this._initializeNewKey({
-          initializeModules: true,
-          importedKey: importKey,
-          importEd25519Seed: params?.importEd25519Seed,
-          delete1OutOf1: p.delete1OutOf1,
-        });
+
+        // check for serviceprovider migratableKey for import key from service provider for new user
+        // provided no importKey is provided ( importKey take precedent )
+        if (this.serviceProvider.migratableKey && !importKey) {
+          // importkey from server provider need to be atomic, hence manual sync is required.
+          const tempStateManualSync = this.manualSync;
+          this.manualSync = true;
+          await this._initializeNewKey({ initializeModules: true, importedKey: this.serviceProvider.migratableKey, delete1OutOf1: true });
+          this.syncLocalMetadataTransitions();
+          // restore manual sync flag
+          this.manualSync = tempStateManualSync;
+        } else {
+          await this._initializeNewKey({ 
+            initializeModules: true, 
+            importedKey: importKey, 
+            delete1OutOf1: p.delete1OutOf1, 
+            importEd25519Seed: params?.importEd25519Seed,
+          });
+        }
+
+        // return after created new tkey account ( skip other steps)
         return this.getKeyDetails();
       }
       // else we continue with catching up share and metadata
