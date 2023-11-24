@@ -13,6 +13,8 @@ class SfaServiceProvider extends ServiceProviderBase {
 
   public torusKey: TorusKey;
 
+  public migratableKey: BN | null = null;
+
   private nodeDetailManagerInstance: NodeDetailManager;
 
   constructor({ enableLogging = false, postboxKey, web3AuthOptions }: SfaServiceProviderArgs) {
@@ -77,6 +79,12 @@ class SfaServiceProvider extends ServiceProviderBase {
 
     const torusKey = await this.authInstance.retrieveShares(torusNodeEndpoints, torusIndexes, verifier, finalVerifierParams, finalIdToken);
     this.torusKey = torusKey;
+    const { finalKeyData, oAuthKeyData } = torusKey;
+    const privKey = finalKeyData.privKey || oAuthKeyData.privKey;
+
+    if (!torusKey.metadata.upgraded) {
+      this.migratableKey = new BN(privKey, "hex");
+    }
     const postboxKey = Torus.getPostboxKey(torusKey);
     this.postboxKey = new BN(postboxKey, 16);
     return this.postboxKey;
