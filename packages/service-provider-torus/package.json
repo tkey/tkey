@@ -38,7 +38,7 @@
     "@babel/runtime": "7.x"
   },
   "dependencies": {
-    "@tkey/common-types": "^12.0.0",
+    "@tkey/common-types": "file:../common-types/tkey-common-types-12.0.0.tgz",
     "@tkey/service-provider-base": "^12.0.0",
     "@toruslabs/customauth": "^17.0.0",
     "@toruslabs/torus.js": "^12.0.1",

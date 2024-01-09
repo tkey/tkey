@@ -4,6 +4,7 @@ import {
   IServiceProvider,
   IStorageLayer,
   KEY_NOT_FOUND,
+  KeyType,
   MockStorageLayerArgs,
   StringifiedType,
 } from "@tkey/common-types";
@@ -23,16 +24,19 @@ class MockStorageLayer implements IStorageLayer {
 
   serviceProvider: IServiceProvider;
 
-  constructor({ dataMap, lockMap }: MockStorageLayerArgs = { dataMap: {}, lockMap: {} }) {
+  keyType: KeyType;
+
+  constructor({ dataMap, lockMap, keyType = "secp256k1" }: MockStorageLayerArgs = { dataMap: {}, lockMap: {}, keyType: "secp256k1" }) {
     this.dataMap = dataMap || {};
     this.lockMap = lockMap || {};
     this.storageLayerName = "MockStorageLayer";
+    this.keyType = keyType;
   }
 
   static fromJSON(value: StringifiedType): MockStorageLayer {
-    const { dataMap, lockMap, storageLayerName } = value;
+    const { dataMap, lockMap, storageLayerName, keyType } = value;
     if (storageLayerName !== "MockStorageLayer") return undefined;
-    return new MockStorageLayer({ dataMap, lockMap });
+    return new MockStorageLayer({ dataMap, lockMap, keyType });
   }
 
   /**
@@ -43,7 +47,7 @@ class MockStorageLayer implements IStorageLayer {
     const { serviceProvider, privKey } = params;
     let usedKey: BN;
     if (!privKey) usedKey = serviceProvider.retrievePubKeyPoint().getX();
-    else usedKey = getPubKeyPoint(privKey).x;
+    else usedKey = getPubKeyPoint(privKey, this.keyType).x;
 
     const fromMap = this.dataMap[usedKey.toString("hex")];
     if (!fromMap) {
@@ -61,7 +65,7 @@ class MockStorageLayer implements IStorageLayer {
     const { serviceProvider, privKey, input } = params;
     let usedKey: BN;
     if (!privKey) usedKey = serviceProvider.retrievePubKeyPoint().getX();
-    else usedKey = getPubKeyPoint(privKey).x;
+    else usedKey = getPubKeyPoint(privKey, this.keyType).x;
     this.dataMap[usedKey.toString("hex")] = stringify(input);
     return { message: "success" };
   }
@@ -71,7 +75,7 @@ class MockStorageLayer implements IStorageLayer {
     input.forEach((el, index) => {
       let usedKey: BN;
       if (!privKey || !privKey[index]) usedKey = serviceProvider.retrievePubKeyPoint().getX();
-      else usedKey = getPubKeyPoint(privKey[index]).x;
+      else usedKey = getPubKeyPoint(privKey[index], this.keyType).x;
       this.dataMap[usedKey.toString("hex")] = stringify(el);
     });
 
@@ -82,7 +86,7 @@ class MockStorageLayer implements IStorageLayer {
     const { serviceProvider, privKey } = params;
     let usedKey: BN;
     if (!privKey) usedKey = serviceProvider.retrievePubKeyPoint().getX();
-    else usedKey = getPubKeyPoint(privKey).x;
+    else usedKey = getPubKeyPoint(privKey, this.keyType).x;
     if (this.lockMap[usedKey.toString("hex")]) return { status: 0 };
     const id = generateID();
     this.lockMap[usedKey.toString("hex")] = id;
@@ -93,7 +97,7 @@ class MockStorageLayer implements IStorageLayer {
     const { serviceProvider, privKey, id } = params;
     let usedKey: BN;
     if (!privKey) usedKey = serviceProvider.retrievePubKeyPoint().getX();
-    else usedKey = getPubKeyPoint(privKey).x;
+    else usedKey = getPubKeyPoint(privKey, this.keyType).x;
     if (!this.lockMap[usedKey.toString("hex")]) return { status: 0 };
     if (id !== this.lockMap[usedKey.toString("hex")]) return { status: 2 };
     this.lockMap[usedKey.toString("hex")] = null;
@@ -105,6 +109,7 @@ class MockStorageLayer implements IStorageLayer {
       dataMap: this.dataMap,
       serviceProvider: this.serviceProvider,
       storageLayerName: this.storageLayerName,
+      keyType: this.keyType,
     };
   }
 }

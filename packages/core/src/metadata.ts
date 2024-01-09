@@ -1,9 +1,10 @@
 import {
   decrypt,
-  ecCurve,
   EncryptedMessage,
+  getEllipticCurve,
   getPubKeyPoint,
   IMetadata,
+  KeyType,
   Point,
   PolyIDAndShares,
   Polynomial,
@@ -49,6 +50,8 @@ class Metadata implements IMetadata {
 
   nonce: number;
 
+  keyType: KeyType;
+
   constructor(input: Point) {
     this.publicPolynomials = {};
     this.publicShares = {};
@@ -58,11 +61,12 @@ class Metadata implements IMetadata {
     this.pubKey = input;
     this.polyIDList = [];
     this.nonce = 0;
+    this.keyType = "secp256k1";
   }
 
   static fromJSON(value: StringifiedType): Metadata {
-    const { pubKey, polyIDList, generalStore, tkeyStore, scopedStore, nonce } = value;
-    const point = Point.fromCompressedPub(pubKey);
+    const { pubKey, polyIDList, generalStore, tkeyStore, scopedStore, nonce, keyType } = value;
+    const point = Point.fromCompressedPub(pubKey, keyType);
     const metadata = new Metadata(point);
     const unserializedPolyIDList: PolyIDAndShares[] = [];
 
@@ -91,6 +95,7 @@ class Metadata implements IMetadata {
     }
 
     metadata.polyIDList = unserializedPolyIDList;
+    metadata.keyType = keyType;
     return metadata;
   }
 
@@ -270,7 +275,7 @@ class Metadata implements IMetadata {
     }
 
     return {
-      pubKey: this.pubKey.encode("elliptic-compressed", { ec: ecCurve }).toString(),
+      pubKey: this.pubKey.encode("elliptic-compressed", { ec: getEllipticCurve(this.keyType) }).toString(),
       polyIDList: serializedPolyIDList,
       scopedStore: this.scopedStore,
       generalStore: this.generalStore,

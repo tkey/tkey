@@ -19,6 +19,7 @@ import {
   ITKeyApi,
   KEY_NOT_FOUND,
   KeyDetails,
+  KeyType,
   LocalMetadataTransitions,
   LocalTransitionData,
   LocalTransitionShares,
@@ -87,8 +88,10 @@ class ThresholdKey implements ITKey {
 
   serverTimeOffset?: number = 0;
 
+  keyType?: KeyType = "secp256k1";
+
   constructor(args?: TKeyArgs) {
-    const { enableLogging = false, modules = {}, serviceProvider, storageLayer, manualSync = false, serverTimeOffset } = args || {};
+    const { enableLogging = false, modules = {}, serviceProvider, storageLayer, manualSync = false, serverTimeOffset, keyType } = args || {};
     this.enableLogging = enableLogging;
     this.serviceProvider = serviceProvider;
     this.storageLayer = storageLayer;
@@ -104,6 +107,7 @@ class ThresholdKey implements ITKey {
     this.setModuleReferences(); // Providing ITKeyApi access to modules
     this.haveWriteMetadataLock = "";
     this.serverTimeOffset = serverTimeOffset;
+    this.keyType = keyType;
   }
 
   static async fromJSON(value: StringifiedType, args: TKeyArgs): Promise<ThresholdKey> {
@@ -419,7 +423,7 @@ class ThresholdKey implements ITKey {
     }
     const privKey = lagrangeInterpolation(shareArr, shareIndexArr);
     // check that priv key regenerated is correct
-    const reconstructedPubKey = getPubKeyPoint(privKey);
+    const reconstructedPubKey = getPubKeyPoint(privKey, this.keyType);
     if (this.metadata.pubKey.x.cmp(reconstructedPubKey.x) !== 0) {
       throw CoreError.incorrectReconstruction();
     }
@@ -659,7 +663,7 @@ class ThresholdKey implements ITKey {
     const shares = poly.generateShares(shareIndexes);
 
     // create metadata to be stored
-    const metadata = new Metadata(getPubKeyPoint(this.privKey));
+    const metadata = new Metadata(getPubKeyPoint(this.privKey, this.keyType));
     metadata.addFromPolynomialAndShares(poly, shares);
     const serviceProviderShare = shares[shareIndexes[0].toString("hex")];
     const shareStore = new ShareStore(serviceProviderShare, poly.getPolynomialID());

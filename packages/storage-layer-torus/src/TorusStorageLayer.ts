@@ -1,13 +1,14 @@
 import {
   decrypt,
-  ecCurve,
   encrypt,
   EncryptedMessage,
+  getEllipticCurve,
   getPubKeyECC,
   getPubKeyPoint,
   IServiceProvider,
   IStorageLayer,
   KEY_NOT_FOUND,
+  KeyType,
   ONE_KEY_DELETE_NONCE,
   ONE_KEY_NAMESPACE,
   prettyPrintError,
@@ -23,8 +24,8 @@ import BN from "bn.js";
 import { keccak256 } from "ethereum-cryptography/keccak";
 import stringify from "json-stable-stringify";
 
-function signDataWithPrivKey(data: { timestamp: number }, privKey: BN): string {
-  const sig = ecCurve.sign(keccak256(Buffer.from(stringify(data), "utf8")), toPrivKeyECC(privKey), "utf-8");
+function signDataWithPrivKey(data: { timestamp: number }, privKey: BN, keyType: KeyType): string {
+  const sig = getEllipticCurve(keyType).sign(keccak256(Buffer.from(stringify(data), "utf8")), toPrivKeyECC(privKey), "utf-8");
   return sig.toDER("hex");
 }
 
@@ -37,14 +38,17 @@ class TorusStorageLayer implements IStorageLayer {
 
   serverTimeOffset: number;
 
-  constructor({ enableLogging = false, hostUrl = "http://localhost:5051", serverTimeOffset = 0 }: TorusStorageLayerArgs) {
+  keyType: KeyType;
+
+  constructor({ enableLogging = false, hostUrl = "http://localhost:5051", serverTimeOffset = 0, keyType = "secp256k1" }: TorusStorageLayerArgs) {
     this.enableLogging = enableLogging;
     this.hostUrl = hostUrl;
     this.storageLayerName = "TorusStorageLayer";
     this.serverTimeOffset = serverTimeOffset;
+    this.keyType = keyType;
   }
 
-  static async serializeMetadataParamsInput(el: unknown, serviceProvider: IServiceProvider, privKey: BN): Promise<unknown> {
+  static async serializeMetadataParamsInput(el: unknown, serviceProvider: IServiceProvider, privKey: BN, keyType: KeyType): Promise<unknown> {
     if (typeof el === "object") {
       // Allow using of special message as command, in which case, do not encrypt
       const obj = el as Record<string, unknown>;
@@ -56,7 +60,7 @@ class TorusStorageLayer implements IStorageLayer {
     const bufferMetadata = Buffer.from(stringify(el));
     let encryptedDetails: EncryptedMessage;
     if (privKey) {
-      encryptedDetails = await encrypt(getPubKeyECC(privKey), bufferMetadata);
+      encryptedDetails = await encrypt(getPubKeyECC(privKey, keyType), bufferMetadata);
     } else {
       encryptedDetails = await serviceProvider.encrypt(bufferMetadata);
     }
@@ -65,9 +69,9 @@ class TorusStorageLayer implements IStorageLayer {
   }
 
   static fromJSON(value: StringifiedType): TorusStorageLayer {
-    const { enableLogging, hostUrl, storageLayerName, serverTimeOffset = 0 } = value;
+    const { enableLogging, hostUrl, storageLayerName, serverTimeOffset = 0, keyType = "secp256k1" } = value;
     if (storageLayerName !== "TorusStorageLayer") return undefined;
-    return new TorusStorageLayer({ enableLogging, hostUrl, serverTimeOffset });
+    return new TorusStorageLayer({ enableLogging, hostUrl, serverTimeOffset, keyType });
   }
 
   /**
@@ -103,7 +107,7 @@ class TorusStorageLayer implements IStorageLayer {
     try {
       const { serviceProvider, privKey, input } = params;
       const metadataParams = this.generateMetadataParams(
-        await TorusStorageLayer.serializeMetadataParamsInput(input, serviceProvider, privKey),
+        await TorusStorageLayer.serializeMetadataParamsInput(input, serviceProvider, privKey, this.keyType),
         serviceProvider,
         privKey
       );
@@ -128,7 +132,7 @@ class TorusStorageLayer implements IStorageLayer {
       const finalMetadataParams = await Promise.all(
         newInput.map(async (el, i) =>
           this.generateMetadataParams(
-            await TorusStorageLayer.serializeMetadataParamsInput(el, serviceProvider, privKey[i]),
+            await TorusStorageLayer.serializeMetadataParamsInput(el, serviceProvider, privKey[i], this.keyType),
             serviceProvider,
             privKey[i]
           )
@@ -184,9 +188,9 @@ class TorusStorageLayer implements IStorageLayer {
 
     const hash = keccak256(Buffer.from(stringify(setTKeyStore), "utf8"));
     if (privKey) {
-      const unparsedSig = toPrivKeyEC(privKey).sign(hash);
+      const unparsedSig = toPrivKeyEC(privKey, this.keyType).sign(hash);
       sig = Buffer.from(unparsedSig.r.toString(16, 64) + unparsedSig.s.toString(16, 64) + new BN(0).toString(16, 2), "hex").toString("base64");
-      const pubK = getPubKeyPoint(privKey);
+      const pubK = getPubKeyPoint(privKey, this.keyType);
       pubX = pubK.x.toString("hex");
       pubY = pubK.y.toString("hex");
     } else {
@@ -212,7 +216,7 @@ class TorusStorageLayer implements IStorageLayer {
 
     let signature: string;
     if (privKey) {
-      signature = signDataWithPrivKey(data, privKey);
+      signature = signDataWithPrivKey(data, privKey, this.keyType);
     } else {
       signature = serviceProvider.sign(new BN(keccak256(Buffer.from(stringify(data), "utf8"))));
     }
@@ -232,7 +236,7 @@ class TorusStorageLayer implements IStorageLayer {
 
     let signature: string;
     if (privKey) {
-      signature = signDataWithPrivKey(data, privKey);
+      signature = signDataWithPrivKey(data, privKey, this.keyType);
     } else {
       signature = serviceProvider.sign(new BN(keccak256(Buffer.from(stringify(data), "utf8"))));
     }
@@ -250,6 +254,7 @@ class TorusStorageLayer implements IStorageLayer {
       enableLogging: this.enableLogging,
       hostUrl: this.hostUrl,
       storageLayerName: this.storageLayerName,
+      keyType: this.keyType,
     };
   }
 }

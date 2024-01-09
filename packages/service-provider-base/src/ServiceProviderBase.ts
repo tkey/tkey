@@ -5,6 +5,7 @@ import {
   EncryptedMessage,
   getPubKeyECC,
   IServiceProvider,
+  KeyType,
   PubKeyType,
   ServiceProviderArgs,
   StringifiedType,
@@ -22,17 +23,20 @@ class ServiceProviderBase implements IServiceProvider {
 
   serviceProviderName: string;
 
-  constructor({ enableLogging = false, postboxKey }: ServiceProviderArgs) {
+  keyType: KeyType;
+
+  constructor({ enableLogging = false, postboxKey, keyType = "secp256k1" }: ServiceProviderArgs) {
     this.enableLogging = enableLogging;
     this.postboxKey = new BN(postboxKey, "hex");
     this.serviceProviderName = "ServiceProviderBase";
+    this.keyType = keyType;
   }
 
   static fromJSON(value: StringifiedType): IServiceProvider {
-    const { enableLogging, postboxKey, serviceProviderName } = value;
+    const { enableLogging, postboxKey, serviceProviderName, keyType } = value;
     if (serviceProviderName !== "ServiceProviderBase") return undefined;
 
-    return new ServiceProviderBase({ enableLogging, postboxKey });
+    return new ServiceProviderBase({ enableLogging, postboxKey, keyType });
   }
 
   async encrypt(msg: Buffer): Promise<EncryptedMessage> {
@@ -45,19 +49,19 @@ class ServiceProviderBase implements IServiceProvider {
   }
 
   retrievePubKeyPoint(): curve.base.BasePoint {
-    return toPrivKeyEC(this.postboxKey).getPublic();
+    return toPrivKeyEC(this.postboxKey, this.keyType).getPublic();
   }
 
   retrievePubKey(type: PubKeyType): Buffer {
     if (type === "ecc") {
-      return getPubKeyECC(this.postboxKey);
+      return getPubKeyECC(this.postboxKey, this.keyType);
     }
     throw new Error("Unsupported pub key type");
   }
 
   sign(msg: BNString): string {
     const tmp = new BN(msg, "hex");
-    const sig = toPrivKeyEC(this.postboxKey).sign(tmp.toString("hex"));
+    const sig = toPrivKeyEC(this.postboxKey, this.keyType).sign(tmp.toString("hex"));
     return Buffer.from(sig.r.toString(16, 64) + sig.s.toString(16, 64) + new BN(0).toString(16, 2), "hex").toString("base64");
   }
 
