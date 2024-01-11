@@ -1,23 +1,32 @@
 import BN from "bn.js";
 
 import { BNString, IPoint, StringifiedType } from "../baseTypes/commonTypes";
-import { getEllipticCurve, KeyType } from "../utils";
+import { Curve, getEllipticCurve } from "../utils";
+import { getPubKeyEC } from ".";
 
 class Point implements IPoint {
   x: BN;
 
   y: BN;
 
-  constructor(x: BNString, y: BNString) {
+  keyType?: Curve;
+
+  constructor(x: BNString, y: BNString, keyType?: Curve) {
     this.x = new BN(x, "hex");
     this.y = new BN(y, "hex");
+    this.keyType = keyType || "secp256k1";
   }
 
-  static fromCompressedPub(value: string, keyType?: KeyType): Point {
+  static fromCompressedPub(value: string, keyType?: Curve): Point {
     const key = getEllipticCurve(keyType || "secp256k1").keyFromPublic(value, "hex");
     const pt = key.getPublic();
     return new Point(pt.getX(), pt.getY());
   }
+
+  static fromPrivateKey = (bn: BN, keyType?: Curve): Point => {
+    const pubKeyEc = getPubKeyEC(bn, keyType || "secp256k1");
+    return new this(pubKeyEc.getX().toString("hex"), pubKeyEc.getY().toString("hex"));
+  };
 
   static fromJSON(value: StringifiedType): Point {
     const { x, y } = value;
@@ -32,7 +41,7 @@ class Point implements IPoint {
         return Buffer.concat([Buffer.from("0x04", "hex"), Buffer.from(this.x.toString("hex"), "hex"), Buffer.from(this.y.toString("hex"), "hex")]);
       case "elliptic-compressed": {
         // TODO: WHAT IS THIS.?
-        const ec = params?.ec || getEllipticCurve("secp256k1");
+        const ec = params?.ec || getEllipticCurve(this.keyType);
         const key = ec.keyFromPublic({ x: this.x.toString("hex"), y: this.y.toString("hex") }, "hex");
         return Buffer.from(key.getPublic(true, "hex"));
       }

@@ -1,4 +1,5 @@
 import {
+  Curve,
   decrypt,
   encrypt,
   EncryptedMessage,
@@ -8,7 +9,6 @@ import {
   IServiceProvider,
   IStorageLayer,
   KEY_NOT_FOUND,
-  KeyType,
   ONE_KEY_DELETE_NONCE,
   ONE_KEY_NAMESPACE,
   prettyPrintError,
@@ -24,7 +24,7 @@ import BN from "bn.js";
 import { keccak256 } from "ethereum-cryptography/keccak";
 import stringify from "json-stable-stringify";
 
-function signDataWithPrivKey(data: { timestamp: number }, privKey: BN, keyType: KeyType): string {
+function signDataWithPrivKey(data: { timestamp: number }, privKey: BN, keyType: Curve): string {
   const sig = getEllipticCurve(keyType).sign(keccak256(Buffer.from(stringify(data), "utf8")), toPrivKeyECC(privKey), "utf-8");
   return sig.toDER("hex");
 }
@@ -38,7 +38,7 @@ class TorusStorageLayer implements IStorageLayer {
 
   serverTimeOffset: number;
 
-  keyType: KeyType;
+  keyType: Curve;
 
   constructor({ enableLogging = false, hostUrl = "http://localhost:5051", serverTimeOffset = 0, keyType = "secp256k1" }: TorusStorageLayerArgs) {
     this.enableLogging = enableLogging;
@@ -48,7 +48,7 @@ class TorusStorageLayer implements IStorageLayer {
     this.keyType = keyType;
   }
 
-  static async serializeMetadataParamsInput(el: unknown, serviceProvider: IServiceProvider, privKey: BN, keyType: KeyType): Promise<unknown> {
+  static async serializeMetadataParamsInput(el: unknown, serviceProvider: IServiceProvider, privKey: BN, keyType: Curve): Promise<unknown> {
     if (typeof el === "object") {
       // Allow using of special message as command, in which case, do not encrypt
       const obj = el as Record<string, unknown>;

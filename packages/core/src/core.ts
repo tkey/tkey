@@ -1,6 +1,7 @@
 import {
   BNString,
   CatchupToLatestShareResult,
+  Curve,
   decrypt,
   DeleteShareResult,
   encrypt,
@@ -19,7 +20,6 @@ import {
   ITKeyApi,
   KEY_NOT_FOUND,
   KeyDetails,
-  KeyType,
   LocalMetadataTransitions,
   LocalTransitionData,
   LocalTransitionShares,
@@ -44,8 +44,8 @@ import {
   TkeyStoreItemType,
   toPrivKeyECC,
 } from "@tkey/common-types";
-import { generatePrivate } from "@toruslabs/eccrypto";
 import BN from "bn.js";
+import { ec as EC } from "elliptic";
 import stringify from "json-stable-stringify";
 
 import AuthMetadata from "./authMetadata";
@@ -88,7 +88,7 @@ class ThresholdKey implements ITKey {
 
   serverTimeOffset?: number = 0;
 
-  keyType?: KeyType = "secp256k1";
+  keyType?: Curve = "secp256k1";
 
   constructor(args?: TKeyArgs) {
     const { enableLogging = false, modules = {}, serviceProvider, storageLayer, manualSync = false, serverTimeOffset, keyType } = args || {};
@@ -423,7 +423,7 @@ class ThresholdKey implements ITKey {
     }
     const privKey = lagrangeInterpolation(shareArr, shareIndexArr);
     // check that priv key regenerated is correct
-    const reconstructedPubKey = getPubKeyPoint(privKey, this.keyType);
+    const reconstructedPubKey = Point.fromPrivateKey(privKey, this.keyType);
     if (this.metadata.pubKey.x.cmp(reconstructedPubKey.x) !== 0) {
       throw CoreError.incorrectReconstruction();
     }
@@ -540,7 +540,7 @@ class ThresholdKey implements ITKey {
     // update metadata nonce
     this.metadata.nonce += 1;
 
-    const poly = generateRandomPolynomial(threshold - 1, this.privKey);
+    const poly = generateRandomPolynomial(threshold - 1, this.privKey, [], this.keyType);
     const shares = poly.generateShares(newShareIndexes);
     const existingShareIndexes = this.metadata.getShareIndexesForPolynomial(previousPolyID);
 
@@ -640,8 +640,10 @@ class ThresholdKey implements ITKey {
     delete1OutOf1?: boolean;
   } = {}): Promise<InitializeNewKeyResult> {
     if (!importedKey) {
-      const tmpPriv = generatePrivate();
-      this._setKey(new BN(tmpPriv));
+      const ec = this.keyType === "ed25519" ? new EC("ed25519") : new EC("secp256k1");
+      const tmpPriv = ec.genKeyPair().getPrivate();
+
+      this._setKey(tmpPriv);
     } else {
       this._setKey(new BN(importedKey));
     }
@@ -655,10 +657,10 @@ class ThresholdKey implements ITKey {
     let poly: Polynomial;
     if (determinedShare) {
       const shareIndexForDeterminedShare = generatePrivateExcludingIndexes([new BN(1), new BN(0)]);
-      poly = generateRandomPolynomial(1, this.privKey, [new Share(shareIndexForDeterminedShare, determinedShare)]);
+      poly = generateRandomPolynomial(1, this.privKey, [new Share(shareIndexForDeterminedShare, determinedShare)], this.keyType);
       shareIndexes.push(shareIndexForDeterminedShare);
     } else {
-      poly = generateRandomPolynomial(1, this.privKey);
+      poly = generateRandomPolynomial(1, this.privKey, [], this.keyType);
     }
     const shares = poly.generateShares(shareIndexes);
 

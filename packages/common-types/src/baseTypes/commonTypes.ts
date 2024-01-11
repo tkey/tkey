@@ -1,8 +1,8 @@
 import type { CustomAuthArgs } from "@toruslabs/customauth";
 import BN from "bn.js";
-import type { curve } from "elliptic";
+import { curve } from "elliptic";
 
-import { KeyType } from "../utils";
+import { Curve } from "../utils";
 
 export type PubKeyType = "ecc";
 
@@ -22,7 +22,7 @@ export interface EncryptedMessage {
 export interface ServiceProviderArgs {
   enableLogging?: boolean;
   postboxKey?: string;
-  keyType?: KeyType;
+  keyType?: Curve;
 }
 
 export interface TorusServiceProviderArgs extends ServiceProviderArgs {
@@ -49,7 +49,7 @@ export interface IServiceProvider extends ISerializable {
 
   serviceProviderName: string;
 
-  keyType: KeyType;
+  keyType: Curve;
 
   encrypt(msg: Buffer): Promise<EncryptedMessage>;
   decrypt(msg: EncryptedMessage): Promise<Buffer>;
@@ -83,7 +83,7 @@ export type TorusStorageLayerArgs = {
   enableLogging?: boolean;
   hostUrl?: string;
   serverTimeOffset?: number;
-  keyType?: KeyType;
+  keyType?: Curve;
 };
 
 export type MockStorageLayerArgs = {
@@ -91,7 +91,7 @@ export type MockStorageLayerArgs = {
   dataMap: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   lockMap: any;
-  keyType?: KeyType;
+  keyType?: Curve;
 };
 
 export type ShareDescriptionMap = {

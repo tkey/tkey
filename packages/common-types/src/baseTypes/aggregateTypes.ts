@@ -14,7 +14,7 @@ import {
   ShareStoreMap,
   ShareStorePolyIDShareIndexMap,
 } from "../base";
-import { KeyType } from "../utils";
+import { Curve } from "../utils";
 import {
   BNString,
   EncryptedMessage,
@@ -77,7 +77,7 @@ export interface IMetadata extends ISerializable {
 
   nonce: number;
 
-  keyType: KeyType;
+  keyType: Curve;
 
   getShareIndexesForPolynomial(polyID: PolynomialID): string[];
   getLatestPublicPolynomial(): PublicPolynomial;
@@ -144,7 +144,7 @@ export type TKeyArgs = {
   customAuthArgs?: CustomAuthArgs;
   manualSync?: boolean;
   serverTimeOffset?: number;
-  keyType?: KeyType;
+  keyType?: Curve;
 };
 
 export interface SecurityQuestionStoreArgs {

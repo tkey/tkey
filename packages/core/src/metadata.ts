@@ -1,10 +1,10 @@
 import {
+  Curve,
   decrypt,
   EncryptedMessage,
   getEllipticCurve,
   getPubKeyPoint,
   IMetadata,
-  KeyType,
   Point,
   PolyIDAndShares,
   Polynomial,
@@ -50,7 +50,7 @@ class Metadata implements IMetadata {
 
   nonce: number;
 
-  keyType: KeyType;
+  keyType: Curve;
 
   constructor(input: Point) {
     this.publicPolynomials = {};

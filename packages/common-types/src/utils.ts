@@ -1,4 +1,4 @@
-import { decrypt as ecDecrypt, encrypt as ecEncrypt, generatePrivate } from "@toruslabs/eccrypto";
+import { decrypt as ecDecrypt, encrypt as ecEncrypt } from "@toruslabs/eccrypto";
 import { keccak256, toChecksumAddress } from "@toruslabs/torus.js";
 import BN from "bn.js";
 import { ec as EC } from "elliptic";
@@ -13,14 +13,14 @@ import { EncryptedMessage } from "./baseTypes/commonTypes";
 // const privKeyBnToPubKeyECC = (bnPrivKey) => {
 //   return getPublic(privKeyBnToEcc(bnPrivKey));
 // };
-export type KeyType = "secp256k1" | "ed25519";
+export type Curve = "secp256k1" | "ed25519";
 
 export const ecCurve = new EC("secp256k1");
 
 const ellipticSecp256k1 = new EC("secp256k1");
 const ellipticEd25519 = new EC("ed25519");
 
-export function getEllipticCurve(keyType: KeyType = "secp256k1") {
+export function getEllipticCurve(keyType: Curve = "secp256k1") {
   if (keyType === "ed25519") {
     return ellipticEd25519;
   }
@@ -90,8 +90,9 @@ export function normalize(input: number | string): string {
   return `0x${hexString}`;
 }
 
-export function generatePrivateExcludingIndexes(shareIndexes: Array<BN>): BN {
-  const key = new BN(generatePrivate());
+export function generatePrivateExcludingIndexes(shareIndexes: Array<BN>, keyType?: Curve): BN {
+  const ec = keyType === "ed25519" ? new EC("ed25519") : new EC("secp256k1");
+  const key = ec.genKeyPair().getPrivate();
   if (shareIndexes.find((el) => el.eq(key))) {
     return generatePrivateExcludingIndexes(shareIndexes);
   }

@@ -1,4 +1,4 @@
-import { getEllipticCurve, IAuthMetadata, KeyType, StringifiedType, stripHexPrefix, toPrivKeyEC } from "@tkey/common-types";
+import { Curve, getEllipticCurve, IAuthMetadata, StringifiedType, stripHexPrefix, toPrivKeyEC } from "@tkey/common-types";
 import { keccak256 } from "@toruslabs/torus.js";
 import BN from "bn.js";
 import stringify from "json-stable-stringify";
@@ -11,9 +11,9 @@ class AuthMetadata implements IAuthMetadata {
 
   privKey: BN;
 
-  keyType: KeyType;
+  keyType: Curve;
 
-  constructor(metadata: Metadata, privKey?: BN, keyType?: KeyType) {
+  constructor(metadata: Metadata, privKey?: BN, keyType?: Curve) {
     this.metadata = metadata;
     this.privKey = privKey;
     this.keyType = keyType || "secp256k1";

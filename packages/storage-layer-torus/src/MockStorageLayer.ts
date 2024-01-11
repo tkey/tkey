@@ -1,10 +1,10 @@
 import {
+  Curve,
   generateID,
   getPubKeyPoint,
   IServiceProvider,
   IStorageLayer,
   KEY_NOT_FOUND,
-  KeyType,
   MockStorageLayerArgs,
   StringifiedType,
 } from "@tkey/common-types";
@@ -24,7 +24,7 @@ class MockStorageLayer implements IStorageLayer {
 
   serviceProvider: IServiceProvider;
 
-  keyType: KeyType;
+  keyType: Curve;
 
   constructor({ dataMap, lockMap, keyType = "secp256k1" }: MockStorageLayerArgs = { dataMap: {}, lockMap: {}, keyType: "secp256k1" }) {
     this.dataMap = dataMap || {};

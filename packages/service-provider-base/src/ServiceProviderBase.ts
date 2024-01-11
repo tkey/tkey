@@ -1,11 +1,11 @@
 import {
   BNString,
+  Curve,
   decrypt as decryptUtils,
   encrypt as encryptUtils,
   EncryptedMessage,
   getPubKeyECC,
   IServiceProvider,
-  KeyType,
   PubKeyType,
   ServiceProviderArgs,
   StringifiedType,
@@ -23,7 +23,7 @@ class ServiceProviderBase implements IServiceProvider {
 
   serviceProviderName: string;
 
-  keyType: KeyType;
+  keyType: Curve;
 
   constructor({ enableLogging = false, postboxKey, keyType = "secp256k1" }: ServiceProviderArgs) {
     this.enableLogging = enableLogging;
