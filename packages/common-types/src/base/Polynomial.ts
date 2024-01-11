@@ -69,7 +69,7 @@ class Polynomial implements ISerializable {
   getPublicPolynomial(): PublicPolynomial {
     const polynomialCommitments: Point[] = [];
     for (let i = 0; i < this.polynomial.length; i += 1) {
-      polynomialCommitments.push(getPubKeyPoint(this.polynomial[i]));
+      polynomialCommitments.push(getPubKeyPoint(this.polynomial[i], "secp256k1"));
     }
     this.publicPolynomial = new PublicPolynomial(polynomialCommitments);
     return this.publicPolynomial;

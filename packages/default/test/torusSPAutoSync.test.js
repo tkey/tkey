@@ -9,6 +9,7 @@ const metadataURL = getMetadataUrl();
 const PRIVATE_KEY = generatePrivate().toString("hex");
 const torusSP = new ServiceProviderTorus({
   postboxKey: PRIVATE_KEY,
+  keyType: "ed25519",
   customAuthArgs: {
     // this url has no effect as postbox key is passed
     // passing it just to satisfy direct auth checks.

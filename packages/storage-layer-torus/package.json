@@ -38,7 +38,7 @@
     "@babel/runtime": "7.x"
   },
   "dependencies": {
-    "@tkey/common-types": "^12.0.0",
+    "@tkey/common-types": "file:../common-types/tkey-common-types-12.0.0.tgz",
     "@toruslabs/http-helpers": "^5.0.0",
     "base64url": "3.0.1",
     "bn.js": "^5.2.1",

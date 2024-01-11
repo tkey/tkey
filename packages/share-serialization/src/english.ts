@@ -433,7 +433,7 @@ export const english = [
   "curious",
   "current",
   "curtain",
-  "curve",
+  "keyType",
   "cushion",
   "custom",
   "cute",

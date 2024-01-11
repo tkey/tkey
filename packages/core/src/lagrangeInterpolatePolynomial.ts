@@ -1,7 +1,6 @@
-import { ecCurve, generatePrivateExcludingIndexes, Point, Polynomial, Share } from "@tkey/common-types";
-import { generatePrivate } from "@toruslabs/eccrypto";
+import { Curve, ecCurve, generatePrivateExcludingIndexes, Point, Polynomial, Share } from "@tkey/common-types";
 import BN from "bn.js";
-import { curve } from "elliptic";
+import { curve, ec as EC } from "elliptic";
 
 import CoreError from "./errors";
 
@@ -104,7 +103,7 @@ export function lagrangeInterpolation(shares: BN[], nodeIndex: BN[]): BN {
 }
 
 // generateRandomPolynomial - determinisiticShares are assumed random
-export function generateRandomPolynomial(degree: number, secret?: BN, deterministicShares?: Array<Share>): Polynomial {
+export function generateRandomPolynomial(degree: number, secret?: BN, deterministicShares?: Array<Share>, keyType?: Curve): Polynomial {
   let actualS = secret;
   if (!secret) {
     actualS = generatePrivateExcludingIndexes([new BN(0)]);
@@ -133,7 +132,9 @@ export function generateRandomPolynomial(degree: number, secret?: BN, determinis
     while (points[shareIndex.toString("hex")] !== undefined) {
       shareIndex = generatePrivateExcludingIndexes([new BN(0)]);
     }
-    points[shareIndex.toString("hex")] = new Point(shareIndex, new BN(generatePrivate()));
+    const ec = keyType === "ed25519" ? new EC("ed25519") : new EC("secp256k1");
+
+    points[shareIndex.toString("hex")] = new Point(shareIndex, ec.genKeyPair().getPrivate());
   }
   points["0"] = new Point(new BN(0), actualS);
   return lagrangeInterpolatePolynomial(Object.values(points));
