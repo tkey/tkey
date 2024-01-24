@@ -71,7 +71,7 @@ class TorusServiceProvider extends ServiceProviderBase {
     if (!obj.metadata.upgraded) {
       this.migratableKey = new BN(privKey, "hex");
     }
-    
+
     this.postboxKey = new BN(localPrivKey, "hex");
     return obj;
   }
