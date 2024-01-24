@@ -49,8 +49,8 @@ export interface IServiceProvider extends ISerializable {
   postboxKey: BN;
 
   serviceProviderName: string;
-  
-  migratableKey? : BN | null;
+
+  migratableKey?: BN | null;
 
   encrypt(msg: Buffer): Promise<EncryptedMessage>;
   decrypt(msg: EncryptedMessage): Promise<Buffer>;

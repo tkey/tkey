@@ -75,19 +75,11 @@ class TorusServiceProvider extends ServiceProviderBase {
   async triggerAggregateLogin(params: AggregateLoginParams): Promise<TorusAggregateLoginResponse> {
     const obj = await this.customAuthInstance.triggerAggregateLogin(params);
 
-    // `obj` maybe `null` in redirect mode.
-    if (obj) {
-      const localPrivKey = Torus.getPostboxKey(obj);
-      this.torusKey = obj;
-      const { finalKeyData, oAuthKeyData } = obj;
-      const privKey = finalKeyData.privKey || oAuthKeyData.privKey;
-
-      if (!obj.metadata.upgraded) {
-        this.migratableKey = new BN(privKey, "hex");
-      }
-    
-      this.postboxKey = new BN(localPrivKey, "hex");
+    if (!obj.metadata.upgraded) {
+      this.migratableKey = new BN(privKey, "hex");
     }
+
+    this.postboxKey = new BN(localPrivKey, "hex");
     return obj;
   }
 
