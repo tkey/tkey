@@ -10,13 +10,17 @@ import CustomAuth, {
   TorusHybridAggregateLoginResponse,
   TorusLoginResponse,
 } from "@toruslabs/customauth";
-import Torus from "@toruslabs/torus.js";
+import Torus, { TorusKey } from "@toruslabs/torus.js";
 import BN from "bn.js";
 
 class TorusServiceProvider extends ServiceProviderBase {
   customAuthInstance: CustomAuth;
 
   singleLoginKey: BN;
+
+  public torusKey: TorusKey;
+
+  public migratableKey: BN | null = null;
 
   customAuthArgs: CustomAuthArgs;
 
@@ -45,6 +49,14 @@ class TorusServiceProvider extends ServiceProviderBase {
   async triggerLogin(params: SubVerifierDetails): Promise<TorusLoginResponse> {
     const obj = await this.customAuthInstance.triggerLogin(params);
     const localPrivKey = Torus.getPostboxKey(obj);
+    this.torusKey = obj;
+    const { finalKeyData, oAuthKeyData } = obj;
+    const privKey = finalKeyData.privKey || oAuthKeyData.privKey;
+
+    if (!obj.metadata.upgraded) {
+      this.migratableKey = new BN(privKey, "hex");
+    }
+
     this.postboxKey = new BN(localPrivKey, "hex");
     return obj;
   }
@@ -52,6 +64,14 @@ class TorusServiceProvider extends ServiceProviderBase {
   async triggerAggregateLogin(params: AggregateLoginParams): Promise<TorusAggregateLoginResponse> {
     const obj = await this.customAuthInstance.triggerAggregateLogin(params);
     const localPrivKey = Torus.getPostboxKey(obj);
+    this.torusKey = obj;
+    const { finalKeyData, oAuthKeyData } = obj;
+    const privKey = finalKeyData.privKey || oAuthKeyData.privKey;
+
+    if (!obj.metadata.upgraded) {
+      this.migratableKey = new BN(privKey, "hex");
+    }
+
     this.postboxKey = new BN(localPrivKey, "hex");
     return obj;
   }
@@ -60,6 +80,7 @@ class TorusServiceProvider extends ServiceProviderBase {
     const obj = await this.customAuthInstance.triggerHybridAggregateLogin(params);
     const aggregateLoginKey = Torus.getPostboxKey(obj.aggregateLogins[0]);
     const singleLoginKey = Torus.getPostboxKey(obj.singleLogin);
+    this.torusKey = null;
     this.postboxKey = new BN(aggregateLoginKey, "hex");
     this.singleLoginKey = new BN(singleLoginKey, "hex");
     return obj;
