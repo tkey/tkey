@@ -1,7 +1,6 @@
 import { ONE_KEY_DELETE_NONCE, type StringifiedType } from "@tkey/common-types";
 import { ServiceProviderBase } from "@tkey/service-provider-base";
 import { TorusStorageLayer } from "@tkey/storage-layer-torus";
-import { type TORUS_NETWORK_TYPE } from "@toruslabs/constants";
 import { NodeDetailManager } from "@toruslabs/fetch-node-details";
 import Torus, { keccak256, TorusKey } from "@toruslabs/torus.js";
 import BN from "bn.js";
@@ -19,6 +18,8 @@ class SfaServiceProvider extends ServiceProviderBase {
   public migratableKey: BN | null = null;
 
   private nodeDetailManagerInstance: NodeDetailManager;
+
+  private torusNodeEndpointOrigin?: string;
 
   private verifierDetails: {
     verifier: string;
@@ -60,6 +61,7 @@ class SfaServiceProvider extends ServiceProviderBase {
     // fetch node details.
     const { torusNodeEndpoints, torusNodePub, torusIndexes } = await this.nodeDetailManagerInstance.getNodeDetails(this.verifierDetails);
 
+    this.torusNodeEndpointOrigin = new URL(torusNodeEndpoints[0]).origin;
     if (params.serverTimeOffset) {
       this.authInstance.serverTimeOffset = params.serverTimeOffset;
     }
@@ -98,21 +100,8 @@ class SfaServiceProvider extends ServiceProviderBase {
     return this.postboxKey;
   }
 
-  isLegacyNetwork(network: TORUS_NETWORK_TYPE) {
-    const legacyNetworks = ["mainnet", "testnet", "cyan", "aqua", "celeste"];
-    return legacyNetworks.indexOf(network) > -1;
-  }
-
   async getHostURL() {
-    let endpoint = "";
-    // check the web3auth network
-
-    if (this.isLegacyNetwork(this.web3AuthOptions.network)) {
-      endpoint = "https://metadata.tor.us";
-    } else {
-      endpoint = "https://sapphire-1.auth.network/metadata";
-    }
-    return endpoint;
+    return this.torusNodeEndpointOrigin;
   }
 
   async _delete1of1Key(endpoint?: string, enableLogging?: boolean) {
