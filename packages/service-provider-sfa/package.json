@@ -38,6 +38,7 @@
   },
   "dependencies": {
     "@tkey/service-provider-base": "^15.1.0",
+    "@tkey/common-types": "^15.1.0",
     "@toruslabs/fetch-node-details": "^13.4.0",
     "@toruslabs/torus.js": "^15.1.0",
     "bn.js": "^5.2.1"
