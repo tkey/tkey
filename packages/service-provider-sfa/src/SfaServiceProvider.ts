@@ -136,10 +136,8 @@ class SfaServiceProvider extends ServiceProviderBase {
       hostUrl: endpoint,
       enableLogging: enableLogging || false,
     });
-    // await StorageLayer.setMetadata({ input: [{ message: ONE_KEY_DELETE_NONCE }], privKey: [this.serviceProvider.postboxKey] });
     await storageLayer.setMetadata({ input: [{ message: ONE_KEY_DELETE_NONCE }], privKey: this.postboxKey });
-
-    // this.root = false
+    this.root = false;
   }
 
   toJSON(): StringifiedType {
