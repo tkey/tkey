@@ -106,7 +106,7 @@ class SfaServiceProvider extends ServiceProviderBase {
     return this.postboxKey;
   }
 
-  async getHostURL() {
+  getHostURL(): string {
     return this.torusNodeEndpointOrigin;
   }
 

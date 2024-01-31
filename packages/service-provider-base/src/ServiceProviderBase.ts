@@ -37,8 +37,8 @@ class ServiceProviderBase implements IServiceProvider {
     return new ServiceProviderBase({ enableLogging, postboxKey });
   }
 
-  async getHostURL(): Promise<string> {
-    throw new Error("Method getHostURL() not implemented.");
+  getHostURL(): string {
+    throw new Error("Method not implemented.");
   }
 
   async encrypt(msg: Buffer): Promise<EncryptedMessage> {
