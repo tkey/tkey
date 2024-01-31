@@ -1,11 +1,11 @@
-import { type StringifiedType } from "@tkey/common-types";
+import { ONE_KEY_DELETE_NONCE, type StringifiedType } from "@tkey/common-types";
 import { ServiceProviderBase } from "@tkey/service-provider-base";
+import { TorusStorageLayer } from "@tkey/storage-layer-torus";
 import { NodeDetailManager } from "@toruslabs/fetch-node-details";
 import Torus, { keccak256, TorusKey } from "@toruslabs/torus.js";
 import BN from "bn.js";
 
 import { AggregateVerifierParams, LoginParams, SfaServiceProviderArgs, Web3AuthOptions } from "./interfaces";
-
 class SfaServiceProvider extends ServiceProviderBase {
   web3AuthOptions: Web3AuthOptions;
 
@@ -13,9 +13,18 @@ class SfaServiceProvider extends ServiceProviderBase {
 
   public torusKey: TorusKey;
 
+  root: boolean;
+
   public migratableKey: BN | null = null;
 
   private nodeDetailManagerInstance: NodeDetailManager;
+
+  private torusNodeEndpointOrigin?: string;
+
+  private verifierDetails: {
+    verifier: string;
+    verifierId: string;
+  };
 
   constructor({ enableLogging = false, postboxKey, web3AuthOptions }: SfaServiceProviderArgs) {
     super({ enableLogging, postboxKey });
@@ -47,11 +56,12 @@ class SfaServiceProvider extends ServiceProviderBase {
 
   async connect(params: LoginParams): Promise<BN> {
     const { verifier, verifierId, idToken, subVerifierInfoArray } = params;
-    const verifierDetails = { verifier, verifierId };
+    this.verifierDetails = { verifier, verifierId };
 
     // fetch node details.
-    const { torusNodeEndpoints, torusNodePub, torusIndexes } = await this.nodeDetailManagerInstance.getNodeDetails(verifierDetails);
+    const { torusNodeEndpoints, torusNodePub, torusIndexes } = await this.nodeDetailManagerInstance.getNodeDetails(this.verifierDetails);
 
+    this.torusNodeEndpointOrigin = `${new URL(torusNodeEndpoints[0]).origin}/metadata`;
     if (params.serverTimeOffset) {
       this.authInstance.serverTimeOffset = params.serverTimeOffset;
     }
@@ -88,6 +98,24 @@ class SfaServiceProvider extends ServiceProviderBase {
     const postboxKey = Torus.getPostboxKey(torusKey);
     this.postboxKey = new BN(postboxKey, 16);
     return this.postboxKey;
+  }
+
+  getHostURL(): string {
+    return this.torusNodeEndpointOrigin;
+  }
+
+  async _delete1of1Key(enableLogging?: boolean) {
+    if (!this.root) {
+      throw new Error("Cannot delete 1of1 key without root flag");
+    }
+
+    // setup TorusStorageLayer using the endpoint
+    const storageLayer = new TorusStorageLayer({
+      hostUrl: this.torusNodeEndpointOrigin,
+      enableLogging: enableLogging || false,
+    });
+    await storageLayer.setMetadata({ input: [{ message: ONE_KEY_DELETE_NONCE }], privKey: this.postboxKey });
+    this.root = false;
   }
 
   toJSON(): StringifiedType {

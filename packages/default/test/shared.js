@@ -7,6 +7,7 @@ import { Metadata } from "@tkey/core";
 import PrivateKeyModule, { ED25519Format, SECP256K1Format } from "@tkey/private-keys";
 import SecurityQuestionsModule from "@tkey/security-questions";
 import SeedPhraseModule, { MetamaskSeedPhraseFormat } from "@tkey/seed-phrase";
+import SFAServiceProvider from "@tkey/service-provider-sfa";
 import TorusServiceProvider from "@tkey/service-provider-torus";
 import ShareTransferModule from "@tkey/share-transfer";
 import TorusStorageLayer from "@tkey/storage-layer-torus";
@@ -19,7 +20,7 @@ import { JsonRpcProvider } from "ethers";
 import { createSandbox } from "sinon";
 
 import ThresholdKey from "../src/index";
-import { getMetadataUrl, getServiceProvider, initStorageLayer, isMocked } from "./helpers";
+import { generateIdToken, getMetadataUrl, getServiceProvider, initStorageLayer, isMocked } from "./helpers";
 
 const rejects = async (fn, error, msg) => {
   let f = () => {};
@@ -1507,6 +1508,75 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
           }
         );
       }
+    });
+
+    it(`init tkey with old metadata url with sapphire network, manualSync=${mode}`, async function () {
+      if (!mode) return;
+      const TORUS_TEST_EMAIL = "hello@tor.us";
+      const token = generateIdToken(TORUS_TEST_EMAIL, "ES256");
+      const postboxKeyBN = new BN(generatePrivate(), "hex");
+      const pubKeyPoint = getPubKeyPoint(postboxKeyBN);
+
+      const serviceProvider = new SFAServiceProvider({
+        postboxKey: postboxKeyBN.toString("hex"),
+        web3AuthOptions: {
+          // This url has no effect as postbox key is passed, passing it just to satisfy direct auth checks.
+          network: "sapphire_mainnet",
+          clientId: "YOUR_CLIENT_ID",
+        },
+      });
+
+      // legacy storage url
+      const storageLayer = new TorusStorageLayer({ hostUrl: "https://sapphire-1.auth.network/metadata" });
+
+      const { nonce } = await getOrSetNonce(
+        "https://metadata.tor.us",
+        ecCurve,
+        0,
+        pubKeyPoint.x.toString("hex"),
+        pubKeyPoint.y.toString("hex"),
+        postboxKeyBN
+      );
+      const nonceBN = new BN(nonce, "hex");
+      const importKey = postboxKeyBN.add(nonceBN).umod(ecCurve.curve.n).toString("hex");
+
+      const tKey = new ThresholdKey({ serviceProvider, storageLayer, manualSync: mode, enableLogging: true });
+      await tKey.initialize({
+        importKey: new BN(importKey, "hex"),
+        delete1OutOf1: true,
+        enableLogging: true,
+      });
+      await tKey.syncLocalMetadataTransitions();
+
+      const storageLayer2 = new TorusStorageLayer({ hostUrl: "https://metadata.tor.us" });
+      const { nonce: nonce2 } = await getOrSetNonce(
+        "https://metadata.tor.us",
+        ecCurve,
+        0,
+        pubKeyPoint.x.toString("hex"),
+        pubKeyPoint.y.toString("hex"),
+        postboxKeyBN
+      );
+      const nonceBN2 = new BN(nonce2, "hex");
+      const importKey2 = postboxKeyBN.add(nonceBN2).umod(ecCurve.curve.n).toString("hex");
+
+      const tKey2 = new ThresholdKey({ serviceProvider, storageLayer: storageLayer2, manualSync: mode, enableLogging: true });
+      await tKey2.initialize({
+        importKey: new BN(importKey2, "hex"),
+        delete1OutOf1: true,
+      });
+      await tKey2.syncLocalMetadataTransitions();
+      // rejects when root is false
+      await rejects(async () => {
+        await serviceProvider._delete1of1Key(true);
+      }, Error);
+      await serviceProvider.connect({
+        idToken: token,
+        verifier: "torus-test-verifierid-hash",
+        verifierId: TORUS_TEST_EMAIL,
+      });
+      if (!serviceProvider.root) serviceProvider.root = true;
+      await serviceProvider._delete1of1Key(true);
     });
   });
 

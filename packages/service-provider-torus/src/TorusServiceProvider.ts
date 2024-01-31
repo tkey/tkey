@@ -46,6 +46,10 @@ class TorusServiceProvider extends ServiceProviderBase {
     return this.customAuthInstance.init(params);
   }
 
+  getHostURL(): string {
+    return this.customAuthArgs.metadataUrl;
+  }
+
   async triggerLogin(params: SubVerifierDetails): Promise<TorusLoginResponse> {
     const obj = await this.customAuthInstance.triggerLogin(params);
     const localPrivKey = Torus.getPostboxKey(obj);
