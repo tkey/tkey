@@ -37,6 +37,10 @@ class ServiceProviderBase implements IServiceProvider {
     return new ServiceProviderBase({ enableLogging, postboxKey });
   }
 
+  async getHostURL(): Promise<string> {
+    throw new Error("Method getHostURL() not implemented.");
+  }
+
   async encrypt(msg: Buffer): Promise<EncryptedMessage> {
     const publicKey = this.retrievePubKey("ecc");
     return encryptUtils(publicKey, msg);
