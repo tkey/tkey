@@ -1511,7 +1511,6 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     });
 
     it(`init tkey with old metadata url with sapphire network, manualSync=${mode}`, async function () {
-      // console.log("hi")
       if (!mode) return;
       const TORUS_TEST_EMAIL = "hello@tor.us";
       const token = generateIdToken(TORUS_TEST_EMAIL, "ES256");
