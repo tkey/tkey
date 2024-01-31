@@ -61,7 +61,7 @@ class SfaServiceProvider extends ServiceProviderBase {
     // fetch node details.
     const { torusNodeEndpoints, torusIndexes, torusNodePub } = await this.nodeDetailManagerInstance.getNodeDetails(verifierDetails);
 
-    this.torusNodeEndpointOrigin = new URL(torusNodeEndpoints[0]).origin;
+    this.torusNodeEndpointOrigin = `${new URL(torusNodeEndpoints[0]).origin}/metadata`;
     if (params.serverTimeOffset) {
       this.authInstance.serverTimeOffset = params.serverTimeOffset;
     }
@@ -110,19 +110,14 @@ class SfaServiceProvider extends ServiceProviderBase {
     return this.torusNodeEndpointOrigin;
   }
 
-  async _delete1of1Key(endpoint?: string, enableLogging?: boolean) {
+  async _delete1of1Key(enableLogging?: boolean) {
     if (!this.root) {
       throw new Error("Cannot delete 1of1 key without root flag");
     }
 
-    // fnd to get the endpoint
-    if (!endpoint) {
-      const { torusNodeEndpoints } = await this.nodeDetailManagerInstance.getNodeDetails(this.verifierDetails);
-      endpoint = `${new URL(torusNodeEndpoints[0]).origin}/metadata`;
-    }
     // setup TorusStorageLayer using the endpoint
     const storageLayer = new TorusStorageLayer({
-      hostUrl: endpoint,
+      hostUrl: this.torusNodeEndpointOrigin,
       enableLogging: enableLogging || false,
     });
     await storageLayer.setMetadata({ input: [{ message: ONE_KEY_DELETE_NONCE }], privKey: this.postboxKey });
