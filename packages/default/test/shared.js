@@ -20,7 +20,7 @@ import { JsonRpcProvider } from "ethers";
 import { createSandbox } from "sinon";
 
 import ThresholdKey from "../src/index";
-import { getMetadataUrl, getServiceProvider, initStorageLayer, isMocked } from "./helpers";
+import { generateIdToken, getMetadataUrl, getServiceProvider, initStorageLayer, isMocked } from "./helpers";
 
 const rejects = async (fn, error, msg) => {
   let f = () => {};
@@ -1513,6 +1513,8 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     it(`init tkey with old metadata url with sapphire network, manualSync=${mode}`, async function () {
       // console.log("hi")
       if (!mode) return;
+      const TORUS_TEST_EMAIL = "hello@tor.us";
+      const token = generateIdToken(TORUS_TEST_EMAIL, "ES256");
       const postboxKeyBN = new BN(generatePrivate(), "hex");
       const pubKeyPoint = getPubKeyPoint(postboxKeyBN);
 
@@ -1521,9 +1523,10 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         web3AuthOptions: {
           // This url has no effect as postbox key is passed, passing it just to satisfy direct auth checks.
           network: "sapphire_mainnet",
-          clientId: "test",
+          clientId: "YOUR_CLIENT_ID",
         },
       });
+
       // legacy storage url
       const storageLayer = new TorusStorageLayer({ hostUrl: "https://sapphire-1.auth.network/metadata" });
 
@@ -1537,10 +1540,12 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       );
       const nonceBN = new BN(nonce, "hex");
       const importKey = postboxKeyBN.add(nonceBN).umod(ecCurve.curve.n).toString("hex");
+
       const tKey = new ThresholdKey({ serviceProvider, storageLayer, manualSync: mode, enableLogging: true });
       await tKey.initialize({
         importKey: new BN(importKey, "hex"),
         delete1OutOf1: true,
+        enableLogging: true,
       });
       await tKey.syncLocalMetadataTransitions();
 
@@ -1564,11 +1569,15 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       await tKey2.syncLocalMetadataTransitions();
       // rejects when root is false
       await rejects(async () => {
-        await serviceProvider._delete1of1Key("https://metadata.tor.us", true);
+        await serviceProvider._delete1of1Key(true);
       }, Error);
-
+      await serviceProvider.connect({
+        idToken: token,
+        verifier: "torus-test-verifierid-hash",
+        verifierId: TORUS_TEST_EMAIL,
+      });
       if (!serviceProvider.root) serviceProvider.root = true;
-      await serviceProvider._delete1of1Key("https://metadata.tor.us", true);
+      await serviceProvider._delete1of1Key(true);
     });
   });
 
