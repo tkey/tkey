@@ -52,7 +52,9 @@ import {
   toPrivKeyECC,
 } from "@tkey-mpc/common-types";
 import { generatePrivate } from "@toruslabs/eccrypto";
+import { keccak256 } from "@toruslabs/torus.js";
 import BN from "bn.js";
+import crypto from "crypto";
 import stringify from "json-stable-stringify";
 
 import AuthMetadata from "./authMetadata";
@@ -66,7 +68,6 @@ import {
   lagrangeInterpolation,
 } from "./lagrangeInterpolatePolynomial";
 import Metadata from "./metadata";
-
 // TODO: handle errors for get and set with retries
 
 class ThresholdKey implements ITKey {
@@ -226,6 +227,19 @@ class ThresholdKey implements ITKey {
     throw CoreError.metadataUndefined();
   }
 
+  computeNonce(index: number) {
+    // generation should occur during tkey.init, fails if chaincode is absent
+    const { chainCode } = this.metadata;
+    if (!chainCode) {
+      throw CoreError.default("chainCode is absent, required for nonce generation");
+    }
+    return new BN(keccak256(Buffer.from(`${index}${chainCode}`)).slice(2), "hex").umod(ecCurve.curve.n);
+  }
+
+  generateSalt(length = 32) {
+    return crypto.randomBytes(length).toString("hex");
+  }
+
   async initialize(params?: {
     withShare?: ShareStore;
     importKey?: BN;
@@ -300,7 +314,8 @@ class ThresholdKey implements ITKey {
         });
         if (useTSS) {
           const { factorEncs, factorPubs, tssPolyCommits } = await this._initializeNewTSSKey(this.tssTag, deviceTSSShare, factorPub, deviceTSSIndex);
-          this.metadata.addTSSData({ tssTag: this.tssTag, tssNonce: 0, tssPolyCommits, factorPubs, factorEncs });
+          const chainCode = this.generateSalt();
+          this.metadata.addTSSData({ tssTag: this.tssTag, tssNonce: 0, tssPolyCommits, factorPubs, factorEncs, chainCode });
         }
         return this.getKeyDetails();
       }
@@ -385,7 +400,7 @@ class ThresholdKey implements ITKey {
    * getTSSShare accepts a factorKey and returns the TSS share based on the factor encrypted TSS shares in the metadata
    * @param factorKey - factor key
    */
-  async getTSSShare(factorKey: BN, opts?: { threshold: number }): Promise<{ tssIndex: number; tssShare: BN }> {
+  async getTSSShare(factorKey: BN, opts?: { threshold: number; accountIndex?: number }): Promise<{ tssIndex: number; tssShare: BN }> {
     if (!this.privKey) throw CoreError.default("tss share cannot be returned until you've reconstructed tkey");
     const factorPub = getPubKeyPoint(factorKey);
     const factorEncs = this.getFactorEncs(factorPub);
@@ -407,6 +422,7 @@ class ThresholdKey implements ITKey {
 
     const userDec = tssShareBNs[0];
 
+    const { threshold, accountIndex } = opts || {};
     if (type === "direct") {
       const tssSharePub = ecCurve.g.mul(userDec);
       const tssCommitA0 = ecCurve.keyFromPublic({ x: tssCommits[0].x.toString(16, 64), y: tssCommits[0].y.toString(16, 64) }).getPublic();
@@ -416,6 +432,11 @@ class ThresholdKey implements ITKey {
         _tssSharePub = _tssSharePub.add(tssCommitA1);
       }
       if (tssSharePub.getX().cmp(_tssSharePub.getX()) === 0 && tssSharePub.getY().cmp(_tssSharePub.getY()) === 0) {
+        if (accountIndex && accountIndex > 0) {
+          const nonce = this.computeNonce(accountIndex);
+          const derivedShare = userDec.add(nonce).umod(ecCurve.n);
+          return { tssIndex, tssShare: derivedShare };
+        }
         return { tssIndex, tssShare: userDec };
       }
       throw new Error("user decryption does not match tss commitments...");
@@ -424,8 +445,6 @@ class ThresholdKey implements ITKey {
     // if type === "hierarchical"
     const serverDecs = tssShareBNs.slice(1); // 5 elems
     const serverIndexes = new Array(serverDecs.length).fill(null).map((_, i) => i + 1);
-
-    const { threshold } = opts || {};
 
     const combis = kCombinations(serverDecs.length, threshold || Math.ceil(serverDecs.length / 2));
     for (let i = 0; i < combis.length; i++) {
@@ -445,6 +464,14 @@ class ThresholdKey implements ITKey {
       for (let j = 0; j < tssIndex; j++) {
         _tssSharePub = _tssSharePub.add(tssCommitA1);
       }
+      if (accountIndex && accountIndex > 0) {
+        const nonce = this.computeNonce(accountIndex);
+        const derivedShare = tssShare.add(nonce).umod(ecCurve.n);
+        if (tssSharePub.getX().cmp(_tssSharePub.getX()) === 0 && tssSharePub.getY().cmp(_tssSharePub.getY()) === 0) {
+          return { tssIndex, tssShare: derivedShare };
+        }
+      }
+
       if (tssSharePub.getX().cmp(_tssSharePub.getX()) === 0 && tssSharePub.getY().cmp(_tssSharePub.getY()) === 0) {
         return { tssIndex, tssShare };
       }
@@ -461,7 +488,17 @@ class ThresholdKey implements ITKey {
     return tssPolyCommits;
   }
 
-  getTSSPub(): Point {
+  getTSSPub(accountIndex?: number): Point {
+    if (accountIndex && accountIndex > 0) {
+      const nonce = this.computeNonce(accountIndex);
+      // we need to add the pub key nonce to the tssPub
+      const noncePub = ecCurve.keyFromPrivate(nonce.toString("hex")).getPublic();
+      const pubKeyPoint = ecCurve
+        .keyFromPublic({ x: this.getTSSCommits()[0].x.toString("hex"), y: this.getTSSCommits()[0].y.toString("hex") })
+        .getPublic();
+      const dervicepubKeyPoint = pubKeyPoint.add(noncePub);
+      return new Point(dervicepubKeyPoint.getX().toString("hex"), dervicepubKeyPoint.getY().toString("hex"));
+    }
     return this.getTSSCommits()[0];
   }
 
