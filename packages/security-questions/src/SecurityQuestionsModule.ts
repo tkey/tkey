@@ -30,9 +30,12 @@ class SecurityQuestionsModule implements IModule {
 
   saveAnswers: boolean;
 
-  constructor(saveAnswers?: boolean) {
+  keyType: NamedCurve;
+
+  constructor(keyType: NamedCurve, saveAnswers?: boolean) {
     this.saveAnswers = saveAnswers;
     this.moduleName = SECURITY_QUESTIONS_MODULE_NAME;
+    this.keyType = keyType;
   }
 
   static refreshSecurityQuestionsMiddleware(generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap): unknown {
@@ -51,7 +54,7 @@ class SecurityQuestionsModule implements IModule {
       return new SecurityQuestionStore({
         nonce: newNonce,
         polynomialID: newShareStores[Object.keys(newShareStores)[0]].polynomialID,
-        sqPublicShare: newShareStores[sqIndex].share.getPublicShare(),
+        sqPublicShare: newShareStores[sqIndex].share.getPublicShare(this.keyType),
         shareIndex: sqStore.shareIndex,
         questions: sqStore.questions,
       });
@@ -79,7 +82,7 @@ class SecurityQuestionsModule implements IModule {
     const sqStore = new SecurityQuestionStore({
       nonce,
       questions,
-      sqPublicShare: newShareStore.share.getPublicShare(),
+      sqPublicShare: newShareStore.share.getPublicShare(this.keyType),
       shareIndex: newShareStore.share.shareIndex,
       polynomialID: newShareStore.polynomialID,
     });
@@ -113,7 +116,7 @@ class SecurityQuestionsModule implements IModule {
     share = share.umod(ecCurve.curve.n);
     const shareStore = new ShareStore(new Share(sqStore.shareIndex, share), sqStore.polynomialID);
     // validate if share is correct
-    const derivedPublicShare = shareStore.share.getPublicShare();
+    const derivedPublicShare = shareStore.share.getPublicShare(this.keyType);
     if (derivedPublicShare.shareCommitment.x.cmp(sqStore.sqPublicShare.shareCommitment.x) !== 0) {
       throw SecurityQuestionsError.incorrectAnswer();
     }

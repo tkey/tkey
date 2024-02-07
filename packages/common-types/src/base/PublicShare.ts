@@ -9,7 +9,7 @@ class PublicShare implements ISerializable {
   shareIndex: BN;
 
   constructor(shareIndex: BNString, shareCommitment: Point) {
-    this.shareCommitment = new Point(shareCommitment.x, shareCommitment.y);
+    this.shareCommitment = new Point(shareCommitment.x, shareCommitment.y, shareCommitment.keyType);
     this.shareIndex = new BN(shareIndex, "hex");
   }
 

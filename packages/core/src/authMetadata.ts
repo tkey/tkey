@@ -11,9 +11,12 @@ class AuthMetadata implements IAuthMetadata {
 
   privKey: BN;
 
-  constructor(metadata: Metadata, privKey?: BN) {
+  keyType: NamedCurve;
+
+  constructor(metadata: Metadata, keyType?: NamedCurve, privKey?: BN) {
     this.metadata = metadata;
     this.privKey = privKey;
+    this.keyType = keyType;
   }
 
   static fromJSON(value: StringifiedType): AuthMetadata {

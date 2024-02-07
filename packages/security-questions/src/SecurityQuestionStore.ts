@@ -6,18 +6,21 @@ class SecurityQuestionStore implements ISerializable {
 
   shareIndex: BN;
 
+  keyType: NamedCurve;
+
   sqPublicShare: PublicShare;
 
   polynomialID: PolynomialID;
 
   questions: string;
 
-  constructor({ nonce, shareIndex, sqPublicShare, polynomialID, questions }: SecurityQuestionStoreArgs) {
+  constructor({ nonce, shareIndex, sqPublicShare, polynomialID, questions, keyType }: SecurityQuestionStoreArgs) {
     this.nonce = new BN(nonce, "hex");
     this.shareIndex = new BN(shareIndex, "hex");
     this.sqPublicShare = new PublicShare(sqPublicShare.shareIndex, sqPublicShare.shareCommitment);
     this.polynomialID = polynomialID;
     this.questions = questions;
+    this.keyType = keyType;
   }
 
   static fromJSON(value: StringifiedType): SecurityQuestionStore {

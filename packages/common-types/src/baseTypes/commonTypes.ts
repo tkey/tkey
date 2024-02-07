@@ -2,7 +2,7 @@ import type { CustomAuthArgs } from "@toruslabs/customauth";
 import BN from "bn.js";
 import type { curve } from "elliptic";
 
-export type PubKeyType = "ecc";
+export type PubKeyType = NamedCurve;
 
 // @flow
 export type PolynomialID = string;
@@ -17,9 +17,11 @@ export interface EncryptedMessage {
   iv: string;
   mac: string;
 }
+
 export interface ServiceProviderArgs {
   enableLogging?: boolean;
   postboxKey?: string;
+  keyType?: NamedCurve;
 }
 
 export interface TorusServiceProviderArgs extends ServiceProviderArgs {
@@ -36,6 +38,7 @@ export interface ISerializable {
 export interface IPoint extends ISerializable {
   x: BN;
   y: BN;
+  keyType: NamedCurve;
   encode(enc: string, params?: unknown): Buffer;
 }
 
@@ -43,6 +46,7 @@ export interface IServiceProvider extends ISerializable {
   enableLogging: boolean;
 
   postboxKey: BN;
+  keyType: NamedCurve;
 
   serviceProviderName: string;
 
@@ -52,9 +56,11 @@ export interface IServiceProvider extends ISerializable {
   retrievePubKeyPoint(): curve.base.BasePoint;
   sign(msg: BNString): string;
 }
+
 export type TorusStorageLayerAPIParams = {
   pub_key_X: string;
   pub_key_Y: string;
+  keyType: NamedCurve;
   set_data: unknown;
   signature: string;
   namespace: string;

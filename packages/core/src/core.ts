@@ -67,6 +67,8 @@ class ThresholdKey implements ITKey {
 
   privKey: BN;
 
+  keyType: NamedCurve;
+
   lastFetchedCloudMetadata: Metadata;
 
   metadata: Metadata;
@@ -88,7 +90,7 @@ class ThresholdKey implements ITKey {
   serverTimeOffset?: number = 0;
 
   constructor(args?: TKeyArgs) {
-    const { enableLogging = false, modules = {}, serviceProvider, storageLayer, manualSync = false, serverTimeOffset } = args || {};
+    const { enableLogging = false, modules = {}, serviceProvider, storageLayer, manualSync = false, serverTimeOffset, keyType } = args || {};
     this.enableLogging = enableLogging;
     this.serviceProvider = serviceProvider;
     this.storageLayer = storageLayer;
@@ -104,10 +106,12 @@ class ThresholdKey implements ITKey {
     this.setModuleReferences(); // Providing ITKeyApi access to modules
     this.haveWriteMetadataLock = "";
     this.serverTimeOffset = serverTimeOffset;
+    this.keyType = keyType;
   }
 
   static async fromJSON(value: StringifiedType, args: TKeyArgs): Promise<ThresholdKey> {
-    const { enableLogging, privKey, metadata, shares, _localMetadataTransitions, manualSync, lastFetchedCloudMetadata, serverTimeOffset } = value;
+    const { enableLogging, privKey, metadata, shares, _localMetadataTransitions, manualSync, lastFetchedCloudMetadata, serverTimeOffset, keyType } =
+      value;
     const { storageLayer, serviceProvider, modules } = args;
 
     const tb = new ThresholdKey({
@@ -117,6 +121,7 @@ class ThresholdKey implements ITKey {
       modules,
       manualSync,
       serverTimeOffset,
+      keyType,
     });
     if (privKey) tb.privKey = new BN(privKey, "hex");
 
@@ -134,7 +139,9 @@ class ThresholdKey implements ITKey {
     tb.shares = shares;
 
     // switch to deserialize local metadata transition based on Object.keys() of authMetadata, ShareStore's and, IMessageMetadata
-    const AuthMetadataKeys = Object.keys(JSON.parse(stringify(new AuthMetadata(new Metadata(new Point("0", "0")), new BN("0", "hex")))));
+    const AuthMetadataKeys = Object.keys(
+      JSON.parse(stringify(new AuthMetadata(new Metadata(new Point("0", "0", this.keyType)), new BN("0", "hex"))))
+    );
     const ShareStoreKeys = Object.keys(JSON.parse(stringify(new ShareStore(new Share("0", "0"), ""))));
     const sampleMessageMetadata: IMessageMetadata = { message: "Sample message", dateAdded: Date.now() };
     const MessageMetadataKeys = Object.keys(sampleMessageMetadata);

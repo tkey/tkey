@@ -18,7 +18,7 @@ export const getPubKeyEC = (bn: BN): curve.base.BasePoint => ecCurve.keyFromPriv
 
 export const getPubKeyECC = (bn: BN): Buffer => getPublic(toPrivKeyECC(bn));
 
-export const getPubKeyPoint = (bn: BN): Point => {
+export const getPubKeyPoint = (bn: BN, keyType: NamedCurve): Point => {
   const pubKeyEc = getPubKeyEC(bn);
-  return new Point(pubKeyEc.getX().toString("hex"), pubKeyEc.getY().toString("hex"));
+  return new Point(pubKeyEc.getX().toString("hex"), pubKeyEc.getY().toString("hex"), keyType);
 };

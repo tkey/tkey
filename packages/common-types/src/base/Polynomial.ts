@@ -66,10 +66,10 @@ class Polynomial implements ISerializable {
     return shares;
   }
 
-  getPublicPolynomial(): PublicPolynomial {
+  getPublicPolynomial(keyType: NamedCurve): PublicPolynomial {
     const polynomialCommitments: Point[] = [];
     for (let i = 0; i < this.polynomial.length; i += 1) {
-      polynomialCommitments.push(getPubKeyPoint(this.polynomial[i]));
+      polynomialCommitments.push(getPubKeyPoint(this.polynomial[i], keyType));
     }
     this.publicPolynomial = new PublicPolynomial(polynomialCommitments);
     return this.publicPolynomial;

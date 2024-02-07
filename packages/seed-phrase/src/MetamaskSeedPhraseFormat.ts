@@ -5,14 +5,17 @@ import { HDNodeWallet, Mnemonic, Provider, randomBytes } from "ethers";
 class MetamaskSeedPhraseFormat implements ISeedPhraseFormat {
   type: string;
 
+  keyType: NamedCurve;
+
   provider: Provider;
 
   hdPathString: string;
 
-  constructor(ethProvider: Provider) {
+  constructor(ethProvider: Provider, keyType: NamedCurve) {
     this.type = "HD Key Tree";
     this.hdPathString = "m/44'/60'/0'/0";
     this.provider = ethProvider;
+    this.keyType = keyType;
   }
 
   validateSeedPhrase(seedPhrase: string): boolean {

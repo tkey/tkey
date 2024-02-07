@@ -19,8 +19,8 @@ class Share implements ISerializable {
     return new Share(shareIndex, share);
   }
 
-  getPublicShare(): PublicShare {
-    return new PublicShare(this.shareIndex, getPubKeyPoint(this.share));
+  getPublicShare(keyType: NamedCurve): PublicShare {
+    return new PublicShare(this.shareIndex, getPubKeyPoint(this.share, keyType));
   }
 
   toJSON(): StringifiedType {

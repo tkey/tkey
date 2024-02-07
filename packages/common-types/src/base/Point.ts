@@ -8,20 +8,23 @@ class Point implements IPoint {
 
   y: BN;
 
-  constructor(x: BNString, y: BNString) {
+  keyType: NamedCurve;
+
+  constructor(x: BNString, y: BNString, keyType: NamedCurve) {
     this.x = new BN(x, "hex");
     this.y = new BN(y, "hex");
+    this.keyType = keyType;
   }
 
-  static fromCompressedPub(value: string): Point {
+  static fromCompressedPub(value: string, keyType: NamedCurve): Point {
     const key = ecCurve.keyFromPublic(value, "hex");
     const pt = key.getPublic();
-    return new Point(pt.getX(), pt.getY());
+    return new Point(pt.getX(), pt.getY(), keyType);
   }
 
   static fromJSON(value: StringifiedType): Point {
-    const { x, y } = value;
-    return new Point(x, y);
+    const { x, y, keyType } = value;
+    return new Point(x, y, keyType);
   }
 
   // complies with EC and elliptic pub key types
@@ -46,6 +49,7 @@ class Point implements IPoint {
     return {
       x: this.x.toString("hex"),
       y: this.y.toString("hex"),
+      keyType: this.keyType,
     };
   }
 }

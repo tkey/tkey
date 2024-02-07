@@ -97,12 +97,14 @@ export interface IMetadata extends ISerializable {
 
 export type InitializeNewKeyResult = {
   privKey: BN;
+  keyType: NamedCurve;
   deviceShare?: ShareStore;
   userShare?: ShareStore;
 };
 
 export type ReconstructedKeyResult = {
   privKey: BN;
+  keyType: NamedCurve;
   seedPhrase?: BN[];
   allKeys?: BN[];
 };
@@ -127,6 +129,7 @@ export type RefreshSharesResult = {
 
 export type KeyDetails = {
   pubKey: Point;
+  keyType: NamedCurve;
   requiredShares: number;
   threshold: number;
   totalShares: number;
@@ -141,6 +144,7 @@ export type TKeyArgs = {
   customAuthArgs?: CustomAuthArgs;
   manualSync?: boolean;
   serverTimeOffset?: number;
+  keyType: NamedCurve;
 };
 
 export interface SecurityQuestionStoreArgs {
@@ -204,11 +208,13 @@ export type MetamaskSeedPhraseStore = ISeedPhraseStore & {
 
 export type IPrivateKeyStore = TkeyStoreItemType & {
   privateKey: BN;
+  keyType: NamedCurve;
   type: string;
 };
 
 export interface ISeedPhraseFormat {
   type: string;
+  keyType: NamedCurve;
   validateSeedPhrase(seedPhrase: string): boolean;
   deriveKeysFromSeedPhrase(seedPhraseStore: ISeedPhraseStore): Promise<BN[]>;
   createSeedPhraseStore(seedPhrase?: string): Promise<ISeedPhraseStore>;
@@ -224,6 +230,7 @@ export interface IPrivateKeyFormat {
 export interface IAuthMetadata {
   metadata: IMetadata;
   privKey?: BN;
+  keyType: NamedCurve;
 }
 
 export interface IMessageMetadata {
@@ -285,6 +292,8 @@ export interface ITKey extends ITKeyApi, ISerializable {
   shares: ShareStorePolyIDShareIndexMap;
 
   privKey: BN;
+
+  keyType: NamedCurve;
 
   _localMetadataTransitions: LocalMetadataTransitions;
 

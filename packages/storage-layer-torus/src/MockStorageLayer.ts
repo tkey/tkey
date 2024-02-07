@@ -43,7 +43,7 @@ class MockStorageLayer implements IStorageLayer {
     const { serviceProvider, privKey } = params;
     let usedKey: BN;
     if (!privKey) usedKey = serviceProvider.retrievePubKeyPoint().getX();
-    else usedKey = getPubKeyPoint(privKey).x;
+    else usedKey = getPubKeyPoint(privKey, serviceProvider.keyType).x;
 
     const fromMap = this.dataMap[usedKey.toString("hex")];
     if (!fromMap) {
@@ -61,7 +61,7 @@ class MockStorageLayer implements IStorageLayer {
     const { serviceProvider, privKey, input } = params;
     let usedKey: BN;
     if (!privKey) usedKey = serviceProvider.retrievePubKeyPoint().getX();
-    else usedKey = getPubKeyPoint(privKey).x;
+    else usedKey = getPubKeyPoint(privKey, serviceProvider.keyType).x;
     this.dataMap[usedKey.toString("hex")] = stringify(input);
     return { message: "success" };
   }
@@ -71,7 +71,7 @@ class MockStorageLayer implements IStorageLayer {
     input.forEach((el, index) => {
       let usedKey: BN;
       if (!privKey || !privKey[index]) usedKey = serviceProvider.retrievePubKeyPoint().getX();
-      else usedKey = getPubKeyPoint(privKey[index]).x;
+      else usedKey = getPubKeyPoint(privKey[index], serviceProvider.keyType).x;
       this.dataMap[usedKey.toString("hex")] = stringify(el);
     });
 
@@ -82,7 +82,7 @@ class MockStorageLayer implements IStorageLayer {
     const { serviceProvider, privKey } = params;
     let usedKey: BN;
     if (!privKey) usedKey = serviceProvider.retrievePubKeyPoint().getX();
-    else usedKey = getPubKeyPoint(privKey).x;
+    else usedKey = getPubKeyPoint(privKey, serviceProvider.keyType).x;
     if (this.lockMap[usedKey.toString("hex")]) return { status: 0 };
     const id = generateID();
     this.lockMap[usedKey.toString("hex")] = id;
@@ -93,7 +93,7 @@ class MockStorageLayer implements IStorageLayer {
     const { serviceProvider, privKey, id } = params;
     let usedKey: BN;
     if (!privKey) usedKey = serviceProvider.retrievePubKeyPoint().getX();
-    else usedKey = getPubKeyPoint(privKey).x;
+    else usedKey = getPubKeyPoint(privKey, serviceProvider.keyType).x;
     if (!this.lockMap[usedKey.toString("hex")]) return { status: 0 };
     if (id !== this.lockMap[usedKey.toString("hex")]) return { status: 2 };
     this.lockMap[usedKey.toString("hex")] = null;

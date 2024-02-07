@@ -186,7 +186,7 @@ class TorusStorageLayer implements IStorageLayer {
     if (privKey) {
       const unparsedSig = toPrivKeyEC(privKey).sign(hash);
       sig = Buffer.from(unparsedSig.r.toString(16, 64) + unparsedSig.s.toString(16, 64) + new BN(0).toString(16, 2), "hex").toString("base64");
-      const pubK = getPubKeyPoint(privKey);
+      const pubK = getPubKeyPoint(privKey, serviceProvider.keyType);
       pubX = pubK.x.toString("hex");
       pubY = pubK.y.toString("hex");
     } else {
@@ -201,6 +201,7 @@ class TorusStorageLayer implements IStorageLayer {
       set_data: setTKeyStore,
       signature: sig,
       namespace,
+      keyType: serviceProvider.keyType,
     };
   }
 

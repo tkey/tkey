@@ -20,12 +20,15 @@ class ServiceProviderBase implements IServiceProvider {
   // For easy serialization
   postboxKey: BN;
 
+  keyType: NamedCurve;
+
   serviceProviderName: string;
 
-  constructor({ enableLogging = false, postboxKey }: ServiceProviderArgs) {
+  constructor({ enableLogging = false, postboxKey, keyType }: ServiceProviderArgs) {
     this.enableLogging = enableLogging;
     this.postboxKey = new BN(postboxKey, "hex");
     this.serviceProviderName = "ServiceProviderBase";
+    this.keyType = keyType;
   }
 
   static fromJSON(value: StringifiedType): IServiceProvider {
