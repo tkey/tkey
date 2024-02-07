@@ -233,7 +233,7 @@ class ThresholdKey implements ITKey {
     if (!chainCode) {
       throw CoreError.default("chainCode is absent, required for nonce generation");
     }
-    return new BN(keccak256(Buffer.from(`${index}${chainCode}`)).slice(2), "hex").umod(ecCurve.curve.n);
+    return index && index > 0 ? new BN(keccak256(Buffer.from(`${index}${chainCode}`)).slice(2), "hex").umod(ecCurve.curve.n) : new BN(0);
   }
 
   generateSalt(length = 32) {
@@ -913,12 +913,15 @@ class ThresholdKey implements ITKey {
           serverEncs: refreshResponse.serverFactorEncs,
         };
       }
+      const chainCode = this.generateSalt();
+
       this.metadata.addTSSData({
         tssTag: this.tssTag,
         tssNonce: newTssNonce,
         tssPolyCommits: newTSSCommits,
         factorPubs,
         factorEncs,
+        chainCode,
       });
       await this._syncShareMetadata();
     } catch (error) {
