@@ -54,7 +54,7 @@ jobs:
         run: |
           cd ./backward-compatibility-tests
           npm i
-          for filename in ../tkey/packages/* ; do
+          for filename in ../packages/* ; do
             echo "installing $filename" || continue
             # ... install packed packages
             packagename="`ls ${filename}| grep tkey`"
