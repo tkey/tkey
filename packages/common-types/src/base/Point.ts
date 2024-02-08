@@ -1,6 +1,6 @@
 import BN from "bn.js";
 
-import { ec } from "elliptic";
+import { ec as EllipticCurve } from "elliptic";
 import { BNString, IPoint, StringifiedType } from "../baseTypes/commonTypes";
 
 enum KeyType {
@@ -9,7 +9,7 @@ enum KeyType {
 }
 
 class Point implements IPoint {
-  ecCurve: ec;
+  ecCurve: EllipticCurve;
 
   keyType: KeyType;
 
@@ -21,17 +21,18 @@ class Point implements IPoint {
     this.x = new BN(x, "hex");
     this.y = new BN(y, "hex");
     this.keyType = keyType;
-    this.ecCurve = new ec(keyType.toString());
+    this.ecCurve = new EllipticCurve(keyType.toString());
   }
 
   static fromSEC1(value: string, keyType: KeyType): Point {
+    const ecCurve = new EllipticCurve(keyType.toString());
     const key = ecCurve.keyFromPublic(value, "hex");
     const pt = key.getPublic();
     return new Point(pt.getX(), pt.getY(), keyType);
   }
 
   toSEC1(compressed = false): string {
-    return ecCurve.keyFromPublic({ x: this.x, y: this.y }).getPublic(compressed, "hex");
+    return this.ecCurve.keyFromPublic({ x: this.x, y: this.y }).getPublic(compressed, "hex");
   }
 
   static fromJSON(value: StringifiedType): Point {
