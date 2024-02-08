@@ -54,7 +54,6 @@ import {
 import { generatePrivate } from "@toruslabs/eccrypto";
 import { keccak256 } from "@toruslabs/torus.js";
 import BN from "bn.js";
-import crypto from "crypto";
 import stringify from "json-stable-stringify";
 
 import AuthMetadata from "./authMetadata";
@@ -236,8 +235,8 @@ class ThresholdKey implements ITKey {
     return index && index > 0 ? new BN(keccak256(Buffer.from(`${index}${chainCode}`)).slice(2), "hex").umod(ecCurve.curve.n) : new BN(0);
   }
 
-  generateSalt(length = 32) {
-    return crypto.randomBytes(length).toString("hex");
+  generateSalt() {
+    return generatePrivate().toString("hex");
   }
 
   async initialize(params?: {

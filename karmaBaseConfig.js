@@ -24,9 +24,9 @@ const localBrowserConfig = (webpackConfig, karmaConfig, packageConfig) => {
     frameworks: ["mocha", "webpack"],
 
     webpack: {
-      module: webpackConfig[1].module,
-      resolve: webpackConfig[1].resolve,
-      plugins: webpackConfig[1].plugins,
+      module: webpackConfig[0].module,
+      resolve: webpackConfig[0].resolve,
+      plugins: webpackConfig[0].plugins,
     },
 
     plugins: ["karma-mocha-reporter", "karma-webkit-launcher", "karma-chrome-launcher", "karma-firefox-launcher", "karma-mocha", "karma-webpack"],
