@@ -63,5 +63,4 @@ jobs:
 
       - name: Running comp tests
         run: |
-          cd ./backward-compatibility-tests
           npm test
