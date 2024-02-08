@@ -30,7 +30,7 @@ const metadataURL = getMetadataUrl();
 const torusSL = initStorageLayer({ hostUrl: metadataURL });
 
 const MANUAL_SYNC = true;
-describe.only(`TorusServiceProvider with manualSync: ${MANUAL_SYNC}`, function () {
+describe(`TorusServiceProvider with manualSync: ${MANUAL_SYNC}`, function () {
   // eslint-disable-next-line mocha/no-setup-in-describe
   sharedTestCases(MANUAL_SYNC, torusSp, torusSL);
 });
