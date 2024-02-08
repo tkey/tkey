@@ -1,7 +1,7 @@
 import BN from "bn.js";
 import { ec as EllipticCurve } from "elliptic";
 
-import { BNString, IPoint, KeyType, StringifiedType } from "../baseTypes/commonTypes";
+import { BNString, IPoint, KeyType, StringifiedType, keyTypeToCurve } from "../baseTypes/commonTypes";
 
 export class Point implements IPoint {
   ecCurve: EllipticCurve;
@@ -34,8 +34,15 @@ export class Point implements IPoint {
   }
 
   static fromSEC1(value: string, keyType: KeyType): Point {
-    const ecCurve = new EllipticCurve(keyType.toString());
+    const ecCurve = keyTypeToCurve(keyType);
     const key = ecCurve.keyFromPublic(value, "hex");
+    const pt = key.getPublic();
+    return new Point(pt.getX(), pt.getY(), keyType);
+  }
+
+  static fromPrivate(privateKey: BNString, keyType: KeyType): Point {
+    const ecCurve = keyTypeToCurve(keyType);
+    const key = ecCurve.keyFromPrivate(privateKey.toString("hex"), "hex");
     const pt = key.getPublic();
     return new Point(pt.getX(), pt.getY(), keyType);
   }
