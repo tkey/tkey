@@ -3,7 +3,7 @@ import BN from "bn.js";
 import { BNString, ISerializable, PolynomialID, StringifiedType } from "../baseTypes/commonTypes";
 import { ecCurve } from "../utils";
 import { getPubKeyPoint } from "./BNUtils";
-import Point from "./Point";
+import { KeyType, Point } from "./Point";
 import PublicPolynomial from "./PublicPolynomial";
 import Share from "./Share";
 
@@ -66,10 +66,10 @@ class Polynomial implements ISerializable {
     return shares;
   }
 
-  getPublicPolynomial(): PublicPolynomial {
+  getPublicPolynomial(keyType: KeyType): PublicPolynomial {
     const polynomialCommitments: Point[] = [];
     for (let i = 0; i < this.polynomial.length; i += 1) {
-      polynomialCommitments.push(getPubKeyPoint(this.polynomial[i]));
+      polynomialCommitments.push(getPubKeyPoint(this.polynomial[i], keyType));
     }
     this.publicPolynomial = new PublicPolynomial(polynomialCommitments);
     return this.publicPolynomial;
