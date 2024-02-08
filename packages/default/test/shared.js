@@ -637,6 +637,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         selectedServers: [1, 2, 3],
         serverEndpoints,
         serverPubKeys,
+        authSignatures: signatures,
       });
 
       {
@@ -849,7 +850,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
 
         sp.verifierName = "torus-test-health";
         sp.verifierId = "test18@example.com";
-        const { postboxkey } = await fetchPostboxKeyAndSigs({
+        const { postboxkey, signatures } = await fetchPostboxKeyAndSigs({
           serviceProvider: sp,
           verifierName: sp.verifierName,
           verifierId: sp.verifierId,
@@ -882,6 +883,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
           inputTSSIndex: tssIndex,
           newFactorPub,
           newTSSIndex: 3,
+          authSignatures: signatures,
         });
         await tb.syncLocalMetadataTransitions();
 
@@ -906,7 +908,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         const sp = customSP;
         sp.verifierName = "torus-test-health";
         sp.verifierId = "test18@example.com";
-        const { postboxkey } = await fetchPostboxKeyAndSigs({
+        const { postboxkey, signatures } = await fetchPostboxKeyAndSigs({
           serviceProvider: sp,
           verifierName: sp.verifierName,
           verifierId: sp.verifierId,
@@ -938,6 +940,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
           inputTSSIndex: tssIndex,
           newFactorPub,
           newTSSIndex: 3,
+          authSignatures: signatures,
         });
 
         await tb.syncLocalMetadataTransitions();
