@@ -7,6 +7,7 @@ import {
   EncryptedMessage,
   FromJSONConstructor,
   GenerateNewShareResult,
+  generatePrivate,
   generatePrivateExcludingIndexes,
   getPubKeyECC,
   getPubKeyPoint,
@@ -44,8 +45,9 @@ import {
   TKeyArgs,
   TkeyStoreItemType,
 } from "@tkey/common-types";
-import { generatePrivate } from "@toruslabs/eccrypto";
 import { keccak256 } from "@toruslabs/torus.js";
+// import nacl = require("@toruslabs/tweetnacl-js");
+import * as nacl from "@toruslabs/tweetnacl-js";
 import BN from "bn.js";
 import { ec as EllipticCurve } from "elliptic";
 import stringify from "json-stable-stringify";
@@ -656,11 +658,26 @@ class ThresholdKey implements ITKey {
     importedKey?: BN;
     delete1OutOf1?: boolean;
   } = {}): Promise<InitializeNewKeyResult> {
-    if (!importedKey) {
-      const tmpPriv = generatePrivate();
+    if (this.keyType === KeyType.secp256k1) {
+      const tmpPriv = importedKey ? importedKey : generatePrivate(this.ecCurve);
       this._setKey(new BN(tmpPriv));
     } else {
-      this._setKey(new BN(importedKey));
+      const seed = importedKey ? importedKey.toBuffer() : nacl.randomBytes(32);
+
+      const keyPair = nacl.sign.keyPair.fromSeed(seed);
+      // need to decode from le ??
+      const tempPriv = new BN(keyPair.secretKey);
+      this._setKey(tempPriv);
+  
+      // encrypt and add to local metadata transitions
+      const encMsg = await this.encrypt(Buffer.from(seed));
+      await this.addLocalMetadataTransitions({ input: [{ message: JSON.stringify(encMsg), dateAdded: Date.now() }], privKey: [tempPriv] });
+  
+      // testing and checking code - to remove
+      // const decMsg = await this.decrypt(encMsg);
+      // const decSeed = Buffer.from(decMsg).toString("hex");
+      // console.log("decSeed: ", decSeed);
+      // console.log("seed: ", seed);
     }
 
     // create a random poly and respective shares
@@ -1279,6 +1296,25 @@ class ThresholdKey implements ITKey {
       throw CoreError.default("Latest poly doesn't include this share");
     }
     await this.inputShareStoreSafe(shareStore);
+  }
+
+  // Export Tkey 
+  async exportFinalKey(): Promise<String> {
+    if (!this.metadata) {
+      throw CoreError.metadataUndefined();
+    }
+    if (!this.privKey) {
+      throw CoreError.privateKeyUnavailable();
+    }
+
+    if (this.keyType === KeyType.secp256k1) {
+      return this.privKey.toString("hex");
+    } else if (this.keyType === KeyType.ed25519) {
+      let result: EncryptedMessage = await this.storageLayer.getMetadata({privKey: this.privKey});
+      let seed = await this.decrypt(result);
+      return seed.toString("hex");
+    }
+    throw CoreError.default("Invalid KeyType");
   }
 
   toJSON(): StringifiedType {
