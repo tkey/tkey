@@ -36,7 +36,7 @@ export interface ISerializable {
 export interface IPoint extends ISerializable {
   x: BN;
   y: BN;
-  encode(enc: string, params?: unknown): Buffer;
+  toSEC1(compressed: boolean): string;
 }
 
 export interface IServiceProvider extends ISerializable {

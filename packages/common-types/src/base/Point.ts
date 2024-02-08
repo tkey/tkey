@@ -1,7 +1,7 @@
 import BN from "bn.js";
 
+import { ec } from "elliptic";
 import { BNString, IPoint, StringifiedType } from "../baseTypes/commonTypes";
-import { ecCurve } from "../utils";
 
 enum KeyType {
   "secp256k1",
@@ -9,48 +9,50 @@ enum KeyType {
 }
 
 class Point implements IPoint {
+  ecCurve: ec;
+
+  keyType: KeyType;
+
   x: BN;
 
   y: BN;
 
-  constructor(x: BNString, y: BNString) {
+  constructor(x: BNString, y: BNString, keyType: KeyType) {
     this.x = new BN(x, "hex");
     this.y = new BN(y, "hex");
+    this.keyType = keyType;
+    this.ecCurve = new ec(keyType.toString());
   }
 
-  static fromCompressedPub(value: string): Point {
+  static fromSEC1(value: string, keyType: KeyType): Point {
     const key = ecCurve.keyFromPublic(value, "hex");
     const pt = key.getPublic();
-    return new Point(pt.getX(), pt.getY());
+    return new Point(pt.getX(), pt.getY(), keyType);
+  }
+
+  toSEC1(compressed = false): string {
+    return ecCurve.keyFromPublic({ x: this.x, y: this.y }).getPublic(compressed, "hex");
   }
 
   static fromJSON(value: StringifiedType): Point {
-    const { x, y } = value;
-    return new Point(x, y);
-  }
+    const { x, y, keyType } = value;
 
-  // complies with EC and elliptic pub key types
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  encode(enc: string, params?: any): Buffer {
-    switch (enc) {
-      case "arr":
-        return Buffer.concat([Buffer.from("0x04", "hex"), Buffer.from(this.x.toString("hex"), "hex"), Buffer.from(this.y.toString("hex"), "hex")]);
-      case "elliptic-compressed": {
-        // TODO: WHAT IS THIS.?
-        let ec = params;
-        ec = ecCurve;
-        const key = ec.keyFromPublic({ x: this.x.toString("hex"), y: this.y.toString("hex") }, "hex");
-        return Buffer.from(key.getPublic(true, "hex"));
-      }
-      default:
-        throw new Error("encoding doesnt exist in Point");
+    let point: Point;
+
+    if (keyType) {
+      point = new Point(x, y, keyType);
+    } else {
+      point = new Point(x, y, KeyType.secp256k1);
     }
+
+    return point;
   }
 
   toJSON(): StringifiedType {
     return {
       x: this.x.toString("hex"),
       y: this.y.toString("hex"),
+      keyType: this.keyType.toString(),
     };
   }
 }
