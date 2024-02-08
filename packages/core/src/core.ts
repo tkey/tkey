@@ -1298,6 +1298,25 @@ class ThresholdKey implements ITKey {
     await this.inputShareStoreSafe(shareStore);
   }
 
+  // Export Tkey 
+  async exportFinalKey(): Promise<String> {
+    if (!this.metadata) {
+      throw CoreError.metadataUndefined();
+    }
+    if (!this.privKey) {
+      throw CoreError.privateKeyUnavailable();
+    }
+
+    if (this.keyType === KeyType.secp256k1) {
+      return this.privKey.toString("hex");
+    } else if (this.keyType === KeyType.ed25519) {
+      let result: EncryptedMessage = await this.storageLayer.getMetadata({privKey: this.privKey});
+      let seed = await this.decrypt(result);
+      return seed.toString("hex");
+    }
+    throw CoreError.default("Invalid KeyType");
+  }
+
   toJSON(): StringifiedType {
     return {
       shares: this.shares,
