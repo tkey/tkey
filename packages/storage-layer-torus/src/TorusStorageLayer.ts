@@ -1,30 +1,30 @@
 import {
   decrypt,
-  ecCurve,
   encrypt,
   EncryptedMessage,
-  getPubKeyECC,
-  getPubKeyPoint,
   IServiceProvider,
   IStorageLayer,
   KEY_NOT_FOUND,
+  KeyType,
+  keyTypeToCurve,
   ONE_KEY_DELETE_NONCE,
   ONE_KEY_NAMESPACE,
+  Point,
   prettyPrintError,
   StringifiedType,
-  toPrivKeyEC,
-  toPrivKeyECC,
   TorusStorageLayerAPIParams,
   TorusStorageLayerArgs,
 } from "@tkey/common-types";
 import { post } from "@toruslabs/http-helpers";
 import base64url from "base64url";
 import BN from "bn.js";
+import { ec as EllipticCurve } from "elliptic";
 import { keccak256 } from "ethereum-cryptography/keccak";
 import stringify from "json-stable-stringify";
 
-function signDataWithPrivKey(data: { timestamp: number }, privKey: BN): string {
-  const sig = ecCurve.sign(keccak256(Buffer.from(stringify(data), "utf8")), toPrivKeyECC(privKey), "utf-8");
+function signDataWithPrivKey(data: { timestamp: number }, privKey: BN, ecCurve: EllipticCurve): string {
+  // const sig = ecCurve.keyFromPrivate(privKey).sign(keccak256(Buffer.from(stringify(data), "utf8")));
+  const sig = ecCurve.sign(keccak256(Buffer.from(stringify(data), "utf8")), privKey.toBuffer(), "utf-8");
   return sig.toDER("hex");
 }
 
@@ -44,7 +44,7 @@ class TorusStorageLayer implements IStorageLayer {
     this.serverTimeOffset = serverTimeOffset;
   }
 
-  static async serializeMetadataParamsInput(el: unknown, serviceProvider: IServiceProvider, privKey: BN): Promise<unknown> {
+  static async serializeMetadataParamsInput(el: unknown, serviceProvider: IServiceProvider, privKey: BN, keyType: KeyType): Promise<unknown> {
     if (typeof el === "object") {
       // Allow using of special message as command, in which case, do not encrypt
       const obj = el as Record<string, unknown>;
@@ -56,7 +56,12 @@ class TorusStorageLayer implements IStorageLayer {
     const bufferMetadata = Buffer.from(stringify(el));
     let encryptedDetails: EncryptedMessage;
     if (privKey) {
-      encryptedDetails = await encrypt(getPubKeyECC(privKey), bufferMetadata);
+      let encKey = privKey;
+      if (keyType === KeyType.ed25519) {
+        const ecCurve = keyTypeToCurve(keyType);
+        encKey = new BN(keccak256(privKey.toBuffer())).umod(ecCurve.curve.n);
+      }
+      encryptedDetails = await encrypt(encKey.toBuffer(), bufferMetadata);
     } else {
       encryptedDetails = await serviceProvider.encrypt(bufferMetadata);
     }
@@ -74,9 +79,10 @@ class TorusStorageLayer implements IStorageLayer {
    *  Get metadata for a key
    * @param privKey - If not provided, it will use service provider's share for decryption
    */
-  async getMetadata<T>(params: { serviceProvider?: IServiceProvider; privKey?: BN }): Promise<T> {
-    const { serviceProvider, privKey } = params;
-    const keyDetails = this.generateMetadataParams({}, serviceProvider, privKey);
+  async getMetadata<T>(params: { serviceProvider?: IServiceProvider; privKey?: BN; keyType: KeyType }): Promise<T> {
+    const { serviceProvider, privKey, keyType } = params;
+    const ecCurve = keyTypeToCurve(keyType);
+    const keyDetails = this.generateMetadataParams({}, keyType, serviceProvider, privKey);
     const metadataResponse = await post<{ message: string }>(`${this.hostUrl}/get`, keyDetails);
     // returns empty object if object
     if (metadataResponse.message === "") {
@@ -86,7 +92,11 @@ class TorusStorageLayer implements IStorageLayer {
 
     let decrypted: Buffer;
     if (privKey) {
-      decrypted = await decrypt(toPrivKeyECC(privKey), encryptedMessage);
+      let encKey = privKey;
+      if (keyType === KeyType.ed25519) {
+        encKey = new BN(keccak256(privKey.toBuffer())).umod(ecCurve.curve.n);
+      }
+      decrypted = await decrypt(encKey.toBuffer(), encryptedMessage);
     } else {
       decrypted = await serviceProvider.decrypt(encryptedMessage);
     }
@@ -99,11 +109,12 @@ class TorusStorageLayer implements IStorageLayer {
    * @param input - data to post
    * @param privKey - If not provided, it will use service provider's share for encryption
    */
-  async setMetadata<T>(params: { input: T; serviceProvider?: IServiceProvider; privKey?: BN }): Promise<{ message: string }> {
+  async setMetadata<T>(params: { input: T; serviceProvider?: IServiceProvider; privKey?: BN; keyType: KeyType }): Promise<{ message: string }> {
     try {
-      const { serviceProvider, privKey, input } = params;
+      const { serviceProvider, privKey, input, keyType } = params;
       const metadataParams = this.generateMetadataParams(
-        await TorusStorageLayer.serializeMetadataParamsInput(input, serviceProvider, privKey),
+        await TorusStorageLayer.serializeMetadataParamsInput(input, serviceProvider, privKey, keyType),
+        keyType,
         serviceProvider,
         privKey
       );
@@ -121,14 +132,20 @@ class TorusStorageLayer implements IStorageLayer {
     }
   }
 
-  async setMetadataStream<T>(params: { input: Array<T>; serviceProvider?: IServiceProvider; privKey?: Array<BN> }): Promise<{ message: string }> {
+  async setMetadataStream<T>(params: {
+    input: Array<T>;
+    serviceProvider?: IServiceProvider;
+    privKey?: Array<BN>;
+    keyType: KeyType;
+  }): Promise<{ message: string }> {
     try {
-      const { serviceProvider, privKey, input } = params;
+      const { serviceProvider, privKey, input, keyType } = params;
       const newInput = input;
       const finalMetadataParams = await Promise.all(
         newInput.map(async (el, i) =>
           this.generateMetadataParams(
-            await TorusStorageLayer.serializeMetadataParamsInput(el, serviceProvider, privKey[i]),
+            await TorusStorageLayer.serializeMetadataParamsInput(el, serviceProvider, privKey[i], keyType),
+            keyType,
             serviceProvider,
             privKey[i]
           )
@@ -165,7 +182,7 @@ class TorusStorageLayer implements IStorageLayer {
     }
   }
 
-  generateMetadataParams(message: unknown, serviceProvider?: IServiceProvider, privKey?: BN): TorusStorageLayerAPIParams {
+  generateMetadataParams(message: unknown, keyType: KeyType, serviceProvider?: IServiceProvider, privKey?: BN): TorusStorageLayerAPIParams {
     let sig: string;
     let pubX: string;
     let pubY: string;
@@ -184,11 +201,13 @@ class TorusStorageLayer implements IStorageLayer {
 
     const hash = keccak256(Buffer.from(stringify(setTKeyStore), "utf8"));
     if (privKey) {
-      const unparsedSig = toPrivKeyEC(privKey).sign(hash);
+      const ecCurve = keyTypeToCurve(keyType);
+      const signKeyPair = ecCurve.keyFromPrivate(privKey.toBuffer());
+      const unparsedSig = signKeyPair.sign(hash);
       sig = Buffer.from(unparsedSig.r.toString(16, 64) + unparsedSig.s.toString(16, 64) + new BN(0).toString(16, 2), "hex").toString("base64");
-      const pubK = getPubKeyPoint(privKey);
-      pubX = pubK.x.toString("hex");
-      pubY = pubK.y.toString("hex");
+      const pubK = signKeyPair.getPublic();
+      pubX = pubK.getX().toString("hex");
+      pubY = pubK.getY().toString("hex");
     } else {
       const point = serviceProvider.retrievePubKeyPoint();
       sig = serviceProvider.sign(new BN(hash));
@@ -204,40 +223,41 @@ class TorusStorageLayer implements IStorageLayer {
     };
   }
 
-  async acquireWriteLock(params: { serviceProvider?: IServiceProvider; privKey?: BN }): Promise<{ status: number; id?: string }> {
-    const { serviceProvider, privKey } = params;
+  async acquireWriteLock(params: { serviceProvider?: IServiceProvider; privKey?: BN; keyType: KeyType }): Promise<{ status: number; id?: string }> {
+    const { serviceProvider, privKey, keyType } = params;
     const data = {
       timestamp: Math.floor((this.serverTimeOffset + Date.now()) / 1000),
     };
 
+    const ecCurve = keyTypeToCurve(keyType);
     let signature: string;
     if (privKey) {
-      signature = signDataWithPrivKey(data, privKey);
+      signature = signDataWithPrivKey(data, privKey, ecCurve);
     } else {
       signature = serviceProvider.sign(new BN(keccak256(Buffer.from(stringify(data), "utf8"))));
     }
     const metadataParams = {
-      key: toPrivKeyEC(privKey).getPublic("hex"),
+      key: ecCurve.keyFromPrivate(privKey.toBuffer()).getPublic("hex"),
       data,
       signature,
     };
     return post<{ status: number; id?: string }>(`${this.hostUrl}/acquireLock`, metadataParams);
   }
 
-  async releaseWriteLock(params: { id: string; serviceProvider?: IServiceProvider; privKey?: BN }): Promise<{ status: number }> {
-    const { serviceProvider, privKey, id } = params;
+  async releaseWriteLock(params: { id: string; serviceProvider?: IServiceProvider; privKey?: BN; keyType: KeyType }): Promise<{ status: number }> {
+    const { serviceProvider, privKey, id, keyType } = params;
     const data = {
       timestamp: Math.floor((this.serverTimeOffset + Date.now()) / 1000),
     };
 
     let signature: string;
     if (privKey) {
-      signature = signDataWithPrivKey(data, privKey);
+      signature = signDataWithPrivKey(data, privKey, keyTypeToCurve(keyType));
     } else {
       signature = serviceProvider.sign(new BN(keccak256(Buffer.from(stringify(data), "utf8"))));
     }
     const metadataParams = {
-      key: toPrivKeyEC(privKey).getPublic("hex"),
+      key: Point.fromPrivate(privKey, keyType).toSEC1(),
       data,
       signature,
       id,

@@ -1,10 +1,23 @@
 import type { CustomAuthArgs } from "@toruslabs/customauth";
 import BN from "bn.js";
-import { curve } from "elliptic";
+import { curve, ec as EllipticCurve } from "elliptic";
 
 export enum KeyType {
   "secp256k1",
   "ed25519",
+}
+const curveED25519 = new EllipticCurve("ed25519");
+const curveSECP256K1 = new EllipticCurve("secp256k1");
+
+export function keyTypeToCurve(keyType: KeyType): EllipticCurve {
+  switch (keyType) {
+    case KeyType.ed25519:
+      return curveED25519;
+    case KeyType.secp256k1:
+      return curveSECP256K1;
+    default:
+      throw new Error("Invalid key type");
+  }
 }
 
 export type PubKeyType = "ecc";

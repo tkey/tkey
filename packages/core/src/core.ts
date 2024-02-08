@@ -20,6 +20,7 @@ import {
   KEY_NOT_FOUND,
   KeyDetails,
   KeyType,
+  keyTypeToCurve,
   LocalMetadataTransitions,
   LocalTransitionData,
   LocalTransitionShares,
@@ -42,9 +43,9 @@ import {
   StringifiedType,
   TKeyArgs,
   TkeyStoreItemType,
-  toPrivKeyECC,
 } from "@tkey/common-types";
 import { generatePrivate } from "@toruslabs/eccrypto";
+import { keccak256 } from "@toruslabs/torus.js";
 import BN from "bn.js";
 import { ec as EllipticCurve } from "elliptic";
 import stringify from "json-stable-stringify";
@@ -111,7 +112,6 @@ class ThresholdKey implements ITKey {
     this.serverTimeOffset = serverTimeOffset;
 
     // temporary: TO FIX
-    // this.ecCurve = new EllipticCurve("secp256k1");
     if (keyType) {
       this.keyType = keyType;
       this.ecCurve = new EllipticCurve(keyType.toString());
@@ -1157,12 +1157,30 @@ class ThresholdKey implements ITKey {
 
   async encrypt(data: Buffer): Promise<EncryptedMessage> {
     if (!this.privKey) throw CoreError.privateKeyUnavailable();
-    return encrypt(getPubKeyECC(this.privKey), data);
+
+    let encKey: BN = this.privKey;
+    let curve = this.ecCurve;
+    if (this.keyType === KeyType.ed25519) {
+      // hash and umod to secp256k1
+      const secpCurve = keyTypeToCurve(KeyType.secp256k1);
+      encKey = new BN(keccak256(this.privKey.toBuffer())).umod(secpCurve.curve.n);
+      curve = secpCurve;
+    }
+    const keyPair = curve.keyFromPrivate(encKey.toBuffer());
+    const publicKey = keyPair.getPublic(false, "hex");
+    return encrypt(Buffer.from(publicKey, "hex"), data);
   }
 
   async decrypt(encryptedMessage: EncryptedMessage): Promise<Buffer> {
     if (!this.privKey) throw CoreError.privateKeyUnavailable();
-    return decrypt(toPrivKeyECC(this.privKey), encryptedMessage);
+    // depend
+    let encKey: BN = this.privKey;
+    if (this.keyType === KeyType.ed25519) {
+      const secpCurve = keyTypeToCurve(KeyType.secp256k1);
+      // hash and umod to secp256k1
+      encKey = new BN(keccak256(this.privKey.toBuffer())).umod(secpCurve.curve.n);
+    }
+    return decrypt(encKey.toBuffer(), encryptedMessage);
   }
 
   async _setTKeyStoreItem(moduleName: string, data: TkeyStoreItemType): Promise<void> {

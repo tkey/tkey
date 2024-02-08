@@ -17,7 +17,6 @@ import {
   ShareMap,
   ShareStore,
   StringifiedType,
-  toPrivKeyECC,
 } from "@tkey/common-types";
 import BN from "bn.js";
 import stringify from "json-stable-stringify";
@@ -187,7 +186,9 @@ class Metadata implements IMetadata {
     if (!encryptedShare) {
       throw CoreError.encryptedShareStoreUnavailable(`${shareStore}`);
     }
-    const rawDecrypted = await decrypt(toPrivKeyECC(shareStore.share.share), encryptedShare as EncryptedMessage);
+
+    // check for keyType
+    const rawDecrypted = await decrypt(shareStore.share.share.toBuffer(), encryptedShare as EncryptedMessage);
     return ShareStore.fromJSON(JSON.parse(rawDecrypted.toString()));
   }
 
