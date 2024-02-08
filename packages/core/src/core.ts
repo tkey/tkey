@@ -45,13 +45,13 @@ import {
 } from "@tkey/common-types";
 import { generatePrivate } from "@toruslabs/eccrypto";
 import BN from "bn.js";
+import { ec as EllipticCurve } from "elliptic";
 import stringify from "json-stable-stringify";
 
 import AuthMetadata from "./authMetadata";
 import CoreError from "./errors";
 import { generateRandomPolynomial, lagrangeInterpolatePolynomial, lagrangeInterpolation } from "./lagrangeInterpolatePolynomial";
 import Metadata from "./metadata";
-
 // TODO: handle errors for get and set with retries
 
 class ThresholdKey implements ITKey {
@@ -87,6 +87,8 @@ class ThresholdKey implements ITKey {
 
   serverTimeOffset?: number = 0;
 
+  ecCurve: EllipticCurve;
+
   constructor(args?: TKeyArgs) {
     const { enableLogging = false, modules = {}, serviceProvider, storageLayer, manualSync = false, serverTimeOffset } = args || {};
     this.enableLogging = enableLogging;
@@ -104,6 +106,9 @@ class ThresholdKey implements ITKey {
     this.setModuleReferences(); // Providing ITKeyApi access to modules
     this.haveWriteMetadataLock = "";
     this.serverTimeOffset = serverTimeOffset;
+
+    // temporary: TO FIX
+    this.ecCurve = new EllipticCurve("secp256k1");
   }
 
   static async fromJSON(value: StringifiedType, args: TKeyArgs): Promise<ThresholdKey> {
@@ -514,7 +519,7 @@ class ThresholdKey implements ITKey {
     const previousPolyID = pubPoly.getPolynomialID();
     const existingShareIndexes = this.metadata.getShareIndexesForPolynomial(previousPolyID);
     const existingShareIndexesBN = existingShareIndexes.map((el) => new BN(el, "hex"));
-    const newShareIndex = new BN(generatePrivateExcludingIndexes(existingShareIndexesBN));
+    const newShareIndex = new BN(generatePrivateExcludingIndexes(existingShareIndexesBN, this.ecCurve));
 
     const results = await this._refreshShares(pubPoly.getThreshold(), [...existingShareIndexes, newShareIndex.toString("hex")], previousPolyID);
     const newShareStores = results.shareStores;
@@ -536,7 +541,7 @@ class ThresholdKey implements ITKey {
     // update metadata nonce
     this.metadata.nonce += 1;
 
-    const poly = generateRandomPolynomial(threshold - 1, this.privKey);
+    const poly = generateRandomPolynomial(threshold - 1, this.ecCurve, this.privKey);
     const shares = poly.generateShares(newShareIndexes);
     const existingShareIndexes = this.metadata.getShareIndexesForPolynomial(previousPolyID);
 
@@ -645,16 +650,16 @@ class ThresholdKey implements ITKey {
     // create a random poly and respective shares
     // 1 is defined as the serviceProvider share
     // 0 is for tKey
-    const shareIndexForDeviceStorage = generatePrivateExcludingIndexes([new BN(1), new BN(0)]);
+    const shareIndexForDeviceStorage = generatePrivateExcludingIndexes([new BN(1), new BN(0)], this.ecCurve);
 
     const shareIndexes = [new BN(1), shareIndexForDeviceStorage];
     let poly: Polynomial;
     if (determinedShare) {
-      const shareIndexForDeterminedShare = generatePrivateExcludingIndexes([new BN(1), new BN(0)]);
-      poly = generateRandomPolynomial(1, this.privKey, [new Share(shareIndexForDeterminedShare, determinedShare)]);
+      const shareIndexForDeterminedShare = generatePrivateExcludingIndexes([new BN(1), new BN(0)], this.ecCurve);
+      poly = generateRandomPolynomial(1, this.ecCurve, this.privKey, [new Share(shareIndexForDeterminedShare, determinedShare)]);
       shareIndexes.push(shareIndexForDeterminedShare);
     } else {
-      poly = generateRandomPolynomial(1, this.privKey);
+      poly = generateRandomPolynomial(1, this.ecCurve, this.privKey);
     }
     const shares = poly.generateShares(shareIndexes);
 
