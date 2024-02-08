@@ -1,12 +1,17 @@
-import { decrypt as ecDecrypt, encrypt as ecEncrypt, generatePrivate } from "@toruslabs/eccrypto";
+import { decrypt as ecDecrypt, encrypt as ecEncrypt } from "@toruslabs/eccrypto";
 import { keccak256, toChecksumAddress } from "@toruslabs/torus.js";
 import BN from "bn.js";
-import { ec as EC } from "elliptic";
+import { ec as EllipticCurve } from "elliptic";
 import { serializeError } from "serialize-error";
 
 import { EncryptedMessage } from "./baseTypes/commonTypes";
 
-export const ecCurve = new EC("secp256k1");
+export const generatePrivate = (curve: EllipticCurve): string => {
+  const key = curve.genKeyPair();
+  return key.getPrivate("hex");
+};
+
+export const ecCurve = new EllipticCurve("secp256k1");
 
 // Wrappers around ECC encrypt/decrypt to use the hex serialization
 // TODO: refactor to take BN
@@ -70,10 +75,10 @@ export function normalize(input: number | string): string {
   return `0x${hexString}`;
 }
 
-export function generatePrivateExcludingIndexes(shareIndexes: Array<BN>): BN {
-  const key = new BN(generatePrivate());
+export function generatePrivateExcludingIndexes(shareIndexes: Array<BN>, curve: EllipticCurve): BN {
+  const key = new BN(generatePrivate(curve));
   if (shareIndexes.find((el) => el.eq(key))) {
-    return generatePrivateExcludingIndexes(shareIndexes);
+    return generatePrivateExcludingIndexes(shareIndexes, curve);
   }
   return key;
 }
