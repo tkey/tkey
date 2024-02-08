@@ -438,7 +438,7 @@ class ThresholdKey implements ITKey {
       shareArr.push(this.shares[pubPolyID][polyShares[i]].share.share);
       shareIndexArr.push(this.shares[pubPolyID][polyShares[i]].share.shareIndex);
     }
-    const privKey = lagrangeInterpolation(shareArr, shareIndexArr);
+    const privKey = lagrangeInterpolation(shareArr, shareIndexArr, this.ecCurve);
     // check that priv key regenerated is correct
     const reconstructedPubKey = getPubKeyPoint(privKey, this.keyType);
     if (this.metadata.pubKey.x.cmp(reconstructedPubKey.x) !== 0) {
@@ -484,7 +484,7 @@ class ThresholdKey implements ITKey {
     for (let i = 0; i < threshold; i += 1) {
       pointsArr.push(new Point(new BN(sharesForExistingPoly[i], "hex"), this.shares[pubPolyID][sharesForExistingPoly[i]].share.share, this.keyType));
     }
-    return lagrangeInterpolatePolynomial(pointsArr);
+    return lagrangeInterpolatePolynomial(pointsArr, this.ecCurve);
   }
 
   async deleteShare(shareIndex: BNString): Promise<DeleteShareResult> {
@@ -571,7 +571,7 @@ class ThresholdKey implements ITKey {
         new Point(new BN(sharesForExistingPoly[i], "hex"), this.shares[previousPolyID][sharesForExistingPoly[i]].share.share, this.keyType)
       );
     }
-    const oldPoly = lagrangeInterpolatePolynomial(pointsArr);
+    const oldPoly = lagrangeInterpolatePolynomial(pointsArr, this.ecCurve);
 
     const shareIndexesNeedingEncryption: string[] = [];
     for (let index = 0; index < existingShareIndexes.length; index += 1) {
@@ -659,7 +659,7 @@ class ThresholdKey implements ITKey {
     delete1OutOf1?: boolean;
   } = {}): Promise<InitializeNewKeyResult> {
     if (this.keyType === KeyType.secp256k1) {
-      const tmpPriv = importedKey ? importedKey : generatePrivate(this.ecCurve);
+      const tmpPriv = importedKey || generatePrivate(this.ecCurve);
       this._setKey(new BN(tmpPriv));
     } else {
       const seed = importedKey ? importedKey.toBuffer() : nacl.randomBytes(32);
@@ -668,11 +668,11 @@ class ThresholdKey implements ITKey {
       // need to decode from le ??
       const tempPriv = new BN(keyPair.secretKey);
       this._setKey(tempPriv);
-  
+
       // encrypt and add to local metadata transitions
       const encMsg = await this.encrypt(Buffer.from(seed));
       await this.addLocalMetadataTransitions({ input: [{ message: JSON.stringify(encMsg), dateAdded: Date.now() }], privKey: [tempPriv] });
-  
+
       // testing and checking code - to remove
       // const decMsg = await this.decrypt(encMsg);
       // const decSeed = Buffer.from(decMsg).toString("hex");
@@ -1298,8 +1298,8 @@ class ThresholdKey implements ITKey {
     await this.inputShareStoreSafe(shareStore);
   }
 
-  // Export Tkey 
-  async exportFinalKey(): Promise<String> {
+  // Export Tkey
+  async exportFinalKey(): Promise<string> {
     if (!this.metadata) {
       throw CoreError.metadataUndefined();
     }
@@ -1310,8 +1310,8 @@ class ThresholdKey implements ITKey {
     if (this.keyType === KeyType.secp256k1) {
       return this.privKey.toString("hex");
     } else if (this.keyType === KeyType.ed25519) {
-      let result: EncryptedMessage = await this.storageLayer.getMetadata({privKey: this.privKey});
-      let seed = await this.decrypt(result);
+      const result: EncryptedMessage = await this.storageLayer.getMetadata({ privKey: this.privKey });
+      const seed = await this.decrypt(result);
       return seed.toString("hex");
     }
     throw CoreError.default("Invalid KeyType");
@@ -1345,7 +1345,7 @@ class ThresholdKey implements ITKey {
     for (let i = 0; i < threshold; i += 1) {
       pointsArr.push(new Point(new BN(sharesForExistingPoly[i], "hex"), this.shares[pubPolyID][sharesForExistingPoly[i]].share.share, this.keyType));
     }
-    const currentPoly = lagrangeInterpolatePolynomial(pointsArr);
+    const currentPoly = lagrangeInterpolatePolynomial(pointsArr, this.ecCurve);
     const allExistingShares = currentPoly.generateShares(existingShareIndexes);
     const shareArray = existingShareIndexes.map((shareIndex) => {
       return this.metadata.shareToShareStore(allExistingShares[shareIndex].share);
