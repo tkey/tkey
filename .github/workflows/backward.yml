@@ -29,9 +29,9 @@ jobs:
         with:
           path: tkey
 
-      - name: switch path
-        run: |
-          cd ./tkey
+      # - name: switch path
+      #   run: |
+      #     cd ./tkey
 
       - name: Set up node
         uses: actions/setup-node@v3
