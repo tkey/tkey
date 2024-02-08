@@ -1,14 +1,14 @@
 import BN from "bn.js";
-
 import { ec as EllipticCurve } from "elliptic";
+
 import { BNString, IPoint, StringifiedType } from "../baseTypes/commonTypes";
 
-enum KeyType {
+export enum KeyType {
   "secp256k1",
   "ed25519",
 }
 
-class Point implements IPoint {
+export class Point implements IPoint {
   ecCurve: EllipticCurve;
 
   keyType: KeyType;
@@ -24,17 +24,6 @@ class Point implements IPoint {
     this.ecCurve = new EllipticCurve(keyType.toString());
   }
 
-  static fromSEC1(value: string, keyType: KeyType): Point {
-    const ecCurve = new EllipticCurve(keyType.toString());
-    const key = ecCurve.keyFromPublic(value, "hex");
-    const pt = key.getPublic();
-    return new Point(pt.getX(), pt.getY(), keyType);
-  }
-
-  toSEC1(compressed = false): string {
-    return this.ecCurve.keyFromPublic({ x: this.x, y: this.y }).getPublic(compressed, "hex");
-  }
-
   static fromJSON(value: StringifiedType): Point {
     const { x, y, keyType } = value;
 
@@ -47,6 +36,17 @@ class Point implements IPoint {
     }
 
     return point;
+  }
+
+  static fromSEC1(value: string, keyType: KeyType): Point {
+    const ecCurve = new EllipticCurve(keyType.toString());
+    const key = ecCurve.keyFromPublic(value, "hex");
+    const pt = key.getPublic();
+    return new Point(pt.getX(), pt.getY(), keyType);
+  }
+
+  toSEC1(compressed = false): string {
+    return this.ecCurve.keyFromPublic({ x: this.x.toString("hex"), y: this.y.toString("hex") }).getPublic(compressed, "hex");
   }
 
   toJSON(): StringifiedType {
