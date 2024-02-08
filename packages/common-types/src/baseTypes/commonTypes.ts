@@ -1,6 +1,11 @@
 import type { CustomAuthArgs } from "@toruslabs/customauth";
 import BN from "bn.js";
-import type { curve } from "elliptic";
+import { curve } from "elliptic";
+
+export enum KeyType {
+  "secp256k1",
+  "ed25519",
+}
 
 export type PubKeyType = "ecc";
 
@@ -20,6 +25,7 @@ export interface EncryptedMessage {
 export interface ServiceProviderArgs {
   enableLogging?: boolean;
   postboxKey?: string;
+  keyType?: KeyType;
 }
 
 export interface TorusServiceProviderArgs extends ServiceProviderArgs {
@@ -43,6 +49,8 @@ export interface IServiceProvider extends ISerializable {
   enableLogging: boolean;
 
   postboxKey: BN;
+
+  keyType: KeyType;
 
   serviceProviderName: string;
 

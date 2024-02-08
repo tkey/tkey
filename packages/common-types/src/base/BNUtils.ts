@@ -2,8 +2,8 @@ import { getPublic } from "@toruslabs/eccrypto";
 import BN from "bn.js";
 import { curve, ec as EllipticCurve } from "elliptic";
 
-import { BNString } from "../baseTypes/commonTypes";
-import { KeyType, Point } from "./Point";
+import { BNString, KeyType } from "../baseTypes/commonTypes";
+import { Point } from "./Point";
 
 // These functions are here because BN can't be extended
 export const toPrivKeyEC = (bn: BN, ec: EllipticCurve): EllipticCurve.KeyPair => ec.keyFromPrivate(bn.toString("hex", 64));

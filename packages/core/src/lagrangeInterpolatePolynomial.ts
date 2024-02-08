@@ -1,4 +1,4 @@
-import { ecCurve, generatePrivateExcludingIndexes, Point, Polynomial, Share } from "@tkey/common-types";
+import { ecCurve, generatePrivateExcludingIndexes, KeyType, Point, Polynomial, Share } from "@tkey/common-types";
 import { generatePrivate } from "@toruslabs/eccrypto";
 import BN from "bn.js";
 import { curve, ec as EllipticCurve } from "elliptic";
@@ -104,7 +104,13 @@ export function lagrangeInterpolation(shares: BN[], nodeIndex: BN[]): BN {
 }
 
 // generateRandomPolynomial - determinisiticShares are assumed random
-export function generateRandomPolynomial(degree: number, eCurve: EllipticCurve, secret?: BN, deterministicShares?: Array<Share>): Polynomial {
+export function generateRandomPolynomial(
+  degree: number,
+  eCurve: EllipticCurve,
+  secret?: BN,
+  deterministicShares?: Array<Share>,
+  keyType?: KeyType
+): Polynomial {
   let actualS = secret;
   if (!secret) {
     actualS = generatePrivateExcludingIndexes([new BN(0)], eCurve);
@@ -126,21 +132,21 @@ export function generateRandomPolynomial(degree: number, eCurve: EllipticCurve, 
   }
   const points: Record<string, Point> = {};
   deterministicShares.forEach((share) => {
-    points[share.shareIndex.toString("hex") as string] = new Point(share.shareIndex, share.share);
+    points[share.shareIndex.toString("hex") as string] = new Point(share.shareIndex, share.share, keyType);
   });
   for (let i = 0; i < degree - deterministicShares.length; i += 1) {
     let shareIndex = generatePrivateExcludingIndexes([new BN(0)], eCurve);
     while (points[shareIndex.toString("hex")] !== undefined) {
       shareIndex = generatePrivateExcludingIndexes([new BN(0)], eCurve);
     }
-    points[shareIndex.toString("hex")] = new Point(shareIndex, new BN(generatePrivate()));
+    points[shareIndex.toString("hex")] = new Point(shareIndex, new BN(generatePrivate()), keyType);
   }
-  points["0"] = new Point(new BN(0), actualS);
+  points["0"] = new Point(new BN(0), actualS, keyType);
   return lagrangeInterpolatePolynomial(Object.values(points));
 }
 
 //  2 + 3x = y | secret for index 1 is 5 >>> g^5 is the commitment | now we have g^2, g^3 and 1, |
-export function polyCommitmentEval(polyCommitments: Array<Point>, index: BN): Point {
+export function polyCommitmentEval(polyCommitments: Array<Point>, index: BN, keyType?: KeyType): Point {
   // convert to base points, this is badly written, its the only way to access the point rn zzz TODO: refactor
   const basePtPolyCommitments: Array<curve.base.BasePoint> = [];
   for (let i = 0; i < polyCommitments.length; i += 1) {
@@ -153,5 +159,5 @@ export function polyCommitmentEval(polyCommitments: Array<Point>, index: BN): Po
     const e = basePtPolyCommitments[i].mul(factor);
     shareCommitment = shareCommitment.add(e);
   }
-  return new Point(shareCommitment.getX(), shareCommitment.getY());
+  return new Point(shareCommitment.getX(), shareCommitment.getY(), keyType);
 }

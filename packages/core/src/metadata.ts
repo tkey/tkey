@@ -1,9 +1,9 @@
 import {
   decrypt,
-  ecCurve,
   EncryptedMessage,
   getPubKeyPoint,
   IMetadata,
+  KeyType,
   Point,
   PolyIDAndShares,
   Polynomial,
@@ -28,6 +28,8 @@ import { polyCommitmentEval } from "./lagrangeInterpolatePolynomial";
 class Metadata implements IMetadata {
   pubKey: Point;
 
+  keyType: KeyType;
+
   publicPolynomials: PublicPolynomialMap;
 
   publicShares: PublicSharePolyIDShareIndexMap;
@@ -49,7 +51,7 @@ class Metadata implements IMetadata {
 
   nonce: number;
 
-  constructor(input: Point) {
+  constructor(input: Point, keyType: KeyType) {
     this.publicPolynomials = {};
     this.publicShares = {};
     this.generalStore = {};
@@ -58,12 +60,20 @@ class Metadata implements IMetadata {
     this.pubKey = input;
     this.polyIDList = [];
     this.nonce = 0;
+    this.keyType = keyType;
   }
 
   static fromJSON(value: StringifiedType): Metadata {
-    const { pubKey, polyIDList, generalStore, tkeyStore, scopedStore, nonce } = value;
-    const point = Point.fromCompressedPub(pubKey);
-    const metadata = new Metadata(point);
+    const { pubKey, polyIDList, generalStore, tkeyStore, scopedStore, nonce, keyType } = value;
+    let type: KeyType;
+    if (keyType) {
+      type = keyType;
+    } else {
+      type = KeyType.secp256k1;
+    }
+
+    const point = Point.fromSEC1(pubKey, type);
+    const metadata = new Metadata(point, type);
     const unserializedPolyIDList: PolyIDAndShares[] = [];
 
     if (generalStore) metadata.generalStore = generalStore;
@@ -81,7 +91,7 @@ class Metadata implements IMetadata {
       const pubPolyID = firstHalf.join("|");
       const pointCommitments: Point[] = [];
       firstHalf.forEach((compressedCommitment) => {
-        pointCommitments.push(Point.fromCompressedPub(compressedCommitment));
+        pointCommitments.push(Point.fromSEC1(compressedCommitment, type));
       });
       const publicPolynomial = new PublicPolynomial(pointCommitments);
       metadata.publicPolynomials[pubPolyID] = publicPolynomial;
@@ -142,20 +152,20 @@ class Metadata implements IMetadata {
   // appends shares and public polynomial to metadata.
   // should represent a generation of share or edit of threshold
   addFromPolynomialAndShares(polynomial: Polynomial, shares: Share[] | ShareMap): void {
-    const publicPolynomial = polynomial.getPublicPolynomial();
+    const publicPolynomial = polynomial.getPublicPolynomial(this.keyType);
     const polyID = publicPolynomial.getPolynomialID();
     this.publicPolynomials[polyID] = publicPolynomial;
 
     const shareIndexArr = [];
     if (Array.isArray(shares)) {
       for (let i = 0; i < shares.length; i += 1) {
-        this.addPublicShare(publicPolynomial.getPolynomialID(), shares[i].getPublicShare());
+        this.addPublicShare(publicPolynomial.getPolynomialID(), shares[i].getPublicShare(this.keyType));
         shareIndexArr.push(shares[i].shareIndex.toString("hex"));
       }
     } else {
       for (const k in shares) {
         if (Object.prototype.hasOwnProperty.call(shares, k)) {
-          this.addPublicShare(publicPolynomial.getPolynomialID(), shares[k].getPublicShare());
+          this.addPublicShare(publicPolynomial.getPolynomialID(), shares[k].getPublicShare(this.keyType));
           shareIndexArr.push(shares[k].shareIndex.toString("hex"));
         }
       }
@@ -168,7 +178,7 @@ class Metadata implements IMetadata {
   }
 
   async getEncryptedShare(shareStore: ShareStore): Promise<ShareStore> {
-    const pubShare = shareStore.share.getPublicShare();
+    const pubShare = shareStore.share.getPublicShare(this.keyType);
     const encryptedShareStore = this.scopedStore.encryptedShares as Record<string, unknown>;
     if (!encryptedShareStore) {
       throw CoreError.encryptedShareStoreUnavailable(`${shareStore}`);
@@ -218,7 +228,7 @@ class Metadata implements IMetadata {
   }
 
   shareToShareStore(share: BN): ShareStore {
-    const pubkey = getPubKeyPoint(share);
+    const pubkey = getPubKeyPoint(share, this.keyType);
     let returnShare: ShareStore;
 
     for (let i = this.polyIDList.length - 1; i >= 0; i -= 1) {
@@ -236,7 +246,11 @@ class Metadata implements IMetadata {
 
         // if not reconstruct
         if (!pubShare) {
-          pubShare = new PublicShare(shareIndex, polyCommitmentEval(this.publicPolynomials[el].polynomialCommitments, new BN(shareIndex, "hex")));
+          pubShare = new PublicShare(
+            shareIndex,
+            polyCommitmentEval(this.publicPolynomials[el].polynomialCommitments, new BN(shareIndex, "hex"), this.keyType),
+            this.keyType
+          );
         }
         if (pubShare.shareCommitment.x.eq(pubkey.x) && pubShare.shareCommitment.y.eq(pubkey.y)) {
           const tempShare = new Share(pubShare.shareIndex, share);
@@ -270,12 +284,13 @@ class Metadata implements IMetadata {
     }
 
     return {
-      pubKey: this.pubKey.encode("elliptic-compressed", { ec: ecCurve }).toString(),
+      pubKey: this.pubKey.toSEC1(true),
       polyIDList: serializedPolyIDList,
       scopedStore: this.scopedStore,
       generalStore: this.generalStore,
       tkeyStore: this.tkeyStore,
       nonce: this.nonce,
+      keyType: this.keyType,
     };
   }
 }

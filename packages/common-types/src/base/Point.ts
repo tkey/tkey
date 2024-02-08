@@ -1,12 +1,7 @@
 import BN from "bn.js";
 import { ec as EllipticCurve } from "elliptic";
 
-import { BNString, IPoint, StringifiedType } from "../baseTypes/commonTypes";
-
-export enum KeyType {
-  "secp256k1",
-  "ed25519",
-}
+import { BNString, IPoint, KeyType, StringifiedType } from "../baseTypes/commonTypes";
 
 export class Point implements IPoint {
   ecCurve: EllipticCurve;
