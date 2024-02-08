@@ -6,14 +6,6 @@ import { serializeError } from "serialize-error";
 
 import { EncryptedMessage } from "./baseTypes/commonTypes";
 
-// const privKeyBnToEcc = (bnPrivKey) => {
-//   return bnPrivKey.toBuffer("be", 32);
-// };
-
-// const privKeyBnToPubKeyECC = (bnPrivKey) => {
-//   return getPublic(privKeyBnToEcc(bnPrivKey));
-// };
-
 export const generatePrivate = (curve: EllipticCurve): string => {
   const key = curve.genKeyPair();
   return key.getPrivate("hex");
