@@ -19,6 +19,7 @@ import {
   ITKeyApi,
   KEY_NOT_FOUND,
   KeyDetails,
+  KeyType,
   LocalMetadataTransitions,
   LocalTransitionData,
   LocalTransitionShares,
@@ -67,6 +68,8 @@ class ThresholdKey implements ITKey {
 
   privKey: BN;
 
+  keyType: KeyType;
+
   lastFetchedCloudMetadata: Metadata;
 
   metadata: Metadata;
@@ -90,7 +93,7 @@ class ThresholdKey implements ITKey {
   ecCurve: EllipticCurve;
 
   constructor(args?: TKeyArgs) {
-    const { enableLogging = false, modules = {}, serviceProvider, storageLayer, manualSync = false, serverTimeOffset } = args || {};
+    const { enableLogging = false, modules = {}, serviceProvider, storageLayer, manualSync = false, serverTimeOffset, keyType } = args || {};
     this.enableLogging = enableLogging;
     this.serviceProvider = serviceProvider;
     this.storageLayer = storageLayer;
@@ -108,11 +111,19 @@ class ThresholdKey implements ITKey {
     this.serverTimeOffset = serverTimeOffset;
 
     // temporary: TO FIX
-    this.ecCurve = new EllipticCurve("secp256k1");
+    // this.ecCurve = new EllipticCurve("secp256k1");
+    if (keyType) {
+      this.keyType = keyType;
+      this.ecCurve = new EllipticCurve(keyType.toString());
+    } else {
+      this.keyType = KeyType.secp256k1;
+      this.ecCurve = new EllipticCurve(this.keyType.toString());
+    }
   }
 
   static async fromJSON(value: StringifiedType, args: TKeyArgs): Promise<ThresholdKey> {
-    const { enableLogging, privKey, metadata, shares, _localMetadataTransitions, manualSync, lastFetchedCloudMetadata, serverTimeOffset } = value;
+    const { enableLogging, privKey, metadata, shares, _localMetadataTransitions, manualSync, lastFetchedCloudMetadata, serverTimeOffset, keyType } =
+      value;
     const { storageLayer, serviceProvider, modules } = args;
 
     const tb = new ThresholdKey({
@@ -122,6 +133,7 @@ class ThresholdKey implements ITKey {
       modules,
       manualSync,
       serverTimeOffset,
+      keyType,
     });
     if (privKey) tb.privKey = new BN(privKey, "hex");
 
@@ -139,7 +151,9 @@ class ThresholdKey implements ITKey {
     tb.shares = shares;
 
     // switch to deserialize local metadata transition based on Object.keys() of authMetadata, ShareStore's and, IMessageMetadata
-    const AuthMetadataKeys = Object.keys(JSON.parse(stringify(new AuthMetadata(new Metadata(new Point("0", "0")), new BN("0", "hex")))));
+    const AuthMetadataKeys = Object.keys(
+      JSON.parse(stringify(new AuthMetadata(new Metadata(new Point("0", "0", keyType), keyType), new BN("0", "hex"))))
+    );
     const ShareStoreKeys = Object.keys(JSON.parse(stringify(new ShareStore(new Share("0", "0"), ""))));
     const sampleMessageMetadata: IMessageMetadata = { message: "Sample message", dateAdded: Date.now() };
     const MessageMetadataKeys = Object.keys(sampleMessageMetadata);
@@ -424,7 +438,7 @@ class ThresholdKey implements ITKey {
     }
     const privKey = lagrangeInterpolation(shareArr, shareIndexArr);
     // check that priv key regenerated is correct
-    const reconstructedPubKey = getPubKeyPoint(privKey);
+    const reconstructedPubKey = getPubKeyPoint(privKey, this.keyType);
     if (this.metadata.pubKey.x.cmp(reconstructedPubKey.x) !== 0) {
       throw CoreError.incorrectReconstruction();
     }
@@ -466,7 +480,7 @@ class ThresholdKey implements ITKey {
       throw CoreError.default("share indexes should be unique");
     }
     for (let i = 0; i < threshold; i += 1) {
-      pointsArr.push(new Point(new BN(sharesForExistingPoly[i], "hex"), this.shares[pubPolyID][sharesForExistingPoly[i]].share.share));
+      pointsArr.push(new Point(new BN(sharesForExistingPoly[i], "hex"), this.shares[pubPolyID][sharesForExistingPoly[i]].share.share, this.keyType));
     }
     return lagrangeInterpolatePolynomial(pointsArr);
   }
@@ -551,7 +565,9 @@ class ThresholdKey implements ITKey {
       throw CoreError.unableToReconstruct("not enough shares for polynomial reconstruction");
     }
     for (let i = 0; i < threshold; i += 1) {
-      pointsArr.push(new Point(new BN(sharesForExistingPoly[i], "hex"), this.shares[previousPolyID][sharesForExistingPoly[i]].share.share));
+      pointsArr.push(
+        new Point(new BN(sharesForExistingPoly[i], "hex"), this.shares[previousPolyID][sharesForExistingPoly[i]].share.share, this.keyType)
+      );
     }
     const oldPoly = lagrangeInterpolatePolynomial(pointsArr);
 
@@ -583,7 +599,7 @@ class ThresholdKey implements ITKey {
       shareIndexesNeedingEncryption.map(async (shareIndex) => {
         const oldShare = oldPoly.polyEval(new BN(shareIndex, "hex"));
         const encryptedShare = await encrypt(getPubKeyECC(oldShare), Buffer.from(JSON.stringify(newShareStores[shareIndex])));
-        newScopedStore[getPubKeyPoint(oldShare).x.toString("hex")] = encryptedShare;
+        newScopedStore[getPubKeyPoint(oldShare, this.keyType).x.toString("hex")] = encryptedShare;
         oldShareStores[shareIndex] = new ShareStore(new Share(shareIndex, oldShare), previousPolyID);
         return oldShare;
       })
@@ -664,7 +680,7 @@ class ThresholdKey implements ITKey {
     const shares = poly.generateShares(shareIndexes);
 
     // create metadata to be stored
-    const metadata = new Metadata(getPubKeyPoint(this.privKey));
+    const metadata = new Metadata(getPubKeyPoint(this.privKey, this.keyType), this.keyType);
     metadata.addFromPolynomialAndShares(poly, shares);
     const serviceProviderShare = shares[shareIndexes[0].toString("hex")];
     const shareStore = new ShareStore(serviceProviderShare, poly.getPolynomialID());
@@ -760,6 +776,7 @@ class ThresholdKey implements ITKey {
       serviceProvider: this.serviceProvider,
       storageLayer: this.storageLayer,
       manualSync: this.manualSync,
+      keyType: this.keyType,
     });
 
     try {
@@ -1272,7 +1289,7 @@ class ThresholdKey implements ITKey {
       throw CoreError.unableToReconstruct("not enough shares for polynomial reconstruction");
     }
     for (let i = 0; i < threshold; i += 1) {
-      pointsArr.push(new Point(new BN(sharesForExistingPoly[i], "hex"), this.shares[pubPolyID][sharesForExistingPoly[i]].share.share));
+      pointsArr.push(new Point(new BN(sharesForExistingPoly[i], "hex"), this.shares[pubPolyID][sharesForExistingPoly[i]].share.share, this.keyType));
     }
     const currentPoly = lagrangeInterpolatePolynomial(pointsArr);
     const allExistingShares = currentPoly.generateShares(existingShareIndexes);

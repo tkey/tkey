@@ -20,6 +20,7 @@ import {
   ISerializable,
   IServiceProvider,
   IStorageLayer,
+  KeyType,
   PolyIDAndShares,
   PolynomialID,
   ShareDescriptionMap,
@@ -55,6 +56,8 @@ export type ShareSerializationMiddleware = {
 
 export interface IMetadata extends ISerializable {
   pubKey: Point;
+
+  keyType: KeyType;
 
   publicPolynomials: PublicPolynomialMap;
 
@@ -141,6 +144,7 @@ export type TKeyArgs = {
   customAuthArgs?: CustomAuthArgs;
   manualSync?: boolean;
   serverTimeOffset?: number;
+  keyType: KeyType;
 };
 
 export interface SecurityQuestionStoreArgs {
@@ -222,6 +226,7 @@ export interface IPrivateKeyFormat {
 }
 
 export interface IAuthMetadata {
+  keyType: KeyType;
   metadata: IMetadata;
   privKey?: BN;
 }
@@ -285,6 +290,8 @@ export interface ITKey extends ITKeyApi, ISerializable {
   shares: ShareStorePolyIDShareIndexMap;
 
   privKey: BN;
+
+  keyType: KeyType;
 
   _localMetadataTransitions: LocalMetadataTransitions;
 

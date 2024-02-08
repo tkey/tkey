@@ -5,6 +5,7 @@ import {
   EncryptedMessage,
   getPubKeyECC,
   IServiceProvider,
+  KeyType,
   PubKeyType,
   ServiceProviderArgs,
   StringifiedType,
@@ -12,7 +13,7 @@ import {
   toPrivKeyECC,
 } from "@tkey/common-types";
 import BN from "bn.js";
-import { curve } from "elliptic";
+import { curve, ec as EllipticCurve } from "elliptic";
 
 class ServiceProviderBase implements IServiceProvider {
   enableLogging: boolean;
@@ -20,19 +21,27 @@ class ServiceProviderBase implements IServiceProvider {
   // For easy serialization
   postboxKey: BN;
 
+  keyType: KeyType;
+
   serviceProviderName: string;
 
-  constructor({ enableLogging = false, postboxKey }: ServiceProviderArgs) {
+  constructor({ enableLogging = false, postboxKey, keyType }: ServiceProviderArgs) {
     this.enableLogging = enableLogging;
     this.postboxKey = new BN(postboxKey, "hex");
     this.serviceProviderName = "ServiceProviderBase";
+
+    if (keyType) {
+      this.keyType = keyType;
+    } else {
+      this.keyType = KeyType.secp256k1;
+    }
   }
 
   static fromJSON(value: StringifiedType): IServiceProvider {
-    const { enableLogging, postboxKey, serviceProviderName } = value;
+    const { enableLogging, postboxKey, serviceProviderName, keyType } = value;
     if (serviceProviderName !== "ServiceProviderBase") return undefined;
 
-    return new ServiceProviderBase({ enableLogging, postboxKey });
+    return new ServiceProviderBase({ enableLogging, postboxKey, keyType });
   }
 
   async encrypt(msg: Buffer): Promise<EncryptedMessage> {
@@ -45,7 +54,8 @@ class ServiceProviderBase implements IServiceProvider {
   }
 
   retrievePubKeyPoint(): curve.base.BasePoint {
-    return toPrivKeyEC(this.postboxKey).getPublic();
+    const ecCurve = new EllipticCurve(this.keyType.toString());
+    return toPrivKeyEC(this.postboxKey, ecCurve).getPublic();
   }
 
   retrievePubKey(type: PubKeyType): Buffer {
@@ -57,7 +67,8 @@ class ServiceProviderBase implements IServiceProvider {
 
   sign(msg: BNString): string {
     const tmp = new BN(msg, "hex");
-    const sig = toPrivKeyEC(this.postboxKey).sign(tmp.toString("hex"));
+    const ecCurve = new EllipticCurve(this.keyType.toString());
+    const sig = toPrivKeyEC(this.postboxKey, ecCurve).sign(tmp.toString("hex"));
     return Buffer.from(sig.r.toString(16, 64) + sig.s.toString(16, 64) + new BN(0).toString(16, 2), "hex").toString("base64");
   }
 
@@ -66,6 +77,7 @@ class ServiceProviderBase implements IServiceProvider {
       enableLogging: this.enableLogging,
       postboxKey: this.postboxKey.toString("hex"),
       serviceProviderName: this.serviceProviderName,
+      keyType: this.keyType,
     };
   }
 }

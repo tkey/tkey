@@ -1,9 +1,9 @@
 import BN from "bn.js";
 
-import { BNString, ISerializable, PolynomialID, StringifiedType } from "../baseTypes/commonTypes";
+import { BNString, ISerializable, KeyType, PolynomialID, StringifiedType } from "../baseTypes/commonTypes";
 import { ecCurve } from "../utils";
 import { getPubKeyPoint } from "./BNUtils";
-import { KeyType, Point } from "./Point";
+import { Point } from "./Point";
 import PublicPolynomial from "./PublicPolynomial";
 import Share from "./Share";
 

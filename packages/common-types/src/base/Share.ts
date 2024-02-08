@@ -1,8 +1,7 @@
 import BN from "bn.js";
 
-import { BNString, ISerializable, StringifiedType } from "../baseTypes/commonTypes";
+import { BNString, ISerializable, KeyType, StringifiedType } from "../baseTypes/commonTypes";
 import { getPubKeyPoint } from "./BNUtils";
-import { KeyType } from "./Point";
 import PublicShare from "./PublicShare";
 
 class Share implements ISerializable {
