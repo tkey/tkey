@@ -26,8 +26,8 @@ jobs:
     steps:
       - name: checkout tkey repo
         uses: actions/checkout@v3
-        with:
-          path: tkey
+        # with:
+        #   path: tkey
 
       # - name: switch path
       #   run: |
