@@ -3,6 +3,11 @@ import BN from "bn.js";
 import { BNString, IPoint, StringifiedType } from "../baseTypes/commonTypes";
 import { ecCurve } from "../utils";
 
+enum KeyType {
+  "secp256k1",
+  "ed25519",
+}
+
 class Point implements IPoint {
   x: BN;
 
