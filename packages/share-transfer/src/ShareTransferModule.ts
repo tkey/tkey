@@ -2,12 +2,11 @@ import {
   decrypt,
   encrypt,
   generatePrivate,
-  getPubKeyECC,
-  getPubKeyPoint,
   IModule,
   ITKeyApi,
   ITkeyError,
   KeyType,
+  Point,
   ShareStore,
   ShareStoreMap,
   ShareTransferStorePointerArgs,
@@ -90,9 +89,10 @@ class ShareTransferModule implements IModule {
     if (this.currentEncKey) throw ShareTransferError.requestExists(`${this.currentEncKey.toString("hex")}`);
     this.currentEncKey = new BN(generatePrivate(KeyType.secp256k1));
     const [newShareTransferStore, userIp] = await Promise.all([this.getShareTransferStore(), getClientIp()]);
-    const encPubKeyX = getPubKeyPoint(this.currentEncKey, KeyType.secp256k1).x.toString("hex");
+    const encPubPoint = Point.fromPrivate(this.currentEncKey, KeyType.secp256k1);
+    const encPubKeyX = encPubPoint.x.toString("hex");
     newShareTransferStore[encPubKeyX] = new ShareRequest({
-      encPubKey: getPubKeyECC(this.currentEncKey),
+      encPubKey: Buffer.from(encPubPoint.toSEC1(), "hex"),
       encShareInTransit: undefined,
       availableShareIndexes,
       userAgent,
