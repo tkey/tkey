@@ -157,6 +157,8 @@ export interface SecurityQuestionStoreArgs {
   polynomialID: PolynomialID;
 
   questions: string;
+
+  keyType?: KeyType;
 }
 
 export interface TkeyStoreDataArgs {

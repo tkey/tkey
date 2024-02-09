@@ -1,4 +1,4 @@
-import { ISerializable, PolynomialID, PublicShare, SecurityQuestionStoreArgs, StringifiedType } from "@tkey/common-types";
+import { ISerializable, KeyType, PolynomialID, PublicShare, SecurityQuestionStoreArgs, StringifiedType } from "@tkey/common-types";
 import BN from "bn.js";
 
 class SecurityQuestionStore implements ISerializable {
@@ -12,10 +12,13 @@ class SecurityQuestionStore implements ISerializable {
 
   questions: string;
 
-  constructor({ nonce, shareIndex, sqPublicShare, polynomialID, questions }: SecurityQuestionStoreArgs) {
+  keyType: KeyType;
+
+  constructor({ nonce, shareIndex, sqPublicShare, polynomialID, questions, keyType }: SecurityQuestionStoreArgs) {
     this.nonce = new BN(nonce, "hex");
     this.shareIndex = new BN(shareIndex, "hex");
-    this.sqPublicShare = new PublicShare(sqPublicShare.shareIndex, sqPublicShare.shareCommitment);
+    this.keyType = keyType in KeyType ? keyType : KeyType.secp256k1;
+    this.sqPublicShare = new PublicShare(sqPublicShare.shareIndex, sqPublicShare.shareCommitment, keyType);
     this.polynomialID = polynomialID;
     this.questions = questions;
   }

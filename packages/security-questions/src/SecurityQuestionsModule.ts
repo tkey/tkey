@@ -51,9 +51,10 @@ class SecurityQuestionsModule implements IModule {
       return new SecurityQuestionStore({
         nonce: newNonce,
         polynomialID: newShareStores[Object.keys(newShareStores)[0]].polynomialID,
-        sqPublicShare: newShareStores[sqIndex].share.getPublicShare(),
+        sqPublicShare: newShareStores[sqIndex].share.getPublicShare(sqStore.keyType),
         shareIndex: sqStore.shareIndex,
         questions: sqStore.questions,
+        keyType: sqStore.keyType,
       });
     }
     return undefined;
@@ -79,9 +80,10 @@ class SecurityQuestionsModule implements IModule {
     const sqStore = new SecurityQuestionStore({
       nonce,
       questions,
-      sqPublicShare: newShareStore.share.getPublicShare(),
+      sqPublicShare: newShareStore.share.getPublicShare(metadata.keyType),
       shareIndex: newShareStore.share.shareIndex,
       polynomialID: newShareStore.polynomialID,
+      keyType: metadata.keyType,
     });
     metadata.setGeneralStoreDomain(this.moduleName, sqStore);
 
@@ -113,7 +115,7 @@ class SecurityQuestionsModule implements IModule {
     share = share.umod(ecCurve.curve.n);
     const shareStore = new ShareStore(new Share(sqStore.shareIndex, share), sqStore.polynomialID);
     // validate if share is correct
-    const derivedPublicShare = shareStore.share.getPublicShare();
+    const derivedPublicShare = shareStore.share.getPublicShare(metadata.keyType);
     if (derivedPublicShare.shareCommitment.x.cmp(sqStore.sqPublicShare.shareCommitment.x) !== 0) {
       throw SecurityQuestionsError.incorrectAnswer();
     }
