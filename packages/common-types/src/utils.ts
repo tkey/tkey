@@ -4,10 +4,11 @@ import BN from "bn.js";
 import { ec as EllipticCurve } from "elliptic";
 import { serializeError } from "serialize-error";
 
-import { EncryptedMessage } from "./baseTypes/commonTypes";
+import { EncryptedMessage, KeyType, keyTypeToCurve } from "./baseTypes/commonTypes";
 
-export const generatePrivate = (curve: EllipticCurve): BN => {
-  const key = curve.genKeyPair();
+export const generatePrivate = (keyType: KeyType): BN => {
+  const ecCurve = keyTypeToCurve(keyType);
+  const key = ecCurve.genKeyPair();
   return key.getPrivate();
 };
 
@@ -75,10 +76,10 @@ export function normalize(input: number | string): string {
   return `0x${hexString}`;
 }
 
-export function generatePrivateExcludingIndexes(shareIndexes: Array<BN>, curve: EllipticCurve): BN {
-  const key = generatePrivate(curve);
+export function generatePrivateExcludingIndexes(shareIndexes: Array<BN>, keyType: KeyType): BN {
+  const key = generatePrivate(keyType);
   if (shareIndexes.find((el) => el.eq(key))) {
-    return generatePrivateExcludingIndexes(shareIndexes, curve);
+    return generatePrivateExcludingIndexes(shareIndexes, keyType);
   }
   return key;
 }

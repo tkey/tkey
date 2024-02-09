@@ -108,15 +108,14 @@ export function lagrangeInterpolation(shares: BN[], nodeIndex: BN[], keyType: Ke
 
 // generateRandomPolynomial - determinisiticShares are assumed random
 export function generateRandomPolynomial(keyType: KeyType, degree: number, secret?: BN, deterministicShares?: Array<Share>): Polynomial {
-  const ecCurve = keyTypeToCurve(keyType);
   let actualS = secret;
   if (!secret) {
-    actualS = generatePrivateExcludingIndexes([new BN(0)], ecCurve);
+    actualS = generatePrivateExcludingIndexes([new BN(0)], keyType);
   }
   if (!deterministicShares) {
     const poly = [actualS];
     for (let i = 0; i < degree; i += 1) {
-      const share = generatePrivateExcludingIndexes(poly, ecCurve);
+      const share = generatePrivateExcludingIndexes(poly, keyType);
       poly.push(share);
     }
     return new Polynomial(poly, keyType);
@@ -133,11 +132,11 @@ export function generateRandomPolynomial(keyType: KeyType, degree: number, secre
     points[share.shareIndex.toString("hex") as string] = new Point(share.shareIndex, share.share, keyType);
   });
   for (let i = 0; i < degree - deterministicShares.length; i += 1) {
-    let shareIndex = generatePrivateExcludingIndexes([new BN(0)], ecCurve);
+    let shareIndex = generatePrivateExcludingIndexes([new BN(0)], keyType);
     while (points[shareIndex.toString("hex")] !== undefined) {
-      shareIndex = generatePrivateExcludingIndexes([new BN(0)], ecCurve);
+      shareIndex = generatePrivateExcludingIndexes([new BN(0)], keyType);
     }
-    points[shareIndex.toString("hex")] = new Point(shareIndex, new BN(generatePrivate(ecCurve)), keyType);
+    points[shareIndex.toString("hex")] = new Point(shareIndex, new BN(generatePrivate(keyType)), keyType);
   }
   points["0"] = new Point(new BN(0), actualS, keyType);
   return lagrangeInterpolatePolynomial(Object.values(points), keyType);
