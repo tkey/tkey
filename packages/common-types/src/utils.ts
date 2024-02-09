@@ -6,9 +6,9 @@ import { serializeError } from "serialize-error";
 
 import { EncryptedMessage } from "./baseTypes/commonTypes";
 
-export const generatePrivate = (curve: EllipticCurve): string => {
+export const generatePrivate = (curve: EllipticCurve): BN => {
   const key = curve.genKeyPair();
-  return key.getPrivate("hex");
+  return key.getPrivate();
 };
 
 export const ecCurve = new EllipticCurve("secp256k1");
@@ -76,7 +76,7 @@ export function normalize(input: number | string): string {
 }
 
 export function generatePrivateExcludingIndexes(shareIndexes: Array<BN>, curve: EllipticCurve): BN {
-  const key = new BN(generatePrivate(curve));
+  const key = generatePrivate(curve);
   if (shareIndexes.find((el) => el.eq(key))) {
     return generatePrivateExcludingIndexes(shareIndexes, curve);
   }
