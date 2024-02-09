@@ -774,6 +774,7 @@ class ThresholdKey implements ITKey {
         input: this._localMetadataTransitions[1],
         privKey: this._localMetadataTransitions[0],
         serviceProvider: this.serviceProvider,
+        keyType: this.keyType,
       });
     } catch (error: unknown) {
       throw CoreError.metadataPostFailed(prettyPrintError(error as Error));
@@ -967,7 +968,7 @@ class ThresholdKey implements ITKey {
   }> {
     const { input, serviceProvider, privKey } = params;
     const authMetadata = new AuthMetadata(this.keyType, input, this.privKey);
-    return this.storageLayer.setMetadata({ input: authMetadata, serviceProvider, privKey });
+    return this.storageLayer.setMetadata({ input: authMetadata, serviceProvider, privKey, keyType: this.keyType });
   }
 
   async setAuthMetadataBulk(params: { input: Metadata[]; serviceProvider?: IServiceProvider; privKey?: BN[] }): Promise<void> {
@@ -1015,8 +1016,9 @@ class ThresholdKey implements ITKey {
       }
     }
     let raw: IMessageMetadata;
+
     try {
-      raw = await this.storageLayer.getMetadata(params);
+      raw = await this.storageLayer.getMetadata({ ...params, keyType: this.keyType });
     } catch (err: unknown) {
       throw CoreError.metadataGetFailed(`${prettyPrintError(err as Error)}`);
     }
@@ -1059,7 +1061,7 @@ class ThresholdKey implements ITKey {
       should only ever be updated by getting metadata)`);
     }
 
-    const res = await this.storageLayer.acquireWriteLock({ privKey: this.privKey });
+    const res = await this.storageLayer.acquireWriteLock({ privKey: this.privKey, keyType: this.keyType });
     if (res.status !== 1) throw CoreError.acquireLockFailed(`lock cannot be acquired from storage layer status code: ${res.status}`);
 
     // increment metadata nonce for write session
@@ -1070,7 +1072,7 @@ class ThresholdKey implements ITKey {
 
   async releaseWriteMetadataLock(): Promise<void> {
     if (!this.haveWriteMetadataLock) throw CoreError.releaseLockFailed("releaseWriteMetadataLock - don't have metadata lock to release");
-    const res = await this.storageLayer.releaseWriteLock({ privKey: this.privKey, id: this.haveWriteMetadataLock });
+    const res = await this.storageLayer.releaseWriteLock({ privKey: this.privKey, id: this.haveWriteMetadataLock, keyType: this.keyType });
     if (res.status !== 1) throw CoreError.releaseLockFailed(`lock cannot be released from storage layer status code: ${res.status}`);
     this.haveWriteMetadataLock = "";
   }
@@ -1311,7 +1313,7 @@ class ThresholdKey implements ITKey {
     if (this.keyType === KeyType.secp256k1) {
       return this.privKey.toString("hex");
     } else if (this.keyType === KeyType.ed25519) {
-      const result: EncryptedMessage = await this.storageLayer.getMetadata({ privKey: this.privKey });
+      const result: EncryptedMessage = await this.storageLayer.getMetadata({ privKey: this.privKey, keyType: this.keyType });
       const seed = await this.decrypt(result);
       return seed.toString("hex");
     }
