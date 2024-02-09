@@ -1,7 +1,7 @@
 import BN from "bn.js";
 import { ec as EllipticCurve } from "elliptic";
 
-import { BNString, IPoint, KeyType, StringifiedType, keyTypeToCurve } from "../baseTypes/commonTypes";
+import { BNString, IPoint, KeyType, keyTypeToCurve, StringifiedType } from "../baseTypes/commonTypes";
 
 export class Point implements IPoint {
   ecCurve: EllipticCurve;
@@ -16,7 +16,7 @@ export class Point implements IPoint {
     this.x = new BN(x, "hex");
     this.y = new BN(y, "hex");
     this.keyType = keyType;
-    this.ecCurve = new EllipticCurve(keyType.toString());
+    this.ecCurve = keyTypeToCurve(keyType);
   }
 
   static fromJSON(value: StringifiedType): Point {
