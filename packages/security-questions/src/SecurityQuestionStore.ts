@@ -24,13 +24,14 @@ class SecurityQuestionStore implements ISerializable {
   }
 
   static fromJSON(value: StringifiedType): SecurityQuestionStore {
-    const { nonce, shareIndex, sqPublicShare, polynomialID, questions } = value;
+    const { nonce, shareIndex, sqPublicShare, polynomialID, questions, keyType } = value;
     return new SecurityQuestionStore({
       nonce: new BN(nonce, "hex"),
       shareIndex: new BN(shareIndex, "hex"),
       sqPublicShare: PublicShare.fromJSON(sqPublicShare),
       polynomialID,
       questions,
+      keyType,
     });
   }
 
@@ -41,6 +42,7 @@ class SecurityQuestionStore implements ISerializable {
       sqPublicShare: this.sqPublicShare,
       polynomialID: this.polynomialID.toString(),
       questions: this.questions,
+      keytype: this.keyType,
     };
   }
 }
