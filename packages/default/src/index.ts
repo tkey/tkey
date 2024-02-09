@@ -8,7 +8,7 @@ import { MockStorageLayer, TorusStorageLayer } from "@tkey/storage-layer-torus";
 
 class ThresholdKey extends TKey {
   constructor(args?: TKeyArgs) {
-    const { modules = {}, serviceProvider, storageLayer, customAuthArgs, serverTimeOffset } = args || {};
+    const { modules = {}, serviceProvider, storageLayer, customAuthArgs, serverTimeOffset, keyType } = args || {};
     const defaultModules = {
       [SHARE_TRANSFER_MODULE_NAME]: new ShareTransferModule(),
       [SHARE_SERIALIZATION_MODULE_NAME]: new ShareSerializationModule(),
@@ -25,12 +25,18 @@ class ThresholdKey extends TKey {
     } else {
       finalStorageLayer = storageLayer;
     }
-    super({ ...(args || {}), modules: { ...defaultModules, ...modules }, serviceProvider: finalServiceProvider, storageLayer: finalStorageLayer });
+    super({
+      ...(args || {}),
+      modules: { ...defaultModules, ...modules },
+      serviceProvider: finalServiceProvider,
+      storageLayer: finalStorageLayer,
+      keyType,
+    });
   }
 
   static async fromJSON(value: StringifiedType, args?: TKeyArgs): Promise<ThresholdKey> {
     const { storageLayer: tempOldStorageLayer, serviceProvider: tempOldServiceProvider } = value;
-    const { storageLayer, serviceProvider, modules = {}, customAuthArgs, serverTimeOffset = 0 } = args || {};
+    const { storageLayer, serviceProvider, modules = {}, customAuthArgs, serverTimeOffset = 0, keyType } = args || {};
     const defaultModules = {
       [SHARE_TRANSFER_MODULE_NAME]: new ShareTransferModule(),
       [SHARE_SERIALIZATION_MODULE_NAME]: new ShareSerializationModule(),
@@ -54,6 +60,7 @@ class ThresholdKey extends TKey {
       modules: { ...defaultModules, ...modules },
       serviceProvider: finalServiceProvider,
       storageLayer: finalStorageLayer,
+      keyType,
     });
   }
 }
