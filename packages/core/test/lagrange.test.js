@@ -1,5 +1,4 @@
-import { KeyType, keyTypeToCurve, Polynomial } from "@tkey/common-types";
-import { generatePrivate } from "@toruslabs/eccrypto";
+import { generatePrivate, KeyType, Polynomial } from "@tkey/common-types";
 import { fail } from "assert";
 import BN from "bn.js";
 
@@ -19,9 +18,8 @@ describe("lagrange interpolate", function () {
     }
   });
   it("#should interpolate random secrets correctly", async function () {
-    const ecCurve = keyTypeToCurve(testKeyType);
     const degree = Math.ceil(Math.random() * 10);
-    const secret = new BN(generatePrivate(ecCurve));
+    const secret = new BN(generatePrivate(testKeyType));
     const poly = generateRandomPolynomial(testKeyType, degree, secret);
     const shares = [];
     const indexes = [];

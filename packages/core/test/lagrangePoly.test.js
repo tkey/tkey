@@ -1,5 +1,4 @@
-import { KeyType, Point, Polynomial } from "@tkey/common-types";
-import { generatePrivate } from "@toruslabs/eccrypto";
+import { generatePrivate, KeyType, Point, Polynomial } from "@tkey/common-types";
 import { fail } from "assert";
 import BN from "bn.js";
 
@@ -28,7 +27,7 @@ describe("lagrangeInterpolatePolynomial", function () {
     const poly = generateRandomPolynomial(testKeyType, degree);
     const pointArr = [];
     for (let i = 0; i < degree + 1; i += 1) {
-      const shareIndex = new BN(generatePrivate());
+      const shareIndex = new BN(generatePrivate(testKeyType));
       pointArr.push(new Point(shareIndex, poly.polyEval(shareIndex), testKeyType));
     }
     const resultPoly = lagrangeInterpolatePolynomial(pointArr, testKeyType);

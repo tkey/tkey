@@ -1,5 +1,4 @@
-import { KeyType, keyTypeToCurve, Point, Polynomial } from "@tkey/common-types";
-import { generatePrivate } from "@toruslabs/eccrypto";
+import { generatePrivate, KeyType, Point, Polynomial } from "@tkey/common-types";
 import { fail } from "assert";
 import BN from "bn.js";
 
@@ -25,14 +24,13 @@ describe("polyCommitmentEval", function () {
     }
   });
   it("#should polyCommitmentEval random poly correctly", async function () {
-    const ecCurve = keyTypeToCurve(testKeyType);
     const degree = Math.floor(Math.random() * (50 - 1)) + 1;
     const poly = generateRandomPolynomial(testKeyType, degree);
     const publicPoly = poly.getPublicPolynomial();
     const expectedShareCommitment = [];
     const shareCommitment = [];
     for (let i = 0; i < 10; i += 1) {
-      const shareIndex = new BN(generatePrivate(ecCurve));
+      const shareIndex = new BN(generatePrivate(testKeyType));
       expectedShareCommitment.push(Point.fromPrivate(poly.polyEval(shareIndex), testKeyType));
       shareCommitment.push(polyCommitmentEval(publicPoly.polynomialCommitments, shareIndex, testKeyType));
     }
