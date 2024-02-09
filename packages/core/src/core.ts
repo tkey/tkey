@@ -45,11 +45,11 @@ import {
   TKeyArgs,
   TkeyStoreItemType,
 } from "@tkey/common-types";
-import { keccak256 } from "@toruslabs/torus.js";
 // import nacl = require("@toruslabs/tweetnacl-js");
 import * as nacl from "@toruslabs/tweetnacl-js";
 import BN from "bn.js";
 import { ec as EllipticCurve } from "elliptic";
+import { keccak512 } from "ethereum-cryptography/keccak";
 import stringify from "json-stable-stringify";
 
 import AuthMetadata from "./authMetadata";
@@ -1180,7 +1180,8 @@ class ThresholdKey implements ITKey {
     if (this.keyType === KeyType.ed25519) {
       // hash and umod to secp256k1
       const secpCurve = keyTypeToCurve(KeyType.secp256k1);
-      encKey = new BN(keccak256(this.privKey.toBuffer())).umod(secpCurve.curve.n);
+
+      encKey = new BN(keccak512(this.privKey.toBuffer())).umod(secpCurve.curve.n);
       curve = secpCurve;
     }
     const keyPair = curve.keyFromPrivate(encKey.toBuffer());
@@ -1195,7 +1196,7 @@ class ThresholdKey implements ITKey {
     if (this.keyType === KeyType.ed25519) {
       const secpCurve = keyTypeToCurve(KeyType.secp256k1);
       // hash and umod to secp256k1
-      encKey = new BN(keccak256(this.privKey.toBuffer())).umod(secpCurve.curve.n);
+      encKey = new BN(keccak512(this.privKey.toBuffer())).umod(secpCurve.curve.n);
     }
     return decrypt(encKey.toBuffer(), encryptedMessage);
   }

@@ -19,7 +19,7 @@ import { post } from "@toruslabs/http-helpers";
 import base64url from "base64url";
 import BN from "bn.js";
 import { ec as EllipticCurve } from "elliptic";
-import { keccak256 } from "ethereum-cryptography/keccak";
+import { keccak256, keccak512 } from "ethereum-cryptography/keccak";
 import stringify from "json-stable-stringify";
 
 function signDataWithPrivKey(data: { timestamp: number }, privKey: BN, ecCurve: EllipticCurve): string {
@@ -59,7 +59,8 @@ class TorusStorageLayer implements IStorageLayer {
       let encKey = privKey;
       if (keyType === KeyType.ed25519) {
         const ecCurve = keyTypeToCurve(keyType);
-        encKey = new BN(keccak256(privKey.toBuffer())).umod(ecCurve.curve.n);
+        // for ed25519, we hash the private key and umod secp256k1 to get the encryption key
+        encKey = new BN(keccak512(privKey.toBuffer())).umod(ecCurve.curve.n);
       }
       encryptedDetails = await encrypt(encKey.toBuffer(), bufferMetadata);
     } else {
@@ -94,7 +95,8 @@ class TorusStorageLayer implements IStorageLayer {
     if (privKey) {
       let encKey = privKey;
       if (keyType === KeyType.ed25519) {
-        encKey = new BN(keccak256(privKey.toBuffer())).umod(ecCurve.curve.n);
+        // for ed25519, we hash the private key and umod secp256k1 to get the encryption key
+        encKey = new BN(keccak512(privKey.toBuffer())).umod(ecCurve.curve.n);
       }
       decrypted = await decrypt(encKey.toBuffer(), encryptedMessage);
     } else {
