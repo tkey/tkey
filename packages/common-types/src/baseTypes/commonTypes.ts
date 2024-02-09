@@ -3,8 +3,8 @@ import BN from "bn.js";
 import { curve, ec as EllipticCurve } from "elliptic";
 
 export enum KeyType {
-  "secp256k1",
-  "ed25519",
+  secp256k1 = "secp256k1",
+  ed25519 = "ed25519",
 }
 const curveED25519 = new EllipticCurve("ed25519");
 const curveSECP256K1 = new EllipticCurve("secp256k1");

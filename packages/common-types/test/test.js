@@ -20,7 +20,7 @@ describe("polynomial", function () {
 describe("Point", function () {
   it("#should encode into elliptic format on encode", async function () {
     const ecCurve = keyTypeToCurve(testKeyType);
-    const secret = generatePrivate(ecCurve);
+    const secret = generatePrivate(testKeyType);
     const point = Point.fromPrivate(secret, testKeyType);
     const result = point.toSEC1(true);
     if (result.toString().slice(2) !== point.x.toString("hex", 64)) {
@@ -29,7 +29,7 @@ describe("Point", function () {
   });
   it("#should decode into point for elliptic format compressed", async function () {
     const ecCurve = keyTypeToCurve(testKeyType);
-    const secret = generatePrivate(ecCurve);
+    const secret = generatePrivate(testKeyType);
     const point = Point.fromPrivate(secret, testKeyType);
     const result = point.toSEC1(true);
     if (result.toString().slice(2) !== point.x.toString("hex", 64)) {
@@ -45,7 +45,7 @@ describe("Point", function () {
   });
   it("#should decode into point for fromCompressedPub", async function () {
     const ecCurve = keyTypeToCurve(testKeyType);
-    const secret = generatePrivate(ecCurve);
+    const secret = generatePrivate(testKeyType);
     const point = Point.fromPrivate(secret, testKeyType);
     const result = point.toSEC1(true);
     if (result.toString().slice(2) !== point.x.toString("hex", 64)) {

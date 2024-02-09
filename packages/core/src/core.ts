@@ -154,7 +154,7 @@ class ThresholdKey implements ITKey {
 
     // switch to deserialize local metadata transition based on Object.keys() of authMetadata, ShareStore's and, IMessageMetadata
     const AuthMetadataKeys = Object.keys(
-      JSON.parse(stringify(new AuthMetadata(keyType, new Metadata(new Point("0", "0", keyType), keyType), new BN("0", "hex"))))
+      JSON.parse(stringify(new AuthMetadata(keyType, new Metadata(new Point("0", "0", keyType)), new BN("0", "hex"))))
     );
     const ShareStoreKeys = Object.keys(JSON.parse(stringify(new ShareStore(new Share("0", "0"), ""))));
     const sampleMessageMetadata: IMessageMetadata = { message: "Sample message", dateAdded: Date.now() };
@@ -535,7 +535,7 @@ class ThresholdKey implements ITKey {
     const previousPolyID = pubPoly.getPolynomialID();
     const existingShareIndexes = this.metadata.getShareIndexesForPolynomial(previousPolyID);
     const existingShareIndexesBN = existingShareIndexes.map((el) => new BN(el, "hex"));
-    const newShareIndex = new BN(generatePrivateExcludingIndexes(existingShareIndexesBN, this.ecCurve));
+    const newShareIndex = new BN(generatePrivateExcludingIndexes(existingShareIndexesBN, this.keyType));
 
     const results = await this._refreshShares(pubPoly.getThreshold(), [...existingShareIndexes, newShareIndex.toString("hex")], previousPolyID);
     const newShareStores = results.shareStores;
@@ -659,7 +659,7 @@ class ThresholdKey implements ITKey {
     delete1OutOf1?: boolean;
   } = {}): Promise<InitializeNewKeyResult> {
     if (this.keyType === KeyType.secp256k1) {
-      const tmpPriv = importedKey || generatePrivate(this.ecCurve);
+      const tmpPriv = importedKey || generatePrivate(this.keyType);
       this._setKey(new BN(tmpPriv));
     } else {
       const seed = importedKey ? importedKey.toBuffer() : nacl.randomBytes(32);
@@ -683,12 +683,12 @@ class ThresholdKey implements ITKey {
     // create a random poly and respective shares
     // 1 is defined as the serviceProvider share
     // 0 is for tKey
-    const shareIndexForDeviceStorage = generatePrivateExcludingIndexes([new BN(1), new BN(0)], this.ecCurve);
+    const shareIndexForDeviceStorage = generatePrivateExcludingIndexes([new BN(1), new BN(0)], this.keyType);
 
     const shareIndexes = [new BN(1), shareIndexForDeviceStorage];
     let poly: Polynomial;
     if (determinedShare) {
-      const shareIndexForDeterminedShare = generatePrivateExcludingIndexes([new BN(1), new BN(0)], this.ecCurve);
+      const shareIndexForDeterminedShare = generatePrivateExcludingIndexes([new BN(1), new BN(0)], this.keyType);
       poly = generateRandomPolynomial(this.keyType, 1, this.privKey, [new Share(shareIndexForDeterminedShare, determinedShare)]);
       shareIndexes.push(shareIndexForDeterminedShare);
     } else {
@@ -697,7 +697,7 @@ class ThresholdKey implements ITKey {
     const shares = poly.generateShares(shareIndexes);
 
     // create metadata to be stored
-    const metadata = new Metadata(getPubKeyPoint(this.privKey, this.keyType), this.keyType);
+    const metadata = new Metadata(Point.fromPrivate(this.privKey, this.keyType));
     metadata.addFromPolynomialAndShares(poly, shares);
     const serviceProviderShare = shares[shareIndexes[0].toString("hex")];
     const shareStore = new ShareStore(serviceProviderShare, poly.getPolynomialID());

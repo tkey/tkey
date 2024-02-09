@@ -50,7 +50,7 @@ class Metadata implements IMetadata {
 
   nonce: number;
 
-  constructor(input: Point, keyType: KeyType) {
+  constructor(input: Point) {
     this.publicPolynomials = {};
     this.publicShares = {};
     this.generalStore = {};
@@ -59,7 +59,7 @@ class Metadata implements IMetadata {
     this.pubKey = input;
     this.polyIDList = [];
     this.nonce = 0;
-    this.keyType = keyType;
+    this.keyType = input.keyType;
   }
 
   static fromJSON(value: StringifiedType): Metadata {
@@ -72,7 +72,7 @@ class Metadata implements IMetadata {
     }
 
     const point = Point.fromSEC1(pubKey, type);
-    const metadata = new Metadata(point, type);
+    const metadata = new Metadata(point);
     const unserializedPolyIDList: PolyIDAndShares[] = [];
 
     if (generalStore) metadata.generalStore = generalStore;
@@ -151,7 +151,7 @@ class Metadata implements IMetadata {
   // appends shares and public polynomial to metadata.
   // should represent a generation of share or edit of threshold
   addFromPolynomialAndShares(polynomial: Polynomial, shares: Share[] | ShareMap): void {
-    const publicPolynomial = polynomial.getPublicPolynomial(this.keyType);
+    const publicPolynomial = polynomial.getPublicPolynomial();
     const polyID = publicPolynomial.getPolynomialID();
     this.publicPolynomials[polyID] = publicPolynomial;
 

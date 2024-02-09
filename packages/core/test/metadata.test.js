@@ -1,4 +1,4 @@
-import { getPubKeyPoint } from "@tkey/common-types";
+import { KeyType, keyTypeToCurve, Point } from "@tkey/common-types";
 import { generatePrivate } from "@toruslabs/eccrypto";
 import { deepStrictEqual } from "assert";
 import BN from "bn.js";
@@ -7,24 +7,25 @@ import stringify from "json-stable-stringify";
 import { generateRandomPolynomial, Metadata } from "../src/index";
 
 const PRIVATE_KEY = generatePrivate().toString("hex");
-
+const testKeyType = KeyType.secp256k1;
 describe("Metadata", function () {
   it("#should serialize and deserialize into JSON seamlessly", async function () {
+    const ecCurve = keyTypeToCurve(testKeyType);
     const privKey = PRIVATE_KEY;
     const privKeyBN = new BN(privKey, 16);
     // create a random poly and respective shares
     const shareIndexes = [new BN(1), new BN(2)];
     for (let i = 1; i <= 2; i += 1) {
-      let ran = generatePrivate();
+      let ran = generatePrivate(ecCurve);
 
       while (ran < 2) {
-        ran = generatePrivate();
+        ran = generatePrivate(ecCurve);
       }
       shareIndexes.push(new BN(ran));
     }
-    const poly = generateRandomPolynomial(1, privKeyBN);
+    const poly = generateRandomPolynomial(testKeyType, 1, privKeyBN);
     const shares = poly.generateShares(shareIndexes);
-    const metadata = new Metadata(getPubKeyPoint(privKeyBN));
+    const metadata = new Metadata(Point.fromPrivate(privKeyBN, testKeyType));
     metadata.addFromPolynomialAndShares(poly, shares);
     metadata.setGeneralStoreDomain("something", { test: "oh this is an object" });
     const serializedMetadata = stringify(metadata);
@@ -35,20 +36,21 @@ describe("Metadata", function () {
     deepStrictEqual(deserializedMetadata2, deserializedMetadata, "metadata and deserializedMetadata should be equal");
   });
   it("#should serialize and deserialize into JSON with tkey store seamlessly", async function () {
+    const ecCurve = keyTypeToCurve(testKeyType);
     const privKey = PRIVATE_KEY;
     const privKeyBN = new BN(privKey, 16);
     // create a random poly and respective shares
     const shareIndexes = [new BN(1), new BN(2)];
     for (let i = 1; i <= 2; i += 1) {
-      let ran = generatePrivate();
+      let ran = generatePrivate(ecCurve);
       while (ran < 2) {
-        ran = generatePrivate();
+        ran = generatePrivate(ecCurve);
       }
       shareIndexes.push(new BN(ran));
     }
-    const poly = generateRandomPolynomial(1, privKeyBN);
+    const poly = generateRandomPolynomial(testKeyType, 1, privKeyBN);
     const shares = poly.generateShares(shareIndexes);
-    const metadata = new Metadata(getPubKeyPoint(privKeyBN));
+    const metadata = new Metadata(Point.fromPrivate(privKeyBN, testKeyType));
     metadata.addFromPolynomialAndShares(poly, shares);
     metadata.setTkeyStoreDomain("something", { test: "oh this is an object" });
     const serializedMetadata = stringify(metadata);
@@ -59,20 +61,21 @@ describe("Metadata", function () {
     deepStrictEqual(deserializedMetadata2, deserializedMetadata, "metadata and deserializedMetadata should be equal");
   });
   it("#should serialize and deserialize into JSON with tkey store seamlessly 2", async function () {
+    const ecCurve = keyTypeToCurve(testKeyType);
     const privKey = PRIVATE_KEY;
     const privKeyBN = new BN(privKey, 16);
     // create a random poly and respective shares
     const shareIndexes = [new BN(1), new BN(2)];
     for (let i = 1; i <= 2; i += 1) {
-      let ran = generatePrivate();
+      let ran = generatePrivate(ecCurve);
       while (ran < 2) {
-        ran = generatePrivate();
+        ran = generatePrivate(ecCurve);
       }
       shareIndexes.push(new BN(ran));
     }
-    const poly = generateRandomPolynomial(1, privKeyBN);
+    const poly = generateRandomPolynomial(testKeyType, 1, privKeyBN);
     const shares = poly.generateShares(shareIndexes);
-    const metadata = new Metadata(getPubKeyPoint(privKeyBN));
+    const metadata = new Metadata(Point.fromPrivate(privKeyBN, testKeyType));
     metadata.addFromPolynomialAndShares(poly, shares);
     metadata.setScopedStore("something", { test: "oh this is an object" });
     const serializedMetadata = stringify(metadata);
