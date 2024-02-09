@@ -1,25 +1,23 @@
-import { KeyType, keyTypeToCurve, Point } from "@tkey/common-types";
-import { generatePrivate } from "@toruslabs/eccrypto";
+import { generatePrivate, KeyType, keyTypeToCurve, Point } from "@tkey/common-types";
 import { deepStrictEqual } from "assert";
 import BN from "bn.js";
 import stringify from "json-stable-stringify";
 
 import { generateRandomPolynomial, Metadata } from "../src/index";
 
-const PRIVATE_KEY = generatePrivate().toString("hex");
 const testKeyType = KeyType.secp256k1;
+const PRIVATE_KEY = generatePrivate(testKeyType).toString("hex");
 describe("Metadata", function () {
   it("#should serialize and deserialize into JSON seamlessly", async function () {
-    const ecCurve = keyTypeToCurve(testKeyType);
     const privKey = PRIVATE_KEY;
     const privKeyBN = new BN(privKey, 16);
     // create a random poly and respective shares
     const shareIndexes = [new BN(1), new BN(2)];
     for (let i = 1; i <= 2; i += 1) {
-      let ran = generatePrivate(ecCurve);
+      let ran = generatePrivate(testKeyType);
 
       while (ran < 2) {
-        ran = generatePrivate(ecCurve);
+        ran = generatePrivate(testKeyType);
       }
       shareIndexes.push(new BN(ran));
     }
@@ -36,15 +34,14 @@ describe("Metadata", function () {
     deepStrictEqual(deserializedMetadata2, deserializedMetadata, "metadata and deserializedMetadata should be equal");
   });
   it("#should serialize and deserialize into JSON with tkey store seamlessly", async function () {
-    const ecCurve = keyTypeToCurve(testKeyType);
     const privKey = PRIVATE_KEY;
     const privKeyBN = new BN(privKey, 16);
     // create a random poly and respective shares
     const shareIndexes = [new BN(1), new BN(2)];
     for (let i = 1; i <= 2; i += 1) {
-      let ran = generatePrivate(ecCurve);
+      let ran = generatePrivate(testKeyType);
       while (ran < 2) {
-        ran = generatePrivate(ecCurve);
+        ran = generatePrivate(testKeyType);
       }
       shareIndexes.push(new BN(ran));
     }
@@ -61,15 +58,14 @@ describe("Metadata", function () {
     deepStrictEqual(deserializedMetadata2, deserializedMetadata, "metadata and deserializedMetadata should be equal");
   });
   it("#should serialize and deserialize into JSON with tkey store seamlessly 2", async function () {
-    const ecCurve = keyTypeToCurve(testKeyType);
     const privKey = PRIVATE_KEY;
     const privKeyBN = new BN(privKey, 16);
     // create a random poly and respective shares
     const shareIndexes = [new BN(1), new BN(2)];
     for (let i = 1; i <= 2; i += 1) {
-      let ran = generatePrivate(ecCurve);
+      let ran = generatePrivate(testKeyType);
       while (ran < 2) {
-        ran = generatePrivate(ecCurve);
+        ran = generatePrivate(testKeyType);
       }
       shareIndexes.push(new BN(ran));
     }

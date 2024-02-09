@@ -1,16 +1,14 @@
-import { generatePrivateExcludingIndexes, KeyType, Point } from "@tkey/common-types";
-import { generatePrivate } from "@toruslabs/eccrypto";
+import { generatePrivate, generatePrivateExcludingIndexes, KeyType, Point } from "@tkey/common-types";
 import { deepStrictEqual } from "assert";
 import BN from "bn.js";
 import stringify from "json-stable-stringify";
 
 import { AuthMetadata, generateRandomPolynomial, Metadata } from "../src/index";
 
-const PRIVATE_KEY = generatePrivate().toString("hex");
-
 describe("AuthMetadata", function () {
   it("#should authenticate and  serialize and deserialize into JSON seamlessly", async function () {
     const testKeyType = KeyType.secp256k1;
+    const PRIVATE_KEY = generatePrivate(testKeyType).toString("hex");
     const privKeyBN = new BN(PRIVATE_KEY, 16);
     // create a random poly and respective shares
     const shareIndexes = [new BN(1), new BN(2)];
@@ -30,6 +28,7 @@ describe("AuthMetadata", function () {
 
   it("#should authenticate and  serialize and deserialize into JSON seamlessly - ed25519", async function () {
     const testKeyType = KeyType.ed25519;
+    const PRIVATE_KEY = generatePrivate(testKeyType).toString("hex");
     const privKeyBN = new BN(PRIVATE_KEY, 16);
     // create a random poly and respective shares
     const shareIndexes = [new BN(1), new BN(2)];
