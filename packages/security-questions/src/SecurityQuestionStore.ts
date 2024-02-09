@@ -18,7 +18,7 @@ class SecurityQuestionStore implements ISerializable {
     this.nonce = new BN(nonce, "hex");
     this.shareIndex = new BN(shareIndex, "hex");
     this.keyType = keyType in KeyType ? keyType : KeyType.secp256k1;
-    this.sqPublicShare = new PublicShare(sqPublicShare.shareIndex, sqPublicShare.shareCommitment, keyType);
+    this.sqPublicShare = new PublicShare(sqPublicShare.shareIndex, sqPublicShare.shareCommitment, this.keyType);
     this.polynomialID = polynomialID;
     this.questions = questions;
   }
