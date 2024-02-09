@@ -34,7 +34,6 @@ describe("Metadata", function () {
     deepStrictEqual(deserializedMetadata2, deserializedMetadata, "metadata and deserializedMetadata should be equal");
   });
   it("#should serialize and deserialize into JSON with tkey store seamlessly", async function () {
-    const ecCurve = keyTypeToCurve(testKeyType);
     const privKey = PRIVATE_KEY;
     const privKeyBN = new BN(privKey, 16);
     // create a random poly and respective shares
@@ -59,7 +58,6 @@ describe("Metadata", function () {
     deepStrictEqual(deserializedMetadata2, deserializedMetadata, "metadata and deserializedMetadata should be equal");
   });
   it("#should serialize and deserialize into JSON with tkey store seamlessly 2", async function () {
-    const ecCurve = keyTypeToCurve(testKeyType);
     const privKey = PRIVATE_KEY;
     const privKeyBN = new BN(privKey, 16);
     // create a random poly and respective shares
