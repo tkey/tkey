@@ -158,7 +158,7 @@ export interface SecurityQuestionStoreArgs {
 
   questions: string;
 
-  keyType?: KeyType;
+  keyType: KeyType;
 }
 
 export interface TkeyStoreDataArgs {

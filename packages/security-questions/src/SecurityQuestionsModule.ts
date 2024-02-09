@@ -144,6 +144,7 @@ class SecurityQuestionsModule implements IModule {
       sqPublicShare: sqStore.sqPublicShare,
       shareIndex: sqStore.shareIndex,
       questions: newQuestions,
+      keyType: metadata.keyType,
     });
     metadata.setGeneralStoreDomain(this.moduleName, newSqStore);
     await this.saveAnswerOnTkeyStore(newAnswerString);
