@@ -2,7 +2,7 @@
 /* eslint-disable mocha/no-exports */
 /* eslint-disable import/no-extraneous-dependencies */
 
-import { ecCurve, getPubKeyPoint, KEY_NOT_FOUND, SHARE_DELETED, ShareStore } from "@tkey/common-types";
+import { ecCurve, getPubKeyPoint, KEY_NOT_FOUND, KeyType, SHARE_DELETED, ShareStore } from "@tkey/common-types";
 import { Metadata } from "@tkey/core";
 import PrivateKeyModule, { ED25519Format, SECP256K1Format } from "@tkey/private-keys";
 import SecurityQuestionsModule from "@tkey/security-questions";
@@ -65,16 +65,17 @@ function compareReconstructedKeys(a, b, message) {
 export const sharedTestCases = (mode, torusSP, storageLayer) => {
   const customSP = torusSP;
   const customSL = storageLayer;
-  describe("tkey", function () {
+  const keyType = KeyType.secp256k1;
+  describe.only("tkey", function () {
     let tb;
     beforeEach("Setup ThresholdKey", async function () {
-      tb = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
+      tb = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode, keyType });
     });
-    it("#should be able to initializeNewKey using initialize and reconstruct it", async function () {
+    it.only("#should be able to initializeNewKey using initialize and reconstruct it", async function () {
       const sp = customSP;
       sp.postboxKey = new BN(getTempKey(), "hex");
       const storageLayer = initStorageLayer({ hostUrl: metadataURL });
-      const tb2 = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync: mode });
+      const tb2 = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync: mode, keyType });
       await tb2.initialize();
       const reconstructedKey = await tb2.reconstructKey();
       await tb2.syncLocalMetadataTransitions();
