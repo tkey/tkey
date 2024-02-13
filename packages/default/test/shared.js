@@ -553,7 +553,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
     });
   });
 
-  describe.only(`StorageLayer, keyType ${keyType}`, function () {
+  describe(`StorageLayer, keyType ${keyType}`, function () {
     it(`#should get or set correctly, manualSync=${mode}`, async function () {
       const tsp = getServiceProvider({ type: torusSP.serviceProviderName });
       const storageLayer = initStorageLayer({ hostUrl: metadataURL });
