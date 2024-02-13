@@ -62,10 +62,10 @@ function compareReconstructedKeys(a, b, message) {
   }
 }
 
-export const sharedTestCases = (mode, torusSP, storageLayer) => {
+export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
   const customSP = torusSP;
   const customSL = storageLayer;
-  const keyType = KeyType.secp256k1;
+  // const keyType = KeyType.secp256k1;
   describe("tkey", function () {
     let tb;
     beforeEach("Setup ThresholdKey", async function () {
@@ -319,7 +319,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     });
   });
 
-  describe(`tkey share deletion, manualSync=${mode}`, function () {
+  describe(`tkey share deletion, manualSync=${mode}, keytype ${keyType}`, function () {
     let deletedShareIndex;
     let deletedShareStores;
     let shareStoreAfterDelete;
@@ -415,7 +415,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     });
   });
 
-  describe("tkey serialization/deserialization", function () {
+  describe(`tkey serialization/deserialization, keyType ${keyType}`, function () {
     let tb;
     beforeEach("Setup ThresholdKey", async function () {
       tb = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
@@ -546,7 +546,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     });
   });
 
-  describe("StorageLayer", function () {
+  describe(`StorageLayer, keyType ${keyType}`, function () {
     it(`#should get or set correctly, manualSync=${mode}`, async function () {
       const tsp = getServiceProvider({ type: torusSP.serviceProviderName });
       const storageLayer = initStorageLayer({ hostUrl: metadataURL });
@@ -580,7 +580,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     });
   });
 
-  describe("SecurityQuestionsModule", function () {
+  describe(`SecurityQuestionsModule, keyType ${keyType}`, function () {
     let tb;
     beforeEach("initialize security questions module", async function () {
       tb = new ThresholdKey({
@@ -619,7 +619,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         fail("key should be able to be reconstructed");
       }
     });
-    it(`#should be able to delete and add security questions, manualSync=${mode}`, async function () {
+    it(`#should be able to delete and add security questions, manualSync=${mode}, keyType ${keyType}`, async function () {
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
       await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
       await tb.generateNewShare();
@@ -646,7 +646,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         fail("key should be able to be reconstructed");
       }
     });
-    it(`#should be able to reconstruct key and initialize a key with security questions after refresh, manualSync=${mode}`, async function () {
+    it(`#should be able to reconstruct key and initialize a key with security questions after refresh, manualSync=${mode}, keyType ${keyType}`, async function () {
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
       await tb.modules.securityQuestions.generateNewShareWithSecurityQuestions("blublu", "who is your cat?");
       const tb2 = new ThresholdKey({
@@ -756,7 +756,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     });
   });
 
-  describe("ShareTransferModule", function () {
+  describe(`ShareTransferModule, keyType ${keyType}`, function () {
     let tb;
     beforeEach("Setup ThresholdKey", async function () {
       tb = new ThresholdKey({
@@ -871,7 +871,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     });
   });
 
-  describe("ShareSerializationModule", function () {
+  describe(`ShareSerializationModule, keyType ${keyType}`, function () {
     it(`#should be able to serialize and deserialize share, manualSync=${mode}`, async function () {
       const tb = new ThresholdKey({
         serviceProvider: customSP,
@@ -909,7 +909,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     });
   });
 
-  describe("TkeyStore", function () {
+  describe(`TkeyStore, keyType ${keyType}`, function () {
     let tb;
     let metamaskSeedPhraseFormat;
     let secp256k1Format;
@@ -1202,7 +1202,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     });
   });
 
-  describe("Tkey LocalMetadataTransition", function () {
+  describe(`Tkey LocalMetadataTransition, keyType ${keyType}`, function () {
     it("should able to get latest share from getGenericMetadataWithTransitionStates with localMetadataTransision", async function () {
       const tb = new ThresholdKey({
         serviceProvider: customSP,
@@ -1292,7 +1292,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     });
   });
 
-  describe("Lock", function () {
+  describe(`Lock, keyType ${keyType}`, function () {
     it(`#locks should fail when tkey/nonce is updated, manualSync=${mode}`, async function () {
       const tb = new ThresholdKey({ serviceProvider: customSP, manualSync: mode, storageLayer: customSL });
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
@@ -1357,7 +1357,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       }
     });
   });
-  describe("tkey error cases", function () {
+  describe(`tkey error cases, keyType ${keyType}`, function () {
     let tb;
     let resp1;
     let sandbox;
@@ -1511,7 +1511,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     });
   });
 
-  describe("OneKey", function () {
+  describe(`OneKey, keyType ${keyType}`, function () {
     if (!mode || isMocked) return;
 
     it("should be able to init tkey with 1 out of 1", async function () {
