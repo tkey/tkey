@@ -2,7 +2,7 @@
 /* eslint-disable mocha/no-exports */
 /* eslint-disable import/no-extraneous-dependencies */
 
-import { ecCurve, generatePrivate, getPubKeyPoint, KEY_NOT_FOUND, SHARE_DELETED, ShareStore } from "@tkey/common-types";
+import { generatePrivate, getPubKeyPoint, KEY_NOT_FOUND, keyTypeToCurve, SHARE_DELETED, ShareStore } from "@tkey/common-types";
 import { Metadata } from "@tkey/core";
 import PrivateKeyModule, { ED25519Format, SECP256K1Format } from "@tkey/private-keys";
 import SecurityQuestionsModule from "@tkey/security-questions";
@@ -67,7 +67,9 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
   // const keyType = KeyType.secp256k1;
   describe("tkey", function () {
     let tb;
+    let ecCurve;
     beforeEach("Setup ThresholdKey", async function () {
+      ecCurve = keyTypeToCurve(keyType);
       tb = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode, keyType });
     });
     it("#should be able to initializeNewKey using initialize and reconstruct it", async function () {
@@ -416,7 +418,9 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
 
   describe(`tkey serialization/deserialization, keyType ${keyType}`, function () {
     let tb;
+    let ecCurve;
     beforeEach("Setup ThresholdKey", async function () {
+      ecCurve = keyTypeToCurve(keyType);
       tb = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode, keyType });
     });
     it(`#should serialize and deserialize correctly without tkeyArgs, manualSync=${mode}`, async function () {
