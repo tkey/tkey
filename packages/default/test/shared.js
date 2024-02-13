@@ -1516,7 +1516,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
 
     it("should be able to init tkey with 1 out of 1", async function () {
       const postboxKeyBN = new BN(generatePrivate(), "hex");
-      const pubKeyPoint = getPubKeyPoint(postboxKeyBN);
+      const pubKeyPoint = getPubKeyPoint(postboxKeyBN, keyType);
 
       const serviceProvider = new TorusServiceProvider({
         postboxKey: postboxKeyBN.toString("hex"),
@@ -1528,6 +1528,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
           web3AuthClientId: "test",
           network: "mainnet",
         },
+        keyType,
       });
       const storageLayer2 = new TorusStorageLayer({ hostUrl: getMetadataUrl() });
 
@@ -1576,7 +1577,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
     it("should not change v1 address without a custom nonce when getOrSetNonce is called", async function () {
       // Create an existing v1 account
       const postboxKeyBN = new BN(generatePrivate(), "hex");
-      const pubKeyPoint = getPubKeyPoint(postboxKeyBN);
+      const pubKeyPoint = getPubKeyPoint(postboxKeyBN, keyType);
 
       // This test require development API, only work with local/beta env
       let metadataUrl = getMetadataUrl();
@@ -1602,6 +1603,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
           web3AuthClientId: "test",
           network: "mainnet",
         },
+        keyType,
       });
 
       const res = await getOrSetNonce(

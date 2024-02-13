@@ -8,7 +8,6 @@ import { sharedTestCases } from "./shared";
 // const MANUAL_SYNC = false;
 const metadataURL = getMetadataUrl();
 const PRIVATE_KEY = generatePrivate().toString("hex");
-const defaultSP = new ServiceProviderBase({ postboxKey: PRIVATE_KEY });
 const defaultSL = initStorageLayer({ hostUrl: metadataURL });
 const testVariables = [
   {
@@ -24,6 +23,7 @@ const testVariables = [
 testVariables.forEach((testVariable) => {
   const { keyType, MANUAL_SYNC } = testVariable;
   describe(`BaseServiceProvider with manualSync: ${MANUAL_SYNC}, keyType ${keyType}`, function () {
+    const defaultSP = new ServiceProviderBase({ postboxKey: PRIVATE_KEY, KeyType });
     // eslint-disable-next-line mocha/no-setup-in-describe
     sharedTestCases(MANUAL_SYNC, defaultSP, defaultSL, keyType);
   });
