@@ -658,20 +658,17 @@ class ThresholdKey implements ITKey {
     importedKey?: BN;
     delete1OutOf1?: boolean;
   } = {}): Promise<InitializeNewKeyResult> {
+    let seed: Uint8Array;
     if (this.keyType === KeyType.secp256k1) {
       const tmpPriv = importedKey || generatePrivate(this.keyType);
       this._setKey(new BN(tmpPriv));
     } else {
-      const seed = importedKey ? importedKey.toBuffer() : nacl.randomBytes(32);
+      seed = importedKey ? importedKey.toBuffer() : nacl.randomBytes(32);
 
       const keyPair = nacl.sign.keyPair.fromSeed(seed);
       // need to decode from le ??
       const tempPriv = new BN(keyPair.secretKey);
       this._setKey(tempPriv);
-
-      // encrypt and add to local metadata transitions
-      const encMsg = await this.encrypt(Buffer.from(seed));
-      await this.addLocalMetadataTransitions({ input: [{ message: JSON.stringify(encMsg), dateAdded: Date.now() }], privKey: [tempPriv] });
 
       // testing and checking code - to remove
       // const decMsg = await this.decrypt(encMsg);
@@ -741,6 +738,13 @@ class ThresholdKey implements ITKey {
     };
     if (determinedShare) {
       result.userShare = new ShareStore(shares[shareIndexes[2].toString("hex")], poly.getPolynomialID());
+    }
+
+    // ed25519 store seed after tkey is initialized
+    if (this.keyType === KeyType.ed25519 && seed) {
+      // encrypt and add to local metadata transitions
+      const encMsg = await this.encrypt(Buffer.from(seed));
+      await this.addLocalMetadataTransitions({ input: [{ message: JSON.stringify(encMsg), dateAdded: Date.now() }], privKey: [this.privKey] });
     }
     return result;
   }
