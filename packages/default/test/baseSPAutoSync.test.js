@@ -23,7 +23,7 @@ const testVariables = [
 testVariables.forEach((testVariable) => {
   const { keyType, MANUAL_SYNC } = testVariable;
   describe(`BaseServiceProvider with manualSync: ${MANUAL_SYNC}, keyType ${keyType}`, function () {
-    const defaultSP = new ServiceProviderBase({ postboxKey: PRIVATE_KEY, KeyType });
+    const defaultSP = new ServiceProviderBase({ postboxKey: PRIVATE_KEY, keyType });
     // eslint-disable-next-line mocha/no-setup-in-describe
     sharedTestCases(MANUAL_SYNC, defaultSP, defaultSL, keyType);
   });
