@@ -2,7 +2,7 @@
 /* eslint-disable mocha/no-exports */
 /* eslint-disable import/no-extraneous-dependencies */
 
-import { ecCurve, getPubKeyPoint, KEY_NOT_FOUND, KeyType, SHARE_DELETED, ShareStore } from "@tkey/common-types";
+import { ecCurve, generatePrivate, getPubKeyPoint, KEY_NOT_FOUND, SHARE_DELETED, ShareStore } from "@tkey/common-types";
 import { Metadata } from "@tkey/core";
 import PrivateKeyModule, { ED25519Format, SECP256K1Format } from "@tkey/private-keys";
 import SecurityQuestionsModule from "@tkey/security-questions";
@@ -10,7 +10,6 @@ import SeedPhraseModule, { MetamaskSeedPhraseFormat } from "@tkey/seed-phrase";
 import TorusServiceProvider from "@tkey/service-provider-torus";
 import ShareTransferModule from "@tkey/share-transfer";
 import TorusStorageLayer from "@tkey/storage-layer-torus";
-import { generatePrivate } from "@toruslabs/eccrypto";
 import { post } from "@toruslabs/http-helpers";
 import { getOrSetNonce, keccak256 } from "@toruslabs/torus.js";
 import { deepEqual, deepStrictEqual, equal, fail, notEqual, notStrictEqual, strict, strictEqual, throws } from "assert";
@@ -36,8 +35,8 @@ const rejects = async (fn, error, msg) => {
 
 const metadataURL = getMetadataUrl();
 
-function getTempKey() {
-  return generatePrivate().toString("hex");
+function getTempKey(keyType) {
+  return generatePrivate(keyType).toString("hex");
 }
 function compareBNArray(a, b, message) {
   if (a.length !== b.length) throw new Error(message);
@@ -73,7 +72,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
     });
     it("#should be able to initializeNewKey using initialize and reconstruct it", async function () {
       const sp = customSP;
-      sp.postboxKey = new BN(getTempKey(), "hex");
+      sp.postboxKey = new BN(getTempKey(keyType), "hex");
       const storageLayer = initStorageLayer({ hostUrl: metadataURL });
       const tb2 = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync: mode, keyType });
       await tb2.initialize();
@@ -91,8 +90,6 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
       await tb2.initialize({ neverInitializeNewKey: true });
       await tb2.inputShareStoreSafe(resp1.deviceShare);
       const reconstructedKey = await tb2.reconstructKey();
-      // eslint-disable-next-line no-console
-      console.log(resp1.privKey.toString("hex"), reconstructedKey.privKey.toString("hex"));
       if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
         fail("key should be able to be reconstructed");
       }
@@ -113,7 +110,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
       }
     });
     it(`#should be able to reconstruct key when initializing with service provider, manualSync=${mode}`, async function () {
-      const importedKey = new BN(generatePrivate());
+      const importedKey = new BN(generatePrivate(keyType));
       const resp1 = await tb._initializeNewKey({ importedKey, initializeModules: true });
       await tb.syncLocalMetadataTransitions();
 
@@ -563,7 +560,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
       deepStrictEqual(resp, message, "set and get message should be equal");
     });
     it(`#should get or set with specified private key correctly, manualSync=${mode}`, async function () {
-      const privKey = generatePrivate().toString("hex");
+      const privKey = generatePrivate(keyType).toString("hex");
       const privKeyBN = new BN(privKey, 16);
       const storageLayer = initStorageLayer({ hostUrl: metadataURL });
       const message = { test: Math.random().toString(36).substring(7) };
@@ -575,7 +572,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
       const privkeys = [];
       const messages = [];
       for (let i = 0; i < 10; i += 1) {
-        privkeys.push(new BN(generatePrivate()));
+        privkeys.push(new BN(generatePrivate(keyType)));
         messages.push({ test: Math.random().toString(36).substring(7) });
       }
       const storageLayer = initStorageLayer({ hostUrl: metadataURL });
@@ -1276,6 +1273,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
         serviceProvider: customSP,
         manualSync: true,
         storageLayer: customSL,
+        keyType,
       });
 
       await tb._initializeNewKey();
@@ -1534,7 +1532,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
     if (!mode || isMocked) return;
 
     it("should be able to init tkey with 1 out of 1", async function () {
-      const postboxKeyBN = new BN(generatePrivate(), "hex");
+      const postboxKeyBN = new BN(generatePrivate(keyType), "hex");
       const pubKeyPoint = getPubKeyPoint(postboxKeyBN, keyType);
 
       const serviceProvider = new TorusServiceProvider({
@@ -1595,7 +1593,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
 
     it("should not change v1 address without a custom nonce when getOrSetNonce is called", async function () {
       // Create an existing v1 account
-      const postboxKeyBN = new BN(generatePrivate(), "hex");
+      const postboxKeyBN = new BN(generatePrivate(keyType), "hex");
       const pubKeyPoint = getPubKeyPoint(postboxKeyBN, keyType);
 
       // This test require development API, only work with local/beta env
