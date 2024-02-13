@@ -66,12 +66,12 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
   const customSP = torusSP;
   const customSL = storageLayer;
   const keyType = KeyType.secp256k1;
-  describe.only("tkey", function () {
+  describe("tkey", function () {
     let tb;
     beforeEach("Setup ThresholdKey", async function () {
       tb = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode, keyType });
     });
-    it.only("#should be able to initializeNewKey using initialize and reconstruct it", async function () {
+    it("#should be able to initializeNewKey using initialize and reconstruct it", async function () {
       const sp = customSP;
       sp.postboxKey = new BN(getTempKey(), "hex");
       const storageLayer = initStorageLayer({ hostUrl: metadataURL });
