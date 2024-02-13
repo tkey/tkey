@@ -1,10 +1,10 @@
 import {
-  ecCurve,
   GenerateNewShareResult,
   IModule,
   isEmptyObject,
   ISQAnswerStore,
   ITKeyApi,
+  keyTypeToCurve,
   SecurityQuestionStoreArgs,
   Share,
   ShareStore,
@@ -46,6 +46,7 @@ class SecurityQuestionsModule implements IModule {
     if (oldShareStores[sqIndex] && newShareStores[sqIndex]) {
       const sqAnswer = oldShareStores[sqIndex].share.share.sub(sqStore.nonce);
       let newNonce = newShareStores[sqIndex].share.share.sub(sqAnswer);
+      const ecCurve = keyTypeToCurve(sqStore.keyType);
       newNonce = newNonce.umod(ecCurve.curve.n);
 
       return new SecurityQuestionStore({
@@ -76,6 +77,7 @@ class SecurityQuestionsModule implements IModule {
     const newShareStore = newSharesDetails.newShareStores[newSharesDetails.newShareIndex.toString("hex")];
     const userInputHash = answerToUserInputHashBN(answerString);
     let nonce = newShareStore.share.share.sub(userInputHash);
+    const ecCurve = keyTypeToCurve(metadata.keyType);
     nonce = nonce.umod(ecCurve.curve.n);
     const sqStore = new SecurityQuestionStore({
       nonce,
@@ -112,6 +114,7 @@ class SecurityQuestionsModule implements IModule {
     const sqStore = new SecurityQuestionStore(rawSqStore as SecurityQuestionStoreArgs);
     const userInputHash = answerToUserInputHashBN(answerString);
     let share = sqStore.nonce.add(userInputHash);
+    const ecCurve = keyTypeToCurve(metadata.keyType);
     share = share.umod(ecCurve.curve.n);
     const shareStore = new ShareStore(new Share(sqStore.shareIndex, share), sqStore.polynomialID);
     // validate if share is correct
@@ -136,6 +139,7 @@ class SecurityQuestionsModule implements IModule {
     const userInputHash = answerToUserInputHashBN(newAnswerString);
     const sqShare = this.tbSDK.outputShareStore(sqStore.shareIndex);
     let nonce = sqShare.share.share.sub(userInputHash);
+    const ecCurve = keyTypeToCurve(sqStore.keyType);
     nonce = nonce.umod(ecCurve.curve.n);
 
     const newSqStore = new SecurityQuestionStore({

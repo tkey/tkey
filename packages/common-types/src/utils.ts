@@ -1,7 +1,6 @@
 import { decrypt as ecDecrypt, encrypt as ecEncrypt } from "@toruslabs/eccrypto";
 import { keccak256, toChecksumAddress } from "@toruslabs/torus.js";
 import BN from "bn.js";
-import { ec as EllipticCurve } from "elliptic";
 import { serializeError } from "serialize-error";
 
 import { EncryptedMessage, KeyType, keyTypeToCurve } from "./baseTypes/commonTypes";
@@ -11,8 +10,6 @@ export const generatePrivate = (keyType: KeyType): BN => {
   const key = ecCurve.genKeyPair();
   return key.getPrivate();
 };
-
-export const ecCurve = new EllipticCurve("secp256k1");
 
 // Wrappers around ECC encrypt/decrypt to use the hex serialization
 // TODO: refactor to take BN
