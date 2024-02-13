@@ -1,18 +1,17 @@
 import {
   decrypt,
   encrypt,
-  getPubKeyECC,
-  getPubKeyPoint,
+  generatePrivate,
   IModule,
   ITKeyApi,
   ITkeyError,
   KeyType,
+  Point,
   ShareStore,
   ShareStoreMap,
   ShareTransferStorePointerArgs,
   toPrivKeyECC,
 } from "@tkey/common-types";
-import { generatePrivate } from "@toruslabs/eccrypto";
 import BN from "bn.js";
 
 import ShareTransferError from "./errors";
@@ -52,7 +51,7 @@ class ShareTransferModule implements IModule {
 
     // This is needed to avoid MIM during share deletion.
     if (numberOfNewShares <= numberOfOldShares) {
-      const shareTransferStorePointer: ShareTransferStorePointer = { pointer: new BN(generatePrivate()) };
+      const shareTransferStorePointer: ShareTransferStorePointer = { pointer: new BN(generatePrivate(KeyType.secp256k1)) };
       return shareTransferStorePointer;
     }
 
@@ -73,7 +72,7 @@ class ShareTransferModule implements IModule {
     const rawShareTransferStorePointer = metadata.getGeneralStoreDomain(this.moduleName) as ShareTransferStorePointerArgs;
     let shareTransferStorePointer: ShareTransferStorePointer;
     if (!rawShareTransferStorePointer) {
-      shareTransferStorePointer = { pointer: new BN(generatePrivate()) };
+      shareTransferStorePointer = { pointer: new BN(generatePrivate(KeyType.secp256k1)) };
       metadata.setGeneralStoreDomain(this.moduleName, shareTransferStorePointer);
       // await this.tbSDK.syncShareMetadata(); // Requires threshold shares
       // OPTIMIZATION TO NOT SYNC METADATA TWICE ON INIT, WILL FAIL IF TKEY DOES NOT HAVE MODULE AS DEFAULT
@@ -88,11 +87,12 @@ class ShareTransferModule implements IModule {
     callback?: (err?: ITkeyError, shareStore?: ShareStore) => void
   ): Promise<string> {
     if (this.currentEncKey) throw ShareTransferError.requestExists(`${this.currentEncKey.toString("hex")}`);
-    this.currentEncKey = new BN(generatePrivate());
+    this.currentEncKey = new BN(generatePrivate(KeyType.secp256k1));
     const [newShareTransferStore, userIp] = await Promise.all([this.getShareTransferStore(), getClientIp()]);
-    const encPubKeyX = getPubKeyPoint(this.currentEncKey, KeyType.secp256k1).x.toString("hex");
+    const encPubPoint = Point.fromPrivate(this.currentEncKey, KeyType.secp256k1);
+    const encPubKeyX = encPubPoint.x.toString("hex");
     newShareTransferStore[encPubKeyX] = new ShareRequest({
-      encPubKey: getPubKeyECC(this.currentEncKey),
+      encPubKey: Buffer.from(encPubPoint.toSEC1(), "hex"),
       encShareInTransit: undefined,
       availableShareIndexes,
       userAgent,
@@ -225,7 +225,7 @@ class ShareTransferModule implements IModule {
 
   async resetShareTransferStore(): Promise<void> {
     const metadata = this.tbSDK.getMetadata();
-    const shareTransferStorePointer = { pointer: new BN(generatePrivate()) };
+    const shareTransferStorePointer = { pointer: new BN(generatePrivate(KeyType.secp256k1)) };
     metadata.setGeneralStoreDomain(this.moduleName, shareTransferStorePointer);
     await this.tbSDK._syncShareMetadata();
   }
