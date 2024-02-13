@@ -375,7 +375,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
 
       const spData = await customSL.getMetadata({ serviceProvider: customSP });
       const data2 = await Promise.allSettled(shareStoresAtEpoch2.map((x) => tb.catchupToLatestShare({ shareStore: x })));
-      const data3 = await Promise.all(sharesStoresAtEpoch3.map((x) => customSL.getMetadata({ privKey: x.share.share })));
+      const data3 = await Promise.all(sharesStoresAtEpoch3.map((x) => customSL.getMetadata({ privKey: x.share.share, keyType })));
 
       deepStrictEqual(spData.message, KEY_NOT_FOUND);
 
