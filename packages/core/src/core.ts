@@ -667,7 +667,7 @@ class ThresholdKey implements ITKey {
 
       const keyPair = nacl.sign.keyPair.fromSeed(seed);
       // need to decode from le ??
-      const tempPriv = new BN(keyPair.secretKey);
+      const tempPriv = new BN(keyPair.secretKey.slice(0, 32)).umod(this.ecCurve.n);
       this._setKey(tempPriv);
 
       // testing and checking code - to remove
