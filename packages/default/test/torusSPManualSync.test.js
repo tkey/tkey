@@ -1,4 +1,4 @@
-import { generatePrivate,KeyType } from "@tkey/common-types";
+import { generatePrivate, KeyType } from "@tkey/common-types";
 import ServiceProviderTorus from "@tkey/service-provider-torus";
 
 import { getMetadataUrl, initStorageLayer } from "./helpers";
@@ -21,7 +21,7 @@ const testVariables = [
 
 testVariables.forEach((testVariable) => {
   const { keyType, MANUAL_SYNC } = testVariable;
-  describe(`TorusServiceProvider with manualSync: ${MANUAL_SYNC}, keyType ${keyType}`, function () {
+  describe.only(`TorusServiceProvider with manualSync: ${MANUAL_SYNC}, keyType ${keyType}`, function () {
     // eslint-disable-next-line mocha/no-setup-in-describe
     const PRIVATE_KEY = generatePrivate(keyType).toString("hex");
     const torusSp = new ServiceProviderTorus({

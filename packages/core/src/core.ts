@@ -113,14 +113,9 @@ class ThresholdKey implements ITKey {
     this.haveWriteMetadataLock = "";
     this.serverTimeOffset = serverTimeOffset;
 
-    // temporary: TO FIX
-    if (keyType) {
-      this.keyType = keyType;
-      this.ecCurve = new EllipticCurve(keyType.toString());
-    } else {
-      this.keyType = KeyType.secp256k1;
-      this.ecCurve = new EllipticCurve(this.keyType.toString());
-    }
+    if (!keyType) throw CoreError.default("keyType is required");
+    this.keyType = keyType;
+    this.ecCurve = keyTypeToCurve(keyType);
   }
 
   static async fromJSON(value: StringifiedType, args: TKeyArgs): Promise<ThresholdKey> {
