@@ -558,8 +558,8 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
       const tsp = getServiceProvider({ type: torusSP.serviceProviderName });
       const storageLayer = initStorageLayer({ hostUrl: metadataURL });
       const message = { test: Math.random().toString(36).substring(7) };
-      await storageLayer.setMetadata({ input: message, privKey: tsp.postboxKey, keyType: tsp.keyType });
-      const resp = await storageLayer.getMetadata({ privKey: tsp.postboxKey });
+      await storageLayer.setMetadata({ input: message, privKey: tsp.postboxKey, keyType });
+      const resp = await storageLayer.getMetadata({ privKey: tsp.postboxKey, keyType });
       deepStrictEqual(resp, message, "set and get message should be equal");
     });
     it(`#should get or set with specified private key correctly, manualSync=${mode}`, async function () {
@@ -568,7 +568,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
       const storageLayer = initStorageLayer({ hostUrl: metadataURL });
       const message = { test: Math.random().toString(36).substring(7) };
       await storageLayer.setMetadata({ input: message, privKey: privKeyBN, keyType });
-      const resp = await storageLayer.getMetadata({ privKey: privKeyBN });
+      const resp = await storageLayer.getMetadata({ privKey: privKeyBN, keyType });
       deepStrictEqual(resp, message, "set and get message should be equal");
     });
     it(`#should be able to get/set bulk correctly, manualSync=${mode}`, async function () {
@@ -579,8 +579,8 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
         messages.push({ test: Math.random().toString(36).substring(7) });
       }
       const storageLayer = initStorageLayer({ hostUrl: metadataURL });
-      await storageLayer.setMetadataStream({ input: [...messages], privKey: [...privkeys] });
-      const responses = await Promise.all(privkeys.map((el) => storageLayer.getMetadata({ privKey: el })));
+      await storageLayer.setMetadataStream({ input: [...messages], privKey: [...privkeys], keyType });
+      const responses = await Promise.all(privkeys.map((el) => storageLayer.getMetadata({ privKey: el, keyType })));
       for (let i = 0; i < 10; i += 1) {
         deepStrictEqual(responses[i], messages[i], "set and get message should be equal");
       }
