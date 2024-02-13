@@ -1,7 +1,7 @@
+import { generatePrivate } from "@tkey/common-types";
 import ServiceProviderBase from "@tkey/service-provider-base";
 import ServiceProviderTorus from "@tkey/service-provider-torus";
 import TorusStorageLayer, { MockStorageLayer } from "@tkey/storage-layer-torus";
-import { generatePrivate } from "@toruslabs/eccrypto";
 
 let mocked;
 const isNode = process.release;
@@ -27,8 +27,8 @@ export function initStorageLayer(extraParams) {
   return mocked === "true" ? new MockStorageLayer() : new TorusStorageLayer(extraParams);
 }
 
-export function getServiceProvider(params) {
-  const { type, privKeyBN, isEmptyProvider, keyType } = params;
+export function getServiceProvider(params, keyType) {
+  const { type, privKeyBN, isEmptyProvider } = params;
   const PRIVATE_KEY = privKeyBN ? privKeyBN.toString("hex") : generatePrivate(keyType).toString("hex");
   if (type === "TorusServiceProvider") {
     return new ServiceProviderTorus({
@@ -40,6 +40,7 @@ export function getServiceProvider(params) {
         web3AuthClientId: "test",
         network: "mainnet",
       },
+      keyType,
     });
   }
   return new ServiceProviderBase({ postboxKey: isEmptyProvider ? null : PRIVATE_KEY });
