@@ -185,7 +185,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
       }
     });
     it(`#should be able to not create a new key if initialize is called with neverInitializeNewKey, manualSync=${mode}`, async function () {
-      const newSP = getServiceProvider({ type: torusSP.serviceProviderName });
+      const newSP = getServiceProvider({ type: torusSP.serviceProviderName, keyType });
       const tb2 = new ThresholdKey({ serviceProvider: newSP, storageLayer: customSL, keyType });
       await rejects(async () => {
         await tb2.initialize({ neverInitializeNewKey: true });
@@ -511,14 +511,14 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
       strictEqual(finalKeyPostSerialization.privKey.toString("hex"), resp1.privKey.toString("hex"), "Incorrect serialization");
     });
     it(`#should be able to serialize and deserialize without service provider share or the postbox key, manualSync=${mode}`, async function () {
-      const customSP2 = getServiceProvider({ type: torusSP.serviceProviderName });
+      const customSP2 = getServiceProvider({ type: torusSP.serviceProviderName, keyType });
       const customSL2 = initStorageLayer({ hostUrl: metadataURL });
       const tb = new ThresholdKey({ serviceProvider: customSP2, storageLayer: customSL2, manualSync: mode, keyType });
       const resp1 = await tb._initializeNewKey({ initializeModules: true });
       const { newShareStores: newShareStores1, newShareIndex: newShareIndex1 } = await tb.generateNewShare();
       await tb.syncLocalMetadataTransitions();
 
-      const customSP3 = getServiceProvider({ type: torusSP.serviceProviderName, isEmptyProvider: true });
+      const customSP3 = getServiceProvider({ type: torusSP.serviceProviderName, isEmptyProvider: true, keyType });
       customSL2.serviceProvider = customSP3;
       const tb2 = new ThresholdKey({ serviceProvider: customSP2, storageLayer: customSL2, manualSync: mode, keyType });
       await tb2.initialize({ withShare: resp1.deviceShare });
@@ -552,7 +552,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
 
   describe(`StorageLayer, keyType ${keyType}`, function () {
     it(`#should get or set correctly, manualSync=${mode}`, async function () {
-      const tsp = getServiceProvider({ type: torusSP.serviceProviderName });
+      const tsp = getServiceProvider({ type: torusSP.serviceProviderName, keyType });
       const storageLayer = initStorageLayer({ hostUrl: metadataURL });
       const message = { test: Math.random().toString(36).substring(7) };
       await storageLayer.setMetadata({ input: message, privKey: tsp.postboxKey, keyType });

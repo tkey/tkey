@@ -28,8 +28,8 @@ export function initStorageLayer(extraParams) {
 }
 
 export function getServiceProvider(params) {
-  const { type, privKeyBN, isEmptyProvider } = params;
-  const PRIVATE_KEY = privKeyBN ? privKeyBN.toString("hex") : generatePrivate().toString("hex");
+  const { type, privKeyBN, isEmptyProvider, keyType } = params;
+  const PRIVATE_KEY = privKeyBN ? privKeyBN.toString("hex") : generatePrivate(keyType).toString("hex");
   if (type === "TorusServiceProvider") {
     return new ServiceProviderTorus({
       postboxKey: isEmptyProvider ? null : PRIVATE_KEY,
