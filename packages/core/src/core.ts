@@ -349,8 +349,6 @@ class ThresholdKey implements ITKey {
     try {
       shareMetadata = await this.getAuthMetadata({ privKey: shareStore.share.share, includeLocalMetadataTransitions });
     } catch (error: unknown) {
-      // eslint-disable-next-line no-console
-      console.log("shareStore", shareStore);
       // delete share error
       const err = error as Error & { code?: number };
       if ((err as CoreError) && err.code === 1308) {
