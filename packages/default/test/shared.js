@@ -551,7 +551,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
       const tsp = getServiceProvider({ type: torusSP.serviceProviderName });
       const storageLayer = initStorageLayer({ hostUrl: metadataURL });
       const message = { test: Math.random().toString(36).substring(7) };
-      await storageLayer.setMetadata({ input: message, privKey: tsp.postboxKey });
+      await storageLayer.setMetadata({ input: message, privKey: tsp.postboxKey, keyType: tsp.keyType });
       const resp = await storageLayer.getMetadata({ privKey: tsp.postboxKey });
       deepStrictEqual(resp, message, "set and get message should be equal");
     });
@@ -560,7 +560,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
       const privKeyBN = new BN(privKey, 16);
       const storageLayer = initStorageLayer({ hostUrl: metadataURL });
       const message = { test: Math.random().toString(36).substring(7) };
-      await storageLayer.setMetadata({ input: message, privKey: privKeyBN });
+      await storageLayer.setMetadata({ input: message, privKey: privKeyBN, keyType });
       const resp = await storageLayer.getMetadata({ privKey: privKeyBN });
       deepStrictEqual(resp, message, "set and get message should be equal");
     });
