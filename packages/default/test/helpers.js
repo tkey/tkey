@@ -43,5 +43,5 @@ export function getServiceProvider(params, keyType) {
       keyType,
     });
   }
-  return new ServiceProviderBase({ postboxKey: isEmptyProvider ? null : PRIVATE_KEY });
+  return new ServiceProviderBase({ postboxKey: isEmptyProvider ? null : PRIVATE_KEY, keyType });
 }

@@ -16,7 +16,7 @@ class ThresholdKey extends TKey {
     let finalServiceProvider: IServiceProvider;
     let finalStorageLayer: IStorageLayer;
     if (!serviceProvider) {
-      finalServiceProvider = new TorusServiceProvider({ customAuthArgs });
+      finalServiceProvider = new TorusServiceProvider({ customAuthArgs, keyType });
     } else {
       finalServiceProvider = serviceProvider;
     }
@@ -46,7 +46,7 @@ class ThresholdKey extends TKey {
       serviceProvider ||
       TorusServiceProvider.fromJSON(tempOldServiceProvider) ||
       ServiceProviderBase.fromJSON(tempOldServiceProvider) ||
-      new TorusServiceProvider({ customAuthArgs });
+      new TorusServiceProvider({ customAuthArgs, keyType });
 
     tempOldStorageLayer.serviceProvider = finalServiceProvider;
     const finalStorageLayer: IStorageLayer =
