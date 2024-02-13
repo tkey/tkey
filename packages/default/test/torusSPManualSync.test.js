@@ -1,3 +1,4 @@
+import { KeyType } from "@tkey/common-types";
 import ServiceProviderTorus from "@tkey/service-provider-torus";
 import { generatePrivate } from "@toruslabs/eccrypto";
 
@@ -17,8 +18,21 @@ const metadataURL = getMetadataUrl();
 
 const torusSL = initStorageLayer({ hostUrl: metadataURL });
 
-const MANUAL_SYNC = true;
-describe(`TorusServiceProvider with manualSync: ${MANUAL_SYNC}`, function () {
-  // eslint-disable-next-line mocha/no-setup-in-describe
-  sharedTestCases(MANUAL_SYNC, torusSp, torusSL);
+const testVariables = [
+  {
+    keyType: KeyType.secp256k1,
+    MANUAL_SYNC: true,
+  },
+  {
+    keyType: KeyType.ed25519,
+    MANUAL_SYNC: true,
+  },
+];
+
+testVariables.forEach((testVariable) => {
+  const { keyType, MANUAL_SYNC } = testVariable;
+  describe(`TorusServiceProvider with manualSync: ${MANUAL_SYNC}, keyType ${keyType}`, function () {
+    // eslint-disable-next-line mocha/no-setup-in-describe
+    sharedTestCases(MANUAL_SYNC, torusSp, torusSL, keyType);
+  });
 });
