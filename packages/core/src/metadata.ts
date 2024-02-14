@@ -1,6 +1,7 @@
 import {
   decrypt,
   EncryptedMessage,
+  getEncryptionPrivateKey,
   getPubKeyPoint,
   IMetadata,
   KeyType,
@@ -183,7 +184,7 @@ class Metadata implements IMetadata {
     }
 
     // check for keyType
-    const rawDecrypted = await decrypt(shareStore.share.share, encryptedShare as EncryptedMessage, this.keyType);
+    const rawDecrypted = await decrypt(getEncryptionPrivateKey(shareStore.share.share, this.keyType), encryptedShare as EncryptedMessage);
     return ShareStore.fromJSON(JSON.parse(rawDecrypted.toString()));
   }
 

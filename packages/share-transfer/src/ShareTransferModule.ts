@@ -1,6 +1,8 @@
 import {
-  EncryptedMessage,
+  decrypt,
+  encrypt,
   generatePrivate,
+  getEncryptionPrivateKey,
   IModule,
   ITKeyApi,
   ITkeyError,
@@ -9,9 +11,7 @@ import {
   ShareStore,
   ShareStoreMap,
   ShareTransferStorePointerArgs,
-  toPrivKeyECC,
 } from "@tkey/common-types";
-import { decrypt as ecDecrypt, encrypt as ecEncrypt } from "@toruslabs/eccrypto";
 import BN from "bn.js";
 
 import ShareTransferError from "./errors";
@@ -108,8 +108,8 @@ class ShareTransferModule implements IModule {
             const latestShareTransferStore = await this.getShareTransferStore();
             if (!this.currentEncKey) throw ShareTransferError.missingEncryptionKey();
             if (latestShareTransferStore[encPubKeyX].encShareInTransit) {
-              const shareStoreBuf = await this.decrypt(
-                toPrivKeyECC(this.currentEncKey, KeyType.secp256k1),
+              const shareStoreBuf = await decrypt(
+                getEncryptionPrivateKey(this.currentEncKey, KeyType.secp256k1),
                 latestShareTransferStore[encPubKeyX].encShareInTransit
               );
               const receivedShare = ShareStore.fromJSON(JSON.parse(shareStoreBuf.toString()));
@@ -162,7 +162,7 @@ class ShareTransferModule implements IModule {
       bufferedShare = Buffer.from(JSON.stringify(share));
     }
     const shareRequest = new ShareRequest(shareTransferStore[encPubKeyX]);
-    shareTransferStore[encPubKeyX].encShareInTransit = await this.encrypt(shareRequest.encPubKey, bufferedShare);
+    shareTransferStore[encPubKeyX].encShareInTransit = await encrypt(shareRequest.encPubKey, bufferedShare);
     await this.setShareTransferStore(shareTransferStore);
     this.currentEncKey = undefined;
   }
@@ -198,8 +198,8 @@ class ShareTransferModule implements IModule {
               this._cleanUpCurrentRequest();
               reject(ShareTransferError.userCancelledRequest());
             } else if (latestShareTransferStore[encPubKeyX].encShareInTransit) {
-              const shareStoreBuf = await this.decrypt(
-                toPrivKeyECC(this.currentEncKey, KeyType.secp256k1),
+              const shareStoreBuf = await decrypt(
+                getEncryptionPrivateKey(this.currentEncKey, KeyType.secp256k1),
                 latestShareTransferStore[encPubKeyX].encShareInTransit
               );
               const receivedShare = ShareStore.fromJSON(JSON.parse(shareStoreBuf.toString()));
@@ -234,26 +234,6 @@ class ShareTransferModule implements IModule {
     const shareTransferStorePointer = { pointer: new BN(generatePrivate(KeyType.secp256k1)) };
     metadata.setGeneralStoreDomain(this.moduleName, shareTransferStorePointer);
     await this.tbSDK._syncShareMetadata();
-  }
-
-  async encrypt(publicKey: Buffer, msg: Buffer): Promise<EncryptedMessage> {
-    const encryptedDetails = await ecEncrypt(publicKey, msg);
-    return {
-      ciphertext: encryptedDetails.ciphertext.toString("hex"),
-      ephemPublicKey: encryptedDetails.ephemPublicKey.toString("hex"),
-      iv: encryptedDetails.iv.toString("hex"),
-      mac: encryptedDetails.mac.toString("hex"),
-    };
-  }
-
-  async decrypt(privKey: Buffer, msg: EncryptedMessage): Promise<Buffer> {
-    const bufferEncDetails = {
-      ciphertext: Buffer.from(msg.ciphertext, "hex"),
-      ephemPublicKey: Buffer.from(msg.ephemPublicKey, "hex"),
-      iv: Buffer.from(msg.iv, "hex"),
-      mac: Buffer.from(msg.mac, "hex"),
-    };
-    return ecDecrypt(privKey, bufferEncDetails);
   }
 
   private _cleanUpCurrentRequest(): void {

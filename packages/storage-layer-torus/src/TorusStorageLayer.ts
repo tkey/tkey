@@ -2,6 +2,8 @@ import {
   decrypt,
   encrypt,
   EncryptedMessage,
+  getEncryptionPrivateKey,
+  getEncryptionPublicKey,
   IServiceProvider,
   IStorageLayer,
   KEY_NOT_FOUND,
@@ -57,7 +59,8 @@ class TorusStorageLayer implements IStorageLayer {
     let encryptedDetails: EncryptedMessage;
     if (privKey) {
       const encKey = privKey;
-      encryptedDetails = await encrypt(encKey, bufferMetadata, keyType);
+      const encryptionPubKey = getEncryptionPublicKey(encKey, keyType);
+      encryptedDetails = await encrypt(encryptionPubKey, bufferMetadata);
     } else {
       encryptedDetails = await serviceProvider.encrypt(bufferMetadata, keyType);
     }
@@ -88,7 +91,7 @@ class TorusStorageLayer implements IStorageLayer {
     let decrypted: Buffer;
     if (privKey) {
       const encKey = privKey;
-      decrypted = await decrypt(encKey, encryptedMessage, keyType);
+      decrypted = await decrypt(getEncryptionPrivateKey(encKey, keyType), encryptedMessage);
     } else {
       decrypted = await serviceProvider.decrypt(encryptedMessage, keyType);
     }

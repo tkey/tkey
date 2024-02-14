@@ -9,6 +9,8 @@ import {
   GenerateNewShareResult,
   generatePrivate,
   generatePrivateExcludingIndexes,
+  getEncryptionPrivateKey,
+  getEncryptionPublicKey,
   getPubKeyPoint,
   IMessageMetadata,
   IMetadata,
@@ -591,7 +593,8 @@ class ThresholdKey implements ITKey {
     const sharesToPush = await Promise.all(
       shareIndexesNeedingEncryption.map(async (shareIndex) => {
         const oldShare = oldPoly.polyEval(new BN(shareIndex, "hex"));
-        const encryptedShare = await encrypt(oldShare, Buffer.from(JSON.stringify(newShareStores[shareIndex])), this.metadata.keyType);
+        const encryptionPubKey = getEncryptionPublicKey(oldShare, this.metadata.keyType);
+        const encryptedShare = await encrypt(encryptionPubKey, Buffer.from(JSON.stringify(newShareStores[shareIndex])));
         newScopedStore[getPubKeyPoint(oldShare, this.keyType).x.toString("hex")] = encryptedShare;
         oldShareStores[shareIndex] = new ShareStore(new Share(shareIndex, oldShare), previousPolyID);
         return oldShare;
@@ -1158,14 +1161,15 @@ class ThresholdKey implements ITKey {
     if (!this.privKey) throw CoreError.privateKeyUnavailable();
 
     const encKey: BN = this.privKey;
-    return encrypt(encKey, data, this.keyType);
+    const encryptionPubKey = getEncryptionPublicKey(encKey, this.metadata.keyType);
+    return encrypt(encryptionPubKey, data);
   }
 
   async decrypt(encryptedMessage: EncryptedMessage): Promise<Buffer> {
     if (!this.privKey) throw CoreError.privateKeyUnavailable();
     // depend
     const encKey: BN = this.privKey;
-    return decrypt(encKey, encryptedMessage, this.keyType);
+    return decrypt(getEncryptionPrivateKey(encKey, this.keyType), encryptedMessage);
   }
 
   async _setTKeyStoreItem(moduleName: string, data: TkeyStoreItemType): Promise<void> {

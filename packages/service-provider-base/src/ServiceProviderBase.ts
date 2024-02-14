@@ -3,6 +3,8 @@ import {
   decrypt as decryptUtils,
   encrypt as encryptUtils,
   EncryptedMessage,
+  getEncryptionPrivateKey,
+  getEncryptionPublicKey,
   getPubKeyECC,
   IServiceProvider,
   KeyType,
@@ -39,11 +41,12 @@ class ServiceProviderBase implements IServiceProvider {
   }
 
   async encrypt(msg: Buffer): Promise<EncryptedMessage> {
-    return encryptUtils(this.postboxKey, msg, this.keyType);
+    const encryptionPubKey = getEncryptionPublicKey(this.postboxKey, this.keyType);
+    return encryptUtils(encryptionPubKey, msg);
   }
 
   async decrypt(msg: EncryptedMessage): Promise<Buffer> {
-    return decryptUtils(this.postboxKey, msg, this.keyType);
+    return decryptUtils(getEncryptionPrivateKey(this.postboxKey, this.keyType), msg);
   }
 
   retrievePubKeyPoint(): curve.base.BasePoint {
