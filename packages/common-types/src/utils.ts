@@ -1,6 +1,7 @@
 import { decrypt as ecDecrypt, encrypt as ecEncrypt } from "@toruslabs/eccrypto";
-import { keccak256, toChecksumAddress } from "@toruslabs/torus.js";
+import { toChecksumAddress } from "@toruslabs/torus.js";
 import BN from "bn.js";
+import { keccak256 } from "ethereum-cryptography/keccak";
 import { serializeError } from "serialize-error";
 
 import { EncryptedMessage, KeyType, keyTypeToCurve } from "./baseTypes/commonTypes";
@@ -9,6 +10,12 @@ export const generatePrivate = (keyType: KeyType): BN => {
   const ecCurve = keyTypeToCurve(keyType);
   const key = ecCurve.genKeyPair();
   return key.getPrivate();
+};
+
+export const ed25519ToSecp256k1 = (privateKey: BN): BN => {
+  const hashedPrivateKey = keccak256(privateKey.toBuffer());
+  const curveN = keyTypeToCurve(KeyType.ed25519).n;
+  return new BN(hashedPrivateKey).umod(curveN);
 };
 
 // Wrappers around ECC encrypt/decrypt to use the hex serialization

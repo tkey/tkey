@@ -21,7 +21,7 @@ class TorusServiceProvider extends ServiceProviderBase {
   customAuthArgs: CustomAuthArgs;
 
   constructor({ enableLogging = false, postboxKey, customAuthArgs, keyType }: TorusServiceProviderArgs) {
-    super({ enableLogging, postboxKey });
+    super({ enableLogging, postboxKey, keyType });
     this.customAuthArgs = customAuthArgs;
     this.customAuthInstance = new CustomAuth(customAuthArgs);
     this.serviceProviderName = "TorusServiceProvider";
