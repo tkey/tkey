@@ -15,7 +15,7 @@ export const generatePrivate = (keyType: KeyType): BN => {
 
 export const ed25519ToSecp256k1 = (privateKey: BN): BN => {
   const hashedPrivateKey = keccak256(privateKey.toBuffer());
-  const curveN = keyTypeToCurve(KeyType.ed25519).n;
+  const curveN = keyTypeToCurve(KeyType.secp256k1).n;
   return new BN(hashedPrivateKey).umod(curveN);
 };
 
@@ -49,7 +49,7 @@ export async function keyTypeEncrypt(privateKey: Buffer, msg: Buffer, keyType: K
   if (keyType === KeyType.ed25519) {
     encKey = ed25519ToSecp256k1(new BN(privateKey)).toBuffer();
   }
-  const publicKey = ecCurve.keyFromPrivate(encKey).getPublic().encode("array", false);
+  const publicKey = ecCurve.keyFromPrivate(encKey).getPublic().encode("array", true);
   return encrypt(Buffer.from(publicKey), msg);
 }
 
