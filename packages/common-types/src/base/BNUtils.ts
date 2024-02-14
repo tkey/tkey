@@ -1,12 +1,12 @@
 import BN from "bn.js";
 import { curve, ec as EllipticCurve } from "elliptic";
 
-import { BNString, KeyType } from "../baseTypes/commonTypes";
+import { BNString, KeyType, keyTypeToCurve } from "../baseTypes/commonTypes";
 import { Point } from "./Point";
 
 // These functions are here because BN can't be extended
 export const toPrivKeyEC = (bn: BN, keyType: KeyType): EllipticCurve.KeyPair => {
-  const ec = new EllipticCurve(keyType.toString());
+  const ec = keyTypeToCurve(keyType);
   const key = ec.keyFromPrivate(bn.toString("hex", 64), "hex");
   return key;
 };
