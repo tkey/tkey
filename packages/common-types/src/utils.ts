@@ -2,6 +2,7 @@ import { decrypt as ecDecrypt, encrypt as ecEncrypt } from "@toruslabs/eccrypto"
 import { toChecksumAddress } from "@toruslabs/torus.js";
 import BN from "bn.js";
 import { keccak256 } from "ethereum-cryptography/keccak";
+// import { keccak512 } from "ethereum-cryptography/keccak";
 import { serializeError } from "serialize-error";
 
 import { EncryptedMessage, KeyType, keyTypeToCurve } from "./baseTypes/commonTypes";
@@ -40,6 +41,24 @@ export async function decrypt(privKey: Buffer, msg: EncryptedMessage): Promise<B
   };
 
   return ecDecrypt(privKey, bufferEncDetails);
+}
+
+export async function keyTypeEncrypt(privateKey: Buffer, msg: Buffer, keyType: KeyType): Promise<EncryptedMessage> {
+  const ecCurve = keyTypeToCurve(KeyType.secp256k1);
+  let encKey = privateKey;
+  if (keyType === KeyType.ed25519) {
+    encKey = ed25519ToSecp256k1(new BN(privateKey)).toBuffer();
+  }
+  const publicKey = ecCurve.keyFromPrivate(encKey).getPublic().encode("array", false);
+  return encrypt(Buffer.from(publicKey), msg);
+}
+
+export async function keyTypeDecrypt(privateKey: Buffer, msg: EncryptedMessage, keyType: KeyType): Promise<Buffer> {
+  let encKey = privateKey;
+  if (keyType === KeyType.ed25519) {
+    encKey = ed25519ToSecp256k1(new BN(privateKey)).toBuffer();
+  }
+  return decrypt(encKey, msg);
 }
 
 export function isEmptyObject(obj: unknown): boolean {

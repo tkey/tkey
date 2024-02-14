@@ -1,15 +1,12 @@
 import {
   BNString,
   CatchupToLatestShareResult,
-  decrypt,
   DeleteShareResult,
-  encrypt,
   EncryptedMessage,
   FromJSONConstructor,
   GenerateNewShareResult,
   generatePrivate,
   generatePrivateExcludingIndexes,
-  getPubKeyECC,
   getPubKeyPoint,
   IMessageMetadata,
   IMetadata,
@@ -21,6 +18,8 @@ import {
   KEY_NOT_FOUND,
   KeyDetails,
   KeyType,
+  keyTypeDecrypt,
+  keyTypeEncrypt,
   keyTypeToCurve,
   LocalMetadataTransitions,
   LocalTransitionData,
@@ -49,7 +48,6 @@ import {
 import * as nacl from "@toruslabs/tweetnacl-js";
 import BN from "bn.js";
 import { ec as EllipticCurve } from "elliptic";
-import { keccak512 } from "ethereum-cryptography/keccak";
 import stringify from "json-stable-stringify";
 
 import AuthMetadata from "./authMetadata";
@@ -595,7 +593,8 @@ class ThresholdKey implements ITKey {
     const sharesToPush = await Promise.all(
       shareIndexesNeedingEncryption.map(async (shareIndex) => {
         const oldShare = oldPoly.polyEval(new BN(shareIndex, "hex"));
-        const encryptedShare = await encrypt(getPubKeyECC(oldShare), Buffer.from(JSON.stringify(newShareStores[shareIndex])));
+        // use secp key for encryption
+        const encryptedShare = await keyTypeEncrypt(oldShare.toBuffer(), Buffer.from(JSON.stringify(newShareStores[shareIndex])), this.keyType);
         newScopedStore[getPubKeyPoint(oldShare, this.keyType).x.toString("hex")] = encryptedShare;
         oldShareStores[shareIndex] = new ShareStore(new Share(shareIndex, oldShare), previousPolyID);
         return oldShare;
@@ -1176,30 +1175,33 @@ class ThresholdKey implements ITKey {
   async encrypt(data: Buffer): Promise<EncryptedMessage> {
     if (!this.privKey) throw CoreError.privateKeyUnavailable();
 
-    let encKey: BN = this.privKey;
-    let curve = this.ecCurve;
-    if (this.keyType === KeyType.ed25519) {
-      // hash and umod to secp256k1
-      const secpCurve = keyTypeToCurve(KeyType.secp256k1);
+    return keyTypeEncrypt(this.privKey.toBuffer(), data, this.keyType);
+    // let encKey: BN = this.privKey;
+    // let curve = this.ecCurve;
+    // if (this.keyType === KeyType.ed25519) {
+    //   // hash and umod to secp256k1
+    //   const secpCurve = keyTypeToCurve(KeyType.secp256k1);
 
-      encKey = new BN(keccak512(this.privKey.toBuffer())).umod(secpCurve.curve.n);
-      curve = secpCurve;
-    }
-    const keyPair = curve.keyFromPrivate(encKey.toBuffer());
-    const publicKey = keyPair.getPublic(false, "hex");
-    return encrypt(Buffer.from(publicKey, "hex"), data);
+    //   encKey = new BN(keccak512(this.privKey.toBuffer())).umod(secpCurve.curve.n);
+    //   curve = secpCurve;
+    // }
+    // const keyPair = curve.keyFromPrivate(encKey.toBuffer());
+    // const publicKey = keyPair.getPublic(false, "hex");
+    // return encrypt(Buffer.from(publicKey, "hex"), data);
   }
 
   async decrypt(encryptedMessage: EncryptedMessage): Promise<Buffer> {
     if (!this.privKey) throw CoreError.privateKeyUnavailable();
+
+    return keyTypeDecrypt(this.privKey.toBuffer(), encryptedMessage, this.keyType);
     // depend
-    let encKey: BN = this.privKey;
-    if (this.keyType === KeyType.ed25519) {
-      const secpCurve = keyTypeToCurve(KeyType.secp256k1);
-      // hash and umod to secp256k1
-      encKey = new BN(keccak512(this.privKey.toBuffer())).umod(secpCurve.curve.n);
-    }
-    return decrypt(encKey.toBuffer(), encryptedMessage);
+    // let encKey: BN = this.privKey;
+    // if (this.keyType === KeyType.ed25519) {
+    //   const secpCurve = keyTypeToCurve(KeyType.secp256k1);
+    //   // hash and umod to secp256k1
+    //   encKey = new BN(keccak512(this.privKey.toBuffer())).umod(secpCurve.curve.n);
+    // }
+    // return decrypt(encKey.toBuffer(), encryptedMessage);
   }
 
   async _setTKeyStoreItem(moduleName: string, data: TkeyStoreItemType): Promise<void> {

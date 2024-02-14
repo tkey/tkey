@@ -1,18 +1,16 @@
 import {
   BNString,
-  decrypt as decryptUtils,
-  ed25519ToSecp256k1,
-  encrypt as encryptUtils,
   EncryptedMessage,
   getPubKeyECC,
   IServiceProvider,
   KeyType,
+  keyTypeDecrypt,
+  keyTypeEncrypt,
   keyTypeToCurve,
   PubKeyType,
   ServiceProviderArgs,
   StringifiedType,
   toPrivKeyEC,
-  toPrivKeyECC,
 } from "@tkey/common-types";
 import BN from "bn.js";
 import { curve } from "elliptic";
@@ -46,22 +44,24 @@ class ServiceProviderBase implements IServiceProvider {
   }
 
   async encrypt(msg: Buffer): Promise<EncryptedMessage> {
-    if (this.keyType === KeyType.ed25519) {
-      const scCurve = keyTypeToCurve(KeyType.secp256k1);
-      const scKey = ed25519ToSecp256k1(this.postboxKey);
-      const pk = scCurve.keyFromPrivate(scKey.toBuffer()).getPublic().encode("hex", true);
-      return encryptUtils(Buffer.from(pk, "hex"), msg);
-    }
-    const publicKey = this.retrievePubKey("ecc");
-    return encryptUtils(publicKey, msg);
+    // if (this.keyType === KeyType.ed25519) {
+    //   const scCurve = keyTypeToCurve(KeyType.secp256k1);
+    //   const scKey = ed25519ToSecp256k1(this.postboxKey);
+    //   const pk = scCurve.keyFromPrivate(scKey.toBuffer()).getPublic().encode("hex", true);
+    //   return encryptUtils(Buffer.from(pk, "hex"), msg);
+    // }
+    // const publicKey = this.retrievePubKey("ecc");
+    // return encryptUtils(publicKey, msg);
+    return keyTypeEncrypt(this.postboxKey.toBuffer(), msg, this.keyType);
   }
 
   async decrypt(msg: EncryptedMessage): Promise<Buffer> {
-    if (this.keyType === KeyType.ed25519) {
-      const scKey = ed25519ToSecp256k1(this.postboxKey);
-      return decryptUtils(scKey.toBuffer(), msg);
-    }
-    return decryptUtils(toPrivKeyECC(this.postboxKey), msg);
+    // if (this.keyType === KeyType.ed25519) {
+    //   const scKey = ed25519ToSecp256k1(this.postboxKey);
+    //   return decryptUtils(scKey.toBuffer(), msg);
+    // }
+    // return decryptUtils(toPrivKeyECC(this.postboxKey), msg);
+    return keyTypeDecrypt(this.postboxKey.toBuffer(), msg, this.keyType);
   }
 
   retrievePubKeyPoint(): curve.base.BasePoint {
