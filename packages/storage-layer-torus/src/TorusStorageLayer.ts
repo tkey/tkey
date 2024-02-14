@@ -58,7 +58,7 @@ class TorusStorageLayer implements IStorageLayer {
     if (privKey) {
       let encKey = privKey;
       if (keyType === KeyType.ed25519) {
-        const ecCurve = keyTypeToCurve(keyType);
+        const ecCurve = keyTypeToCurve(KeyType.secp256k1);
         // for ed25519, we hash the private key and umod secp256k1 to get the encryption key
         encKey = new BN(keccak512(privKey.toBuffer())).umod(ecCurve.curve.n);
       }
@@ -82,7 +82,6 @@ class TorusStorageLayer implements IStorageLayer {
    */
   async getMetadata<T>(params: { serviceProvider?: IServiceProvider; privKey?: BN; keyType: KeyType }): Promise<T> {
     const { serviceProvider, privKey, keyType } = params;
-    const ecCurve = keyTypeToCurve(keyType);
     const keyDetails = this.generateMetadataParams({}, keyType, serviceProvider, privKey);
     const metadataResponse = await post<{ message: string }>(`${this.hostUrl}/get`, keyDetails);
     // returns empty object if object
@@ -95,6 +94,7 @@ class TorusStorageLayer implements IStorageLayer {
     if (privKey) {
       let encKey = privKey;
       if (keyType === KeyType.ed25519) {
+        const ecCurve = keyTypeToCurve(KeyType.secp256k1);
         // for ed25519, we hash the private key and umod secp256k1 to get the encryption key
         encKey = new BN(keccak512(privKey.toBuffer())).umod(ecCurve.curve.n);
       }
@@ -142,6 +142,11 @@ class TorusStorageLayer implements IStorageLayer {
   }): Promise<{ message: string }> {
     try {
       const { serviceProvider, privKey, input, keyType } = params;
+      /* eslint-disable no-console */
+      console.log("params");
+      console.log(params);
+      /* eslint-enable no-console */
+
       const newInput = input;
       const finalMetadataParams = await Promise.all(
         newInput.map(async (el, i) =>
@@ -153,11 +158,21 @@ class TorusStorageLayer implements IStorageLayer {
           )
         )
       );
+      /* eslint-disable no-console */
+      console.log("finalMetadataParams");
+      console.log(finalMetadataParams);
+      /* eslint-enable no-console */
 
+      /* eslint-disable no-console */
+      console.log("start serialize");
+      /* eslint-enable no-console */
       const FD = new FormData();
       finalMetadataParams.forEach((el, index) => {
         FD.append(index.toString(), JSON.stringify(el));
       });
+      /* eslint-disable no-console */
+      console.log("end serialize");
+      /* eslint-enable no-console */
       const options: RequestInit = {
         mode: "cors",
         method: "POST",
@@ -170,6 +185,9 @@ class TorusStorageLayer implements IStorageLayer {
         isUrlEncodedData: true,
         timeout: 600 * 1000, // 10 mins of timeout for excessive shares case
       };
+      /* eslint-disable no-console */
+      console.log("posting");
+      /* eslint-enable no-console */
       return await post<{ message: string }>(`${this.hostUrl}/bulk_set_stream`, FD, options, customOptions);
     } catch (error) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -203,6 +221,9 @@ class TorusStorageLayer implements IStorageLayer {
 
     const hash = keccak256(Buffer.from(stringify(setTKeyStore), "utf8"));
     if (privKey) {
+      /* eslint-disable no-console */
+      console.log("Private Key");
+      /* eslint-enable no-console */
       const ecCurve = keyTypeToCurve(keyType);
       const signKeyPair = ecCurve.keyFromPrivate(privKey.toBuffer());
       const unparsedSig = signKeyPair.sign(hash);
@@ -211,6 +232,10 @@ class TorusStorageLayer implements IStorageLayer {
       pubX = pubK.getX().toString("hex");
       pubY = pubK.getY().toString("hex");
     } else {
+      /* eslint-disable no-console */
+      console.log("Service Provider");
+      console.log(serviceProvider);
+      /* eslint-enable no-console */
       const point = serviceProvider.retrievePubKeyPoint();
       sig = serviceProvider.sign(new BN(hash));
       pubX = point.getX().toString("hex");

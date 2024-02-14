@@ -1,4 +1,4 @@
-import { KeyType, generatePrivate } from "@tkey/common-types";
+import { generatePrivate, KeyType } from "@tkey/common-types";
 import ServiceProviderTorus from "@tkey/service-provider-torus";
 
 import { getMetadataUrl, initStorageLayer } from "./helpers";

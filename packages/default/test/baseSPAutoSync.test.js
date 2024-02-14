@@ -1,6 +1,5 @@
-import { KeyType } from "@tkey/common-types";
+import { generatePrivate, KeyType } from "@tkey/common-types";
 import { ServiceProviderBase } from "@tkey/service-provider-base";
-import { generatePrivate } from "@toruslabs/eccrypto";
 
 import { getMetadataUrl, initStorageLayer } from "./helpers";
 import { sharedTestCases } from "./shared";
@@ -22,6 +21,7 @@ const testVariables = [
 testVariables.forEach((testVariable) => {
   const { keyType, MANUAL_SYNC } = testVariable;
   describe(`BaseServiceProvider with manualSync: ${MANUAL_SYNC}, keyType ${keyType}`, function () {
+    // eslint-disable-next-line mocha/no-setup-in-describe
     const PRIVATE_KEY = generatePrivate(keyType).toString("hex");
     const defaultSP = new ServiceProviderBase({ postboxKey: PRIVATE_KEY, keyType });
     // eslint-disable-next-line mocha/no-setup-in-describe

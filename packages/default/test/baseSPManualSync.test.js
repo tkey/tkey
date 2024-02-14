@@ -1,6 +1,5 @@
-import { KeyType } from "@tkey/common-types";
+import { generatePrivate, KeyType } from "@tkey/common-types";
 import ServiceProviderBase from "@tkey/service-provider-base";
-import { generatePrivate } from "@toruslabs/eccrypto";
 
 import { getMetadataUrl, initStorageLayer } from "./helpers";
 import { sharedTestCases } from "./shared";
