@@ -38,12 +38,16 @@
     "@babel/runtime": "7.x"
   },
   "dependencies": {
+    "@toruslabs/torus.js": "^12.0.1",
+    "elliptic": "^6.5.4",
+    "@toruslabs/eccrypto": "^4.0.0",
     "@tkey/common-types": "^12.0.0",
     "@toruslabs/http-helpers": "^5.0.0",
     "bn.js": "^5.2.1"
   },
   "devDependencies": {
-    "@types/bn.js": "^5.1.2"
+    "@types/bn.js": "^5.1.2",
+    "@types/elliptic": "^6.4.15"
   },
   "bugs": {
     "url": "https://github.com/tkey/tkey/issues"
