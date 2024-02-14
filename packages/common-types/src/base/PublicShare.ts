@@ -18,14 +18,7 @@ class PublicShare implements ISerializable {
 
   static fromJSON(value: StringifiedType): PublicShare {
     const { shareCommitment, shareIndex, keyType } = value;
-
-    let publicShare: PublicShare;
-    if (keyType) {
-      publicShare = new PublicShare(shareIndex, Point.fromJSON(shareCommitment), keyType);
-    } else {
-      publicShare = new PublicShare(shareIndex, Point.fromJSON(shareCommitment), KeyType.secp256k1);
-    }
-    return publicShare;
+    return new PublicShare(shareIndex, Point.fromJSON(shareCommitment), keyType in KeyType ? keyType : KeyType.secp256k1);
   }
 
   toJSON(): StringifiedType {
