@@ -67,8 +67,8 @@ export interface IServiceProvider extends ISerializable {
 
   serviceProviderName: string;
 
-  encrypt(msg: Buffer): Promise<EncryptedMessage>;
-  decrypt(msg: EncryptedMessage): Promise<Buffer>;
+  encrypt(msg: Buffer, keyType: KeyType): Promise<EncryptedMessage>;
+  decrypt(msg: EncryptedMessage, keyType: KeyType): Promise<Buffer>;
   retrievePubKey(type: PubKeyType): Buffer;
   retrievePubKeyPoint(): curve.base.BasePoint;
   sign(msg: BNString): string;

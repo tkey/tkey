@@ -41,8 +41,7 @@ class AuthMetadata implements IAuthMetadata {
     const data = this.metadata;
 
     if (!this.privKey) throw CoreError.privKeyUnavailable();
-    const ecCurve = keyTypeToCurve(this.keyType);
-    const k = toPrivKeyEC(this.privKey, ecCurve);
+    const k = toPrivKeyEC(this.privKey, this.keyType);
     const sig = k.sign(stripHexPrefix(keccak256(Buffer.from(stringify(data), "utf8"))));
 
     return {

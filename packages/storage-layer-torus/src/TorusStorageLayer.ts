@@ -19,7 +19,7 @@ import { post } from "@toruslabs/http-helpers";
 import base64url from "base64url";
 import BN from "bn.js";
 import { ec as EllipticCurve } from "elliptic";
-import { keccak256, keccak512 } from "ethereum-cryptography/keccak";
+import { keccak256 } from "ethereum-cryptography/keccak";
 import stringify from "json-stable-stringify";
 
 function signDataWithPrivKey(data: { timestamp: number }, privKey: BN, ecCurve: EllipticCurve): string {
@@ -56,15 +56,10 @@ class TorusStorageLayer implements IStorageLayer {
     const bufferMetadata = Buffer.from(stringify(el));
     let encryptedDetails: EncryptedMessage;
     if (privKey) {
-      let encKey = privKey;
-      if (keyType === KeyType.ed25519) {
-        const ecCurve = keyTypeToCurve(KeyType.secp256k1);
-        // for ed25519, we hash the private key and umod secp256k1 to get the encryption key
-        encKey = new BN(keccak512(privKey.toBuffer())).umod(ecCurve.curve.n);
-      }
-      encryptedDetails = await encrypt(encKey.toBuffer(), bufferMetadata);
+      const encKey = privKey;
+      encryptedDetails = await encrypt(encKey, bufferMetadata, keyType);
     } else {
-      encryptedDetails = await serviceProvider.encrypt(bufferMetadata);
+      encryptedDetails = await serviceProvider.encrypt(bufferMetadata, keyType);
     }
     const serializedEncryptedDetails = base64url.encode(stringify(encryptedDetails));
     return serializedEncryptedDetails;
@@ -92,15 +87,10 @@ class TorusStorageLayer implements IStorageLayer {
 
     let decrypted: Buffer;
     if (privKey) {
-      let encKey = privKey;
-      if (keyType === KeyType.ed25519) {
-        const ecCurve = keyTypeToCurve(KeyType.secp256k1);
-        // for ed25519, we hash the private key and umod secp256k1 to get the encryption key
-        encKey = new BN(keccak512(privKey.toBuffer())).umod(ecCurve.curve.n);
-      }
-      decrypted = await decrypt(encKey.toBuffer(), encryptedMessage);
+      const encKey = privKey;
+      decrypted = await decrypt(encKey, encryptedMessage, keyType);
     } else {
-      decrypted = await serviceProvider.decrypt(encryptedMessage);
+      decrypted = await serviceProvider.decrypt(encryptedMessage, keyType);
     }
 
     return JSON.parse(decrypted.toString()) as T;

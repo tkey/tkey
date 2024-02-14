@@ -10,7 +10,6 @@ import {
   ShareStore,
   ShareStoreMap,
   ShareTransferStorePointerArgs,
-  toPrivKeyECC,
 } from "@tkey/common-types";
 import BN from "bn.js";
 
@@ -108,7 +107,7 @@ class ShareTransferModule implements IModule {
             const latestShareTransferStore = await this.getShareTransferStore();
             if (!this.currentEncKey) throw ShareTransferError.missingEncryptionKey();
             if (latestShareTransferStore[encPubKeyX].encShareInTransit) {
-              const shareStoreBuf = await decrypt(toPrivKeyECC(this.currentEncKey), latestShareTransferStore[encPubKeyX].encShareInTransit);
+              const shareStoreBuf = await decrypt(this.currentEncKey, latestShareTransferStore[encPubKeyX].encShareInTransit, KeyType.secp256k1);
               const receivedShare = ShareStore.fromJSON(JSON.parse(shareStoreBuf.toString()));
               await this.tbSDK.inputShareStoreSafe(receivedShare, true);
               this._cleanUpCurrentRequest();
@@ -158,8 +157,7 @@ class ShareTransferModule implements IModule {
       const share = this.tbSDK.outputShareStore(filtered[0]);
       bufferedShare = Buffer.from(JSON.stringify(share));
     }
-    const shareRequest = new ShareRequest(shareTransferStore[encPubKeyX]);
-    shareTransferStore[encPubKeyX].encShareInTransit = await encrypt(shareRequest.encPubKey, bufferedShare);
+    shareTransferStore[encPubKeyX].encShareInTransit = await encrypt(this.currentEncKey, bufferedShare, KeyType.secp256k1);
     await this.setShareTransferStore(shareTransferStore);
     this.currentEncKey = undefined;
   }
@@ -195,7 +193,7 @@ class ShareTransferModule implements IModule {
               this._cleanUpCurrentRequest();
               reject(ShareTransferError.userCancelledRequest());
             } else if (latestShareTransferStore[encPubKeyX].encShareInTransit) {
-              const shareStoreBuf = await decrypt(toPrivKeyECC(this.currentEncKey), latestShareTransferStore[encPubKeyX].encShareInTransit);
+              const shareStoreBuf = await decrypt(this.currentEncKey, latestShareTransferStore[encPubKeyX].encShareInTransit, KeyType.secp256k1);
               const receivedShare = ShareStore.fromJSON(JSON.parse(shareStoreBuf.toString()));
               await this.tbSDK.inputShareStoreSafe(receivedShare, true);
               if (deleteRequestAfterCompletion) {

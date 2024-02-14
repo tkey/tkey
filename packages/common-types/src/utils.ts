@@ -1,8 +1,10 @@
 import { decrypt as ecDecrypt, encrypt as ecEncrypt } from "@toruslabs/eccrypto";
 import { keccak256, toChecksumAddress } from "@toruslabs/torus.js";
 import BN from "bn.js";
+import { keccak512 } from "ethereum-cryptography/keccak";
 import { serializeError } from "serialize-error";
 
+import { toPrivKeyEC, toPrivKeyECC } from ".";
 import { EncryptedMessage, KeyType, keyTypeToCurve } from "./baseTypes/commonTypes";
 
 export const generatePrivate = (keyType: KeyType): BN => {
@@ -13,8 +15,15 @@ export const generatePrivate = (keyType: KeyType): BN => {
 
 // Wrappers around ECC encrypt/decrypt to use the hex serialization
 // TODO: refactor to take BN
-export async function encrypt(publicKey: Buffer, msg: Buffer): Promise<EncryptedMessage> {
-  const encryptedDetails = await ecEncrypt(publicKey, msg);
+export async function encrypt(privateKey: BN, msg: Buffer, keyType: KeyType): Promise<EncryptedMessage> {
+  let priv = toPrivKeyEC(privateKey, keyType);
+
+  if (keyType === KeyType.ed25519) {
+    const secpCurve = keyTypeToCurve(KeyType.secp256k1);
+    priv = toPrivKeyEC(new BN(keccak512(toPrivKeyECC(privateKey, keyType))).umod(secpCurve.curve.n), KeyType.secp256k1);
+  }
+
+  const encryptedDetails = await ecEncrypt(Buffer.from(priv.getPublic().encode("hex", false), "hex"), msg);
 
   return {
     ciphertext: encryptedDetails.ciphertext.toString("hex"),
@@ -24,7 +33,7 @@ export async function encrypt(publicKey: Buffer, msg: Buffer): Promise<Encrypted
   };
 }
 
-export async function decrypt(privKey: Buffer, msg: EncryptedMessage): Promise<Buffer> {
+export async function decrypt(privKey: BN, msg: EncryptedMessage, keyType: KeyType): Promise<Buffer> {
   const bufferEncDetails = {
     ciphertext: Buffer.from(msg.ciphertext, "hex"),
     ephemPublicKey: Buffer.from(msg.ephemPublicKey, "hex"),
@@ -32,7 +41,14 @@ export async function decrypt(privKey: Buffer, msg: EncryptedMessage): Promise<B
     mac: Buffer.from(msg.mac, "hex"),
   };
 
-  return ecDecrypt(privKey, bufferEncDetails);
+  let priv = toPrivKeyEC(privKey, keyType);
+
+  if (keyType === KeyType.ed25519) {
+    const secpCurve = keyTypeToCurve(KeyType.secp256k1);
+    priv = toPrivKeyEC(new BN(keccak512(toPrivKeyECC(privKey, keyType))).umod(secpCurve.curve.n), KeyType.secp256k1);
+  }
+
+  return ecDecrypt(Buffer.from(priv.getPrivate("hex"), "hex"), bufferEncDetails);
 }
 
 export function isEmptyObject(obj: unknown): boolean {

@@ -10,10 +10,9 @@ import {
   ServiceProviderArgs,
   StringifiedType,
   toPrivKeyEC,
-  toPrivKeyECC,
 } from "@tkey/common-types";
 import BN from "bn.js";
-import { curve, ec as EllipticCurve } from "elliptic";
+import { curve } from "elliptic";
 
 class ServiceProviderBase implements IServiceProvider {
   enableLogging: boolean;
@@ -40,30 +39,27 @@ class ServiceProviderBase implements IServiceProvider {
   }
 
   async encrypt(msg: Buffer): Promise<EncryptedMessage> {
-    const publicKey = this.retrievePubKey("ecc");
-    return encryptUtils(publicKey, msg);
+    return encryptUtils(this.postboxKey, msg, this.keyType);
   }
 
   async decrypt(msg: EncryptedMessage): Promise<Buffer> {
-    return decryptUtils(toPrivKeyECC(this.postboxKey), msg);
+    return decryptUtils(this.postboxKey, msg, this.keyType);
   }
 
   retrievePubKeyPoint(): curve.base.BasePoint {
-    const ecCurve = new EllipticCurve(this.keyType.toString());
-    return toPrivKeyEC(this.postboxKey, ecCurve).getPublic();
+    return toPrivKeyEC(this.postboxKey, this.keyType).getPublic();
   }
 
   retrievePubKey(type: PubKeyType): Buffer {
     if (type === "ecc") {
-      return getPubKeyECC(this.postboxKey);
+      return getPubKeyECC(this.postboxKey, this.keyType, false);
     }
     throw new Error("Unsupported pub key type");
   }
 
   sign(msg: BNString): string {
     const tmp = new BN(msg, "hex");
-    const ecCurve = new EllipticCurve(this.keyType.toString());
-    const sig = toPrivKeyEC(this.postboxKey, ecCurve).sign(tmp.toString("hex"));
+    const sig = toPrivKeyEC(this.postboxKey, this.keyType).sign(tmp.toString("hex"));
     return Buffer.from(sig.r.toString(16, 64) + sig.s.toString(16, 64) + new BN(0).toString(16, 2), "hex").toString("base64");
   }
 

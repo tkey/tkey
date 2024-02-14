@@ -183,7 +183,7 @@ class Metadata implements IMetadata {
     }
 
     // check for keyType
-    const rawDecrypted = await decrypt(shareStore.share.share.toBuffer(), encryptedShare as EncryptedMessage);
+    const rawDecrypted = await decrypt(shareStore.share.share, encryptedShare as EncryptedMessage, this.keyType);
     return ShareStore.fromJSON(JSON.parse(rawDecrypted.toString()));
   }
 
