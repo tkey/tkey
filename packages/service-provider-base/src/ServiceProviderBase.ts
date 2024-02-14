@@ -29,12 +29,7 @@ class ServiceProviderBase implements IServiceProvider {
     this.enableLogging = enableLogging;
     this.postboxKey = new BN(postboxKey, "hex");
     this.serviceProviderName = "ServiceProviderBase";
-
-    if (keyType) {
-      this.keyType = keyType;
-    } else {
-      this.keyType = KeyType.secp256k1;
-    }
+    this.keyType = keyType in KeyType ? keyType : KeyType.secp256k1;
   }
 
   static fromJSON(value: StringifiedType): IServiceProvider {

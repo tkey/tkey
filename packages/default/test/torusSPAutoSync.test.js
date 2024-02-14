@@ -34,6 +34,7 @@ testVariables.forEach((testVariable) => {
         web3AuthClientId: "test",
         network: "mainnet",
       },
+      keyType,
     });
     // eslint-disable-next-line mocha/no-setup-in-describe
     sharedTestCases(MANUAL_SYNC, torusSP, torusSL, keyType);
