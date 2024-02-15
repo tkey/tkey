@@ -239,6 +239,7 @@ class TorusStorageLayer implements IStorageLayer {
       key: ecCurve.keyFromPrivate(privKey.toBuffer()).getPublic("hex"),
       data,
       signature,
+      key_type: keyType.toString(),
     };
     return post<{ status: number; id?: string }>(`${this.hostUrl}/acquireLock`, metadataParams);
   }
@@ -260,6 +261,7 @@ class TorusStorageLayer implements IStorageLayer {
       data,
       signature,
       id,
+      key_type: keyType.toString(),
     };
     return post<{ status: number; id?: string }>(`${this.hostUrl}/releaseLock`, metadataParams);
   }
