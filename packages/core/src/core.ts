@@ -9,7 +9,8 @@ import {
   GenerateNewShareResult,
   generatePrivate,
   generatePrivateExcludingIndexes,
-  getPubKeyECC,
+  getEncryptionPrivateKey,
+  getEncryptionPublicKey,
   getPubKeyPoint,
   IMessageMetadata,
   IMetadata,
@@ -45,11 +46,8 @@ import {
   TKeyArgs,
   TkeyStoreItemType,
 } from "@tkey/common-types";
-// import nacl = require("@toruslabs/tweetnacl-js");
-import * as nacl from "@toruslabs/tweetnacl-js";
 import BN from "bn.js";
 import { ec as EllipticCurve } from "elliptic";
-import { keccak512 } from "ethereum-cryptography/keccak";
 import stringify from "json-stable-stringify";
 
 import AuthMetadata from "./authMetadata";
@@ -595,7 +593,8 @@ class ThresholdKey implements ITKey {
     const sharesToPush = await Promise.all(
       shareIndexesNeedingEncryption.map(async (shareIndex) => {
         const oldShare = oldPoly.polyEval(new BN(shareIndex, "hex"));
-        const encryptedShare = await encrypt(getPubKeyECC(oldShare), Buffer.from(JSON.stringify(newShareStores[shareIndex])));
+        const encryptionPubKey = getEncryptionPublicKey(oldShare, this.metadata.keyType);
+        const encryptedShare = await encrypt(encryptionPubKey, Buffer.from(JSON.stringify(newShareStores[shareIndex])));
         newScopedStore[getPubKeyPoint(oldShare, this.keyType).x.toString("hex")] = encryptedShare;
         oldShareStores[shareIndex] = new ShareStore(new Share(shareIndex, oldShare), previousPolyID);
         return oldShare;
@@ -654,23 +653,8 @@ class ThresholdKey implements ITKey {
     delete1OutOf1?: boolean;
   } = {}): Promise<InitializeNewKeyResult> {
     let seed: Uint8Array;
-    if (this.keyType === KeyType.secp256k1) {
-      const tmpPriv = importedKey || generatePrivate(this.keyType);
-      this._setKey(new BN(tmpPriv));
-    } else {
-      seed = importedKey ? importedKey.toBuffer() : nacl.randomBytes(32);
-
-      const keyPair = nacl.sign.keyPair.fromSeed(seed);
-      // need to decode from le ??
-      const tempPriv = new BN(keyPair.secretKey.slice(0, 32)).umod(this.ecCurve.n);
-      this._setKey(tempPriv);
-
-      // testing and checking code - to remove
-      // const decMsg = await this.decrypt(encMsg);
-      // const decSeed = Buffer.from(decMsg).toString("hex");
-      // console.log("decSeed: ", decSeed);
-      // console.log("seed: ", seed);
-    }
+    const tmpPriv = importedKey || generatePrivate(this.keyType);
+    this._setKey(new BN(tmpPriv));
 
     // create a random poly and respective shares
     // 1 is defined as the serviceProvider share
@@ -1176,30 +1160,16 @@ class ThresholdKey implements ITKey {
   async encrypt(data: Buffer): Promise<EncryptedMessage> {
     if (!this.privKey) throw CoreError.privateKeyUnavailable();
 
-    let encKey: BN = this.privKey;
-    let curve = this.ecCurve;
-    if (this.keyType === KeyType.ed25519) {
-      // hash and umod to secp256k1
-      const secpCurve = keyTypeToCurve(KeyType.secp256k1);
-
-      encKey = new BN(keccak512(this.privKey.toBuffer())).umod(secpCurve.curve.n);
-      curve = secpCurve;
-    }
-    const keyPair = curve.keyFromPrivate(encKey.toBuffer());
-    const publicKey = keyPair.getPublic(false, "hex");
-    return encrypt(Buffer.from(publicKey, "hex"), data);
+    const encKey: BN = this.privKey;
+    const encryptionPubKey = getEncryptionPublicKey(encKey, this.metadata.keyType);
+    return encrypt(encryptionPubKey, data);
   }
 
   async decrypt(encryptedMessage: EncryptedMessage): Promise<Buffer> {
     if (!this.privKey) throw CoreError.privateKeyUnavailable();
     // depend
-    let encKey: BN = this.privKey;
-    if (this.keyType === KeyType.ed25519) {
-      const secpCurve = keyTypeToCurve(KeyType.secp256k1);
-      // hash and umod to secp256k1
-      encKey = new BN(keccak512(this.privKey.toBuffer())).umod(secpCurve.curve.n);
-    }
-    return decrypt(encKey.toBuffer(), encryptedMessage);
+    const encKey: BN = this.privKey;
+    return decrypt(getEncryptionPrivateKey(encKey, this.keyType), encryptedMessage);
   }
 
   async _setTKeyStoreItem(moduleName: string, data: TkeyStoreItemType): Promise<void> {

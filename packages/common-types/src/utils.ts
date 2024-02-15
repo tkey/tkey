@@ -1,8 +1,11 @@
 import { decrypt as ecDecrypt, encrypt as ecEncrypt } from "@toruslabs/eccrypto";
 import { keccak256, toChecksumAddress } from "@toruslabs/torus.js";
 import BN from "bn.js";
+// eslint-disable-next-line import/no-extraneous-dependencies
+import { keccak512 } from "ethereum-cryptography/keccak";
 import { serializeError } from "serialize-error";
 
+import { getPubKeyEC, toPrivKeyEC, toPrivKeyECC } from ".";
 import { EncryptedMessage, KeyType, keyTypeToCurve } from "./baseTypes/commonTypes";
 
 export const generatePrivate = (keyType: KeyType): BN => {
@@ -10,6 +13,28 @@ export const generatePrivate = (keyType: KeyType): BN => {
   const key = ecCurve.genKeyPair();
   return key.getPrivate();
 };
+
+export function getEncryptionPrivateKey(privateKey: BN, keyType: KeyType): Buffer {
+  let priv = toPrivKeyEC(privateKey, keyType);
+
+  if (keyType === KeyType.ed25519) {
+    const secpCurve = keyTypeToCurve(KeyType.secp256k1);
+    priv = toPrivKeyEC(new BN(keccak512(toPrivKeyECC(privateKey, keyType))).umod(secpCurve.curve.n), KeyType.secp256k1);
+  }
+
+  return toPrivKeyECC(priv.getPrivate(), KeyType.secp256k1);
+}
+
+export function getEncryptionPublicKey(privateKey: BN, keyType: KeyType): Buffer {
+  let priv = toPrivKeyEC(privateKey, keyType);
+
+  if (keyType === KeyType.ed25519) {
+    const secpCurve = keyTypeToCurve(KeyType.secp256k1);
+    priv = toPrivKeyEC(new BN(keccak512(toPrivKeyECC(privateKey, keyType))).umod(secpCurve.curve.n), KeyType.secp256k1);
+  }
+
+  return Buffer.from(getPubKeyEC(priv.getPrivate(), KeyType.secp256k1).encode("hex", false), "hex");
+}
 
 // Wrappers around ECC encrypt/decrypt to use the hex serialization
 // TODO: refactor to take BN
@@ -24,7 +49,7 @@ export async function encrypt(publicKey: Buffer, msg: Buffer): Promise<Encrypted
   };
 }
 
-export async function decrypt(privKey: Buffer, msg: EncryptedMessage): Promise<Buffer> {
+export async function decrypt(privateKey: Buffer, msg: EncryptedMessage): Promise<Buffer> {
   const bufferEncDetails = {
     ciphertext: Buffer.from(msg.ciphertext, "hex"),
     ephemPublicKey: Buffer.from(msg.ephemPublicKey, "hex"),
@@ -32,7 +57,7 @@ export async function decrypt(privKey: Buffer, msg: EncryptedMessage): Promise<B
     mac: Buffer.from(msg.mac, "hex"),
   };
 
-  return ecDecrypt(privKey, bufferEncDetails);
+  return ecDecrypt(privateKey, bufferEncDetails);
 }
 
 export function isEmptyObject(obj: unknown): boolean {

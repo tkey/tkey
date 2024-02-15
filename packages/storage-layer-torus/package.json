@@ -22,7 +22,7 @@
     "url": "git+https://github.com/tkey/tkey.git"
   },
   "scripts": {
-    "test": "cross-env MOCKED=true mocha --config ../../.mocharc.json ",
+    "test": "node --test -r esbuild-register test/*.spec.ts ",
     "coverage": "nyc npm test",
     "coverage-production": "nyc npm run test-production",
     "test-development": "cross-env MOCKED=false METADATA=http://localhost:5051 mocha --config ../../.mocharc.json ",
@@ -39,7 +39,7 @@
   },
   "dependencies": {
     "@tkey/common-types": "^12.0.0",
-    "@toruslabs/http-helpers": "^5.0.0",
+    "@toruslabs/http-helpers": "^6.0.0",
     "base64url": "3.0.1",
     "bn.js": "^5.2.1",
     "elliptic": "^6.5.4",
@@ -48,7 +48,8 @@
   },
   "devDependencies": {
     "@types/bn.js": "^5.1.2",
-    "@types/json-stable-stringify": "^1.0.34"
+    "@types/json-stable-stringify": "^1.0.34",
+    "esbuild-register": "^3.5.0"
   },
   "bugs": {
     "url": "https://github.com/tkey/tkey/issues"

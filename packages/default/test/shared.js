@@ -2,7 +2,7 @@
 /* eslint-disable mocha/no-exports */
 /* eslint-disable import/no-extraneous-dependencies */
 
-import { generatePrivate, getPubKeyPoint, KEY_NOT_FOUND, KeyType, keyTypeToCurve, SHARE_DELETED, ShareStore } from "@tkey/common-types";
+import { generatePrivate, getPubKeyPoint, KEY_NOT_FOUND, keyTypeToCurve, SHARE_DELETED, ShareStore } from "@tkey/common-types";
 import { Metadata } from "@tkey/core";
 import PrivateKeyModule, { ED25519Format, SECP256K1Format } from "@tkey/private-keys";
 import SecurityQuestionsModule from "@tkey/security-questions";
@@ -12,7 +12,6 @@ import ShareTransferModule from "@tkey/share-transfer";
 import TorusStorageLayer from "@tkey/storage-layer-torus";
 import { post } from "@toruslabs/http-helpers";
 import { getOrSetNonce, keccak256 } from "@toruslabs/torus.js";
-import nacl from "@toruslabs/tweetnacl-js";
 import { deepEqual, deepStrictEqual, equal, fail, notEqual, notStrictEqual, strict, strictEqual, throws } from "assert";
 import BN from "bn.js";
 import { JsonRpcProvider } from "ethers";
@@ -113,7 +112,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
       }
     });
     it(`#should be able to reconstruct key when initializing with import key, manualSync=${mode}`, async function () {
-      let importedKey = keyType === KeyType.secp256k1 ? new BN(generatePrivate(keyType)) : new BN(nacl.randomBytes(32));
+      let importedKey = new BN(generatePrivate(keyType));
 
       const resp1 = await tb._initializeNewKey({ importedKey, initializeModules: true });
       await tb.syncLocalMetadataTransitions();
@@ -123,11 +122,6 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
       await tb2.inputShareStoreSafe(resp1.deviceShare);
       const reconstructedKey = await tb2.reconstructKey();
 
-      // ed25519 key are derived from seed
-      if (keyType === KeyType.ed25519) {
-        const seed = importedKey.toBuffer();
-        importedKey = new BN(nacl.sign.keyPair.fromSeed(seed).secretKey.slice(0, 32)).umod(ecCurve.curve.n);
-      }
       if (importedKey.cmp(reconstructedKey.privKey) !== 0) {
         fail("key should be able to be reconstructed");
       }
