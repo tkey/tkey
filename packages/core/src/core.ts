@@ -9,7 +9,8 @@ import {
   GenerateNewShareResult,
   generatePrivate,
   generatePrivateExcludingIndexes,
-  getPubKeyECC,
+  getEncryptionPrivateKey,
+  getEncryptionPublicKey,
   getPubKeyPoint,
   IMessageMetadata,
   IMetadata,
@@ -45,11 +46,8 @@ import {
   TKeyArgs,
   TkeyStoreItemType,
 } from "@tkey/common-types";
-// import nacl = require("@toruslabs/tweetnacl-js");
-import * as nacl from "@toruslabs/tweetnacl-js";
 import BN from "bn.js";
 import { ec as EllipticCurve } from "elliptic";
-import { keccak512 } from "ethereum-cryptography/keccak";
 import stringify from "json-stable-stringify";
 
 import AuthMetadata from "./authMetadata";
@@ -113,14 +111,9 @@ class ThresholdKey implements ITKey {
     this.haveWriteMetadataLock = "";
     this.serverTimeOffset = serverTimeOffset;
 
-    // temporary: TO FIX
-    if (keyType) {
-      this.keyType = keyType;
-      this.ecCurve = new EllipticCurve(keyType.toString());
-    } else {
-      this.keyType = KeyType.secp256k1;
-      this.ecCurve = new EllipticCurve(this.keyType.toString());
-    }
+    if (!keyType) throw CoreError.default("keyType is required");
+    this.keyType = keyType;
+    this.ecCurve = keyTypeToCurve(keyType);
   }
 
   static async fromJSON(value: StringifiedType, args: TKeyArgs): Promise<ThresholdKey> {
@@ -600,7 +593,8 @@ class ThresholdKey implements ITKey {
     const sharesToPush = await Promise.all(
       shareIndexesNeedingEncryption.map(async (shareIndex) => {
         const oldShare = oldPoly.polyEval(new BN(shareIndex, "hex"));
-        const encryptedShare = await encrypt(getPubKeyECC(oldShare), Buffer.from(JSON.stringify(newShareStores[shareIndex])));
+        const encryptionPubKey = getEncryptionPublicKey(oldShare, this.metadata.keyType);
+        const encryptedShare = await encrypt(encryptionPubKey, Buffer.from(JSON.stringify(newShareStores[shareIndex])));
         newScopedStore[getPubKeyPoint(oldShare, this.keyType).x.toString("hex")] = encryptedShare;
         oldShareStores[shareIndex] = new ShareStore(new Share(shareIndex, oldShare), previousPolyID);
         return oldShare;
@@ -658,27 +652,9 @@ class ThresholdKey implements ITKey {
     importedKey?: BN;
     delete1OutOf1?: boolean;
   } = {}): Promise<InitializeNewKeyResult> {
-    if (this.keyType === KeyType.secp256k1) {
-      const tmpPriv = importedKey || generatePrivate(this.keyType);
-      this._setKey(new BN(tmpPriv));
-    } else {
-      const seed = importedKey ? importedKey.toBuffer() : nacl.randomBytes(32);
-
-      const keyPair = nacl.sign.keyPair.fromSeed(seed);
-      // need to decode from le ??
-      const tempPriv = new BN(keyPair.secretKey);
-      this._setKey(tempPriv);
-
-      // encrypt and add to local metadata transitions
-      const encMsg = await this.encrypt(Buffer.from(seed));
-      await this.addLocalMetadataTransitions({ input: [{ message: JSON.stringify(encMsg), dateAdded: Date.now() }], privKey: [tempPriv] });
-
-      // testing and checking code - to remove
-      // const decMsg = await this.decrypt(encMsg);
-      // const decSeed = Buffer.from(decMsg).toString("hex");
-      // console.log("decSeed: ", decSeed);
-      // console.log("seed: ", seed);
-    }
+    let seed: Uint8Array;
+    const tmpPriv = importedKey || generatePrivate(this.keyType);
+    this._setKey(new BN(tmpPriv));
 
     // create a random poly and respective shares
     // 1 is defined as the serviceProvider share
@@ -742,6 +718,13 @@ class ThresholdKey implements ITKey {
     if (determinedShare) {
       result.userShare = new ShareStore(shares[shareIndexes[2].toString("hex")], poly.getPolynomialID());
     }
+
+    // ed25519 store seed after tkey is initialized
+    if (this.keyType === KeyType.ed25519 && seed) {
+      // encrypt and add to local metadata transitions
+      const encMsg = await this.encrypt(Buffer.from(seed));
+      await this.addLocalMetadataTransitions({ input: [{ message: JSON.stringify(encMsg), dateAdded: Date.now() }], privKey: [this.privKey] });
+    }
     return result;
   }
 
@@ -774,6 +757,7 @@ class ThresholdKey implements ITKey {
         input: this._localMetadataTransitions[1],
         privKey: this._localMetadataTransitions[0],
         serviceProvider: this.serviceProvider,
+        keyType: this.keyType,
       });
     } catch (error: unknown) {
       throw CoreError.metadataPostFailed(prettyPrintError(error as Error));
@@ -967,7 +951,7 @@ class ThresholdKey implements ITKey {
   }> {
     const { input, serviceProvider, privKey } = params;
     const authMetadata = new AuthMetadata(this.keyType, input, this.privKey);
-    return this.storageLayer.setMetadata({ input: authMetadata, serviceProvider, privKey });
+    return this.storageLayer.setMetadata({ input: authMetadata, serviceProvider, privKey, keyType: this.keyType });
   }
 
   async setAuthMetadataBulk(params: { input: Metadata[]; serviceProvider?: IServiceProvider; privKey?: BN[] }): Promise<void> {
@@ -1015,8 +999,9 @@ class ThresholdKey implements ITKey {
       }
     }
     let raw: IMessageMetadata;
+
     try {
-      raw = await this.storageLayer.getMetadata(params);
+      raw = await this.storageLayer.getMetadata({ ...params, keyType: this.keyType });
     } catch (err: unknown) {
       throw CoreError.metadataGetFailed(`${prettyPrintError(err as Error)}`);
     }
@@ -1059,7 +1044,7 @@ class ThresholdKey implements ITKey {
       should only ever be updated by getting metadata)`);
     }
 
-    const res = await this.storageLayer.acquireWriteLock({ privKey: this.privKey });
+    const res = await this.storageLayer.acquireWriteLock({ privKey: this.privKey, keyType: this.keyType });
     if (res.status !== 1) throw CoreError.acquireLockFailed(`lock cannot be acquired from storage layer status code: ${res.status}`);
 
     // increment metadata nonce for write session
@@ -1070,7 +1055,7 @@ class ThresholdKey implements ITKey {
 
   async releaseWriteMetadataLock(): Promise<void> {
     if (!this.haveWriteMetadataLock) throw CoreError.releaseLockFailed("releaseWriteMetadataLock - don't have metadata lock to release");
-    const res = await this.storageLayer.releaseWriteLock({ privKey: this.privKey, id: this.haveWriteMetadataLock });
+    const res = await this.storageLayer.releaseWriteLock({ privKey: this.privKey, id: this.haveWriteMetadataLock, keyType: this.keyType });
     if (res.status !== 1) throw CoreError.releaseLockFailed(`lock cannot be released from storage layer status code: ${res.status}`);
     this.haveWriteMetadataLock = "";
   }
@@ -1175,30 +1160,16 @@ class ThresholdKey implements ITKey {
   async encrypt(data: Buffer): Promise<EncryptedMessage> {
     if (!this.privKey) throw CoreError.privateKeyUnavailable();
 
-    let encKey: BN = this.privKey;
-    let curve = this.ecCurve;
-    if (this.keyType === KeyType.ed25519) {
-      // hash and umod to secp256k1
-      const secpCurve = keyTypeToCurve(KeyType.secp256k1);
-
-      encKey = new BN(keccak512(this.privKey.toBuffer())).umod(secpCurve.curve.n);
-      curve = secpCurve;
-    }
-    const keyPair = curve.keyFromPrivate(encKey.toBuffer());
-    const publicKey = keyPair.getPublic(false, "hex");
-    return encrypt(Buffer.from(publicKey, "hex"), data);
+    const encKey: BN = this.privKey;
+    const encryptionPubKey = getEncryptionPublicKey(encKey, this.metadata.keyType);
+    return encrypt(encryptionPubKey, data);
   }
 
   async decrypt(encryptedMessage: EncryptedMessage): Promise<Buffer> {
     if (!this.privKey) throw CoreError.privateKeyUnavailable();
     // depend
-    let encKey: BN = this.privKey;
-    if (this.keyType === KeyType.ed25519) {
-      const secpCurve = keyTypeToCurve(KeyType.secp256k1);
-      // hash and umod to secp256k1
-      encKey = new BN(keccak512(this.privKey.toBuffer())).umod(secpCurve.curve.n);
-    }
-    return decrypt(encKey.toBuffer(), encryptedMessage);
+    const encKey: BN = this.privKey;
+    return decrypt(getEncryptionPrivateKey(encKey, this.keyType), encryptedMessage);
   }
 
   async _setTKeyStoreItem(moduleName: string, data: TkeyStoreItemType): Promise<void> {
@@ -1311,7 +1282,7 @@ class ThresholdKey implements ITKey {
     if (this.keyType === KeyType.secp256k1) {
       return this.privKey.toString("hex");
     } else if (this.keyType === KeyType.ed25519) {
-      const result: EncryptedMessage = await this.storageLayer.getMetadata({ privKey: this.privKey });
+      const result: EncryptedMessage = await this.storageLayer.getMetadata({ privKey: this.privKey, keyType: this.keyType });
       const seed = await this.decrypt(result);
       return seed.toString("hex");
     }
@@ -1329,6 +1300,7 @@ class ThresholdKey implements ITKey {
       manualSync: this.manualSync,
       serviceProvider: this.serviceProvider,
       storageLayer: this.storageLayer,
+      keyType: this.keyType,
     };
   }
 

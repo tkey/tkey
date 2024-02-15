@@ -1,6 +1,7 @@
 import {
   decrypt,
   EncryptedMessage,
+  getEncryptionPrivateKey,
   getPubKeyPoint,
   IMetadata,
   KeyType,
@@ -64,12 +65,7 @@ class Metadata implements IMetadata {
 
   static fromJSON(value: StringifiedType): Metadata {
     const { pubKey, polyIDList, generalStore, tkeyStore, scopedStore, nonce, keyType } = value;
-    let type: KeyType;
-    if (keyType) {
-      type = keyType;
-    } else {
-      type = KeyType.secp256k1;
-    }
+    const type = keyType in KeyType ? keyType : KeyType.secp256k1;
 
     const point = Point.fromSEC1(pubKey, type);
     const metadata = new Metadata(point);
@@ -188,7 +184,7 @@ class Metadata implements IMetadata {
     }
 
     // check for keyType
-    const rawDecrypted = await decrypt(shareStore.share.share.toBuffer(), encryptedShare as EncryptedMessage);
+    const rawDecrypted = await decrypt(getEncryptionPrivateKey(shareStore.share.share, this.keyType), encryptedShare as EncryptedMessage);
     return ShareStore.fromJSON(JSON.parse(rawDecrypted.toString()));
   }
 

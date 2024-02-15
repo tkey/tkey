@@ -80,5 +80,8 @@
   "engines": {
     "node": ">=18.x",
     "npm": ">=9.x"
+  },
+  "dependencies": {
+    "ethereum-cryptography": "^2.1.3"
   }
 }

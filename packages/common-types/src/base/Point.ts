@@ -17,16 +17,7 @@ export class Point implements IPoint {
 
   static fromJSON(value: StringifiedType): Point {
     const { x, y, keyType } = value;
-
-    let point: Point;
-
-    if (keyType) {
-      point = new Point(x, y, keyType);
-    } else {
-      point = new Point(x, y, KeyType.secp256k1);
-    }
-
-    return point;
+    return new Point(x, y, keyType in KeyType ? keyType : KeyType.secp256k1);
   }
 
   static fromSEC1(value: string, keyType: KeyType): Point {

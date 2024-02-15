@@ -2,6 +2,8 @@ import {
   decrypt,
   encrypt,
   EncryptedMessage,
+  getEncryptionPrivateKey,
+  getEncryptionPublicKey,
   IServiceProvider,
   IStorageLayer,
   KEY_NOT_FOUND,
@@ -19,7 +21,7 @@ import { post } from "@toruslabs/http-helpers";
 import base64url from "base64url";
 import BN from "bn.js";
 import { ec as EllipticCurve } from "elliptic";
-import { keccak256, keccak512 } from "ethereum-cryptography/keccak";
+import { keccak256 } from "ethereum-cryptography/keccak";
 import stringify from "json-stable-stringify";
 
 function signDataWithPrivKey(data: { timestamp: number }, privKey: BN, ecCurve: EllipticCurve): string {
@@ -56,15 +58,11 @@ class TorusStorageLayer implements IStorageLayer {
     const bufferMetadata = Buffer.from(stringify(el));
     let encryptedDetails: EncryptedMessage;
     if (privKey) {
-      let encKey = privKey;
-      if (keyType === KeyType.ed25519) {
-        const ecCurve = keyTypeToCurve(keyType);
-        // for ed25519, we hash the private key and umod secp256k1 to get the encryption key
-        encKey = new BN(keccak512(privKey.toBuffer())).umod(ecCurve.curve.n);
-      }
-      encryptedDetails = await encrypt(encKey.toBuffer(), bufferMetadata);
+      const encKey = privKey;
+      const encryptionPubKey = getEncryptionPublicKey(encKey, keyType);
+      encryptedDetails = await encrypt(encryptionPubKey, bufferMetadata);
     } else {
-      encryptedDetails = await serviceProvider.encrypt(bufferMetadata);
+      encryptedDetails = await serviceProvider.encrypt(bufferMetadata, keyType);
     }
     const serializedEncryptedDetails = base64url.encode(stringify(encryptedDetails));
     return serializedEncryptedDetails;
@@ -82,7 +80,6 @@ class TorusStorageLayer implements IStorageLayer {
    */
   async getMetadata<T>(params: { serviceProvider?: IServiceProvider; privKey?: BN; keyType: KeyType }): Promise<T> {
     const { serviceProvider, privKey, keyType } = params;
-    const ecCurve = keyTypeToCurve(keyType);
     const keyDetails = this.generateMetadataParams({}, keyType, serviceProvider, privKey);
     const metadataResponse = await post<{ message: string }>(`${this.hostUrl}/get`, keyDetails);
     // returns empty object if object
@@ -93,14 +90,10 @@ class TorusStorageLayer implements IStorageLayer {
 
     let decrypted: Buffer;
     if (privKey) {
-      let encKey = privKey;
-      if (keyType === KeyType.ed25519) {
-        // for ed25519, we hash the private key and umod secp256k1 to get the encryption key
-        encKey = new BN(keccak512(privKey.toBuffer())).umod(ecCurve.curve.n);
-      }
-      decrypted = await decrypt(encKey.toBuffer(), encryptedMessage);
+      const encKey = privKey;
+      decrypted = await decrypt(getEncryptionPrivateKey(encKey, keyType), encryptedMessage);
     } else {
-      decrypted = await serviceProvider.decrypt(encryptedMessage);
+      decrypted = await serviceProvider.decrypt(encryptedMessage, keyType);
     }
 
     return JSON.parse(decrypted.toString()) as T;
@@ -142,6 +135,7 @@ class TorusStorageLayer implements IStorageLayer {
   }): Promise<{ message: string }> {
     try {
       const { serviceProvider, privKey, input, keyType } = params;
+
       const newInput = input;
       const finalMetadataParams = await Promise.all(
         newInput.map(async (el, i) =>
@@ -158,6 +152,7 @@ class TorusStorageLayer implements IStorageLayer {
       finalMetadataParams.forEach((el, index) => {
         FD.append(index.toString(), JSON.stringify(el));
       });
+
       const options: RequestInit = {
         mode: "cors",
         method: "POST",
@@ -170,6 +165,7 @@ class TorusStorageLayer implements IStorageLayer {
         isUrlEncodedData: true,
         timeout: 600 * 1000, // 10 mins of timeout for excessive shares case
       };
+
       return await post<{ message: string }>(`${this.hostUrl}/bulk_set_stream`, FD, options, customOptions);
     } catch (error) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

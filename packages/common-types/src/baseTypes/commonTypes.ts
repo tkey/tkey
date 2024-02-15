@@ -67,8 +67,8 @@ export interface IServiceProvider extends ISerializable {
 
   serviceProviderName: string;
 
-  encrypt(msg: Buffer): Promise<EncryptedMessage>;
-  decrypt(msg: EncryptedMessage): Promise<Buffer>;
+  encrypt(msg: Buffer, keyType: KeyType): Promise<EncryptedMessage>;
+  decrypt(msg: EncryptedMessage, keyType: KeyType): Promise<Buffer>;
   retrievePubKey(type: PubKeyType): Buffer;
   retrievePubKeyPoint(): curve.base.BasePoint;
   sign(msg: BNString): string;
@@ -84,15 +84,15 @@ export type TorusStorageLayerAPIParams = {
 export interface IStorageLayer extends ISerializable {
   storageLayerName: string;
 
-  getMetadata<T>(params: { serviceProvider?: IServiceProvider; privKey?: BN }): Promise<T>;
+  getMetadata<T>(params: { serviceProvider?: IServiceProvider; privKey?: BN; keyType: KeyType }): Promise<T>;
 
-  setMetadata<T>(params: { input: T; serviceProvider?: IServiceProvider; privKey?: BN }): Promise<{ message: string }>;
+  setMetadata<T>(params: { input: T; serviceProvider?: IServiceProvider; privKey?: BN; keyType: KeyType }): Promise<{ message: string }>;
 
-  setMetadataStream<T>(params: { input: T[]; serviceProvider?: IServiceProvider; privKey?: BN[] }): Promise<{ message: string }>;
+  setMetadataStream<T>(params: { input: T[]; serviceProvider?: IServiceProvider; privKey?: BN[]; keyType: KeyType }): Promise<{ message: string }>;
 
-  acquireWriteLock(params: { serviceProvider?: IServiceProvider; privKey?: BN }): Promise<{ status: number; id?: string }>;
+  acquireWriteLock(params: { serviceProvider?: IServiceProvider; privKey?: BN; keyType: KeyType }): Promise<{ status: number; id?: string }>;
 
-  releaseWriteLock(params: { id: string; serviceProvider?: IServiceProvider; privKey?: BN }): Promise<{ status: number }>;
+  releaseWriteLock(params: { id: string; serviceProvider?: IServiceProvider; privKey?: BN; keyType: KeyType }): Promise<{ status: number }>;
 }
 
 export type TorusStorageLayerArgs = {

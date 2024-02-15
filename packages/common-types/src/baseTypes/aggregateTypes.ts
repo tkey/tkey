@@ -157,6 +157,8 @@ export interface SecurityQuestionStoreArgs {
   polynomialID: PolynomialID;
 
   questions: string;
+
+  keyType: KeyType;
 }
 
 export interface TkeyStoreDataArgs {
@@ -271,8 +273,8 @@ export interface ITKeyApi {
   outputShare(shareIndex: BNString, type?: string): Promise<unknown>;
   inputShareStore(shareStore: ShareStore): void;
   deleteShare(shareIndex: BNString): Promise<DeleteShareResult>;
-  encrypt(data: Buffer): Promise<EncryptedMessage>;
-  decrypt(encryptedMesage: EncryptedMessage): Promise<Buffer>;
+  encrypt(data: Buffer, keyType: KeyType): Promise<EncryptedMessage>;
+  decrypt(encryptedMesage: EncryptedMessage, keyType: KeyType): Promise<Buffer>;
 
   getTKeyStoreItem(moduleName: string, id: string): Promise<TkeyStoreItemType>;
   getTKeyStore(moduleName: string): Promise<TkeyStoreItemType[]>;

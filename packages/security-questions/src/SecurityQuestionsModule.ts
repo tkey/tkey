@@ -1,10 +1,10 @@
 import {
-  ecCurve,
   GenerateNewShareResult,
   IModule,
   isEmptyObject,
   ISQAnswerStore,
   ITKeyApi,
+  keyTypeToCurve,
   SecurityQuestionStoreArgs,
   Share,
   ShareStore,
@@ -46,14 +46,16 @@ class SecurityQuestionsModule implements IModule {
     if (oldShareStores[sqIndex] && newShareStores[sqIndex]) {
       const sqAnswer = oldShareStores[sqIndex].share.share.sub(sqStore.nonce);
       let newNonce = newShareStores[sqIndex].share.share.sub(sqAnswer);
+      const ecCurve = keyTypeToCurve(sqStore.keyType);
       newNonce = newNonce.umod(ecCurve.curve.n);
 
       return new SecurityQuestionStore({
         nonce: newNonce,
         polynomialID: newShareStores[Object.keys(newShareStores)[0]].polynomialID,
-        sqPublicShare: newShareStores[sqIndex].share.getPublicShare(),
+        sqPublicShare: newShareStores[sqIndex].share.getPublicShare(sqStore.keyType),
         shareIndex: sqStore.shareIndex,
         questions: sqStore.questions,
+        keyType: sqStore.keyType,
       });
     }
     return undefined;
@@ -75,13 +77,15 @@ class SecurityQuestionsModule implements IModule {
     const newShareStore = newSharesDetails.newShareStores[newSharesDetails.newShareIndex.toString("hex")];
     const userInputHash = answerToUserInputHashBN(answerString);
     let nonce = newShareStore.share.share.sub(userInputHash);
+    const ecCurve = keyTypeToCurve(metadata.keyType);
     nonce = nonce.umod(ecCurve.curve.n);
     const sqStore = new SecurityQuestionStore({
       nonce,
       questions,
-      sqPublicShare: newShareStore.share.getPublicShare(),
+      sqPublicShare: newShareStore.share.getPublicShare(metadata.keyType),
       shareIndex: newShareStore.share.shareIndex,
       polynomialID: newShareStore.polynomialID,
+      keyType: metadata.keyType,
     });
     metadata.setGeneralStoreDomain(this.moduleName, sqStore);
 
@@ -110,10 +114,11 @@ class SecurityQuestionsModule implements IModule {
     const sqStore = new SecurityQuestionStore(rawSqStore as SecurityQuestionStoreArgs);
     const userInputHash = answerToUserInputHashBN(answerString);
     let share = sqStore.nonce.add(userInputHash);
+    const ecCurve = keyTypeToCurve(metadata.keyType);
     share = share.umod(ecCurve.curve.n);
     const shareStore = new ShareStore(new Share(sqStore.shareIndex, share), sqStore.polynomialID);
     // validate if share is correct
-    const derivedPublicShare = shareStore.share.getPublicShare();
+    const derivedPublicShare = shareStore.share.getPublicShare(metadata.keyType);
     if (derivedPublicShare.shareCommitment.x.cmp(sqStore.sqPublicShare.shareCommitment.x) !== 0) {
       throw SecurityQuestionsError.incorrectAnswer();
     }
@@ -134,6 +139,7 @@ class SecurityQuestionsModule implements IModule {
     const userInputHash = answerToUserInputHashBN(newAnswerString);
     const sqShare = this.tbSDK.outputShareStore(sqStore.shareIndex);
     let nonce = sqShare.share.share.sub(userInputHash);
+    const ecCurve = keyTypeToCurve(sqStore.keyType);
     nonce = nonce.umod(ecCurve.curve.n);
 
     const newSqStore = new SecurityQuestionStore({
@@ -142,6 +148,7 @@ class SecurityQuestionsModule implements IModule {
       sqPublicShare: sqStore.sqPublicShare,
       shareIndex: sqStore.shareIndex,
       questions: newQuestions,
+      keyType: metadata.keyType,
     });
     metadata.setGeneralStoreDomain(this.moduleName, newSqStore);
     await this.saveAnswerOnTkeyStore(newAnswerString);
