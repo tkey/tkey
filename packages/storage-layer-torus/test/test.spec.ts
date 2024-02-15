@@ -1,6 +1,7 @@
 import { describe, it } from "node:test";
 
 import { generatePrivate, KeyType } from "@tkey/common-types";
+import assert from "assert";
 import { BN } from "bn.js";
 
 import TorusStorageLayer from "../src/TorusStorageLayer";
@@ -12,11 +13,12 @@ keyTypes.forEach((keyType) => {
     it("#should encrypt and decrypt correctly", async function () {
       const privKey = generatePrivate(keyType);
       const tmp = new BN(123);
-      const message = Buffer.from(tmp.toString("hex"));
+      const message = tmp.toBuffer();
       const storageLayer = new TorusStorageLayer({ hostUrl: metadataURL });
-      const result = await storageLayer.setMetadata({ input: message, privKey, keyType });
-      // eslint-disable-next-line no-console
-      console.log(result);
+      const _ = await storageLayer.setMetadata({ input: message, privKey, keyType });
+
+      const readResult = await storageLayer.getMetadata({ privKey, keyType });
+      assert(Buffer.from(readResult.data).equals(Buffer.from(message)));
     });
   });
 });
