@@ -217,7 +217,7 @@ class TorusStorageLayer implements IStorageLayer {
       pub_key_Y: pubY,
       set_data: setTKeyStore,
       signature: sig,
-      key_type: keyType,
+      key_type: keyType.toString(),
       namespace,
     };
   }

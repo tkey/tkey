@@ -21,7 +21,7 @@ class ThresholdKey extends TKey {
       finalServiceProvider = serviceProvider;
     }
     if (!storageLayer) {
-      finalStorageLayer = new TorusStorageLayer({ hostUrl: "https://metadata.tor.us", serverTimeOffset });
+      finalStorageLayer = new TorusStorageLayer({ hostUrl: "https://node-1.node.web3auth.io/metadata", serverTimeOffset });
     } else {
       finalStorageLayer = storageLayer;
     }
@@ -53,7 +53,7 @@ class ThresholdKey extends TKey {
       storageLayer ||
       MockStorageLayer.fromJSON(tempOldStorageLayer) ||
       TorusStorageLayer.fromJSON(tempOldStorageLayer) ||
-      new TorusStorageLayer({ hostUrl: "https://metadata.tor.us", serverTimeOffset });
+      new TorusStorageLayer({ hostUrl: "https://node-1.node.web3auth.io/metadata", serverTimeOffset });
 
     return super.fromJSON(value, {
       ...(args || {}),

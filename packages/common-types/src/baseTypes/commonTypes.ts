@@ -79,7 +79,7 @@ export type TorusStorageLayerAPIParams = {
   set_data: unknown;
   signature: string;
   namespace: string;
-  key_type: KeyType;
+  key_type: string;
 };
 
 export interface IStorageLayer extends ISerializable {
