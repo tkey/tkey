@@ -1,4 +1,5 @@
 import BN from "bn.js";
+import { curve } from "elliptic";
 
 import { BNString, IPoint, KeyType, keyTypeToCurve, StringifiedType } from "../baseTypes/commonTypes";
 
@@ -46,6 +47,11 @@ export class Point implements IPoint {
   toSEC1(compressed = false): string {
     const ecCurve = keyTypeToCurve(this.keyType);
     return ecCurve.keyFromPublic({ x: this.x.toString("hex"), y: this.y.toString("hex") }).getPublic(compressed, "hex");
+  }
+
+  toBasePoint(): curve.base.BasePoint {
+    const ecCurve = keyTypeToCurve(this.keyType);
+    return ecCurve.keyFromPublic({ x: this.x.toString("hex"), y: this.y.toString("hex") }).getPublic();
   }
 
   toJSON(): StringifiedType {

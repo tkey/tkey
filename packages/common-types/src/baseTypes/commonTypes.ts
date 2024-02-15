@@ -20,6 +20,13 @@ export function keyTypeToCurve(keyType: KeyType): EllipticCurve {
   }
 }
 
+export const curveSign = (privKey: Buffer, keyType: KeyType, msg: Buffer): EllipticCurve.Signature => {
+  const ecCurve = keyTypeToCurve(keyType);
+  const k = ecCurve.keyFromPrivate(privKey);
+  const sig = k.sign(new BN(msg, "hex"));
+  return sig;
+};
+
 export type PubKeyType = "ecc";
 
 // @flow

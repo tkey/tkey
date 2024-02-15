@@ -1,4 +1,4 @@
-import { IAuthMetadata, KeyType, keyTypeToCurve, StringifiedType, stripHexPrefix, toPrivKeyEC } from "@tkey/common-types";
+import { IAuthMetadata, KeyType, keyTypeToCurve, StringifiedType, stripHexPrefix } from "@tkey/common-types";
 import { keccak256 } from "@toruslabs/torus.js";
 import BN from "bn.js";
 import { ec as EllipticCurve } from "elliptic";
@@ -42,7 +42,7 @@ class AuthMetadata implements IAuthMetadata {
 
     if (!this.privKey) throw CoreError.privKeyUnavailable();
     const ecCurve = keyTypeToCurve(this.keyType);
-    const k = toPrivKeyEC(this.privKey, ecCurve);
+    const k = ecCurve.keyFromPrivate(this.privKey.toBuffer());
     const sig = k.sign(stripHexPrefix(keccak256(Buffer.from(stringify(data), "utf8"))));
 
     return {

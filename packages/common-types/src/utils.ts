@@ -54,6 +54,10 @@ export async function keyTypeEncrypt(privateKey: Buffer, msg: Buffer, keyType: K
 }
 
 export async function keyTypeDecrypt(privateKey: Buffer, msg: EncryptedMessage, keyType: KeyType): Promise<Buffer> {
+  if (privateKey.length !== 32) {
+    throw new Error("Invalid private key length");
+  }
+
   let encKey = privateKey;
   if (keyType === KeyType.ed25519) {
     encKey = ed25519ToSecp256k1(new BN(privateKey)).toBuffer();

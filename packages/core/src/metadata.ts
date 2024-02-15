@@ -1,6 +1,5 @@
 import {
   EncryptedMessage,
-  getPubKeyPoint,
   IMetadata,
   KeyType,
   keyTypeDecrypt,
@@ -229,7 +228,7 @@ class Metadata implements IMetadata {
   }
 
   shareToShareStore(share: BN): ShareStore {
-    const pubkey = getPubKeyPoint(share, this.keyType);
+    const pubkey = Point.fromSEC1(share.toString("hex"), this.keyType);
     let returnShare: ShareStore;
 
     for (let i = this.polyIDList.length - 1; i >= 0; i -= 1) {

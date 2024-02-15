@@ -1,16 +1,14 @@
 import {
   BNString,
   EncryptedMessage,
-  getPubKeyECC,
   IServiceProvider,
   KeyType,
   keyTypeDecrypt,
   keyTypeEncrypt,
-  keyTypeToCurve,
+  Point,
   PubKeyType,
   ServiceProviderArgs,
   StringifiedType,
-  toPrivKeyEC,
 } from "@tkey/common-types";
 import BN from "bn.js";
 import { curve } from "elliptic";
@@ -65,21 +63,20 @@ class ServiceProviderBase implements IServiceProvider {
   }
 
   retrievePubKeyPoint(): curve.base.BasePoint {
-    const ecCurve = keyTypeToCurve(this.keyType);
-    return toPrivKeyEC(this.postboxKey, ecCurve).getPublic();
+    return Point.fromPrivate(this.postboxKey, this.keyType).toBasePoint();
   }
 
   retrievePubKey(type: PubKeyType): Buffer {
     if (type === "ecc") {
-      return getPubKeyECC(this.postboxKey);
+      return Buffer.from(Point.fromPrivate(this.postboxKey, this.keyType).toSEC1());
     }
     throw new Error("Unsupported pub key type");
   }
 
   sign(msg: BNString): string {
     const tmp = new BN(msg, "hex");
-    const ecCurve = keyTypeToCurve(this.keyType);
-    const sig = toPrivKeyEC(this.postboxKey, ecCurve).sign(tmp.toString("hex"));
+    const sig = curveSign(this.postboxKey, this.keyType, tmp);
+
     return Buffer.from(sig.r.toString(16, 64) + sig.s.toString(16, 64) + new BN(0).toString(16, 2), "hex").toString("base64");
   }
 

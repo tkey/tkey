@@ -7,7 +7,6 @@ import {
   GenerateNewShareResult,
   generatePrivate,
   generatePrivateExcludingIndexes,
-  getPubKeyPoint,
   IMessageMetadata,
   IMetadata,
   InitializeNewKeyResult,
@@ -433,7 +432,7 @@ class ThresholdKey implements ITKey {
     }
     const privKey = lagrangeInterpolation(shareArr, shareIndexArr, this.keyType);
     // check that priv key regenerated is correct
-    const reconstructedPubKey = getPubKeyPoint(privKey, this.keyType);
+    const reconstructedPubKey = Point.fromSEC1(privKey.toString("hex"), this.keyType);
     if (this.metadata.pubKey.x.cmp(reconstructedPubKey.x) !== 0) {
       throw CoreError.incorrectReconstruction();
     }
@@ -595,7 +594,7 @@ class ThresholdKey implements ITKey {
         const oldShare = oldPoly.polyEval(new BN(shareIndex, "hex"));
         // use secp key for encryption
         const encryptedShare = await keyTypeEncrypt(oldShare.toBuffer(), Buffer.from(JSON.stringify(newShareStores[shareIndex])), this.keyType);
-        newScopedStore[getPubKeyPoint(oldShare, this.keyType).x.toString("hex")] = encryptedShare;
+        newScopedStore[Point.fromSEC1(oldShare.toString("hex"), this.keyType).x.toString("hex")] = encryptedShare;
         oldShareStores[shareIndex] = new ShareStore(new Share(shareIndex, oldShare), previousPolyID);
         return oldShare;
       })
