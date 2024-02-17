@@ -26,7 +26,7 @@
     "coverage": "nyc npm test",
     "coverage-production": "nyc npm run test-production",
     "test-development": "MOCKED=false METADATA=http://localhost:5051 npm run test",
-    "test-production": "MOCKED=false METADATA=https://node-1.node.web3auth.io/metadata  npm run test",
+    "test-production": "MOCKED=false METADATA=https://node-1.dev-node.web3auth.io/metadata  npm run test",
     "test-debugger": "node --inspect-brk --test -r esbuild-register test/*.spec.ts",
     "dev": "rimraf dist/ && cross-env NODE_ENV=development torus-scripts build",
     "build": "rimraf dist/ && cross-env NODE_ENV=production torus-scripts build",

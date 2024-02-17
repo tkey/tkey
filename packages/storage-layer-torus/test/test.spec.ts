@@ -6,7 +6,7 @@ import { BN } from "bn.js";
 
 import TorusStorageLayer from "../src/TorusStorageLayer";
 
-const metadataURL = process.env.METADATA || "https://node-1.node.web3auth.io/metadata";
+const metadataURL = process.env.METADATA || "https://node-1.dev-node.web3auth.io/metadata";
 
 const keyTypes = [KeyType.secp256k1, KeyType.ed25519];
 keyTypes.forEach((keyType) => {

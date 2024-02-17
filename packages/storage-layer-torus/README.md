@@ -30,7 +30,7 @@ const storageLayer = new TorusStorageLayer(TorusStorageLayerArgs);
 ```ts
 declare type TorusStorageLayerArgs = {
   enableLogging?: boolean;
-  hostUrl?: string; // use `https://node-1.node.web3auth.io/metadata` for connecting to the Torus Metadata Server
+  hostUrl?: string; // use `https://node-1.dev-node.web3auth.io/metadata` for connecting to the Torus Metadata Server
   serverTimeOffset?: number;
 };
 ```
@@ -40,5 +40,5 @@ declare type TorusStorageLayerArgs = {
 ```js
 import TorusStorageLayer from "@tkey/storage-layer-torus";
 
-const storageLayer = new TorusStorageLayer({ hostUrl: "https://node-1.node.web3auth.io/metadata" });
+const storageLayer = new TorusStorageLayer({ hostUrl: "https://node-1.dev-node.web3auth.io/metadata" });
 ```
