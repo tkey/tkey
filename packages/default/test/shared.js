@@ -377,7 +377,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
       const sharesStoresAtEpoch3 = tb.getAllShareStoresForLatestPolynomial();
       await tb.CRITICAL_deleteTkey();
 
-      const spData = await customSL.getMetadata({ serviceProvider: customSP });
+      const spData = await customSL.getMetadata({ serviceProvider: customSP, keyType });
       const data2 = await Promise.allSettled(shareStoresAtEpoch2.map((x) => tb.catchupToLatestShare({ shareStore: x })));
       const data3 = await Promise.all(sharesStoresAtEpoch3.map((x) => customSL.getMetadata({ privKey: x.share.share, keyType })));
 
@@ -408,7 +408,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
         await tb2.syncLocalMetadataTransitions();
       }
 
-      const data3 = await customSL.getMetadata({ serviceProvider: customSP });
+      const data3 = await customSL.getMetadata({ serviceProvider: customSP, keyType });
       notEqual(data3.message, KEY_NOT_FOUND);
       deepStrictEqual(tb2.metadata.nonce, 1);
 
