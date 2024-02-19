@@ -11,6 +11,7 @@ import {
   FromJSONConstructor,
   GenerateNewShareResult,
   generatePrivateExcludingIndexes,
+  generateSalt,
   getPubKeyECC,
   getPubKeyPoint,
   hexPoint,
@@ -226,19 +227,6 @@ class ThresholdKey implements ITKey {
     throw CoreError.metadataUndefined();
   }
 
-  computeNonce(index: number) {
-    // generation should occur during tkey.init, fails if chaincode is absent
-    const { chainCode } = this.metadata;
-    if (!chainCode) {
-      throw CoreError.default("chainCode is absent, required for nonce generation");
-    }
-    return index && index > 0 ? new BN(keccak256(Buffer.from(`${index}${chainCode}`)).slice(2), "hex").umod(ecCurve.curve.n) : new BN(0);
-  }
-
-  generateSalt() {
-    return generatePrivate().toString("hex");
-  }
-
   async initialize(params?: {
     withShare?: ShareStore;
     importKey?: BN;
@@ -313,8 +301,8 @@ class ThresholdKey implements ITKey {
         });
         if (useTSS) {
           const { factorEncs, factorPubs, tssPolyCommits } = await this._initializeNewTSSKey(this.tssTag, deviceTSSShare, factorPub, deviceTSSIndex);
-          const chainCode = this.generateSalt();
-          this.metadata.addTSSData({ tssTag: this.tssTag, tssNonce: 0, tssPolyCommits, factorPubs, factorEncs, chainCode });
+          const accountSalt = generateSalt();
+          this.metadata.addTSSData({ tssTag: this.tssTag, tssNonce: 0, tssPolyCommits, factorPubs, factorEncs, accountSalt });
         }
         return this.getKeyDetails();
       }
@@ -432,7 +420,7 @@ class ThresholdKey implements ITKey {
       }
       if (tssSharePub.getX().cmp(_tssSharePub.getX()) === 0 && tssSharePub.getY().cmp(_tssSharePub.getY()) === 0) {
         if (accountIndex && accountIndex > 0) {
-          const nonce = this.computeNonce(accountIndex);
+          const nonce = this.computeAccountNonce(accountIndex);
           const derivedShare = userDec.add(nonce).umod(ecCurve.n);
           return { tssIndex, tssShare: derivedShare };
         }
@@ -463,15 +451,12 @@ class ThresholdKey implements ITKey {
       for (let j = 0; j < tssIndex; j++) {
         _tssSharePub = _tssSharePub.add(tssCommitA1);
       }
-      if (accountIndex && accountIndex > 0) {
-        const nonce = this.computeNonce(accountIndex);
-        const derivedShare = tssShare.add(nonce).umod(ecCurve.n);
-        if (tssSharePub.getX().cmp(_tssSharePub.getX()) === 0 && tssSharePub.getY().cmp(_tssSharePub.getY()) === 0) {
+      if (tssSharePub.getX().cmp(_tssSharePub.getX()) === 0 && tssSharePub.getY().cmp(_tssSharePub.getY()) === 0) {
+        if (accountIndex && accountIndex > 0) {
+          const nonce = this.computeAccountNonce(accountIndex);
+          const derivedShare = tssShare.add(nonce).umod(ecCurve.n);
           return { tssIndex, tssShare: derivedShare };
         }
-      }
-
-      if (tssSharePub.getX().cmp(_tssSharePub.getX()) === 0 && tssSharePub.getY().cmp(_tssSharePub.getY()) === 0) {
         return { tssIndex, tssShare };
       }
     }
@@ -488,17 +473,16 @@ class ThresholdKey implements ITKey {
   }
 
   getTSSPub(accountIndex?: number): Point {
+    const tssCommits = this.getTSSCommits();
     if (accountIndex && accountIndex > 0) {
-      const nonce = this.computeNonce(accountIndex);
+      const nonce = this.computeAccountNonce(accountIndex);
       // we need to add the pub key nonce to the tssPub
       const noncePub = ecCurve.keyFromPrivate(nonce.toString("hex")).getPublic();
-      const pubKeyPoint = ecCurve
-        .keyFromPublic({ x: this.getTSSCommits()[0].x.toString("hex"), y: this.getTSSCommits()[0].y.toString("hex") })
-        .getPublic();
+      const pubKeyPoint = ecCurve.keyFromPublic({ x: tssCommits[0].x.toString("hex"), y: tssCommits[0].y.toString("hex") }).getPublic();
       const dervicepubKeyPoint = pubKeyPoint.add(noncePub);
       return new Point(dervicepubKeyPoint.getX().toString("hex"), dervicepubKeyPoint.getY().toString("hex"));
     }
-    return this.getTSSCommits()[0];
+    return tssCommits[0];
   }
 
   /**
@@ -912,7 +896,7 @@ class ThresholdKey implements ITKey {
           serverEncs: refreshResponse.serverFactorEncs,
         };
       }
-      const chainCode = this.generateSalt();
+      const accountSalt = generateSalt();
 
       this.metadata.addTSSData({
         tssTag: this.tssTag,
@@ -920,7 +904,7 @@ class ThresholdKey implements ITKey {
         tssPolyCommits: newTSSCommits,
         factorPubs,
         factorEncs,
-        chainCode,
+        accountSalt,
       });
       await this._syncShareMetadata();
     } catch (error) {
@@ -2006,6 +1990,16 @@ class ThresholdKey implements ITKey {
 
   private async initializeModules() {
     return Promise.all(Object.keys(this.modules).map((x) => this.modules[x].initialize()));
+  }
+
+  private computeAccountNonce(index: number) {
+    // generation should occur during tkey.init, fails if accountSalt is absent
+    const { accountSalt } = this.metadata;
+    if (!accountSalt) {
+      throw CoreError.accountSaltUndefined();
+    }
+    const accountHash = keccak256(Buffer.from(`${index}${accountSalt}`)).slice(2);
+    return index && index > 0 ? new BN(accountHash, "hex").umod(ecCurve.curve.n) : new BN(0);
   }
 }
 

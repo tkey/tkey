@@ -79,7 +79,7 @@ export interface IMetadata extends ISerializable {
 
   nonce: number;
 
-  chainCode?: string;
+  accountSalt?: string;
 
   getShareIndexesForPolynomial(polyID: PolynomialID): string[];
   getLatestPublicPolynomial(): PublicPolynomial;
@@ -91,7 +91,7 @@ export interface IMetadata extends ISerializable {
     factorEncs?: {
       [factorPubID: string]: FactorEnc;
     };
-    chainCode?: string;
+    accountSalt?: string;
   }): void;
   addPublicShare(polynomialID: PolynomialID, publicShare: PublicShare): void;
   setGeneralStoreDomain(key: string, obj: unknown): void;

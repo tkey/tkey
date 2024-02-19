@@ -40,7 +40,6 @@
     "@toruslabs/rss-client": "^1.5.0",
     "@toruslabs/torus.js": "^11.0.6",
     "bn.js": "^5.2.1",
-    "crypto": "^1.0.1",
     "elliptic": "^6.5.4",
     "json-stable-stringify": "^1.0.2"
   },

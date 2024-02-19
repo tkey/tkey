@@ -69,7 +69,7 @@ class Metadata implements IMetadata {
   };
 
   // salt
-  chainCode?: string;
+  accountSalt?: string;
 
   constructor(input: Point) {
     this.tssPolyCommits = {};
@@ -87,7 +87,7 @@ class Metadata implements IMetadata {
   }
 
   static fromJSON(value: StringifiedType): Metadata {
-    const { pubKey, polyIDList, generalStore, tkeyStore, scopedStore, nonce, tssNonces, tssPolyCommits, factorPubs, factorEncs, chainCode } = value;
+    const { pubKey, polyIDList, generalStore, tkeyStore, scopedStore, nonce, tssNonces, tssPolyCommits, factorPubs, factorEncs, accountSalt } = value;
     const point = Point.fromCompressedPub(pubKey);
     const metadata = new Metadata(point);
     const unserializedPolyIDList: PolyIDAndShares[] = [];
@@ -96,7 +96,7 @@ class Metadata implements IMetadata {
     if (tkeyStore) metadata.tkeyStore = tkeyStore;
     if (scopedStore) metadata.scopedStore = scopedStore;
     if (nonce) metadata.nonce = nonce;
-    if (chainCode) metadata.chainCode = chainCode;
+    if (accountSalt) metadata.accountSalt = accountSalt;
     if (tssPolyCommits) {
       metadata.tssPolyCommits = {};
       for (const key in tssPolyCommits) {
@@ -194,15 +194,15 @@ class Metadata implements IMetadata {
     factorEncs?: {
       [factorPubID: string]: FactorEnc;
     };
-    chainCode?: string;
+    accountSalt?: string;
   }): void {
-    const { tssTag, tssNonce, tssPolyCommits, factorPubs, factorEncs, chainCode } = tssData;
+    const { tssTag, tssNonce, tssPolyCommits, factorPubs, factorEncs, accountSalt } = tssData;
     if (tssNonce !== undefined) this.tssNonces[tssTag] = tssNonce;
     if (tssPolyCommits) this.tssPolyCommits[tssTag] = tssPolyCommits;
     if (factorPubs) this.factorPubs[tssTag] = factorPubs;
     if (factorEncs) this.factorEncs[tssTag] = factorEncs;
-    if (chainCode && !this.chainCode) {
-      this.chainCode = chainCode;
+    if (accountSalt && !this.accountSalt) {
+      this.accountSalt = accountSalt;
     }
   }
 
@@ -347,7 +347,7 @@ class Metadata implements IMetadata {
       ...(this.tssPolyCommits && { tssPolyCommits: this.tssPolyCommits }),
       ...(this.factorPubs && { factorPubs: this.factorPubs }),
       ...(this.factorEncs && { factorEncs: this.factorEncs }),
-      ...(this.chainCode && { chainCode: this.chainCode }),
+      ...(this.accountSalt && { accountSalt: this.accountSalt }),
     };
   }
 }
