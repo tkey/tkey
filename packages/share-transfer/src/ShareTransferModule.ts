@@ -3,6 +3,7 @@ import {
   encrypt,
   generatePrivate,
   getEncryptionPrivateKey,
+  getEncryptionPublicKey,
   IModule,
   ITKeyApi,
   ITkeyError,
@@ -92,7 +93,7 @@ class ShareTransferModule implements IModule {
     const encPubPoint = Point.fromPrivate(this.currentEncKey, KeyType.secp256k1);
     const encPubKeyX = encPubPoint.x.toString("hex");
     newShareTransferStore[encPubKeyX] = new ShareRequest({
-      encPubKey: Buffer.from(encPubPoint.toSEC1(), "hex"),
+      encPubKey: getEncryptionPublicKey(this.currentEncKey, KeyType.secp256k1),
       encShareInTransit: undefined,
       availableShareIndexes,
       userAgent,
