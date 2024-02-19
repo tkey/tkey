@@ -768,7 +768,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       });
 
       it(`#should be not be able to lookup delete share, manualSync=${mode}`, async function () {
-        if (!customSP.useTSS) this();
+        if (!customSP.useTSS) this.skip();
         const newKeys = Object.keys(shareStoreAfterDelete);
         if (newKeys.find((el) => el === deletedShareIndex.toString("hex"))) {
           fail("Unable to delete share index");
@@ -808,7 +808,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       //   // TODO: check that TSS nonce is reset
       // });
       it(`#should be able to reinitialize after wipe, manualSync=${mode}`, async function () {
-        if (!customSP.useTSS) this();
+        if (!customSP.useTSS) this.skip();
         // create 2/4
         const resp1 = await tb._initializeNewKey({ initializeModules: true });
         await tb.generateNewShare();
@@ -842,7 +842,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         tb = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
       });
       it(`#should serialize and deserialize correctly without tkeyArgs, manualSync=${mode}`, async function () {
-        if (!customSP.useTSS) this();
+        if (!customSP.useTSS) this.skip();
         const sp = customSP;
         let userInput = new BN(keccak256(Buffer.from("user answer blublu", "utf-8")).slice(2), "hex");
         userInput = userInput.umod(ecCurve.curve.n);
@@ -900,7 +900,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         strictEqual(tssPrivKey.toString("hex"), tssPrivKey2.toString("hex"), "Incorrect tss key");
       });
       it(`#should serialize and deserialize correctly with tkeyArgs, manualSync=${mode}`, async function () {
-        if (!customSP.useTSS) this();
+        if (!customSP.useTSS) this.skip();
         let userInput = new BN(keccak256(Buffer.from("user answer blublu", "utf-8")).slice(2), "hex");
         userInput = userInput.umod(ecCurve.curve.n);
         const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
@@ -959,7 +959,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       });
       // TODO: add test for initialize such that initialize throws if the remote metadata is already there
       it(`#should serialize and deserialize correctly, keeping localTransitions consistent before syncing NewKeyAssign, manualSync=${mode}`, async function () {
-        if (!customSP.useTSS) this();
+        if (!customSP.useTSS) this.skip();
 
         const sp = customSP;
         sp.verifierName = "torus-test-health";
@@ -1005,7 +1005,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         }
       });
       it(`#should serialize and deserialize correctly keeping localTransitions afterNewKeyAssign, manualSync=${mode}`, async function () {
-        if (!customSP.useTSS) this();
+        if (!customSP.useTSS) this.skip();
         let userInput = new BN(keccak256(Buffer.from("user answer blublu", "utf-8")).slice(2), "hex");
         userInput = userInput.umod(ecCurve.curve.n);
         const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
