@@ -1,6 +1,7 @@
 import { decrypt as ecDecrypt, encrypt as ecEncrypt } from "@toruslabs/eccrypto";
 import { keccak256, toChecksumAddress } from "@toruslabs/torus.js";
 import BN from "bn.js";
+import { ec } from "elliptic";
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { keccak512 } from "ethereum-cryptography/keccak";
 import { serializeError } from "serialize-error";
@@ -14,26 +15,21 @@ export const generatePrivate = (keyType: KeyType): BN => {
   return key.getPrivate();
 };
 
-export function getEncryptionPrivateKey(privateKey: BN, keyType: KeyType): Buffer {
+function getPrivateKeyForEncryption(privateKey: BN, keyType: KeyType): ec.KeyPair {
   let priv = toPrivKeyEC(privateKey, keyType);
-
   if (keyType === KeyType.ed25519) {
     const secpCurve = keyTypeToCurve(KeyType.secp256k1);
     priv = toPrivKeyEC(new BN(keccak512(toPrivKeyECC(privateKey, keyType))).umod(secpCurve.curve.n), KeyType.secp256k1);
   }
+  return priv;
+}
 
-  return toPrivKeyECC(priv.getPrivate(), KeyType.secp256k1);
+export function getEncryptionPrivateKey(privateKey: BN, keyType: KeyType): Buffer {
+  return toPrivKeyECC(getPrivateKeyForEncryption(privateKey, keyType).getPrivate(), KeyType.secp256k1);
 }
 
 export function getEncryptionPublicKey(privateKey: BN, keyType: KeyType): Buffer {
-  let priv = toPrivKeyEC(privateKey, keyType);
-
-  if (keyType === KeyType.ed25519) {
-    const secpCurve = keyTypeToCurve(KeyType.secp256k1);
-    priv = toPrivKeyEC(new BN(keccak512(toPrivKeyECC(privateKey, keyType))).umod(secpCurve.curve.n), KeyType.secp256k1);
-  }
-
-  return Buffer.from(getPubKeyEC(priv.getPrivate(), KeyType.secp256k1).encode("hex", false), "hex");
+  return Buffer.from(getPubKeyEC(getPrivateKeyForEncryption(privateKey, keyType).getPrivate(), KeyType.secp256k1).encode("hex", false), "hex");
 }
 
 // Wrappers around ECC encrypt/decrypt to use the hex serialization
