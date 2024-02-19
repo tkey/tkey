@@ -27,7 +27,7 @@ export class Point implements IPoint {
     return new Point(pt.getX(), pt.getY(), keyType);
   }
 
-  static fromPrivate(privateKey: BNString, keyType: KeyType): Point {
+  static fromPrivate(privateKey: BN, keyType: KeyType): Point {
     const ecCurve = keyTypeToCurve(keyType);
     const key = ecCurve.keyFromPrivate(privateKey.toString("hex"), "hex");
     const pt = key.getPublic();

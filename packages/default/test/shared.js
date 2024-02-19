@@ -1616,7 +1616,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
       let metadataUrl = getMetadataUrl();
       if (metadataUrl === "https://node-1.dev-node.web3auth.io/metadata") metadataUrl = "https://metadata-testing.tor.us";
       await post(
-        `${metadataUrl}/get_or_set_nonce`,
+        `${metadataUrl}/set_nonce`,
         {
           pub_key_X: pubKeyPoint.x.toString("hex"),
           pub_key_Y: pubKeyPoint.y.toString("hex"),
