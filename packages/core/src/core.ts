@@ -610,7 +610,8 @@ class ThresholdKey implements ITKey {
         const adjustedGeneralStore = this._refreshMiddleware[moduleName](
           this.metadata.getGeneralStoreDomain(moduleName),
           oldShareStores,
-          newShareStores
+          newShareStores,
+          this.keyType
         );
         if (!adjustedGeneralStore) this.metadata.deleteGeneralStoreDomain(moduleName);
         else this.metadata.setGeneralStoreDomain(moduleName, adjustedGeneralStore);
@@ -1101,7 +1102,7 @@ class ThresholdKey implements ITKey {
 
   _addRefreshMiddleware(
     moduleName: string,
-    middleware: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap) => unknown
+    middleware: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap, keyType: KeyType) => unknown
   ): void {
     this._refreshMiddleware[moduleName] = middleware;
   }

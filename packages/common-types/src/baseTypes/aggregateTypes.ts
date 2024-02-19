@@ -42,7 +42,7 @@ export type ModuleMap = {
 };
 
 export type RefreshMiddlewareMap = {
-  [moduleName: string]: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap) => unknown;
+  [moduleName: string]: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap, keyType: KeyType) => unknown;
 };
 
 export type ReconstructKeyMiddlewareMap = {
@@ -260,7 +260,7 @@ export interface ITKeyApi {
   addShareDescription(shareIndex: string, description: string, updateMetadata?: boolean): Promise<void>;
   _addRefreshMiddleware(
     moduleName: string,
-    middleware: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap) => unknown
+    middleware: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap, keyType: KeyType) => unknown
   ): void;
   _addReconstructKeyMiddleware(moduleName: string, middleware: () => Promise<Array<BN>>): void;
   _addShareSerializationMiddleware(
