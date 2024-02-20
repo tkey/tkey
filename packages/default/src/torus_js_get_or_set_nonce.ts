@@ -1,9 +1,7 @@
-import { KeyType } from "@tkey/common-types";
+import { KeyType, keyTypeToCurve } from "@tkey/common-types";
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { post } from "@toruslabs/http-helpers";
 import BN from "bn.js";
-// eslint-disable-next-line import/no-extraneous-dependencies
-import { ec } from "elliptic";
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { keccak256 } from "ethereum-cryptography/keccak";
 // eslint-disable-next-line import/no-extraneous-dependencies
@@ -48,8 +46,9 @@ export interface MetadataParams {
   signature: string;
 }
 
-export function generateMetadataParams(ecCurve: ec, serverTimeOffset: number, message: string, privateKey: BN, keyType: KeyType): MetadataParams {
-  const key = ecCurve.keyFromPrivate(privateKey.toString("hex", 64));
+export function generateMetadataParams(serverTimeOffset: number, message: string, privateKey: BN, keyType: KeyType): MetadataParams {
+  const ec = keyTypeToCurve(keyType);
+  const key = ec.keyFromPrivate(privateKey.toString("hex", 64), "hex");
   const setData = {
     data: message,
     timestamp: new BN(~~(serverTimeOffset + Date.now() / 1000)).toString(16),
@@ -66,7 +65,6 @@ export function generateMetadataParams(ecCurve: ec, serverTimeOffset: number, me
 
 export async function getOrSetNonce(
   legacyMetadataHost: string,
-  ecCurve: ec,
   serverTimeOffset: number,
   X: string,
   Y: string,
@@ -77,7 +75,7 @@ export async function getOrSetNonce(
   let data: Data;
   const msg = getOnly ? "getNonce" : "getOrSetNonce";
   if (privKey) {
-    data = generateMetadataParams(ecCurve, serverTimeOffset, msg, privKey, keyType);
+    data = generateMetadataParams(serverTimeOffset, msg, privKey, keyType);
   } else {
     data = {
       pub_key_X: X,

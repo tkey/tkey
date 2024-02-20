@@ -1567,7 +1567,6 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
       const storageLayer2 = new TorusStorageLayer({ hostUrl: getMetadataUrl() });
       const { typeOfUser, nonce, pubNonce } = await getOrSetNonce(
         getMetadataUrl(),
-        serviceProvider.customAuthInstance.torus.ec,
         0,
         pubKeyPoint.x.toString("hex"),
         pubKeyPoint.y.toString("hex"),
@@ -1594,15 +1593,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
         nonce: newNonce,
         pubNonce: newPubNonce,
         upgraded,
-      } = await getOrSetNonce(
-        getMetadataUrl(),
-        serviceProvider.customAuthInstance.torus.ec,
-        0,
-        pubKeyPoint.x.toString("hex"),
-        pubKeyPoint.y.toString("hex"),
-        keyType,
-        postboxKeyBN
-      );
+      } = await getOrSetNonce(getMetadataUrl(), 0, pubKeyPoint.x.toString("hex"), pubKeyPoint.y.toString("hex"), keyType, postboxKeyBN);
       equal(upgraded, true);
       equal(newTypeOfUser, "v2");
       equal(newNonce, undefined);
@@ -1629,6 +1620,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
       );
 
       // Call get or set nonce
+      /*
       const serviceProvider = new TorusServiceProvider({
         postboxKey: postboxKeyBN.toString("hex"),
         customAuthArgs: {
@@ -1641,27 +1633,12 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
         },
         keyType,
       });
+      */
 
-      const res = await getOrSetNonce(
-        metadataUrl,
-        serviceProvider.customAuthInstance.torus.ec,
-        0,
-        pubKeyPoint.x.toString("hex"),
-        pubKeyPoint.y.toString("hex"),
-        keyType,
-        postboxKeyBN
-      );
+      const res = await getOrSetNonce(metadataUrl, 0, pubKeyPoint.x.toString("hex"), pubKeyPoint.y.toString("hex"), keyType, postboxKeyBN);
       equal(res.typeOfUser, "v1");
 
-      const anotherRes = await getOrSetNonce(
-        metadataUrl,
-        serviceProvider.customAuthInstance.torus.ec,
-        0,
-        pubKeyPoint.x.toString("hex"),
-        pubKeyPoint.y.toString("hex"),
-        keyType,
-        postboxKeyBN
-      );
+      const anotherRes = await getOrSetNonce(metadataUrl, 0, pubKeyPoint.x.toString("hex"), pubKeyPoint.y.toString("hex"), keyType, postboxKeyBN);
       deepEqual(res, anotherRes);
     });
 
