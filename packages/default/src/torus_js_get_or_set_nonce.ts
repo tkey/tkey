@@ -50,7 +50,8 @@ export function generateMetadataParams(serverTimeOffset: number, message: string
   const ec = keyTypeToCurve(keyType);
   const key = ec.keyFromPrivate(privateKey.toString("hex", 64), "hex");
   const setData = {
-    data: message,
+    operation: message,
+    data: "",
     timestamp: new BN(~~(serverTimeOffset + Date.now() / 1000)).toString(16),
   };
   const sig = key.sign(keccak256(Buffer.from(stringify(setData), "utf8")).slice(2));
@@ -80,7 +81,7 @@ export async function getOrSetNonce(
     data = {
       pub_key_X: X,
       pub_key_Y: Y,
-      set_data: { data: msg },
+      set_data: { operation: msg, data: "", timestamp: new BN(~~(serverTimeOffset + Date.now() / 1000)).toString(16) },
       keyType,
     };
   }
