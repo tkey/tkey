@@ -427,7 +427,7 @@ class ThresholdKey implements ITKey {
       }
       if (tssSharePub.getX().cmp(_tssSharePub.getX()) === 0 && tssSharePub.getY().cmp(_tssSharePub.getY()) === 0) {
         if (accountIndex && accountIndex > 0) {
-          const nonce = await this.computeAccountNonce(accountIndex);
+          const nonce = this.computeAccountNonce(accountIndex);
           const derivedShare = userDec.add(nonce).umod(ecCurve.n);
           return { tssIndex, tssShare: derivedShare };
         }
@@ -460,7 +460,7 @@ class ThresholdKey implements ITKey {
       }
       if (tssSharePub.getX().cmp(_tssSharePub.getX()) === 0 && tssSharePub.getY().cmp(_tssSharePub.getY()) === 0) {
         if (accountIndex && accountIndex > 0) {
-          const nonce = await this.computeAccountNonce(accountIndex);
+          const nonce = this.computeAccountNonce(accountIndex);
           const derivedShare = tssShare.add(nonce).umod(ecCurve.n);
           return { tssIndex, tssShare: derivedShare };
         }
@@ -489,6 +489,7 @@ class ThresholdKey implements ITKey {
       const dervicepubKeyPoint = pubKeyPoint.add(noncePub);
       return new Point(dervicepubKeyPoint.getX().toString("hex"), dervicepubKeyPoint.getY().toString("hex"));
     }
+    return tssCommits[0];
   }
 
   /**
@@ -1969,6 +1970,15 @@ class ThresholdKey implements ITKey {
     this.lastFetchedCloudMetadata = undefined;
   }
 
+  computeAccountNonce(index: number) {
+    // generation should occur during tkey.init, fails if accountSalt is absent
+    if (!this._accountSalt) {
+      throw CoreError.accountSaltUndefined();
+    }
+    const accountHash = keccak256(Buffer.from(`${index}${this._accountSalt}`)).slice(2);
+    return index && index > 0 ? new BN(accountHash, "hex").umod(ecCurve.curve.n) : new BN(0);
+  }
+
   getApi(): ITKeyApi {
     return {
       getMetadata: this.getMetadata.bind(this),
@@ -2003,15 +2013,6 @@ class ThresholdKey implements ITKey {
 
   private async initializeModules() {
     return Promise.all(Object.keys(this.modules).map((x) => this.modules[x].initialize()));
-  }
-
-  private computeAccountNonce(index: number) {
-    // generation should occur during tkey.init, fails if accountSalt is absent
-    if (!this._accountSalt) {
-      throw CoreError.accountSaltUndefined();
-    }
-    const accountHash = keccak256(Buffer.from(`${index}${this._accountSalt}`)).slice(2);
-    return index && index > 0 ? new BN(accountHash, "hex").umod(ecCurve.curve.n) : new BN(0);
   }
 }
 
