@@ -11,13 +11,14 @@ import TorusServiceProvider from "@tkey/service-provider-torus";
 import ShareTransferModule from "@tkey/share-transfer";
 import TorusStorageLayer from "@tkey/storage-layer-torus";
 import { post } from "@toruslabs/http-helpers";
-import { getOrSetNonce, keccak256 } from "@toruslabs/torus.js";
 import { deepEqual, deepStrictEqual, equal, fail, notEqual, notStrictEqual, strict, strictEqual, throws } from "assert";
 import BN from "bn.js";
+import { keccak256 } from "ethereum-cryptography/keccak";
 import { JsonRpcProvider } from "ethers";
 import { createSandbox } from "sinon";
 
 import ThresholdKey from "../src/index";
+import { getOrSetNonce } from "../src/torus_js_get_or_set_nonce";
 import { getMetadataUrl, getServiceProvider, initStorageLayer, isMocked } from "./helpers";
 
 const rejects = async (fn, error, msg) => {
@@ -1564,13 +1565,13 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
         keyType,
       });
       const storageLayer2 = new TorusStorageLayer({ hostUrl: getMetadataUrl() });
-
       const { typeOfUser, nonce, pubNonce } = await getOrSetNonce(
         getMetadataUrl(),
         serviceProvider.customAuthInstance.torus.ec,
         0,
         pubKeyPoint.x.toString("hex"),
         pubKeyPoint.y.toString("hex"),
+        keyType,
         postboxKeyBN
       );
       equal(typeOfUser, "v2");
@@ -1599,6 +1600,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
         0,
         pubKeyPoint.x.toString("hex"),
         pubKeyPoint.y.toString("hex"),
+        keyType,
         postboxKeyBN
       );
       equal(upgraded, true);
@@ -1646,6 +1648,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
         0,
         pubKeyPoint.x.toString("hex"),
         pubKeyPoint.y.toString("hex"),
+        keyType,
         postboxKeyBN
       );
       equal(res.typeOfUser, "v1");
@@ -1656,6 +1659,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
         0,
         pubKeyPoint.x.toString("hex"),
         pubKeyPoint.y.toString("hex"),
+        keyType,
         postboxKeyBN
       );
       deepEqual(res, anotherRes);
