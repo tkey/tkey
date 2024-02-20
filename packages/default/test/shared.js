@@ -111,12 +111,12 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       }
       const { tssShare: retrievedTSS1, tssIndex: retrievedTSSIndex1 } = await tb1.getTSSShare(factorKey, { accountIndex: 1 });
       const tssPrivKey1 = getLagrangeCoeffs([1, retrievedTSSIndex1], 1)
-        .mul(serverDKGPrivKeys[0].add(tb1.computeAccountNonce(1)))
+        .mul(serverDKGPrivKeys[0].add(await tb1.computeAccountNonce(1)))
         .add(getLagrangeCoeffs([1, retrievedTSSIndex1], retrievedTSSIndex1).mul(retrievedTSS1))
         .umod(ecCurve.n);
       const tssPubKey1 = ecCurve.keyFromPrivate(tssPrivKey1).getPublic();
 
-      const pubKey1 = tb1.getTSSPub(1);
+      const pubKey1 = await tb1.getTSSPub(1);
       strictEqual(tssPubKey1.x.toString(16, 64), pubKey1.x.toString(16, 64));
       strictEqual(tssPubKey1.y.toString(16, 64), pubKey1.y.toString(16, 64));
 
@@ -141,12 +141,12 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
 
       const { tssShare: retrievedTSS2, tssIndex: retrievedTSSIndex2 } = await tb2.getTSSShare(factorKey, { accountIndex: 2 });
       const tssPrivKey2 = getLagrangeCoeffs([1, retrievedTSSIndex2], 1)
-        .mul(serverDKGPrivKeys[0].add(tb1.computeAccountNonce(2)))
+        .mul(serverDKGPrivKeys[0].add(await tb1.computeAccountNonce(2)))
         .add(getLagrangeCoeffs([1, retrievedTSSIndex2], retrievedTSSIndex2).mul(retrievedTSS2))
         .umod(ecCurve.n);
 
       const tssPubKey2 = getPubKeyPoint(tssPrivKey2);
-      const pubKey2 = tb1.getTSSPub(2);
+      const pubKey2 = await tb1.getTSSPub(2);
 
       strictEqual(tssPubKey2.x.toString(16, 64), pubKey2.x.toString(16, 64));
       strictEqual(tssPubKey2.y.toString(16, 64), pubKey2.y.toString(16, 64));
@@ -174,7 +174,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         const tssSharePub = ecCurve.keyFromPrivate(retrievedTSS.toString("hex")).getPublic();
         const { tssShare: retrievedTSS2 } = await tb2.getTSSShare(factorKey, { accountIndex: 1 });
         const tssSharePub2 = ecCurve.keyFromPrivate(retrievedTSS2.toString("hex")).getPublic();
-        const nonce = tb1.computeAccountNonce(1);
+        const nonce = await tb1.computeAccountNonce(1);
         const noncePub = ecCurve.keyFromPrivate(nonce.toString("hex")).getPublic();
         const tssShareDerived = tssSharePub.add(noncePub);
         strictEqual(tssShareDerived.getX().toString("hex"), tssSharePub2.getX().toString("hex"));
@@ -182,7 +182,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
 
         const { tssShare: retrievedTSS3 } = await tb2.getTSSShare(factorKey, { accountIndex: 2 });
         const tssSharePub3 = ecCurve.keyFromPrivate(retrievedTSS3.toString("hex")).getPublic();
-        const nonce2 = tb1.computeAccountNonce(2);
+        const nonce2 = await tb1.computeAccountNonce(2);
         const noncePub2 = ecCurve.keyFromPrivate(nonce2.toString("hex")).getPublic();
         const tssShareDerived2 = tssSharePub.add(noncePub2);
         strictEqual(tssShareDerived2.getX().toString("hex"), tssSharePub3.getX().toString("hex"));
@@ -192,7 +192,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       {
         const { tssShare: newTSS, tssIndex } = await tb1.getTSSShare(factorKey, { accountIndex: 1 });
         const newTSSPrivKey = getLagrangeCoeffs([1, 2], 1)
-          .mul(new BN(serverDKGPrivKeys[1], "hex").add(tb1.computeAccountNonce(1)))
+          .mul(new BN(serverDKGPrivKeys[1], "hex").add(await tb1.computeAccountNonce(1)))
           .add(getLagrangeCoeffs([1, 2], 2).mul(newTSS))
           .umod(ecCurve.n);
         strictEqual(tssPrivKey1.toString(16, 64), newTSSPrivKey.toString(16, 64));
@@ -203,7 +203,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       {
         const { tssShare: newTSS2, tssIndex } = await tb2.getTSSShare(factorKey2, { accountIndex: 1 });
         const newTSSPrivKey = getLagrangeCoeffs([1, 3], 1)
-          .mul(new BN(serverDKGPrivKeys[1], "hex").add(tb1.computeAccountNonce(1)))
+          .mul(new BN(serverDKGPrivKeys[1], "hex").add(await tb1.computeAccountNonce(1)))
           .add(getLagrangeCoeffs([1, 3], 3).mul(newTSS2))
           .umod(ecCurve.n);
         strictEqual(tssPrivKey1.toString(16, 64), newTSSPrivKey.toString(16, 64));
@@ -214,7 +214,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       {
         const { tssShare: newTSS, tssIndex } = await tb2.getTSSShare(factorKey, { accountIndex: 2 });
         const newTSSPrivKey = getLagrangeCoeffs([1, 2], 1)
-          .mul(new BN(serverDKGPrivKeys[1], "hex").add(tb2.computeAccountNonce(2)))
+          .mul(new BN(serverDKGPrivKeys[1], "hex").add(await tb2.computeAccountNonce(2)))
           .add(getLagrangeCoeffs([1, 2], 2).mul(newTSS))
           .umod(ecCurve.n);
         strictEqual(tssPrivKey2.toString(16, 64), newTSSPrivKey.toString(16, 64));
@@ -225,7 +225,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       {
         const { tssShare: newTSS2, tssIndex } = await tb2.getTSSShare(factorKey2, { accountIndex: 2 });
         const newTSSPrivKey = getLagrangeCoeffs([1, 3], 1)
-          .mul(new BN(serverDKGPrivKeys[1], "hex").add(tb1.computeAccountNonce(2)))
+          .mul(new BN(serverDKGPrivKeys[1], "hex").add(await tb1.computeAccountNonce(2)))
           .add(getLagrangeCoeffs([1, 3], 3).mul(newTSS2))
           .umod(ecCurve.n);
         strictEqual(tssPrivKey2.toString(16, 64), newTSSPrivKey.toString(16, 64));

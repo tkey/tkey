@@ -68,9 +68,6 @@ class Metadata implements IMetadata {
     };
   };
 
-  // salt
-  accountSalt?: string;
-
   constructor(input: Point) {
     this.tssPolyCommits = {};
     this.tssNonces = {};
@@ -87,7 +84,7 @@ class Metadata implements IMetadata {
   }
 
   static fromJSON(value: StringifiedType): Metadata {
-    const { pubKey, polyIDList, generalStore, tkeyStore, scopedStore, nonce, tssNonces, tssPolyCommits, factorPubs, factorEncs, accountSalt } = value;
+    const { pubKey, polyIDList, generalStore, tkeyStore, scopedStore, nonce, tssNonces, tssPolyCommits, factorPubs, factorEncs } = value;
     const point = Point.fromCompressedPub(pubKey);
     const metadata = new Metadata(point);
     const unserializedPolyIDList: PolyIDAndShares[] = [];
@@ -96,7 +93,6 @@ class Metadata implements IMetadata {
     if (tkeyStore) metadata.tkeyStore = tkeyStore;
     if (scopedStore) metadata.scopedStore = scopedStore;
     if (nonce) metadata.nonce = nonce;
-    if (accountSalt) metadata.accountSalt = accountSalt;
     if (tssPolyCommits) {
       metadata.tssPolyCommits = {};
       for (const key in tssPolyCommits) {
@@ -194,16 +190,12 @@ class Metadata implements IMetadata {
     factorEncs?: {
       [factorPubID: string]: FactorEnc;
     };
-    accountSalt?: string;
   }): void {
-    const { tssTag, tssNonce, tssPolyCommits, factorPubs, factorEncs, accountSalt } = tssData;
+    const { tssTag, tssNonce, tssPolyCommits, factorPubs, factorEncs } = tssData;
     if (tssNonce !== undefined) this.tssNonces[tssTag] = tssNonce;
     if (tssPolyCommits) this.tssPolyCommits[tssTag] = tssPolyCommits;
     if (factorPubs) this.factorPubs[tssTag] = factorPubs;
     if (factorEncs) this.factorEncs[tssTag] = factorEncs;
-    if (accountSalt && !this.accountSalt) {
-      this.accountSalt = accountSalt;
-    }
   }
 
   // appends shares and public polynomial to metadata.
@@ -347,7 +339,6 @@ class Metadata implements IMetadata {
       ...(this.tssPolyCommits && { tssPolyCommits: this.tssPolyCommits }),
       ...(this.factorPubs && { factorPubs: this.factorPubs }),
       ...(this.factorEncs && { factorEncs: this.factorEncs }),
-      ...(this.accountSalt && { accountSalt: this.accountSalt }),
     };
   }
 }

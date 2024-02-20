@@ -69,6 +69,7 @@ import {
 } from "./lagrangeInterpolatePolynomial";
 import Metadata from "./metadata";
 // TODO: handle errors for get and set with retries
+export const TSS_MODULE = "tssModule";
 
 class ThresholdKey implements ITKey {
   modules: ModuleMap;
@@ -98,6 +99,8 @@ class ThresholdKey implements ITKey {
   _reconstructKeyMiddleware: ReconstructKeyMiddlewareMap;
 
   _shareSerializationMiddleware: ShareSerializationMiddleware;
+
+  _accountSalt: string;
 
   storeDeviceShare: (deviceShareStore: ShareStore, customDeviceInfo?: StringifiedType) => Promise<void>;
 
@@ -302,7 +305,11 @@ class ThresholdKey implements ITKey {
         if (useTSS) {
           const { factorEncs, factorPubs, tssPolyCommits } = await this._initializeNewTSSKey(this.tssTag, deviceTSSShare, factorPub, deviceTSSIndex);
           const accountSalt = generateSalt();
-          this.metadata.addTSSData({ tssTag: this.tssTag, tssNonce: 0, tssPolyCommits, factorPubs, factorEncs, accountSalt });
+          this._setTKeyStoreItem(TSS_MODULE, {
+            id: "accountSalt",
+            value: accountSalt,
+          });
+          this.metadata.addTSSData({ tssTag: this.tssTag, tssNonce: 0, tssPolyCommits, factorPubs, factorEncs });
         }
         return this.getKeyDetails();
       }
@@ -420,7 +427,7 @@ class ThresholdKey implements ITKey {
       }
       if (tssSharePub.getX().cmp(_tssSharePub.getX()) === 0 && tssSharePub.getY().cmp(_tssSharePub.getY()) === 0) {
         if (accountIndex && accountIndex > 0) {
-          const nonce = this.computeAccountNonce(accountIndex);
+          const nonce = await this.computeAccountNonce(accountIndex);
           const derivedShare = userDec.add(nonce).umod(ecCurve.n);
           return { tssIndex, tssShare: derivedShare };
         }
@@ -453,7 +460,7 @@ class ThresholdKey implements ITKey {
       }
       if (tssSharePub.getX().cmp(_tssSharePub.getX()) === 0 && tssSharePub.getY().cmp(_tssSharePub.getY()) === 0) {
         if (accountIndex && accountIndex > 0) {
-          const nonce = this.computeAccountNonce(accountIndex);
+          const nonce = await this.computeAccountNonce(accountIndex);
           const derivedShare = tssShare.add(nonce).umod(ecCurve.n);
           return { tssIndex, tssShare: derivedShare };
         }
@@ -472,10 +479,10 @@ class ThresholdKey implements ITKey {
     return tssPolyCommits;
   }
 
-  getTSSPub(accountIndex?: number): Point {
+  async getTSSPub(accountIndex?: number): Promise<Point> {
     const tssCommits = this.getTSSCommits();
     if (accountIndex && accountIndex > 0) {
-      const nonce = this.computeAccountNonce(accountIndex);
+      const nonce = await this.computeAccountNonce(accountIndex);
       // we need to add the pub key nonce to the tssPub
       const noncePub = ecCurve.keyFromPrivate(nonce.toString("hex")).getPublic();
       const pubKeyPoint = ecCurve.keyFromPublic({ x: tssCommits[0].x.toString("hex"), y: tssCommits[0].y.toString("hex") }).getPublic();
@@ -897,14 +904,16 @@ class ThresholdKey implements ITKey {
         };
       }
       const accountSalt = generateSalt();
-
       this.metadata.addTSSData({
         tssTag: this.tssTag,
         tssNonce: newTssNonce,
         tssPolyCommits: newTSSCommits,
         factorPubs,
         factorEncs,
-        accountSalt,
+      });
+      this._setTKeyStoreItem(TSS_MODULE, {
+        id: "accountSalt",
+        value: accountSalt,
       });
       await this._syncShareMetadata();
     } catch (error) {
@@ -1992,13 +2001,13 @@ class ThresholdKey implements ITKey {
     return Promise.all(Object.keys(this.modules).map((x) => this.modules[x].initialize()));
   }
 
-  private computeAccountNonce(index: number) {
+  private async computeAccountNonce(index: number) {
     // generation should occur during tkey.init, fails if accountSalt is absent
-    const { accountSalt } = this.metadata;
-    if (!accountSalt) {
+    this._accountSalt = this._accountSalt || (await this.getTKeyStoreItem(TSS_MODULE, "accountSalt")).value;
+    if (!this._accountSalt) {
       throw CoreError.accountSaltUndefined();
     }
-    const accountHash = keccak256(Buffer.from(`${index}${accountSalt}`)).slice(2);
+    const accountHash = keccak256(Buffer.from(`${index}${this._accountSalt}`)).slice(2);
     return index && index > 0 ? new BN(accountHash, "hex").umod(ecCurve.curve.n) : new BN(0);
   }
 }
