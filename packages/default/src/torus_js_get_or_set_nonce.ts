@@ -54,7 +54,7 @@ export function generateMetadataParams(serverTimeOffset: number, message: string
     data: "",
     timestamp: new BN(~~(serverTimeOffset + Date.now() / 1000)).toString(16),
   };
-  const sig = key.sign(keccak256(Buffer.from(stringify(setData), "utf8")).slice(2));
+  const sig = key.sign(keccak256(Buffer.from(stringify(setData), "utf8")));
   return {
     pub_key_X: key.getPublic().getX().toString("hex"), // DO NOT PAD THIS. BACKEND DOESN'T
     pub_key_Y: key.getPublic().getY().toString("hex"), // DO NOT PAD THIS. BACKEND DOESN'T
