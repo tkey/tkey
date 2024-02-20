@@ -479,17 +479,16 @@ class ThresholdKey implements ITKey {
     return tssPolyCommits;
   }
 
-  async getTSSPub(accountIndex?: number): Promise<Point> {
+  getTSSPub(accountIndex?: number): Point {
     const tssCommits = this.getTSSCommits();
     if (accountIndex && accountIndex > 0) {
-      const nonce = await this.computeAccountNonce(accountIndex);
+      const nonce = this.computeAccountNonce(accountIndex);
       // we need to add the pub key nonce to the tssPub
       const noncePub = ecCurve.keyFromPrivate(nonce.toString("hex")).getPublic();
       const pubKeyPoint = ecCurve.keyFromPublic({ x: tssCommits[0].x.toString("hex"), y: tssCommits[0].y.toString("hex") }).getPublic();
       const dervicepubKeyPoint = pubKeyPoint.add(noncePub);
       return new Point(dervicepubKeyPoint.getX().toString("hex"), dervicepubKeyPoint.getY().toString("hex"));
     }
-    return tssCommits[0];
   }
 
   /**
@@ -620,6 +619,11 @@ class ThresholdKey implements ITKey {
         })
       );
     }
+
+    // assign account salt from tKey store if it exists
+    const accountSalt = await this.getTKeyStoreItem(TSS_MODULE, "accountSalt");
+    if (accountSalt && accountSalt?.value) this._accountSalt = accountSalt.value;
+
     return { privKey, ...returnObject };
   }
 
@@ -2001,9 +2005,8 @@ class ThresholdKey implements ITKey {
     return Promise.all(Object.keys(this.modules).map((x) => this.modules[x].initialize()));
   }
 
-  private async computeAccountNonce(index: number) {
+  private computeAccountNonce(index: number) {
     // generation should occur during tkey.init, fails if accountSalt is absent
-    this._accountSalt = this._accountSalt || (await this.getTKeyStoreItem(TSS_MODULE, "accountSalt")).value;
     if (!this._accountSalt) {
       throw CoreError.accountSaltUndefined();
     }

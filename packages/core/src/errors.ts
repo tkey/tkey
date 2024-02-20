@@ -32,8 +32,8 @@ class CoreError extends TkeyError {
     1103: "setMetadata errored",
     1104: "previouslyFetchedCloudMetadata provided in initialization is outdated",
     1105: "previouslyFetchedCloudMetadata.nonce should never be higher than the latestShareDetails, please contact support",
-    1106: "Account Salt is absent, required for nonce generation",
-    // tkeystore
+    1106: "Account Salt is absent, required for nonce generation.Make sure key is reconstructed",
+    // tKeystore
     1201: "Invalid tkeyStore",
     1202: "Encryption failed",
     1203: "Decryption failed",
