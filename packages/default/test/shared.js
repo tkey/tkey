@@ -1550,8 +1550,6 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
 
     it("should be able to init tkey with 1 out of 1", async function () {
       const postboxKeyBN = new BN(generatePrivate(keyType), "hex");
-      const pubKeyPoint = getPubKeyPoint(postboxKeyBN, keyType);
-
       const serviceProvider = new TorusServiceProvider({
         postboxKey: postboxKeyBN.toString("hex"),
         customAuthArgs: {
@@ -1565,14 +1563,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
         keyType,
       });
       const storageLayer2 = new TorusStorageLayer({ hostUrl: getMetadataUrl() });
-      const { typeOfUser, nonce, pubNonce } = await getOrSetNonce(
-        getMetadataUrl(),
-        0,
-        pubKeyPoint.x.toString("hex"),
-        pubKeyPoint.y.toString("hex"),
-        keyType,
-        postboxKeyBN
-      );
+      const { typeOfUser, nonce, pubNonce } = await getOrSetNonce(getMetadataUrl(), 0, keyType, postboxKeyBN);
       equal(typeOfUser, "v2");
       notEqual(nonce, undefined);
       notEqual(pubNonce, undefined);
@@ -1593,7 +1584,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
         nonce: newNonce,
         pubNonce: newPubNonce,
         upgraded,
-      } = await getOrSetNonce(getMetadataUrl(), 0, pubKeyPoint.x.toString("hex"), pubKeyPoint.y.toString("hex"), keyType, postboxKeyBN);
+      } = await getOrSetNonce(getMetadataUrl(), 0, keyType, postboxKeyBN);
       equal(upgraded, true);
       equal(newTypeOfUser, "v2");
       equal(newNonce, undefined);
@@ -1635,10 +1626,10 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
       });
       */
 
-      const res = await getOrSetNonce(metadataUrl, 0, pubKeyPoint.x.toString("hex"), pubKeyPoint.y.toString("hex"), keyType, postboxKeyBN);
+      const res = await getOrSetNonce(metadataUrl, 0, keyType, postboxKeyBN);
       equal(res.typeOfUser, "v1");
 
-      const anotherRes = await getOrSetNonce(metadataUrl, 0, pubKeyPoint.x.toString("hex"), pubKeyPoint.y.toString("hex"), keyType, postboxKeyBN);
+      const anotherRes = await getOrSetNonce(metadataUrl, 0, keyType, postboxKeyBN);
       deepEqual(res, anotherRes);
     });
 

@@ -65,25 +65,13 @@ export function generateMetadataParams(serverTimeOffset: number, message: string
 }
 
 export async function getOrSetNonce(
-  legacyMetadataHost: string,
+  MetadataHost: string,
   serverTimeOffset: number,
-  X: string,
-  Y: string,
   keyType: KeyType,
-  privKey?: BN,
+  privKey: BN,
   getOnly = false
 ): Promise<GetOrSetNonceResult> {
-  let data: Data;
   const msg = getOnly ? "getNonce" : "getOrSetNonce";
-  if (privKey) {
-    data = generateMetadataParams(serverTimeOffset, msg, privKey, keyType);
-  } else {
-    data = {
-      pub_key_X: X,
-      pub_key_Y: Y,
-      set_data: { operation: msg, data: "", timestamp: new BN(~~(serverTimeOffset + Date.now() / 1000)).toString(16) },
-      keyType,
-    };
-  }
-  return post<GetOrSetNonceResult>(`${legacyMetadataHost}/get_or_set_nonce`, data, undefined, { useAPIKey: true });
+  const data = generateMetadataParams(serverTimeOffset, msg, privKey, keyType);
+  return post<GetOrSetNonceResult>(`${MetadataHost}/get_or_set_nonce`, data, undefined, { useAPIKey: true });
 }
