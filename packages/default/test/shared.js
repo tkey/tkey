@@ -1563,8 +1563,8 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
         keyType,
       });
       const storageLayer2 = new TorusStorageLayer({ hostUrl: getMetadataUrl() });
-      const { typeOfUser, nonce, pubNonce } = await getOrSetNonce(getMetadataUrl(), 0, keyType, postboxKeyBN);
-      equal(typeOfUser, "v2");
+      const { nonce, pubNonce } = await getOrSetNonce(getMetadataUrl(), 0, keyType, postboxKeyBN);
+      // equal(typeOfUser, "v2"); // no longer returned
       notEqual(nonce, undefined);
       notEqual(pubNonce, undefined);
 
@@ -1580,13 +1580,13 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
       equal(tKey.privKey.toString("hex"), importKey);
 
       const {
-        typeOfUser: newTypeOfUser,
+        // typeOfUser: newTypeOfUser,
         nonce: newNonce,
         pubNonce: newPubNonce,
         upgraded,
       } = await getOrSetNonce(getMetadataUrl(), 0, keyType, postboxKeyBN);
       equal(upgraded, true);
-      equal(newTypeOfUser, "v2");
+      // equal(newTypeOfUser, "v2");
       equal(newNonce, undefined);
       deepEqual(pubNonce, newPubNonce);
     });
@@ -1627,7 +1627,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
       */
 
       const res = await getOrSetNonce(metadataUrl, 0, keyType, postboxKeyBN);
-      equal(res.typeOfUser, "v1");
+      // equal(res.typeOfUser, "v1"); no longer returned
 
       const anotherRes = await getOrSetNonce(metadataUrl, 0, keyType, postboxKeyBN);
       deepEqual(res, anotherRes);
