@@ -486,8 +486,8 @@ class ThresholdKey implements ITKey {
       // we need to add the pub key nonce to the tssPub
       const noncePub = ecCurve.keyFromPrivate(nonce.toString("hex")).getPublic();
       const pubKeyPoint = ecCurve.keyFromPublic({ x: tssCommits[0].x.toString("hex"), y: tssCommits[0].y.toString("hex") }).getPublic();
-      const dervicepubKeyPoint = pubKeyPoint.add(noncePub);
-      return new Point(dervicepubKeyPoint.getX().toString("hex"), dervicepubKeyPoint.getY().toString("hex"));
+      const devicePubKeyPoint = pubKeyPoint.add(noncePub);
+      return new Point(devicePubKeyPoint.getX().toString("hex"), devicePubKeyPoint.getY().toString("hex"));
     }
     return tssCommits[0];
   }

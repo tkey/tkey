@@ -186,7 +186,6 @@ class Metadata implements IMetadata {
     tssNonce?: number;
     tssPolyCommits?: Point[];
     factorPubs?: Point[];
-    accountIndex?: number;
     factorEncs?: {
       [factorPubID: string]: FactorEnc;
     };
