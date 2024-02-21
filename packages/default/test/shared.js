@@ -1594,11 +1594,14 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
     it("should not change v1 address without a custom nonce when getOrSetNonce is called", async function () {
       // Create an existing v1 account
       const postboxKeyBN = new BN(generatePrivate(keyType), "hex");
-      const pubKeyPoint = getPubKeyPoint(postboxKeyBN, keyType);
 
       // This test require development API, only work with local/beta env
-      let metadataUrl = getMetadataUrl();
-      if (metadataUrl === "https://node-1.dev-node.web3auth.io/metadata") metadataUrl = "https://metadata-testing.tor.us";
+      const metadataUrl = getMetadataUrl();
+      // if (metadataUrl === "https://node-1.dev-node.web3auth.io/metadata") metadataUrl = "https://metadata-testing.tor.us";
+
+      await getOrSetNonce(metadataURL, 0, keyType, postboxKeyBN, false);
+      /*
+      // Not available on latest metadata server
       await post(
         `${metadataUrl}/set_nonce`,
         {
@@ -1609,7 +1612,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
         undefined,
         { useAPIKey: true }
       );
-
+      */
       // Call get or set nonce
       /*
       const serviceProvider = new TorusServiceProvider({
