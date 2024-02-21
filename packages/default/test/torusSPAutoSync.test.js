@@ -40,6 +40,6 @@ testVariables.forEach((testVariable) => {
     // eslint-disable-next-line mocha/no-setup-in-describe
     sharedTestCases(MANUAL_SYNC, torusSP, torusSL, keyType);
     // eslint-disable-next-line mocha/no-setup-in-describe
-    await sleep(10000);
+    await sleep(120000);
   });
 });
