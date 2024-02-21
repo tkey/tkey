@@ -1,7 +1,7 @@
 import { generatePrivate, KeyType } from "@tkey/common-types";
 import ServiceProviderTorus from "@tkey/service-provider-torus";
 
-import { getMetadataUrl, initStorageLayer } from "./helpers";
+import { getMetadataUrl, initStorageLayer, sleep } from "./helpers";
 import { sharedTestCases } from "./shared";
 
 const metadataURL = getMetadataUrl();
@@ -22,7 +22,8 @@ const testVariables = [
 testVariables.forEach((testVariable) => {
   const { keyType, MANUAL_SYNC } = testVariable;
 
-  describe(`TorusServiceProvider with manualSync: ${MANUAL_SYNC}, keyType ${keyType}`, function () {
+  // eslint-disable-next-line mocha/no-async-describe
+  describe(`TorusServiceProvider with manualSync: ${MANUAL_SYNC}, keyType ${keyType}`, async function () {
     // eslint-disable-next-line mocha/no-setup-in-describe
     const PRIVATE_KEY = generatePrivate(keyType).toString("hex");
     const torusSP = new ServiceProviderTorus({
@@ -38,5 +39,7 @@ testVariables.forEach((testVariable) => {
     });
     // eslint-disable-next-line mocha/no-setup-in-describe
     sharedTestCases(MANUAL_SYNC, torusSP, torusSL, keyType);
+    // eslint-disable-next-line mocha/no-setup-in-describe
+    await sleep(5000);
   });
 });

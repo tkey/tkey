@@ -1,7 +1,7 @@
 import { generatePrivate } from "@tkey/common-types";
-import ServiceProviderBase from "@tkey/service-provider-base";
+import { ServiceProviderBase } from "@tkey/service-provider-base";
 import ServiceProviderTorus from "@tkey/service-provider-torus";
-import TorusStorageLayer, { MockStorageLayer } from "@tkey/storage-layer-torus";
+import { MockStorageLayer, TorusStorageLayer } from "@tkey/storage-layer-torus";
 
 let mocked;
 const isNode = process.release;
@@ -25,6 +25,14 @@ export function getMetadataUrl() {
 
 export function initStorageLayer(extraParams) {
   return mocked === "true" ? new MockStorageLayer() : new TorusStorageLayer(extraParams);
+}
+
+export async function sleep(ms) {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve();
+    }, ms);
+  });
 }
 
 export function getServiceProvider(params, keyType) {
