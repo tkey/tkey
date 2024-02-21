@@ -2,7 +2,6 @@ import { decrypt as ecDecrypt, encrypt as ecEncrypt } from "@toruslabs/eccrypto"
 import { keccak256, toChecksumAddress } from "@toruslabs/torus.js";
 import BN from "bn.js";
 import { ec } from "elliptic";
-// eslint-disable-next-line import/no-extraneous-dependencies
 import { keccak512 } from "ethereum-cryptography/keccak";
 import { serializeError } from "serialize-error";
 
