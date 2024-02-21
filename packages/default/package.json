@@ -12,7 +12,7 @@
     "coverage": "nyc npm test",
     "coverage-production": "nyc npm run test-production",
     "test-development": "cross-env MOCKED=false METADATA=http://localhost:5051 mocha ./test/*.test.js --config ../../.mocharc.json",
-    "test-production": "cross-env MOCKED=false METADATA=https://node-1.dev-node.web3auth.io/metadata mocha ./test/*.test.js --config ../../.mocharc.json --parallel",
+    "test-production": "cross-env MOCKED=false METADATA=https://node-1.dev-node.web3auth.io/metadata mocha ./test/*.test.js --config ../../.mocharc.json",
     "test-debugger": "cross-env MOCKED=true mocha --config ../../.mocharc.json --inspect-brk",
     "browser-tests:local-mocked": "cross-env INFRA=LOCAL MOCKED=true karma start",
     "browser-tests:local-dev": "cross-env INFRA=LOCAL MOCKED=false METADATA=http://localhost:5051 karma start",

@@ -12,7 +12,7 @@
     "dev": "cross-env FORCE_COLOR=1 lerna run dev",
     "test": "cross-env FORCE_COLOR=1 lerna run test --parallel",
     "test:cov": "cross-env FORCE_COLOR=1 lerna run coverage --parallel",
-    "test-development": "cross-env FORCE_COLOR=1 lerna run test-development --parallel",
+    "test-development": "cross-env FORCE_COLOR=1 lerna run test-development",
     "test-production": "cross-env FORCE_COLOR=1 lerna run test-production --parallel",
     "test-production:cov": "cross-env FORCE_COLOR=1 lerna run coverage-production --parallel",
     "test-debugger": "cross-env FORCE_COLOR=1 lerna run test-debugger --parallel",
