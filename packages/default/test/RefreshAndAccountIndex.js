@@ -1,4 +1,5 @@
 import { ecCurve, getPubKeyPoint } from "@tkey-mpc/common-types";
+// eslint-disable-next-line import/no-extraneous-dependencies
 import { generatePrivate } from "@toruslabs/eccrypto";
 import { fail, notEqual, rejects, strictEqual } from "assert";
 import BN from "bn.js";
@@ -13,7 +14,7 @@ const metadataURL = getMetadataUrl();
 export const refreshAndAccountIndex = (customSP, manualSync, accountIndexBackwardCompatible) => {
   const mode = manualSync;
 
-  describe.only("RefreshAndAccountIndex", function () {
+  describe("RefreshAndAccountIndex", function () {
     it("#should be able to refresh tss shares", async function () {
       const sp = customSP;
       if (!sp.useTSS) this.skip();
