@@ -1675,13 +1675,13 @@ class ThresholdKey implements ITKey {
 
     // read errors for what each means
     if (latestMetadata.nonce > this.lastFetchedCloudMetadata.nonce) {
-      throw CoreError.acquireLockFailed(`unable to acquire write access for metadata due to 
+      throw CoreError.acquireLockFailed(`unable to acquire write access for metadata due to
       lastFetchedCloudMetadata (${this.lastFetchedCloudMetadata.nonce})
            being lower than last written metadata nonce (${latestMetadata.nonce}). perhaps update metadata SDK (create new tKey and init)`);
     } else if (latestMetadata.nonce < this.lastFetchedCloudMetadata.nonce) {
-      throw CoreError.acquireLockFailed(`unable to acquire write access for metadata due to 
+      throw CoreError.acquireLockFailed(`unable to acquire write access for metadata due to
       lastFetchedCloudMetadata (${this.lastFetchedCloudMetadata.nonce})
-      being higher than last written metadata nonce (${latestMetadata.nonce}). this should never happen as it 
+      being higher than last written metadata nonce (${latestMetadata.nonce}). this should never happen as it
       should only ever be updated by getting metadata)`);
     }
 
@@ -1975,7 +1975,8 @@ class ThresholdKey implements ITKey {
     if (!this._accountSalt) {
       throw CoreError.accountSaltUndefined();
     }
-    const accountHash = keccak256(Buffer.from(`${index}${this._accountSalt}`)).slice(2);
+    let accountHash = keccak256(Buffer.from(`${index}${this._accountSalt}`));
+    if (accountHash.length === 66) accountHash = accountHash.slice(2);
     return index && index > 0 ? new BN(accountHash, "hex").umod(ecCurve.curve.n) : new BN(0);
   }
 
