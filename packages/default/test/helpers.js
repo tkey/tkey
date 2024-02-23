@@ -1,9 +1,8 @@
-import { ecCurve, getPubKeyPoint, Point } from "@tkey-mpc/common-types";
+import { ecCurve, generatePrivate, getPubKeyPoint, Point } from "@tkey-mpc/common-types";
 import ServiceProviderBase from "@tkey-mpc/service-provider-base";
 import ServiceProviderTorus from "@tkey-mpc/service-provider-torus";
 import TorusStorageLayer, { MockStorageLayer } from "@tkey-mpc/storage-layer-torus";
-import { generatePrivate } from "@toruslabs/eccrypto";
-import { generatePolynomial, getShare, hexPoint, MockServer, postEndpoint } from "@toruslabs/rss-client";
+import { generatePolynomial, getLagrangeCoeffs, getShare, hexPoint, MockServer, postEndpoint } from "@toruslabs/rss-client";
 // eslint-disable-next-line import/no-extraneous-dependencies
 import Torus from "@toruslabs/torus.js";
 import BN from "bn.js";
@@ -196,4 +195,13 @@ export async function assignTssDkgKeys(opts) {
     serverDKGPrivKeys,
     // serverDKGPubKeys,
   };
+}
+
+export async function computeIndexedPrivateKey(tkey, factorKey, serverDKGPrivKeys, accountIndex) {
+  const { tssShare: retrievedTSS1, tssIndex: retrievedTSSIndex1 } = await tkey.getTSSShare(factorKey, { accountIndex });
+  const tssPrivKey1 = getLagrangeCoeffs([1, retrievedTSSIndex1], 1)
+    .mul(serverDKGPrivKeys.add(tkey.computeAccountNonce(accountIndex)))
+    .add(getLagrangeCoeffs([1, retrievedTSSIndex1], retrievedTSSIndex1).mul(retrievedTSS1))
+    .umod(ecCurve.n);
+  return tssPrivKey1;
 }
