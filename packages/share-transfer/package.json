@@ -44,7 +44,6 @@
     "bn.js": "^5.2.1"
   },
   "devDependencies": {
-    "@types/bn.js": "^5.1.2"
   },
   "bugs": {
     "url": "https://github.com/tkey/tkey/issues"

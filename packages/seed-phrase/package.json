@@ -47,7 +47,6 @@
     "ethers": "^6.7.1"
   },
   "devDependencies": {
-    "@types/bn.js": "^5.1.2"
   },
   "lint-staged": {
     "!(*d).ts": [
