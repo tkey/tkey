@@ -623,17 +623,18 @@ class ThresholdKey implements ITKey {
 
     // only valid for use Tss
     // assign account salt from tKey store if it exists
-    const accountSalt = await this.getTKeyStoreItem(TSS_MODULE, "accountSalt");
-    if (accountSalt && accountSalt?.value) {
-      this._accountSalt = accountSalt.value;
-    } else {
-      const newSalt = generateSalt();
-      await this._setTKeyStoreItem(TSS_MODULE, {
-        id: "accountSalt",
-        value: newSalt,
-      });
-      this._accountSalt = newSalt;
-      await this._syncShareMetadata();
+    if (Object.keys(this.metadata.tssPolyCommits).length > 0) {
+      const accountSalt = await this.getTKeyStoreItem(TSS_MODULE, "accountSalt");
+      if (accountSalt && accountSalt?.value) {
+        this._accountSalt = accountSalt.value;
+      } else {
+        const newSalt = generateSalt();
+        await this._setTKeyStoreItem(TSS_MODULE, {
+          id: "accountSalt",
+          value: newSalt,
+        });
+        this._accountSalt = newSalt;
+      }
     }
 
     return { privKey, ...returnObject };
@@ -931,7 +932,6 @@ class ThresholdKey implements ITKey {
         id: "accountSalt",
         value: accountSalt,
       });
-      await this._syncShareMetadata();
     } catch (error) {
       this.tssTag = oldTag;
       throw error;

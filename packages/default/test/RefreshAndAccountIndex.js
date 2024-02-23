@@ -13,8 +13,8 @@ const metadataURL = getMetadataUrl();
 // eslint-disable-next-line mocha/no-exports
 export const refreshAndAccountIndex = (customSP, manualSync, accountIndexBackwardCompatible) => {
   const mode = manualSync;
-
-  describe("RefreshAndAccountIndex", function () {
+  const { useTSS } = customSP;
+  describe(`RefreshAndAccountIndex : useTss ${useTSS}, manualSync ${manualSync}, bcAccountIndex ${accountIndexBackwardCompatible}`, function () {
     it("#should be able to refresh tss shares", async function () {
       const sp = customSP;
       if (!sp.useTSS) this.skip();
@@ -160,36 +160,24 @@ export const refreshAndAccountIndex = (customSP, manualSync, accountIndexBackwar
 
       // check for account 1 and 2 after refresh share ( tb1 only refresh once )
       {
-        const { tssShare: newTSS, tssIndex } = await tb1.getTSSShare(factorKey, { accountIndex: 1 });
         const computedKey = await computeIndexedPrivateKey(tb1, factorKey, serverDKGPrivKeys[1], 1);
         strictEqual(tssPrivKey1.toString(16, 64), computedKey.toString(16, 64));
-        // eslint-disable-next-line no-console
-        console.log("newTSS", newTSS.toString("hex"), tssIndex);
       }
 
       {
-        const { tssShare: newTSS, tssIndex } = await tb1.getTSSShare(factorKey, { accountIndex: 2 });
         const computedKey = await computeIndexedPrivateKey(tb1, factorKey, serverDKGPrivKeys[1], 2);
         strictEqual(tssPrivKeyIndex2.toString(16, 64), computedKey.toString(16, 64));
-        // eslint-disable-next-line no-console
-        console.log("newTSS", newTSS.toString("hex"), tssIndex);
       }
 
       // check for account 1 and 2 after refresh share ( tb2 only refresh twice )
       {
-        const { tssShare: newTSS2, tssIndex } = await tb2.getTSSShare(factorKey2, { accountIndex: 1 });
         const computedKey = await computeIndexedPrivateKey(tb2, factorKey2, serverDKGPrivKeys[2], 1);
         strictEqual(tssPrivKey1.toString(16, 64), computedKey.toString(16, 64));
-        // eslint-disable-next-line no-console
-        console.log("newTSS2", newTSS2.toString("hex"), tssIndex);
       }
 
       {
-        const { tssShare: newTSS2, tssIndex } = await tb2.getTSSShare(factorKey2, { accountIndex: 2 });
         const computedKey = await computeIndexedPrivateKey(tb2, factorKey2, serverDKGPrivKeys[2], 2);
         strictEqual(tssPrivKeytb2Index2.toString(16, 64), computedKey.toString(16, 64));
-        // eslint-disable-next-line no-console
-        console.log("newTSS2", newTSS2.toString("hex"), tssIndex);
       }
     });
   });
