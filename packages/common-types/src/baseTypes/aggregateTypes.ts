@@ -196,6 +196,7 @@ export interface ShareRequestArgs {
 
 export type TkeyStoreItemType = {
   id: string;
+  value?: string;
 };
 
 export type ISeedPhraseStore = TkeyStoreItemType & {

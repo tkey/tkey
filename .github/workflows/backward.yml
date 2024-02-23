@@ -26,12 +26,12 @@ jobs:
     steps:
       - name: checkout tkey repo
         uses: actions/checkout@v3
-        with:
-          path: tkey
+        # with:
+        #   path: tkey
 
-      - name: switch path
-        run: |
-          cd ./tkey
+      # - name: switch path
+      #   run: |
+      #     cd ./tkey
 
       - name: Set up node
         uses: actions/setup-node@v3
@@ -54,7 +54,7 @@ jobs:
         run: |
           cd ./backward-compatibility-tests
           npm i
-          for filename in ../tkey/packages/* ; do
+          for filename in ../packages/* ; do
             echo "installing $filename" || continue
             # ... install packed packages
             packagename="`ls ${filename}| grep tkey`"
@@ -63,5 +63,4 @@ jobs:
 
       - name: Running comp tests
         run: |
-          cd ./backward-compatibility-tests
           npm test

@@ -104,3 +104,7 @@ export function generateID(): string {
   // after the decimal.
   return `${Math.random().toString(36).substr(2, 9)}`;
 }
+
+export function generateSalt() {
+  return generatePrivate().toString("hex").padStart(64, "0");
+}

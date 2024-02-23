@@ -48,7 +48,6 @@
     "elliptic": "^6.5.4"
   },
   "devDependencies": {
-    "@types/bn.js": "^5.1.2",
     "@types/elliptic": "^6.4.15"
   },
   "bugs": {

@@ -11,6 +11,7 @@ import {
   FromJSONConstructor,
   GenerateNewShareResult,
   generatePrivateExcludingIndexes,
+  generateSalt,
   getPubKeyECC,
   getPubKeyPoint,
   hexPoint,
@@ -52,6 +53,7 @@ import {
   toPrivKeyECC,
 } from "@tkey-mpc/common-types";
 import { generatePrivate } from "@toruslabs/eccrypto";
+import { keccak256 } from "@toruslabs/torus.js";
 import BN from "bn.js";
 import stringify from "json-stable-stringify";
 
@@ -66,8 +68,8 @@ import {
   lagrangeInterpolation,
 } from "./lagrangeInterpolatePolynomial";
 import Metadata from "./metadata";
-
 // TODO: handle errors for get and set with retries
+export const TSS_MODULE = "tssModule";
 
 class ThresholdKey implements ITKey {
   modules: ModuleMap;
@@ -97,6 +99,8 @@ class ThresholdKey implements ITKey {
   _reconstructKeyMiddleware: ReconstructKeyMiddlewareMap;
 
   _shareSerializationMiddleware: ShareSerializationMiddleware;
+
+  _accountSalt: string;
 
   storeDeviceShare: (deviceShareStore: ShareStore, customDeviceInfo?: StringifiedType) => Promise<void>;
 
@@ -300,6 +304,11 @@ class ThresholdKey implements ITKey {
         });
         if (useTSS) {
           const { factorEncs, factorPubs, tssPolyCommits } = await this._initializeNewTSSKey(this.tssTag, deviceTSSShare, factorPub, deviceTSSIndex);
+          const accountSalt = generateSalt();
+          await this._setTKeyStoreItem(TSS_MODULE, {
+            id: "accountSalt",
+            value: accountSalt,
+          });
           this.metadata.addTSSData({ tssTag: this.tssTag, tssNonce: 0, tssPolyCommits, factorPubs, factorEncs });
         }
         return this.getKeyDetails();
@@ -385,7 +394,7 @@ class ThresholdKey implements ITKey {
    * getTSSShare accepts a factorKey and returns the TSS share based on the factor encrypted TSS shares in the metadata
    * @param factorKey - factor key
    */
-  async getTSSShare(factorKey: BN, opts?: { threshold: number }): Promise<{ tssIndex: number; tssShare: BN }> {
+  async getTSSShare(factorKey: BN, opts?: { threshold: number; accountIndex?: number }): Promise<{ tssIndex: number; tssShare: BN }> {
     if (!this.privKey) throw CoreError.default("tss share cannot be returned until you've reconstructed tkey");
     const factorPub = getPubKeyPoint(factorKey);
     const factorEncs = this.getFactorEncs(factorPub);
@@ -407,6 +416,7 @@ class ThresholdKey implements ITKey {
 
     const userDec = tssShareBNs[0];
 
+    const { threshold, accountIndex } = opts || {};
     if (type === "direct") {
       const tssSharePub = ecCurve.g.mul(userDec);
       const tssCommitA0 = ecCurve.keyFromPublic({ x: tssCommits[0].x.toString(16, 64), y: tssCommits[0].y.toString(16, 64) }).getPublic();
@@ -416,6 +426,11 @@ class ThresholdKey implements ITKey {
         _tssSharePub = _tssSharePub.add(tssCommitA1);
       }
       if (tssSharePub.getX().cmp(_tssSharePub.getX()) === 0 && tssSharePub.getY().cmp(_tssSharePub.getY()) === 0) {
+        if (accountIndex && accountIndex > 0) {
+          const nonce = this.computeAccountNonce(accountIndex);
+          const derivedShare = userDec.add(nonce).umod(ecCurve.n);
+          return { tssIndex, tssShare: derivedShare };
+        }
         return { tssIndex, tssShare: userDec };
       }
       throw new Error("user decryption does not match tss commitments...");
@@ -424,8 +439,6 @@ class ThresholdKey implements ITKey {
     // if type === "hierarchical"
     const serverDecs = tssShareBNs.slice(1); // 5 elems
     const serverIndexes = new Array(serverDecs.length).fill(null).map((_, i) => i + 1);
-
-    const { threshold } = opts || {};
 
     const combis = kCombinations(serverDecs.length, threshold || Math.ceil(serverDecs.length / 2));
     for (let i = 0; i < combis.length; i++) {
@@ -446,6 +459,11 @@ class ThresholdKey implements ITKey {
         _tssSharePub = _tssSharePub.add(tssCommitA1);
       }
       if (tssSharePub.getX().cmp(_tssSharePub.getX()) === 0 && tssSharePub.getY().cmp(_tssSharePub.getY()) === 0) {
+        if (accountIndex && accountIndex > 0) {
+          const nonce = this.computeAccountNonce(accountIndex);
+          const derivedShare = tssShare.add(nonce).umod(ecCurve.n);
+          return { tssIndex, tssShare: derivedShare };
+        }
         return { tssIndex, tssShare };
       }
     }
@@ -461,8 +479,17 @@ class ThresholdKey implements ITKey {
     return tssPolyCommits;
   }
 
-  getTSSPub(): Point {
-    return this.getTSSCommits()[0];
+  getTSSPub(accountIndex?: number): Point {
+    const tssCommits = this.getTSSCommits();
+    if (accountIndex && accountIndex > 0) {
+      const nonce = this.computeAccountNonce(accountIndex);
+      // we need to add the pub key nonce to the tssPub
+      const noncePub = ecCurve.keyFromPrivate(nonce.toString("hex")).getPublic();
+      const pubKeyPoint = ecCurve.keyFromPublic({ x: tssCommits[0].x.toString("hex"), y: tssCommits[0].y.toString("hex") }).getPublic();
+      const devicePubKeyPoint = pubKeyPoint.add(noncePub);
+      return new Point(devicePubKeyPoint.getX().toString("hex"), devicePubKeyPoint.getY().toString("hex"));
+    }
+    return tssCommits[0];
   }
 
   /**
@@ -593,6 +620,23 @@ class ThresholdKey implements ITKey {
         })
       );
     }
+
+    // only valid for use Tss
+    // assign account salt from tKey store if it exists
+    if (Object.keys(this.metadata.tssPolyCommits).length > 0) {
+      const accountSalt = await this.getTKeyStoreItem(TSS_MODULE, "accountSalt");
+      if (accountSalt && accountSalt?.value) {
+        this._accountSalt = accountSalt.value;
+      } else {
+        const newSalt = generateSalt();
+        await this._setTKeyStoreItem(TSS_MODULE, {
+          id: "accountSalt",
+          value: newSalt,
+        });
+        this._accountSalt = newSalt;
+      }
+    }
+
     return { privKey, ...returnObject };
   }
 
@@ -876,6 +920,7 @@ class ThresholdKey implements ITKey {
           serverEncs: refreshResponse.serverFactorEncs,
         };
       }
+      const accountSalt = generateSalt();
       this.metadata.addTSSData({
         tssTag: this.tssTag,
         tssNonce: newTssNonce,
@@ -883,7 +928,10 @@ class ThresholdKey implements ITKey {
         factorPubs,
         factorEncs,
       });
-      await this._syncShareMetadata();
+      await this._setTKeyStoreItem(TSS_MODULE, {
+        id: "accountSalt",
+        value: accountSalt,
+      });
     } catch (error) {
       this.tssTag = oldTag;
       throw error;
@@ -1638,13 +1686,13 @@ class ThresholdKey implements ITKey {
 
     // read errors for what each means
     if (latestMetadata.nonce > this.lastFetchedCloudMetadata.nonce) {
-      throw CoreError.acquireLockFailed(`unable to acquire write access for metadata due to 
+      throw CoreError.acquireLockFailed(`unable to acquire write access for metadata due to
       lastFetchedCloudMetadata (${this.lastFetchedCloudMetadata.nonce})
            being lower than last written metadata nonce (${latestMetadata.nonce}). perhaps update metadata SDK (create new tKey and init)`);
     } else if (latestMetadata.nonce < this.lastFetchedCloudMetadata.nonce) {
-      throw CoreError.acquireLockFailed(`unable to acquire write access for metadata due to 
+      throw CoreError.acquireLockFailed(`unable to acquire write access for metadata due to
       lastFetchedCloudMetadata (${this.lastFetchedCloudMetadata.nonce})
-      being higher than last written metadata nonce (${latestMetadata.nonce}). this should never happen as it 
+      being higher than last written metadata nonce (${latestMetadata.nonce}). this should never happen as it
       should only ever be updated by getting metadata)`);
     }
 
@@ -1931,6 +1979,16 @@ class ThresholdKey implements ITKey {
     this.metadata = undefined;
     this.shares = {};
     this.lastFetchedCloudMetadata = undefined;
+  }
+
+  computeAccountNonce(index: number) {
+    // generation should occur during tkey.init, fails if accountSalt is absent
+    if (!this._accountSalt) {
+      throw CoreError.accountSaltUndefined();
+    }
+    let accountHash = keccak256(Buffer.from(`${index}${this._accountSalt}`));
+    if (accountHash.length === 66) accountHash = accountHash.slice(2);
+    return index && index > 0 ? new BN(accountHash, "hex").umod(ecCurve.curve.n) : new BN(0);
   }
 
   getApi(): ITKeyApi {

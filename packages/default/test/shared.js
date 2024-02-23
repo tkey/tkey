@@ -3,7 +3,7 @@
 /* eslint-disable mocha/no-exports */
 /* eslint-disable import/no-extraneous-dependencies */
 
-import { ecCurve, getPubKeyPoint, KEY_NOT_FOUND, SHARE_DELETED, ShareStore } from "@tkey-mpc/common-types";
+import { ecCurve, getPubKeyPoint, KEY_NOT_FOUND, SHARE_DELETED, ShareStore, toPrivKeyEC } from "@tkey-mpc/common-types";
 import { Metadata } from "@tkey-mpc/core";
 import PrivateKeyModule, { ED25519Format, SECP256K1Format } from "@tkey-mpc/private-keys";
 import SecurityQuestionsModule from "@tkey-mpc/security-questions";
@@ -22,7 +22,17 @@ import stringify from "json-stable-stringify";
 import { createSandbox } from "sinon";
 
 import ThresholdKey from "../src/index";
-import { assignTssDkgKeys, fetchPostboxKeyAndSigs, getMetadataUrl, getServiceProvider, initStorageLayer, isMocked, setupTSSMocks } from "./helpers";
+import {
+  assignTssDkgKeys,
+  computeIndexedPrivateKey,
+  fetchPostboxKeyAndSigs,
+  getMetadataUrl,
+  getServiceProvider,
+  initStorageLayer,
+  isMocked,
+  setupTSSMocks,
+} from "./helpers";
+import { refreshAndAccountIndex } from "./RefreshAndAccountIndex";
 
 const rejects = async (fn, error, msg) => {
   let f = () => {};
@@ -67,96 +77,13 @@ function compareReconstructedKeys(a, b, message) {
 export const sharedTestCases = (mode, torusSP, storageLayer) => {
   const customSP = torusSP;
   const customSL = storageLayer;
+
+  // backward compatibility test
+  refreshAndAccountIndex(customSP, mode, true);
+
+  refreshAndAccountIndex(customSP, mode, false);
+
   describe("TSS tests", function () {
-    it("#should be able to refresh tss shares", async function () {
-      const sp = customSP;
-      if (!sp.useTSS) this.skip();
-
-      const deviceTSSShare = new BN(generatePrivate());
-      const deviceTSSIndex = 2;
-
-      sp.verifierName = "torus-test-health";
-      sp.verifierId = "test19@example.com";
-      const testId = sp.getVerifierNameVerifierId();
-      const { signatures, postboxkey } = await fetchPostboxKeyAndSigs({
-        serviceProvider: sp,
-        verifierName: sp.verifierName,
-        verifierId: sp.verifierId,
-      });
-      sp.postboxKey = postboxkey;
-      const { serverDKGPrivKeys } = await assignTssDkgKeys({
-        serviceProvider: sp,
-        verifierName: sp.verifierName,
-        verifierId: sp.verifierId,
-        maxTSSNonceToSimulate: 2,
-      });
-      const storageLayer = initStorageLayer({ hostUrl: metadataURL });
-      const tb1 = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync: mode });
-
-      // factor key needs to passed from outside of tKey
-      const factorKey = new BN(generatePrivate());
-      const factorPub = getPubKeyPoint(factorKey);
-
-      await tb1.initialize({ useTSS: true, factorPub, deviceTSSShare, deviceTSSIndex });
-      const newShare = await tb1.generateNewShare();
-      const reconstructedKey = await tb1.reconstructKey();
-      await tb1.syncLocalMetadataTransitions();
-      if (tb1.privKey.cmp(reconstructedKey.privKey) !== 0) {
-        fail("key should be able to be reconstructed");
-      }
-
-      const tb2 = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync: mode });
-      await tb2.initialize({ useTSS: true, factorPub });
-      await tb2.inputShareStoreSafe(newShare.newShareStores[newShare.newShareIndex.toString("hex")]);
-      await tb2.reconstructKey();
-      const { tssShare: retrievedTSS, tssIndex: retrievedTSSIndex } = await tb2.getTSSShare(factorKey);
-      const tssCommits = tb2.getTSSCommits();
-      const tssPrivKey = getLagrangeCoeffs([1, retrievedTSSIndex], 1)
-        .mul(serverDKGPrivKeys[0])
-        .add(getLagrangeCoeffs([1, retrievedTSSIndex], retrievedTSSIndex).mul(retrievedTSS))
-        .umod(ecCurve.n);
-
-      const tssPubKey = getPubKeyPoint(tssPrivKey);
-      strictEqual(tssPubKey.x.toString(16, 64), tssCommits[0].x.toString(16, 64));
-      strictEqual(tssPubKey.y.toString(16, 64), tssCommits[0].y.toString(16, 64));
-
-      // // test tss refresh
-
-      const factorKey2 = new BN(generatePrivate());
-      const factorPub2 = getPubKeyPoint(factorKey2);
-
-      const factorPubs = [factorPub, factorPub2];
-      const { serverEndpoints, serverPubKeys } = await sp.getRSSNodeDetails();
-      await tb2._refreshTSSShares(true, retrievedTSS, retrievedTSSIndex, factorPubs, [2, 3], testId, {
-        serverThreshold: 3,
-        selectedServers: [1, 2, 3],
-        serverEndpoints,
-        serverPubKeys,
-        authSignatures: signatures,
-      });
-
-      {
-        const { tssShare: newTSS2, tssIndex } = await tb2.getTSSShare(factorKey);
-        const newTSSPrivKey = getLagrangeCoeffs([1, 2], 1)
-          .mul(new BN(serverDKGPrivKeys[1], "hex"))
-          .add(getLagrangeCoeffs([1, 2], 2).mul(newTSS2))
-          .umod(ecCurve.n);
-        strictEqual(tssPrivKey.toString(16, 64), newTSSPrivKey.toString(16, 64));
-        // eslint-disable-next-line no-console
-        console.log("newTSS2", newTSS2.toString("hex"), tssIndex);
-      }
-
-      {
-        const { tssShare: newTSS2, tssIndex } = await tb2.getTSSShare(factorKey2);
-        const newTSSPrivKey = getLagrangeCoeffs([1, 3], 1)
-          .mul(new BN(serverDKGPrivKeys[1], "hex"))
-          .add(getLagrangeCoeffs([1, 3], 3).mul(newTSS2))
-          .umod(ecCurve.n);
-        strictEqual(tssPrivKey.toString(16, 64), newTSSPrivKey.toString(16, 64));
-        // eslint-disable-next-line no-console
-        console.log("newTSS2", newTSS2.toString("hex"), tssIndex);
-      }
-    });
     it("#should be able to reconstruct tssShare from factor key (tss2) when initializing a key with useTSS true", async function () {
       const sp = customSP;
       if (!sp.useTSS) this.skip();
@@ -561,6 +488,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         selectedServers: [1, 2, 3],
         serverEndpoints,
         serverPubKeys,
+        authSignatures: signatures,
       });
 
       {
@@ -702,7 +630,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         await tb.getTSSShare(newFactorKey);
       });
       // it(`#should be able to delete a user and reset tss nonce, manualSync=${mode}`, async function () {
-      //   if (!customSP.useTSS) this.skip();
+      //   if (!customSP.useTSS) this();
       //   // create 2/4
       //   await tb._initializeNewKey({ initializeModules: true });
       //   await tb.generateNewShare();
@@ -773,7 +701,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
 
         sp.verifierName = "torus-test-health";
         sp.verifierId = "test18@example.com";
-        const { postboxkey } = await fetchPostboxKeyAndSigs({
+        const { postboxkey, signatures } = await fetchPostboxKeyAndSigs({
           serviceProvider: sp,
           verifierName: sp.verifierName,
           verifierId: sp.verifierId,
@@ -806,6 +734,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
           inputTSSIndex: tssIndex,
           newFactorPub,
           newTSSIndex: 3,
+          authSignatures: signatures,
         });
         await tb.syncLocalMetadataTransitions();
 
@@ -830,7 +759,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         const sp = customSP;
         sp.verifierName = "torus-test-health";
         sp.verifierId = "test18@example.com";
-        const { postboxkey } = await fetchPostboxKeyAndSigs({
+        const { postboxkey, signatures } = await fetchPostboxKeyAndSigs({
           serviceProvider: sp,
           verifierName: sp.verifierName,
           verifierId: sp.verifierId,
@@ -862,6 +791,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
           inputTSSIndex: tssIndex,
           newFactorPub,
           newTSSIndex: 3,
+          authSignatures: signatures,
         });
 
         await tb.syncLocalMetadataTransitions();

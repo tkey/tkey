@@ -44,16 +44,13 @@
   },
   "dependencies": {
     "@tkey-mpc/common-types": "^9.0.2",
-    "@types/bn.js": "^5.1.1",
     "bn.js": "^5.2.1"
   },
   "devDependencies": {
     "@tkey-mpc/core": "^9.0.2",
     "@tkey-mpc/service-provider-base": "^9.0.2",
     "@tkey-mpc/storage-layer-torus": "^9.0.2",
-    "@types/bn.js": "^5.1.2",
-    "@types/filesystem": "^0.0.33",
-    "bn.js": "^5.2.1"
+    "@types/filesystem": "^0.0.33"
   },
   "bugs": {
     "url": "https://github.com/tkey/tkey/issues"
