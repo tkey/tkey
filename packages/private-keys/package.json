@@ -1,6 +1,6 @@
 {
   "name": "@tkey-mpc/private-keys",
-  "version": "9.0.2",
+  "version": "9.1.0",
   "description": "TKey Private Keys Module",
   "author": "Torus Labs",
   "homepage": "https://github.com/tkey/tkey#readme",
@@ -37,10 +37,8 @@
   "peerDependencies": {
     "@babel/runtime": "7.x"
   },
-  "devDependencies": {
-  },
   "dependencies": {
-    "@tkey-mpc/common-types": "^9.0.2",
+    "@tkey-mpc/common-types": "^9.1.0",
     "@toruslabs/tweetnacl-js": "^1.0.4",
     "bn.js": "^5.2.1",
     "randombytes": "^2.1.0"
