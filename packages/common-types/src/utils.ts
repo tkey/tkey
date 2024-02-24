@@ -16,6 +16,8 @@ export const generatePrivate = (keyType: KeyType): BN => {
 
 function getPrivateKeyForEncryption(privateKey: BN, keyType: KeyType): ec.KeyPair {
   let priv = toPrivKeyEC(privateKey, keyType);
+  // If the key is an edwards25519 scalar, then we derive a fresh secp256k1 scalar from it, which is required for our encryption scheme.
+  // We do that by first hashing and then computing the result modulo the curve order.
   if (keyType === KeyType.ed25519) {
     const secpCurve = keyTypeToCurve(KeyType.secp256k1);
     priv = toPrivKeyEC(new BN(keccak512(toPrivKeyECC(privateKey, keyType))).umod(secpCurve.curve.n), KeyType.secp256k1);

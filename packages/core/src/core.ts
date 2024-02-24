@@ -46,6 +46,7 @@ import {
   TKeyArgs,
   TkeyStoreItemType,
 } from "@tkey/common-types";
+import nacl from "@toruslabs/tweetnacl-js";
 import BN from "bn.js";
 import { ec as EllipticCurve } from "elliptic";
 import stringify from "json-stable-stringify";
@@ -653,9 +654,16 @@ class ThresholdKey implements ITKey {
     importedKey?: BN;
     delete1OutOf1?: boolean;
   } = {}): Promise<InitializeNewKeyResult> {
-    let seed: Uint8Array;
-    const tmpPriv = importedKey || generatePrivate(this.keyType);
-    this._setKey(new BN(tmpPriv));
+    let seed: Uint8Array = new Uint8Array();
+    if (this.keyType === KeyType.secp256k1) {
+      const tmpPriv = importedKey || generatePrivate(this.keyType);
+      this._setKey(new BN(tmpPriv));
+    } else {
+      seed = importedKey ? new Uint8Array(importedKey.toBuffer()) : nacl.randomBytes(32);
+      const keyPair = nacl.sign.keyPair.fromSeed(seed);
+      const tempPriv = new BN(keyPair.secretKey.slice(0, 32)).umod(this.ecCurve.curve.n);
+      this._setKey(tempPriv);
+    }
 
     // create a random poly and respective shares
     // 1 is defined as the serviceProvider share
@@ -721,10 +729,9 @@ class ThresholdKey implements ITKey {
     }
 
     // ed25519 store seed after tkey is initialized
-    if (this.keyType === KeyType.ed25519 && seed) {
-      // encrypt and add to local metadata transitions
-      const encMsg = await this.encrypt(Buffer.from(seed));
-      await this.addLocalMetadataTransitions({ input: [{ message: JSON.stringify(encMsg), dateAdded: Date.now() }], privKey: [this.privKey] });
+    if (this.keyType === KeyType.ed25519) {
+      // encrypt and add to general store domain
+      this.metadata.setGeneralStoreDomain("ed25519Seed", { message: await this.encrypt(Buffer.from(seed)) });
     }
     return result;
   }
@@ -1283,8 +1290,8 @@ class ThresholdKey implements ITKey {
     if (this.keyType === KeyType.secp256k1) {
       return this.privKey.toString("hex");
     } else if (this.keyType === KeyType.ed25519) {
-      const result: EncryptedMessage = await this.storageLayer.getMetadata({ privKey: this.privKey, keyType: this.keyType });
-      const seed = await this.decrypt(result);
+      const result = this.metadata.getGeneralStoreDomain("ed25519Seed") as Record<string, EncryptedMessage>;
+      const seed = new BN(await this.decrypt(result.message));
       return seed.toString("hex");
     }
     throw CoreError.default("Invalid KeyType");

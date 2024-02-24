@@ -1,7 +1,7 @@
 import { generatePrivate, KeyType } from "@tkey/common-types";
 import ServiceProviderTorus from "@tkey/service-provider-torus";
 
-import { getMetadataUrl, initStorageLayer, sleep } from "./helpers";
+import { getMetadataUrl, initStorageLayer } from "./helpers";
 import { sharedTestCases } from "./shared";
 
 const metadataURL = getMetadataUrl();
@@ -36,6 +36,5 @@ testVariables.forEach((testVariable) => {
     });
     // eslint-disable-next-line mocha/no-setup-in-describe
     sharedTestCases(MANUAL_SYNC, torusSp, torusSL, keyType);
-    // eslint-disable-next-line mocha/no-setup-in-describe
   });
 });

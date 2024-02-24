@@ -27,14 +27,6 @@ export function initStorageLayer(extraParams) {
   return mocked === "true" ? new MockStorageLayer() : new TorusStorageLayer(extraParams);
 }
 
-export async function sleep(ms) {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve();
-    }, ms);
-  });
-}
-
 export function getServiceProvider(params, keyType) {
   const { type, privKeyBN, isEmptyProvider } = params;
   const PRIVATE_KEY = privKeyBN ? privKeyBN.toString("hex") : generatePrivate(keyType).toString("hex");

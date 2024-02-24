@@ -2,15 +2,15 @@
 /* eslint-disable mocha/no-exports */
 /* eslint-disable import/no-extraneous-dependencies */
 
-import { generatePrivate, getPubKeyPoint, KEY_NOT_FOUND, keyTypeToCurve, SHARE_DELETED, ShareStore } from "@tkey/common-types";
+import { generatePrivate, KEY_NOT_FOUND, KeyType, keyTypeToCurve, SHARE_DELETED, ShareStore } from "@tkey/common-types";
 import { Metadata } from "@tkey/core";
-import PrivateKeyModule, { ED25519Format, SECP256K1Format } from "@tkey/private-keys";
-import SecurityQuestionsModule from "@tkey/security-questions";
-import SeedPhraseModule, { MetamaskSeedPhraseFormat } from "@tkey/seed-phrase";
-import TorusServiceProvider from "@tkey/service-provider-torus";
-import ShareTransferModule from "@tkey/share-transfer";
-import TorusStorageLayer from "@tkey/storage-layer-torus";
-import { post } from "@toruslabs/http-helpers";
+import { ED25519Format, PrivateKeyModule, SECP256K1Format } from "@tkey/private-keys";
+import { SecurityQuestionsModule } from "@tkey/security-questions";
+import { MetamaskSeedPhraseFormat, SeedPhraseModule } from "@tkey/seed-phrase";
+import { TorusServiceProvider } from "@tkey/service-provider-torus";
+import { ShareTransferModule } from "@tkey/share-transfer";
+import { TorusStorageLayer } from "@tkey/storage-layer-torus";
+import nacl from "@toruslabs/tweetnacl-js";
 import { deepEqual, deepStrictEqual, equal, fail, notEqual, notStrictEqual, strict, strictEqual, throws } from "assert";
 import BN from "bn.js";
 import { keccak256 } from "ethereum-cryptography/keccak";
@@ -113,7 +113,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
       }
     });
     it(`#should be able to reconstruct key when initializing with import key, manualSync=${mode}`, async function () {
-      let importedKey = new BN(generatePrivate(keyType));
+      const importedKey = new BN(generatePrivate(keyType));
 
       const resp1 = await tb._initializeNewKey({ importedKey, initializeModules: true });
       await tb.syncLocalMetadataTransitions();
@@ -123,8 +123,19 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
       await tb2.inputShareStoreSafe(resp1.deviceShare);
       const reconstructedKey = await tb2.reconstructKey();
 
-      if (importedKey.cmp(reconstructedKey.privKey) !== 0) {
-        fail("key should be able to be reconstructed");
+      if (keyType === KeyType.secp256k1) {
+        if (importedKey.cmp(reconstructedKey.privKey) !== 0) {
+          fail("key should be able to be reconstructed");
+        }
+      } else if (keyType === KeyType.ed25519) {
+        const ecCurve = keyTypeToCurve(keyType);
+        const keyPair = nacl.sign.keyPair.fromSeed(importedKey.toBuffer());
+        const privateKey = new BN(keyPair.secretKey.slice(0, 32)).umod(ecCurve.curve.n);
+        if (privateKey.cmp(reconstructedKey.privKey) !== 0) {
+          fail("key should be able to be reconstructed");
+        }
+      } else {
+        throw new Error(`Unsupported key type: ${keyType}`);
       }
       // should check correct key is imported
     });
@@ -1568,8 +1579,9 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
       notEqual(nonce, undefined);
       notEqual(pubNonce, undefined);
 
+      const ecCurve = keyTypeToCurve(keyType);
       const nonceBN = new BN(nonce, "hex");
-      const importKey = postboxKeyBN.add(nonceBN).umod(serviceProvider.customAuthInstance.torus.ec.curve.n).toString("hex");
+      const importKey = postboxKeyBN.add(nonceBN).umod(ecCurve.curve.n);
 
       const tKey = new ThresholdKey({ serviceProvider, storageLayer: storageLayer2, manualSync: mode, keyType });
       await tKey.initialize({
@@ -1577,7 +1589,18 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
         delete1OutOf1: true,
       });
       await tKey.syncLocalMetadataTransitions();
-      equal(tKey.privKey.toString("hex"), importKey);
+      if (keyType === KeyType.secp256k1) {
+        equal(tKey.privKey.toString("hex"), importKey.toString("hex"));
+        equal(await tKey.exportFinalKey(), importKey.toString("hex"));
+      } else if (keyType === KeyType.ed25519) {
+        const ecCurve = keyTypeToCurve(keyType);
+        const keyPair = nacl.sign.keyPair.fromSeed(importKey.toBuffer());
+        const privateKey = new BN(keyPair.secretKey.slice(0, 32)).umod(ecCurve.curve.n);
+        equal(tKey.privKey.toString("hex"), privateKey.toString("hex"));
+        equal(await tKey.exportFinalKey(), importKey.toString("hex"));
+      } else {
+        throw new Error(`Unsupported key type: ${keyType}`);
+      }
 
       const {
         // typeOfUser: newTypeOfUser,
