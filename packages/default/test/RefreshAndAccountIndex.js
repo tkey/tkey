@@ -1,7 +1,7 @@
 import { ecCurve, getPubKeyPoint } from "@tkey-mpc/common-types";
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { generatePrivate } from "@toruslabs/eccrypto";
-import { fail, notEqual, rejects, strictEqual } from "assert";
+import assert, { fail, notEqual, rejects, strictEqual } from "assert";
 import BN from "bn.js";
 
 import ThresholdKey from "../src/index";
@@ -131,6 +131,22 @@ export const refreshAndAccountIndex = (customSP, manualSync, accountIndexBackwar
         authSignatures: signatures,
       });
 
+      {
+        // ensure tssShare is the master share
+        const { tssShare } = await tb2.getTSSShare(factorKey);
+        const { tssShare: tssShareIndex1 } = await tb2.getTSSShare(factorKey, { accountIndex: 1 });
+        const { tssShare: tssShareIndex2 } = await tb2.getTSSShare(factorKey, { accountIndex: 2 });
+        const { tssShare: tssShareIndex0 } = await tb2.getTSSShare(factorKey, { accountIndex: 0 });
+
+        const nonce1 = tb2.computeAccountNonce(1);
+        const nonce2 = tb2.computeAccountNonce(2);
+
+        assert(tb2.computeAccountNonce(0).eq(new BN(0)), "nonce for account 0 should be 0");
+        assert(tssShare.eq(tssShareIndex0), "tssShareIndex0 should be equal to tssShare");
+        assert(tssShare.add(nonce1).umod(ecCurve.n).eq(tssShareIndex1), "tssShareIndex1 should be equal to tssShare + nonce1");
+        assert(tssShare.add(nonce2).umod(ecCurve.n).eq(tssShareIndex2), "tssShareIndex2 should be equal to tssShare + nonce2");
+        assert(!tssShareIndex1.add(nonce1).umod(ecCurve.n).eq(tssShareIndex2), "tssShareIndex2 should not be equal to tssShareIndex1 + nonce1");
+      }
       // test case to ensure nonce mechanism
       {
         // make sure derived pub key is different from the index 0 key

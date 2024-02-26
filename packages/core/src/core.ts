@@ -394,7 +394,7 @@ class ThresholdKey implements ITKey {
    * getTSSShare accepts a factorKey and returns the TSS share based on the factor encrypted TSS shares in the metadata
    * @param factorKey - factor key
    */
-  async getTSSShare(factorKey: BN, opts?: { threshold: number; accountIndex?: number }): Promise<{ tssIndex: number; tssShare: BN }> {
+  async getTSSShare(factorKey: BN, opts?: { threshold?: number; accountIndex?: number }): Promise<{ tssIndex: number; tssShare: BN }> {
     if (!this.privKey) throw CoreError.default("tss share cannot be returned until you've reconstructed tkey");
     const factorPub = getPubKeyPoint(factorKey);
     const factorEncs = this.getFactorEncs(factorPub);
