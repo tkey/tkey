@@ -634,6 +634,7 @@ class ThresholdKey implements ITKey {
         const { salt, encryptedSalt } = await this.generateSaltAndEncrypted(privKey);
         this.metadata.addTSSData({ tssTag: this.tssTag, encryptedSalt });
         this._accountSalt = salt;
+        await this._syncShareMetadata();
       }
     }
 
