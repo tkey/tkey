@@ -68,13 +68,14 @@ class Metadata implements IMetadata {
     };
   };
 
-  encryptedSalt?: EncryptedMessage;
+  encryptedSalt?: EncryptedMessage | Record<string, unknown>;
 
   constructor(input: Point) {
     this.tssPolyCommits = {};
     this.tssNonces = {};
     this.factorPubs = {};
     this.factorEncs = {};
+    this.encryptedSalt = {};
     this.publicPolynomials = {};
     this.publicShares = {};
     this.generalStore = {};
@@ -86,7 +87,8 @@ class Metadata implements IMetadata {
   }
 
   static fromJSON(value: StringifiedType): Metadata {
-    const { pubKey, polyIDList, generalStore, tkeyStore, scopedStore, nonce, tssNonces, tssPolyCommits, factorPubs, factorEncs } = value;
+    const { pubKey, polyIDList, generalStore, tkeyStore, scopedStore, nonce, tssNonces, tssPolyCommits, factorPubs, factorEncs, encryptedSalt } =
+      value;
     const point = Point.fromCompressedPub(pubKey);
     const metadata = new Metadata(point);
     const unserializedPolyIDList: PolyIDAndShares[] = [];
@@ -114,6 +116,8 @@ class Metadata implements IMetadata {
       }
     }
     if (factorEncs) metadata.factorEncs = factorEncs;
+
+    if (encryptedSalt) metadata.encryptedSalt = encryptedSalt;
 
     for (let i = 0; i < polyIDList.length; i += 1) {
       const serializedPolyID: string = polyIDList[i];
@@ -198,7 +202,7 @@ class Metadata implements IMetadata {
     if (tssPolyCommits) this.tssPolyCommits[tssTag] = tssPolyCommits;
     if (factorPubs) this.factorPubs[tssTag] = factorPubs;
     if (factorEncs) this.factorEncs[tssTag] = factorEncs;
-    if (encryptedSalt && !this.encryptedSalt) this.encryptedSalt = encryptedSalt;
+    if (encryptedSalt && Object.keys(this.encryptedSalt).length === 0) this.encryptedSalt = encryptedSalt;
   }
 
   // appends shares and public polynomial to metadata.
@@ -342,6 +346,7 @@ class Metadata implements IMetadata {
       ...(this.tssPolyCommits && { tssPolyCommits: this.tssPolyCommits }),
       ...(this.factorPubs && { factorPubs: this.factorPubs }),
       ...(this.factorEncs && { factorEncs: this.factorEncs }),
+      ...(this.encryptedSalt && { encryptedSalt: this.encryptedSalt }),
     };
   }
 }

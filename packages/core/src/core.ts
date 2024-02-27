@@ -305,8 +305,9 @@ class ThresholdKey implements ITKey {
         if (useTSS) {
           const { factorEncs, factorPubs, tssPolyCommits } = await this._initializeNewTSSKey(this.tssTag, deviceTSSShare, factorPub, deviceTSSIndex);
 
-          const { encryptedSalt } = await this.getSaltAndEncrypted(this.privKey);
+          const { salt, encryptedSalt } = await this.generateSaltAndEncrypted(this.privKey);
           this.metadata.addTSSData({ tssTag: this.tssTag, tssNonce: 0, tssPolyCommits, factorPubs, factorEncs, encryptedSalt });
+          this._accountSalt = salt;
           // await this._setTKeyStoreItem(TSS_MODULE, {
           //   id: "accountSalt",
           //   value: accountSalt,
@@ -630,7 +631,7 @@ class ThresholdKey implements ITKey {
       if (accountSalt) {
         this._accountSalt = accountSalt;
       } else {
-        const { salt, encryptedSalt } = await this.getSaltAndEncrypted(privKey);
+        const { salt, encryptedSalt } = await this.generateSaltAndEncrypted(privKey);
         this.metadata.addTSSData({ tssTag: this.tssTag, encryptedSalt });
         this._accountSalt = salt;
       }
@@ -919,7 +920,7 @@ class ThresholdKey implements ITKey {
           serverEncs: refreshResponse.serverFactorEncs,
         };
       }
-      const { encryptedSalt } = await this.getSaltAndEncrypted(this.privKey);
+      const { salt, encryptedSalt } = await this.generateSaltAndEncrypted(this.privKey);
       this.metadata.addTSSData({
         tssTag: this.tssTag,
         tssNonce: newTssNonce,
@@ -928,6 +929,7 @@ class ThresholdKey implements ITKey {
         factorEncs,
         encryptedSalt,
       });
+      this._accountSalt = salt;
     } catch (error) {
       this.tssTag = oldTag;
       throw error;
@@ -2024,7 +2026,7 @@ class ThresholdKey implements ITKey {
   }
 
   //
-  private async getSaltAndEncrypted(privKey: BN): Promise<{ salt: string; encryptedSalt: EncryptedMessage }> {
+  private async generateSaltAndEncrypted(privKey: BN): Promise<{ salt: string; encryptedSalt: EncryptedMessage }> {
     if (!privKey) {
       throw CoreError.privateKeyUnavailable();
     }
@@ -2036,9 +2038,9 @@ class ThresholdKey implements ITKey {
 
   private async getAccountSalt() {
     if (this._accountSalt) return this._accountSalt;
-    if (this.metadata.encryptedSalt) {
-      const decrypteSalt = await decrypt(this.privKey.toBuffer(), this.metadata.encryptedSalt);
-      return decrypteSalt.toString("hex");
+    if (Object.keys(this.metadata.encryptedSalt).length) {
+      const decryptedSalt = await decrypt(this.privKey.toBuffer(), this.metadata.encryptedSalt as EncryptedMessage);
+      return decryptedSalt.toString("hex");
     }
     return undefined;
   }
