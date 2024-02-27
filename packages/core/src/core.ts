@@ -69,7 +69,7 @@ import {
 } from "./lagrangeInterpolatePolynomial";
 import Metadata from "./metadata";
 // TODO: handle errors for get and set with retries
-export const TSS_MODULE = "tssModule";
+// export const TSS_MODULE = "tssModule";
 
 class ThresholdKey implements ITKey {
   modules: ModuleMap;
@@ -304,12 +304,13 @@ class ThresholdKey implements ITKey {
         });
         if (useTSS) {
           const { factorEncs, factorPubs, tssPolyCommits } = await this._initializeNewTSSKey(this.tssTag, deviceTSSShare, factorPub, deviceTSSIndex);
-          const accountSalt = generateSalt();
-          await this._setTKeyStoreItem(TSS_MODULE, {
-            id: "accountSalt",
-            value: accountSalt,
-          });
-          this.metadata.addTSSData({ tssTag: this.tssTag, tssNonce: 0, tssPolyCommits, factorPubs, factorEncs });
+
+          const { encryptedSalt } = await this.getSaltAndEncrypted(this.privKey);
+          this.metadata.addTSSData({ tssTag: this.tssTag, tssNonce: 0, tssPolyCommits, factorPubs, factorEncs, encryptedSalt });
+          // await this._setTKeyStoreItem(TSS_MODULE, {
+          //   id: "accountSalt",
+          //   value: accountSalt,
+          // });
         }
         return this.getKeyDetails();
       }
@@ -624,16 +625,14 @@ class ThresholdKey implements ITKey {
     // only valid for use Tss
     // assign account salt from tKey store if it exists
     if (Object.keys(this.metadata.tssPolyCommits).length > 0) {
-      const accountSalt = await this.getTKeyStoreItem(TSS_MODULE, "accountSalt");
-      if (accountSalt && accountSalt?.value) {
-        this._accountSalt = accountSalt.value;
+      const accountSalt = await this.getAccountSalt();
+
+      if (accountSalt) {
+        this._accountSalt = accountSalt;
       } else {
-        const newSalt = generateSalt();
-        await this._setTKeyStoreItem(TSS_MODULE, {
-          id: "accountSalt",
-          value: newSalt,
-        });
-        this._accountSalt = newSalt;
+        const { salt, encryptedSalt } = await this.getSaltAndEncrypted(privKey);
+        this.metadata.addTSSData({ tssTag: this.tssTag, encryptedSalt });
+        this._accountSalt = salt;
       }
     }
 
@@ -920,17 +919,14 @@ class ThresholdKey implements ITKey {
           serverEncs: refreshResponse.serverFactorEncs,
         };
       }
-      const accountSalt = generateSalt();
+      const { encryptedSalt } = await this.getSaltAndEncrypted(this.privKey);
       this.metadata.addTSSData({
         tssTag: this.tssTag,
         tssNonce: newTssNonce,
         tssPolyCommits: newTSSCommits,
         factorPubs,
         factorEncs,
-      });
-      await this._setTKeyStoreItem(TSS_MODULE, {
-        id: "accountSalt",
-        value: accountSalt,
+        encryptedSalt,
       });
     } catch (error) {
       this.tssTag = oldTag;
@@ -2025,6 +2021,26 @@ class ThresholdKey implements ITKey {
 
   private async initializeModules() {
     return Promise.all(Object.keys(this.modules).map((x) => this.modules[x].initialize()));
+  }
+
+  //
+  private async getSaltAndEncrypted(privKey: BN): Promise<{ salt: string; encryptedSalt: EncryptedMessage }> {
+    if (!privKey) {
+      throw CoreError.privateKeyUnavailable();
+    }
+
+    const salt = generateSalt();
+    const encryptedSalt = await encrypt(getPubKeyECC(privKey), Buffer.from(salt, "hex"));
+    return { salt, encryptedSalt };
+  }
+
+  private async getAccountSalt() {
+    if (this._accountSalt) return this._accountSalt;
+    if (this.metadata.encryptedSalt) {
+      const decrypteSalt = await decrypt(this.privKey.toBuffer(), this.metadata.encryptedSalt);
+      return decrypteSalt.toString("hex");
+    }
+    return undefined;
   }
 }
 

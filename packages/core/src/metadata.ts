@@ -68,6 +68,8 @@ class Metadata implements IMetadata {
     };
   };
 
+  encryptedSalt?: EncryptedMessage;
+
   constructor(input: Point) {
     this.tssPolyCommits = {};
     this.tssNonces = {};
@@ -189,12 +191,14 @@ class Metadata implements IMetadata {
     factorEncs?: {
       [factorPubID: string]: FactorEnc;
     };
+    encryptedSalt?: EncryptedMessage;
   }): void {
-    const { tssTag, tssNonce, tssPolyCommits, factorPubs, factorEncs } = tssData;
+    const { tssTag, tssNonce, tssPolyCommits, factorPubs, factorEncs, encryptedSalt } = tssData;
     if (tssNonce !== undefined) this.tssNonces[tssTag] = tssNonce;
     if (tssPolyCommits) this.tssPolyCommits[tssTag] = tssPolyCommits;
     if (factorPubs) this.factorPubs[tssTag] = factorPubs;
     if (factorEncs) this.factorEncs[tssTag] = factorEncs;
+    if (encryptedSalt && !this.encryptedSalt) this.encryptedSalt = encryptedSalt;
   }
 
   // appends shares and public polynomial to metadata.
