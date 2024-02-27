@@ -835,7 +835,8 @@ class ThresholdKey implements ITKey {
     serverOpts: {
       selectedServers?: number[];
       authSignatures: string[];
-    }
+    },
+    syncMetdata: boolean = true
   ): Promise<void> {
     const oldTag = this.tssTag;
     try {
@@ -920,16 +921,23 @@ class ThresholdKey implements ITKey {
           serverEncs: refreshResponse.serverFactorEncs,
         };
       }
-      const { salt, encryptedSalt } = await this.generateSaltAndEncrypted(this.privKey);
+      let accountSalt = await this.getAccountSalt();
+      let encryptedAccountSalt;
+      if (!accountSalt) {
+        const { salt, encryptedSalt } = await this.generateSaltAndEncrypted(this.privKey);
+        accountSalt = salt;
+        encryptedAccountSalt = encryptedSalt;
+      }
       this.metadata.addTSSData({
         tssTag: this.tssTag,
         tssNonce: newTssNonce,
         tssPolyCommits: newTSSCommits,
         factorPubs,
         factorEncs,
-        encryptedSalt,
+        encryptedSalt: encryptedAccountSalt,
       });
-      this._accountSalt = salt;
+      this._accountSalt = accountSalt;
+      if (syncMetdata) await this._syncShareMetadata();
     } catch (error) {
       this.tssTag = oldTag;
       throw error;
