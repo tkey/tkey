@@ -305,13 +305,10 @@ class ThresholdKey implements ITKey {
         if (useTSS) {
           const { factorEncs, factorPubs, tssPolyCommits } = await this._initializeNewTSSKey(this.tssTag, deviceTSSShare, factorPub, deviceTSSIndex);
 
-          const { salt, encryptedSalt } = await this.generateSaltAndEncrypted(this.privKey);
+          const { encryptedSalt } = await this.generateSaltAndEncrypted(this.privKey);
           this.metadata.addTSSData({ tssTag: this.tssTag, tssNonce: 0, tssPolyCommits, factorPubs, factorEncs, encryptedSalt });
+          const salt = await this.getAccountSalt(this.privKey);
           this._accountSalt = salt;
-          // await this._setTKeyStoreItem(TSS_MODULE, {
-          //   id: "accountSalt",
-          //   value: accountSalt,
-          // });
         }
         return this.getKeyDetails();
       }
@@ -626,7 +623,7 @@ class ThresholdKey implements ITKey {
     // only valid for use Tss
     // assign account salt from tKey store if it exists
     if (Object.keys(this.metadata.tssPolyCommits).length > 0) {
-      const accountSalt = await this.getAccountSalt();
+      const accountSalt = await this.getAccountSalt(privKey);
 
       if (accountSalt) {
         this._accountSalt = accountSalt;
@@ -635,6 +632,11 @@ class ThresholdKey implements ITKey {
         this.metadata.addTSSData({ tssTag: this.tssTag, encryptedSalt });
         this._accountSalt = salt;
         await this._syncShareMetadata();
+        // this is very specific case where exisiting user do not have salt.
+        // sync metadata to cloud to ensure salt is stored incase of manual sync mode
+        // new user or importKey should not hit this cases
+        // NOTE this is not mistake, we force sync for this case
+        if (this.manualSync) await this.syncLocalMetadataTransitions();
       }
     }
 
@@ -839,6 +841,8 @@ class ThresholdKey implements ITKey {
     },
     syncMetdata: boolean = true
   ): Promise<void> {
+    if (!this.privKey) throw CoreError.privateKeyUnavailable();
+
     const oldTag = this.tssTag;
     try {
       const { importKey, factorPub, newTSSIndex, tag } = params;
@@ -922,7 +926,7 @@ class ThresholdKey implements ITKey {
           serverEncs: refreshResponse.serverFactorEncs,
         };
       }
-      let accountSalt = await this.getAccountSalt();
+      let accountSalt = await this.getAccountSalt(this.privKey);
       let encryptedAccountSalt;
       if (!accountSalt) {
         const { salt, encryptedSalt } = await this.generateSaltAndEncrypted(this.privKey);
@@ -2045,10 +2049,10 @@ class ThresholdKey implements ITKey {
     return { salt, encryptedSalt };
   }
 
-  private async getAccountSalt() {
+  private async getAccountSalt(privKey: BNString): Promise<string | undefined> {
     if (this._accountSalt) return this._accountSalt;
     if (Object.keys(this.metadata.encryptedSalt).length) {
-      const decryptedSalt = await decrypt(this.privKey.toBuffer(), this.metadata.encryptedSalt as EncryptedMessage);
+      const decryptedSalt = await decrypt(toPrivKeyECC(privKey), this.metadata.encryptedSalt as EncryptedMessage);
       return decryptedSalt.toString("hex");
     }
     return undefined;
