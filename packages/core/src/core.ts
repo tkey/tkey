@@ -839,7 +839,7 @@ class ThresholdKey implements ITKey {
       selectedServers?: number[];
       authSignatures: string[];
     },
-    syncMetdata: boolean = true
+    updateMetadata: boolean = true
   ): Promise<void> {
     if (!this.privKey) throw CoreError.privateKeyUnavailable();
 
@@ -942,7 +942,7 @@ class ThresholdKey implements ITKey {
         encryptedSalt: encryptedAccountSalt,
       });
       this._accountSalt = accountSalt;
-      if (syncMetdata) await this._syncShareMetadata();
+      if (updateMetadata) await this._syncShareMetadata();
     } catch (error) {
       this.tssTag = oldTag;
       throw error;
