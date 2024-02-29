@@ -843,8 +843,7 @@ class ThresholdKey implements ITKey {
     serverOpts: {
       selectedServers?: number[];
       authSignatures: string[];
-    },
-    updateMetadata: boolean = true
+    }
   ): Promise<void> {
     if (!this.privKey) throw CoreError.privateKeyUnavailable();
 
@@ -941,16 +940,12 @@ class ThresholdKey implements ITKey {
       if (!this._accountSalt) {
         const accountSalt = generateSalt();
         // tkeyStoreItem already syncMetadata
-        await this._setTKeyStoreItem(
-          TSS_MODULE,
-          {
-            id: "accountSalt",
-            value: accountSalt,
-          },
-          updateMetadata
-        );
+        await this._setTKeyStoreItem(TSS_MODULE, {
+          id: "accountSalt",
+          value: accountSalt,
+        });
         this._accountSalt = accountSalt;
-      } else if (updateMetadata) {
+      } else {
         await this._syncShareMetadata();
       }
     } catch (error) {
