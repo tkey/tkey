@@ -1,6 +1,6 @@
 {
   "name": "@tkey-mpc/default",
-  "version": "9.1.1",
+  "version": "9.1.0",
   "description": "TKey default library",
   "main": "dist/default.cjs.js",
   "module": "dist/default.esm.js",
@@ -35,7 +35,7 @@
   ],
   "dependencies": {
     "@tkey-mpc/common-types": "^9.1.0",
-    "@tkey-mpc/core": "^9.1.1",
+    "@tkey-mpc/core": "^9.1.0",
     "@tkey-mpc/security-questions": "^9.1.0",
     "@tkey-mpc/service-provider-base": "^9.1.0",
     "@tkey-mpc/service-provider-torus": "^9.1.0",
