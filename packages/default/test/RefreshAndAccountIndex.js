@@ -8,7 +8,7 @@ import ThresholdKey from "../src/index";
 import { assignTssDkgKeys, computeIndexedPrivateKey, fetchPostboxKeyAndSigs, getMetadataUrl, initStorageLayer } from "./helpers";
 
 const metadataURL = getMetadataUrl();
-
+const TSS_MODULE = "tssModule";
 // eslint-disable-next-line mocha/no-exports
 export const refreshAndAccountIndex = (customSP, manualSync, resetAccountSalt) => {
   const mode = manualSync;
@@ -52,8 +52,8 @@ export const refreshAndAccountIndex = (customSP, manualSync, resetAccountSalt) =
       const tss0ShareIndex2 = await tb0.getTSSShare(factorKey, { accountIndex: 2 });
       const tss0ShareIndex99 = await tb0.getTSSShare(factorKey, { accountIndex: 99 });
       if (resetAccountSalt) {
-        // eslint-disable-next-line require-atomic-updates
-        tb0.metadata.encryptedSalt = {};
+        // tb0.metadata.encryptedSalt = {};
+        await tb0._deleteTKeyStoreItem(TSS_MODULE, "accountSalt");
       }
 
       const newShare = await tb0.generateNewShare();
