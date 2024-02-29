@@ -70,6 +70,7 @@ import {
 import Metadata from "./metadata";
 // TODO: handle errors for get and set with retries
 export const TSS_MODULE = "tssModule";
+export const ACCOUNTSALT = "accountSalt";
 
 class ThresholdKey implements ITKey {
   modules: ModuleMap;
@@ -304,12 +305,14 @@ class ThresholdKey implements ITKey {
         });
         if (useTSS) {
           const { factorEncs, factorPubs, tssPolyCommits } = await this._initializeNewTSSKey(this.tssTag, deviceTSSShare, factorPub, deviceTSSIndex);
+
+          this.metadata.addTSSData({ tssTag: this.tssTag, tssNonce: 0, tssPolyCommits, factorPubs, factorEncs });
           const accountSalt = generateSalt();
           await this._setTKeyStoreItem(TSS_MODULE, {
             id: "accountSalt",
             value: accountSalt,
           });
-          this.metadata.addTSSData({ tssTag: this.tssTag, tssNonce: 0, tssPolyCommits, factorPubs, factorEncs });
+          this._accountSalt = accountSalt;
         }
         return this.getKeyDetails();
       }
@@ -394,7 +397,7 @@ class ThresholdKey implements ITKey {
    * getTSSShare accepts a factorKey and returns the TSS share based on the factor encrypted TSS shares in the metadata
    * @param factorKey - factor key
    */
-  async getTSSShare(factorKey: BN, opts?: { threshold: number; accountIndex?: number }): Promise<{ tssIndex: number; tssShare: BN }> {
+  async getTSSShare(factorKey: BN, opts?: { threshold?: number; accountIndex?: number }): Promise<{ tssIndex: number; tssShare: BN }> {
     if (!this.privKey) throw CoreError.default("tss share cannot be returned until you've reconstructed tkey");
     const factorPub = getPubKeyPoint(factorKey);
     const factorEncs = this.getFactorEncs(factorPub);
@@ -625,7 +628,7 @@ class ThresholdKey implements ITKey {
     // assign account salt from tKey store if it exists
     if (Object.keys(this.metadata.tssPolyCommits).length > 0) {
       const accountSalt = await this.getTKeyStoreItem(TSS_MODULE, "accountSalt");
-      if (accountSalt && accountSalt?.value) {
+      if (accountSalt && accountSalt.value) {
         this._accountSalt = accountSalt.value;
       } else {
         const newSalt = generateSalt();
@@ -634,6 +637,11 @@ class ThresholdKey implements ITKey {
           value: newSalt,
         });
         this._accountSalt = newSalt;
+        // this is very specific case where exisiting user do not have salt.
+        // sync metadata to cloud to ensure salt is stored incase of manual sync mode
+        // new user or importKey should not hit this cases
+        // NOTE this is not mistake, we force sync for this case
+        if (this.manualSync) await this.syncLocalMetadataTransitions();
       }
     }
 
@@ -837,6 +845,8 @@ class ThresholdKey implements ITKey {
       authSignatures: string[];
     }
   ): Promise<void> {
+    if (!this.privKey) throw CoreError.privateKeyUnavailable();
+
     const oldTag = this.tssTag;
     try {
       const { importKey, factorPub, newTSSIndex, tag } = params;
@@ -920,7 +930,6 @@ class ThresholdKey implements ITKey {
           serverEncs: refreshResponse.serverFactorEncs,
         };
       }
-      const accountSalt = generateSalt();
       this.metadata.addTSSData({
         tssTag: this.tssTag,
         tssNonce: newTssNonce,
@@ -928,10 +937,17 @@ class ThresholdKey implements ITKey {
         factorPubs,
         factorEncs,
       });
-      await this._setTKeyStoreItem(TSS_MODULE, {
-        id: "accountSalt",
-        value: accountSalt,
-      });
+      if (!this._accountSalt) {
+        const accountSalt = generateSalt();
+        // tkeyStoreItem already syncMetadata
+        await this._setTKeyStoreItem(TSS_MODULE, {
+          id: "accountSalt",
+          value: accountSalt,
+        });
+        this._accountSalt = accountSalt;
+      } else {
+        await this._syncShareMetadata();
+      }
     } catch (error) {
       this.tssTag = oldTag;
       throw error;
@@ -1819,7 +1835,7 @@ class ThresholdKey implements ITKey {
     return decrypt(toPrivKeyECC(this.privKey), encryptedMessage);
   }
 
-  async _setTKeyStoreItem(moduleName: string, data: TkeyStoreItemType): Promise<void> {
+  async _setTKeyStoreItem(moduleName: string, data: TkeyStoreItemType, updateMetadata: boolean = true): Promise<void> {
     if (!this.metadata) {
       throw CoreError.metadataUndefined();
     }
@@ -1840,7 +1856,7 @@ class ThresholdKey implements ITKey {
 
     // update metadataStore
     this.metadata.setTkeyStoreDomain(moduleName, rawTkeyStoreItems);
-    await this._syncShareMetadata();
+    if (updateMetadata) await this._syncShareMetadata();
   }
 
   async _deleteTKeyStoreItem(moduleName: string, id: string): Promise<void> {
