@@ -6,7 +6,7 @@
   ],
   "scripts": {
     "just:publish:lerna": "lerna publish",
-    "publish:lerna": "npm run clean && npm install && lerna publish",
+    "publish:lerna": "npm run clean && npm install && npm run build && lerna publish",
     "clean": "lerna clean --yes && lerna exec -- rimraf package-lock.json yarn.lock dist/ .rts2_cache_{cjs,esm}/ tkey-*.tgz",
     "build": "cross-env FORCE_COLOR=1 lerna run build",
     "dev": "cross-env FORCE_COLOR=1 lerna run dev",

@@ -1,6 +1,6 @@
 {
   "name": "@tkey-mpc/core",
-  "version": "9.1.1",
+  "version": "9.1.0",
   "description": "TKey Core library",
   "main": "dist/core.cjs.js",
   "module": "dist/core.esm.js",
@@ -75,5 +75,5 @@
     "node": ">=18.x",
     "npm": ">=9.x"
   },
-  "gitHead": "cd56e965033eb307b8a41b653c4aa6fa5fdb5a5f"
+  "gitHead": "e4970c327253ff3493c5ea0d072531d6ff2df73f"
 }
