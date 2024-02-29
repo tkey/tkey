@@ -2047,26 +2047,6 @@ class ThresholdKey implements ITKey {
   private async initializeModules() {
     return Promise.all(Object.keys(this.modules).map((x) => this.modules[x].initialize()));
   }
-
-  //
-  // private async generateSaltAndEncrypted(privKey: BN): Promise<{ salt: string; encryptedSalt: EncryptedMessage }> {
-  //   if (!privKey) {
-  //     throw CoreError.privateKeyUnavailable();
-  //   }
-
-  //   const salt = generateSalt();
-  //   const encryptedSalt = await encrypt(getPubKeyECC(privKey), Buffer.from(salt, "hex"));
-  //   return { salt, encryptedSalt };
-  // }
-
-  // private async getAccountSalt(privKey: BNString): Promise<string | undefined> {
-  //   if (this._accountSalt) return this._accountSalt;
-  //   if (Object.keys(this.metadata.encryptedSalt).length) {
-  //     const decryptedSalt = await decrypt(toPrivKeyECC(privKey), this.metadata.encryptedSalt as EncryptedMessage);
-  //     return decryptedSalt.toString("hex");
-  //   }
-  //   return undefined;
-  // }
 }
 
 export default ThresholdKey;
