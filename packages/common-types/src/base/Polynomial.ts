@@ -1,9 +1,7 @@
 import BN from "bn.js";
 
-import { BNString, ISerializable, PolynomialID, StringifiedType } from "../baseTypes/commonTypes";
-import { ecCurve } from "../utils";
-import { getPubKeyPoint } from "./BNUtils";
-import Point from "./Point";
+import { BNString, ISerializable, KeyType, keyTypeToCurve, PolynomialID, StringifiedType } from "../baseTypes/commonTypes";
+import { Point } from "./Point";
 import PublicPolynomial from "./PublicPolynomial";
 import Share from "./Share";
 
@@ -17,13 +15,21 @@ class Polynomial implements ISerializable {
 
   publicPolynomial: PublicPolynomial;
 
-  constructor(polynomial: BN[]) {
+  keyType: KeyType;
+
+  constructor(polynomial: BN[], keyType: KeyType) {
     this.polynomial = polynomial;
+    this.keyType = keyType;
   }
 
   static fromJSON(value: StringifiedType): Polynomial {
-    const { polynomial } = value;
-    return new Polynomial(polynomial.map((x: string) => new BN(x, "hex")));
+    const { polynomial, keyType } = value;
+    const postKeyType = keyType in KeyType ? keyType : KeyType.secp256k1;
+
+    return new Polynomial(
+      polynomial.map((x: string) => new BN(x, "hex")),
+      postKeyType
+    );
   }
 
   getThreshold(): number {
@@ -31,6 +37,7 @@ class Polynomial implements ISerializable {
   }
 
   polyEval(x: BNString): BN {
+    const ecCurve = keyTypeToCurve(this.keyType);
     const tmpX = new BN(x, "hex");
     let xi = new BN(tmpX);
     let sum = new BN(0);
@@ -69,7 +76,7 @@ class Polynomial implements ISerializable {
   getPublicPolynomial(): PublicPolynomial {
     const polynomialCommitments: Point[] = [];
     for (let i = 0; i < this.polynomial.length; i += 1) {
-      polynomialCommitments.push(getPubKeyPoint(this.polynomial[i]));
+      polynomialCommitments.push(Point.fromPrivate(this.polynomial[i], this.keyType));
     }
     this.publicPolynomial = new PublicPolynomial(polynomialCommitments);
     return this.publicPolynomial;
@@ -82,6 +89,7 @@ class Polynomial implements ISerializable {
   toJSON(): StringifiedType {
     return {
       polynomial: this.polynomial.map((x) => x.toString("hex")),
+      keyType: this.keyType,
     };
   }
 }

@@ -1,4 +1,4 @@
-import { StringifiedType, TorusServiceProviderArgs } from "@tkey/common-types";
+import { KeyType, StringifiedType, TorusServiceProviderArgs } from "@tkey/common-types";
 import { ServiceProviderBase } from "@tkey/service-provider-base";
 import CustomAuth, {
   AggregateLoginParams,
@@ -20,21 +20,23 @@ class TorusServiceProvider extends ServiceProviderBase {
 
   customAuthArgs: CustomAuthArgs;
 
-  constructor({ enableLogging = false, postboxKey, customAuthArgs }: TorusServiceProviderArgs) {
+  constructor({ enableLogging = false, postboxKey, customAuthArgs, keyType }: TorusServiceProviderArgs) {
     super({ enableLogging, postboxKey });
     this.customAuthArgs = customAuthArgs;
     this.customAuthInstance = new CustomAuth(customAuthArgs);
     this.serviceProviderName = "TorusServiceProvider";
+    this.keyType = keyType in KeyType ? keyType : KeyType.secp256k1;
   }
 
   static fromJSON(value: StringifiedType): TorusServiceProvider {
-    const { enableLogging, postboxKey, customAuthArgs, serviceProviderName } = value;
+    const { enableLogging, postboxKey, customAuthArgs, serviceProviderName, keyType } = value;
     if (serviceProviderName !== "TorusServiceProvider") return undefined;
 
     return new TorusServiceProvider({
       enableLogging,
       postboxKey,
       customAuthArgs,
+      keyType,
     });
   }
 
@@ -70,6 +72,7 @@ class TorusServiceProvider extends ServiceProviderBase {
       ...super.toJSON(),
       serviceProviderName: this.serviceProviderName,
       customAuthArgs: this.customAuthArgs,
+      keyType: this.keyType,
     };
   }
 }

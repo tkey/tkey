@@ -1,7 +1,7 @@
 import BN from "bn.js";
 
-import { BNString, ISerializable, StringifiedType } from "../baseTypes/commonTypes";
-import { getPubKeyPoint } from "./BNUtils";
+import { BNString, ISerializable, KeyType, StringifiedType } from "../baseTypes/commonTypes";
+import { Point } from "./Point";
 import PublicShare from "./PublicShare";
 
 class Share implements ISerializable {
@@ -19,8 +19,9 @@ class Share implements ISerializable {
     return new Share(shareIndex, share);
   }
 
-  getPublicShare(): PublicShare {
-    return new PublicShare(this.shareIndex, getPubKeyPoint(this.share));
+  getPublicShare(keyType: KeyType): PublicShare {
+    const pubKeyPoint = Point.fromPrivate(this.share, keyType);
+    return new PublicShare(this.shareIndex, pubKeyPoint, keyType);
   }
 
   toJSON(): StringifiedType {

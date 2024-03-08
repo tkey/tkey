@@ -1,5 +1,5 @@
 import { ISerializable, PolynomialID, StringifiedType } from "../baseTypes/commonTypes";
-import Point from "./Point";
+import { Point } from "./Point";
 
 class PublicPolynomial implements ISerializable {
   polynomialCommitments: Point[];
@@ -22,7 +22,7 @@ class PublicPolynomial implements ISerializable {
   getPolynomialID(): PolynomialID {
     let idSeed = "";
     for (let i = 0; i < this.polynomialCommitments.length; i += 1) {
-      let nextChunk = this.polynomialCommitments[i].encode("elliptic-compressed").toString();
+      let nextChunk = this.polynomialCommitments[i].toSEC1(true);
       if (i !== 0) {
         nextChunk = `|${nextChunk}`;
       }

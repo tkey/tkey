@@ -8,7 +8,7 @@ import { MockStorageLayer, TorusStorageLayer } from "@tkey/storage-layer-torus";
 
 class ThresholdKey extends TKey {
   constructor(args?: TKeyArgs) {
-    const { modules = {}, serviceProvider, storageLayer, customAuthArgs, serverTimeOffset } = args || {};
+    const { modules = {}, serviceProvider, storageLayer, customAuthArgs, serverTimeOffset, keyType } = args || {};
     const defaultModules = {
       [SHARE_TRANSFER_MODULE_NAME]: new ShareTransferModule(),
       [SHARE_SERIALIZATION_MODULE_NAME]: new ShareSerializationModule(),
@@ -16,21 +16,27 @@ class ThresholdKey extends TKey {
     let finalServiceProvider: IServiceProvider;
     let finalStorageLayer: IStorageLayer;
     if (!serviceProvider) {
-      finalServiceProvider = new TorusServiceProvider({ customAuthArgs });
+      finalServiceProvider = new TorusServiceProvider({ customAuthArgs, keyType });
     } else {
       finalServiceProvider = serviceProvider;
     }
     if (!storageLayer) {
-      finalStorageLayer = new TorusStorageLayer({ hostUrl: "https://metadata.tor.us", serverTimeOffset });
+      finalStorageLayer = new TorusStorageLayer({ hostUrl: "https://node-1.dev-node.web3auth.io/metadata", serverTimeOffset });
     } else {
       finalStorageLayer = storageLayer;
     }
-    super({ ...(args || {}), modules: { ...defaultModules, ...modules }, serviceProvider: finalServiceProvider, storageLayer: finalStorageLayer });
+    super({
+      ...(args || {}),
+      modules: { ...defaultModules, ...modules },
+      serviceProvider: finalServiceProvider,
+      storageLayer: finalStorageLayer,
+      keyType,
+    });
   }
 
   static async fromJSON(value: StringifiedType, args?: TKeyArgs): Promise<ThresholdKey> {
     const { storageLayer: tempOldStorageLayer, serviceProvider: tempOldServiceProvider } = value;
-    const { storageLayer, serviceProvider, modules = {}, customAuthArgs, serverTimeOffset = 0 } = args || {};
+    const { storageLayer, serviceProvider, modules = {}, customAuthArgs, serverTimeOffset = 0, keyType } = args || {};
     const defaultModules = {
       [SHARE_TRANSFER_MODULE_NAME]: new ShareTransferModule(),
       [SHARE_SERIALIZATION_MODULE_NAME]: new ShareSerializationModule(),
@@ -40,20 +46,21 @@ class ThresholdKey extends TKey {
       serviceProvider ||
       TorusServiceProvider.fromJSON(tempOldServiceProvider) ||
       ServiceProviderBase.fromJSON(tempOldServiceProvider) ||
-      new TorusServiceProvider({ customAuthArgs });
+      new TorusServiceProvider({ customAuthArgs, keyType });
 
     tempOldStorageLayer.serviceProvider = finalServiceProvider;
     const finalStorageLayer: IStorageLayer =
       storageLayer ||
       MockStorageLayer.fromJSON(tempOldStorageLayer) ||
       TorusStorageLayer.fromJSON(tempOldStorageLayer) ||
-      new TorusStorageLayer({ hostUrl: "https://metadata.tor.us", serverTimeOffset });
+      new TorusStorageLayer({ hostUrl: "https://node-1.dev-node.web3auth.io/metadata", serverTimeOffset });
 
     return super.fromJSON(value, {
       ...(args || {}),
       modules: { ...defaultModules, ...modules },
       serviceProvider: finalServiceProvider,
       storageLayer: finalStorageLayer,
+      keyType,
     });
   }
 }

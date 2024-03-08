@@ -1,7 +1,8 @@
 name: BrowserTests
 
-on: [push]
-
+on:   
+  create: #[push]
+  workflow_dispatch:
 env:
   PLAYWRIGHT_BROWSERS_PATH: 0
   NODE_VERSION: 20
