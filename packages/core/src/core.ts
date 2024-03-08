@@ -659,7 +659,7 @@ class ThresholdKey implements ITKey {
       const tmpPriv = importedKey || generatePrivate(this.keyType);
       this._setKey(new BN(tmpPriv));
     } else if (this.keyType === KeyType.ed25519) {
-      seed = importedKey ? new Uint8Array(importedKey.toBuffer()) : nacl.randomBytes(32);
+      seed = importedKey ? new Uint8Array(importedKey.toBuffer(undefined, 32)) : nacl.randomBytes(32);
       const keyPair = nacl.sign.keyPair.fromSeed(seed);
       const tempPriv = new BN(keyPair.secretKey.slice(0, 32)).umod(this.ecCurve.curve.n);
       this._setKey(tempPriv);
