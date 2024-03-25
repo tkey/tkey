@@ -254,11 +254,11 @@ class TorusStorageLayer implements IStorageLayer {
     const data = {
       timestamp: Math.floor((this.serverTimeOffset + Date.now()) / 1000),
     };
-    const ecCurve = keyTypeToCurve(keyType);
 
     let signature: string;
     let pubKeyHex: string;
     if (privKey) {
+      const ecCurve = keyTypeToCurve(KeyType.secp256k1);
       const signerKey = getPrivateKeyForSigning(privKey, keyType);
       signature = signDataWithPrivKey(data, signerKey.getPrivate(), ecCurve);
       pubKeyHex = signerKey.getPublic("hex");
