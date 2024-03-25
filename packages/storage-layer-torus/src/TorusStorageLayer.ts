@@ -4,6 +4,7 @@ import {
   EncryptedMessage,
   getEncryptionPrivateKey,
   getEncryptionPublicKey,
+  getPrivateKeyForSigning,
   IServiceProvider,
   IStorageLayer,
   KEY_NOT_FOUND,
@@ -199,8 +200,7 @@ class TorusStorageLayer implements IStorageLayer {
 
     const hash = keccak256(Buffer.from(stringify(setTKeyStore), "utf8"));
     if (privKey) {
-      const ecCurve = keyTypeToCurve(keyType);
-      const signKeyPair = ecCurve.keyFromPrivate(privKey.toBuffer());
+      const signKeyPair = getPrivateKeyForSigning(privKey, keyType);
       const unparsedSig = signKeyPair.sign(hash);
       sig = Buffer.from(unparsedSig.r.toString(16, 64) + unparsedSig.s.toString(16, 64) + new BN(0).toString(16, 2), "hex").toString("base64");
       const pubK = signKeyPair.getPublic();

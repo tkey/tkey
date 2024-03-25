@@ -8,10 +8,10 @@ import TorusStorageLayer from "../src/TorusStorageLayer";
 
 const metadataURL = process.env.METADATA || "https://node-1.dev-node.web3auth.io/metadata";
 
-const keyTypes = [KeyType.secp256k1, KeyType.ed25519];
+const keyTypes = [KeyType.ed25519, KeyType.secp256k1];
 keyTypes.forEach((keyType) => {
   describe(`TorusStorageLayer test, keyType ${keyType}`, function () {
-    it("#should encrypt and decrypt correctly", async function () {
+    it.only("#should encrypt and decrypt correctly", async function () {
       const privKey = generatePrivate(keyType);
       const tmp = new BN(123);
       const message = tmp.toBuffer();

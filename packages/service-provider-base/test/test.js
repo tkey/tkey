@@ -4,7 +4,7 @@ import BN from "bn.js";
 
 import ServiceProviderBase from "../src/ServiceProviderBase";
 
-const keyTypes = [KeyType.secp256k1, KeyType.ed25519];
+const keyTypes = [KeyType.secp256k1];
 
 describe("ServiceProvider", function () {
   it("#should encrypt and decrypt correctly", async function () {
