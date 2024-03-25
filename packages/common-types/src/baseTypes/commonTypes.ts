@@ -72,6 +72,11 @@ export interface IServiceProvider extends ISerializable {
   retrievePubKey(type: PubKeyType): Buffer;
   retrievePubKeyPoint(): curve.base.BasePoint;
   sign(msg: BNString): string;
+  metadataSign(msg: BNString): {
+    sig: string;
+    pubX: string;
+    pubY: string;
+  };
 }
 export type TorusStorageLayerAPIParams = {
   pub_key_X: string;

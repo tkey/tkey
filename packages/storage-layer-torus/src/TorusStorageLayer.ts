@@ -207,10 +207,10 @@ class TorusStorageLayer implements IStorageLayer {
       pubX = pubK.getX().toString("hex");
       pubY = pubK.getY().toString("hex");
     } else {
-      const point = serviceProvider.retrievePubKeyPoint();
-      sig = serviceProvider.sign(new BN(hash));
-      pubX = point.getX().toString("hex");
-      pubY = point.getY().toString("hex");
+      const sigData = serviceProvider.metadataSign(new BN(hash));
+      pubX = sigData.pubX;
+      pubY = sigData.pubY;
+      sig = sigData.sig;
     }
     return {
       pub_key_X: pubX,
@@ -233,7 +233,8 @@ class TorusStorageLayer implements IStorageLayer {
     if (privKey) {
       signature = signDataWithPrivKey(data, privKey, ecCurve);
     } else {
-      signature = serviceProvider.sign(new BN(keccak256(Buffer.from(stringify(data), "utf8"))));
+      const sigData = serviceProvider.metadataSign(new BN(keccak256(Buffer.from(stringify(data), "utf8"))));
+      signature = sigData.sig;
     }
     const metadataParams = {
       key: ecCurve.keyFromPrivate(privKey.toBuffer()).getPublic("hex"),
@@ -254,7 +255,8 @@ class TorusStorageLayer implements IStorageLayer {
     if (privKey) {
       signature = signDataWithPrivKey(data, privKey, keyTypeToCurve(keyType));
     } else {
-      signature = serviceProvider.sign(new BN(keccak256(Buffer.from(stringify(data), "utf8"))));
+      const sigData = serviceProvider.metadataSign(new BN(keccak256(Buffer.from(stringify(data), "utf8"))));
+      signature = sigData.sig;
     }
     const metadataParams = {
       key: Point.fromPrivate(privKey, keyType).toSEC1(),
