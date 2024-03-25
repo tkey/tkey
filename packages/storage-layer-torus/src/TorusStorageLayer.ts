@@ -12,7 +12,6 @@ import {
   keyTypeToCurve,
   ONE_KEY_DELETE_NONCE,
   ONE_KEY_NAMESPACE,
-  Point,
   prettyPrintError,
   StringifiedType,
   TorusStorageLayerAPIParams,
@@ -230,14 +229,19 @@ class TorusStorageLayer implements IStorageLayer {
 
     const ecCurve = keyTypeToCurve(keyType);
     let signature: string;
+    let pubKeyHex: string;
     if (privKey) {
-      signature = signDataWithPrivKey(data, privKey, ecCurve);
+      const signerKey = getPrivateKeyForSigning(privKey, keyType);
+      signature = signDataWithPrivKey(data, signerKey.getPrivate(), ecCurve);
+      pubKeyHex = signerKey.getPublic("hex");
     } else {
       const sigData = serviceProvider.metadataSign(new BN(keccak256(Buffer.from(stringify(data), "utf8"))));
       signature = sigData.sig;
+      const keypair = sigData.signer;
+      pubKeyHex = keypair.getPublic("hex");
     }
     const metadataParams = {
-      key: ecCurve.keyFromPrivate(privKey.toBuffer()).getPublic("hex"),
+      key: pubKeyHex,
       data,
       signature,
       key_type: keyType.toString(),
@@ -250,16 +254,23 @@ class TorusStorageLayer implements IStorageLayer {
     const data = {
       timestamp: Math.floor((this.serverTimeOffset + Date.now()) / 1000),
     };
+    const ecCurve = keyTypeToCurve(keyType);
 
     let signature: string;
+    let pubKeyHex: string;
     if (privKey) {
-      signature = signDataWithPrivKey(data, privKey, keyTypeToCurve(keyType));
+      const signerKey = getPrivateKeyForSigning(privKey, keyType);
+      signature = signDataWithPrivKey(data, signerKey.getPrivate(), ecCurve);
+      pubKeyHex = signerKey.getPublic("hex");
     } else {
       const sigData = serviceProvider.metadataSign(new BN(keccak256(Buffer.from(stringify(data), "utf8"))));
       signature = sigData.sig;
+      signature = sigData.sig;
+      const keypair = sigData.signer;
+      pubKeyHex = keypair.getPublic("hex");
     }
     const metadataParams = {
-      key: Point.fromPrivate(privKey, keyType).toSEC1(),
+      key: pubKeyHex,
       data,
       signature,
       id,

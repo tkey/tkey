@@ -15,7 +15,7 @@ import {
   toPrivKeyEC,
 } from "@tkey/common-types";
 import BN from "bn.js";
-import { curve } from "elliptic";
+import { curve, ec } from "elliptic";
 
 class ServiceProviderBase implements IServiceProvider {
   enableLogging: boolean;
@@ -68,6 +68,7 @@ class ServiceProviderBase implements IServiceProvider {
   }
 
   metadataSign(msg: BNString): {
+    signer: ec.KeyPair;
     sig: string;
     pubX: string;
     pubY: string;
@@ -77,6 +78,7 @@ class ServiceProviderBase implements IServiceProvider {
     const sig = keyPair.sign(tmp.toString("hex"));
     const pubKey = keyPair.getPublic();
     return {
+      signer: keyPair,
       sig: Buffer.from(sig.r.toString(16, 64) + sig.s.toString(16, 64) + new BN(0).toString(16, 2), "hex").toString("base64"),
       pubX: pubKey.getX().toString("hex"),
       pubY: pubKey.getY().toString("hex"),
