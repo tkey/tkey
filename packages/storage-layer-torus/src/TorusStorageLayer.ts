@@ -4,6 +4,7 @@ import {
   EncryptedMessage,
   getEncryptionPrivateKey,
   getEncryptionPublicKey,
+  getPrivateKeyForSigning,
   IServiceProvider,
   IStorageLayer,
   KEY_NOT_FOUND,
@@ -11,7 +12,6 @@ import {
   keyTypeToCurve,
   ONE_KEY_DELETE_NONCE,
   ONE_KEY_NAMESPACE,
-  Point,
   prettyPrintError,
   StringifiedType,
   TorusStorageLayerAPIParams,
@@ -199,18 +199,17 @@ class TorusStorageLayer implements IStorageLayer {
 
     const hash = keccak256(Buffer.from(stringify(setTKeyStore), "utf8"));
     if (privKey) {
-      const ecCurve = keyTypeToCurve(keyType);
-      const signKeyPair = ecCurve.keyFromPrivate(privKey.toBuffer());
+      const signKeyPair = getPrivateKeyForSigning(privKey, keyType);
       const unparsedSig = signKeyPair.sign(hash);
       sig = Buffer.from(unparsedSig.r.toString(16, 64) + unparsedSig.s.toString(16, 64) + new BN(0).toString(16, 2), "hex").toString("base64");
       const pubK = signKeyPair.getPublic();
       pubX = pubK.getX().toString("hex");
       pubY = pubK.getY().toString("hex");
     } else {
-      const point = serviceProvider.retrievePubKeyPoint();
-      sig = serviceProvider.sign(new BN(hash));
-      pubX = point.getX().toString("hex");
-      pubY = point.getY().toString("hex");
+      const sigData = serviceProvider.metadataSign(new BN(hash));
+      pubX = sigData.pubX;
+      pubY = sigData.pubY;
+      sig = sigData.sig;
     }
     return {
       pub_key_X: pubX,
@@ -228,15 +227,21 @@ class TorusStorageLayer implements IStorageLayer {
       timestamp: Math.floor((this.serverTimeOffset + Date.now()) / 1000),
     };
 
-    const ecCurve = keyTypeToCurve(keyType);
     let signature: string;
+    let pubKeyHex: string;
     if (privKey) {
-      signature = signDataWithPrivKey(data, privKey, ecCurve);
+      const ecCurve = keyTypeToCurve(KeyType.secp256k1);
+      const signerKey = getPrivateKeyForSigning(privKey, keyType);
+      signature = signDataWithPrivKey(data, signerKey.getPrivate(), ecCurve);
+      pubKeyHex = signerKey.getPublic("hex");
     } else {
-      signature = serviceProvider.sign(new BN(keccak256(Buffer.from(stringify(data), "utf8"))));
+      const sigData = serviceProvider.metadataSign(new BN(keccak256(Buffer.from(stringify(data), "utf8"))));
+      signature = sigData.sig;
+      const keypair = sigData.signer;
+      pubKeyHex = keypair.getPublic("hex");
     }
     const metadataParams = {
-      key: ecCurve.keyFromPrivate(privKey.toBuffer()).getPublic("hex"),
+      key: pubKeyHex,
       data,
       signature,
       key_type: keyType.toString(),
@@ -251,13 +256,21 @@ class TorusStorageLayer implements IStorageLayer {
     };
 
     let signature: string;
+    let pubKeyHex: string;
     if (privKey) {
-      signature = signDataWithPrivKey(data, privKey, keyTypeToCurve(keyType));
+      const ecCurve = keyTypeToCurve(KeyType.secp256k1);
+      const signerKey = getPrivateKeyForSigning(privKey, keyType);
+      signature = signDataWithPrivKey(data, signerKey.getPrivate(), ecCurve);
+      pubKeyHex = signerKey.getPublic("hex");
     } else {
-      signature = serviceProvider.sign(new BN(keccak256(Buffer.from(stringify(data), "utf8"))));
+      const sigData = serviceProvider.metadataSign(new BN(keccak256(Buffer.from(stringify(data), "utf8"))));
+      signature = sigData.sig;
+      signature = sigData.sig;
+      const keypair = sigData.signer;
+      pubKeyHex = keypair.getPublic("hex");
     }
     const metadataParams = {
-      key: Point.fromPrivate(privKey, keyType).toSEC1(),
+      key: pubKeyHex,
       data,
       signature,
       id,

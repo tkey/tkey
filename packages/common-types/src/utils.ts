@@ -1,11 +1,10 @@
 import { decrypt as ecDecrypt, encrypt as ecEncrypt } from "@toruslabs/eccrypto";
-import { keccak256, toChecksumAddress } from "@toruslabs/torus.js";
+import { getSecpKeyFromEd25519, keccak256, toChecksumAddress } from "@toruslabs/torus.js";
 import BN from "bn.js";
 import { ec } from "elliptic";
-import { keccak512 } from "ethereum-cryptography/keccak";
 import { serializeError } from "serialize-error";
 
-import { getPubKeyEC, toPrivKeyEC, toPrivKeyECC } from ".";
+import { toPrivKeyEC, toPrivKeyECC } from ".";
 import { EncryptedMessage, KeyType, keyTypeToCurve } from "./baseTypes/commonTypes";
 
 export const generatePrivate = (keyType: KeyType): BN => {
@@ -15,14 +14,17 @@ export const generatePrivate = (keyType: KeyType): BN => {
 };
 
 function getPrivateKeyForEncryption(privateKey: BN, keyType: KeyType): ec.KeyPair {
-  let priv = toPrivKeyEC(privateKey, keyType);
   // If the key is an edwards25519 scalar, then we derive a fresh secp256k1 scalar from it, which is required for our encryption scheme.
   // We do that by first hashing and then computing the result modulo the curve order.
   if (keyType === KeyType.ed25519) {
-    const secpCurve = keyTypeToCurve(KeyType.secp256k1);
-    priv = toPrivKeyEC(new BN(keccak512(toPrivKeyECC(privateKey, keyType))).umod(secpCurve.curve.n), KeyType.secp256k1);
+    const { scalar } = getSecpKeyFromEd25519(privateKey);
+    return toPrivKeyEC(scalar, KeyType.secp256k1);
   }
-  return priv;
+  return toPrivKeyEC(privateKey, keyType);
+}
+
+export function getPrivateKeyForSigning(privateKey: BN, keyType: KeyType): ec.KeyPair {
+  return getPrivateKeyForEncryption(privateKey, keyType);
 }
 
 export function getEncryptionPrivateKey(privateKey: BN, keyType: KeyType): Buffer {
@@ -30,7 +32,8 @@ export function getEncryptionPrivateKey(privateKey: BN, keyType: KeyType): Buffe
 }
 
 export function getEncryptionPublicKey(privateKey: BN, keyType: KeyType): Buffer {
-  return Buffer.from(getPubKeyEC(getPrivateKeyForEncryption(privateKey, keyType).getPrivate(), KeyType.secp256k1).encode("hex", false), "hex");
+  const encPubKey = getPrivateKeyForEncryption(privateKey, keyType).getPublic();
+  return Buffer.from(encPubKey.encodeCompressed("hex"), "hex");
 }
 
 // Wrappers around ECC encrypt/decrypt to use the hex serialization

@@ -5,6 +5,7 @@ import {
   EncryptedMessage,
   getEncryptionPrivateKey,
   getEncryptionPublicKey,
+  getPrivateKeyForSigning,
   getPubKeyECC,
   IServiceProvider,
   KeyType,
@@ -14,7 +15,7 @@ import {
   toPrivKeyEC,
 } from "@tkey/common-types";
 import BN from "bn.js";
-import { curve } from "elliptic";
+import { curve, ec } from "elliptic";
 
 class ServiceProviderBase implements IServiceProvider {
   enableLogging: boolean;
@@ -64,6 +65,24 @@ class ServiceProviderBase implements IServiceProvider {
     const tmp = new BN(msg, "hex");
     const sig = toPrivKeyEC(this.postboxKey, this.keyType).sign(tmp.toString("hex"));
     return Buffer.from(sig.r.toString(16, 64) + sig.s.toString(16, 64) + new BN(0).toString(16, 2), "hex").toString("base64");
+  }
+
+  metadataSign(msg: BNString): {
+    signer: ec.KeyPair;
+    sig: string;
+    pubX: string;
+    pubY: string;
+  } {
+    const tmp = new BN(msg, "hex");
+    const keyPair = getPrivateKeyForSigning(this.postboxKey, this.keyType);
+    const sig = keyPair.sign(tmp.toString("hex"));
+    const pubKey = keyPair.getPublic();
+    return {
+      signer: keyPair,
+      sig: Buffer.from(sig.r.toString(16, 64) + sig.s.toString(16, 64) + new BN(0).toString(16, 2), "hex").toString("base64"),
+      pubX: pubKey.getX().toString("hex"),
+      pubY: pubKey.getY().toString("hex"),
+    };
   }
 
   toJSON(): StringifiedType {
