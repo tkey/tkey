@@ -11,7 +11,6 @@ import {
   generatePrivateExcludingIndexes,
   getEncryptionPrivateKey,
   getEncryptionPublicKey,
-  getPrivateKeyForSigning,
   getPubKeyPoint,
   IMessageMetadata,
   IMetadata,
