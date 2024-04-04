@@ -137,7 +137,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
       // should check correct key is imported
     });
 
-    it.only(`#should be able to reconstruct key when initializing a with a share, manualSync=${mode}`, async function () {
+    it(`#should be able to reconstruct key when initializing a with a share, manualSync=${mode}`, async function () {
       let userInput = new BN(keccak256(Buffer.from("user answer blublu")).slice(2), "hex");
       userInput = userInput.umod(ecCurve.curve.n);
       const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
