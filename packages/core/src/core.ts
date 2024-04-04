@@ -660,7 +660,11 @@ class ThresholdKey implements ITKey {
       const tmpPriv = importedKey || generatePrivate(this.keyType);
       this._setKey(new BN(tmpPriv));
     } else if (this.keyType === KeyType.ed25519) {
-      seed = importedKey || new BN(await getRandomBytes(32));
+      seed = importedKey;
+      if (!seed) {
+        const newEd25519Seed = await getRandomBytes(32);
+        seed = new BN(newEd25519Seed);
+      }
       const keyPair = getEd25519ExtendedPublicKey(seed);
       // note this scalar is litte endian encoded
       // no need of converting to BE, since we only use this for encryption and decryption.
