@@ -223,7 +223,7 @@ class ThresholdKey implements ITKey {
 
   async initialize(params?: {
     withShare?: ShareStore;
-    importKey?: BN;
+    importKey?: Buffer;
     neverInitializeNewKey?: boolean;
     transitionMetadata?: Metadata;
     previouslyFetchedCloudMetadata?: Metadata;
@@ -652,18 +652,18 @@ class ThresholdKey implements ITKey {
   }: {
     determinedShare?: BN;
     initializeModules?: boolean;
-    importedKey?: BN;
+    importedKey?: Buffer;
     delete1OutOf1?: boolean;
   } = {}): Promise<InitializeNewKeyResult> {
-    let seed: BN;
+    let seed: Buffer;
     if (this.keyType === KeyType.secp256k1) {
-      const tmpPriv = importedKey || generatePrivate(this.keyType);
+      const tmpPriv = importedKey ? new BN(importedKey) : generatePrivate(this.keyType);
       this._setKey(new BN(tmpPriv));
     } else if (this.keyType === KeyType.ed25519) {
-      seed = importedKey;
+      seed = importedKey && importedKey;
       if (!seed) {
         const newEd25519Seed = await getRandomBytes(32);
-        seed = new BN(newEd25519Seed);
+        seed = Buffer.from(newEd25519Seed);
       }
       const keyPair = getEd25519ExtendedPublicKey(seed);
       // note this scalar is litte endian encoded
@@ -743,7 +743,7 @@ class ThresholdKey implements ITKey {
     // ed25519 store seed after tkey is initialized
     if (this.keyType === KeyType.ed25519) {
       // encrypt and add to general store domain
-      this.metadata.setGeneralStoreDomain("ed25519Seed", { message: await this.encrypt(seed.toArrayLike(Buffer)) });
+      this.metadata.setGeneralStoreDomain("ed25519Seed", { message: await this.encrypt(seed) });
     }
     return result;
   }

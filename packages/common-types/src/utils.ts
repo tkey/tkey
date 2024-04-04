@@ -4,7 +4,7 @@ import BN from "bn.js";
 import { ec } from "elliptic";
 import { serializeError } from "serialize-error";
 
-import { toPrivKeyEC, toPrivKeyECC } from ".";
+import { toPrivKeyEC, toPrivKeyECC } from "./base";
 import { EncryptedMessage, KeyType, keyTypeToCurve } from "./baseTypes/commonTypes";
 
 export const generatePrivate = (keyType: KeyType): BN => {
