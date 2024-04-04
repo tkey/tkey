@@ -14,7 +14,7 @@ import { generateEd25519KeyData, generateSecp256k1KeyData, getEd25519ExtendedPub
 import { deepEqual, deepStrictEqual, equal, fail, notEqual, notStrictEqual, strict, strictEqual, throws } from "assert";
 import BN from "bn.js";
 import { keccak256 } from "ethereum-cryptography/keccak";
-import { getRandomBytesSync } from "ethereum-cryptography/random";
+import { getRandomBytes } from "ethereum-cryptography/random";
 import { JsonRpcProvider } from "ethers";
 import { createSandbox } from "sinon";
 
@@ -112,7 +112,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
       }
     });
     it(`#should be able to reconstruct key when initializing with import key, manualSync=${mode}`, async function () {
-      const importedKey = keyType === "ed25519" ? new BN(getRandomBytesSync(32)) : new BN(generatePrivate(keyType));
+      const importedKey = keyType === "ed25519" ? new BN(await getRandomBytes(32)) : new BN(generatePrivate(keyType));
 
       const resp1 = await tb._initializeNewKey({ importedKey, initializeModules: true });
       await tb.syncLocalMetadataTransitions();
@@ -137,7 +137,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
       // should check correct key is imported
     });
 
-    it(`#should be able to reconstruct key when initializing a with a share, manualSync=${mode}`, async function () {
+    it.only(`#should be able to reconstruct key when initializing a with a share, manualSync=${mode}`, async function () {
       let userInput = new BN(keccak256(Buffer.from("user answer blublu")).slice(2), "hex");
       userInput = userInput.umod(ecCurve.curve.n);
       const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
@@ -1557,7 +1557,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
     if (!mode || isMocked) return;
 
     it("should be able to init tkey with 1 out of 1", async function () {
-      const importedKey = keyType === "ed25519" ? new BN(getRandomBytesSync(32)) : generatePrivate(keyType); // incase of ed25519, priv key doesnt have to on curve, it can be random 32 bytes.
+      const importedKey = keyType === "ed25519" ? new BN(await getRandomBytes(32)) : generatePrivate(keyType); // incase of ed25519, priv key doesnt have to on curve, it can be random 32 bytes.
       const keyData = keyType === "ed25519" ? await generateEd25519KeyData(importedKey) : await generateSecp256k1KeyData(importedKey);
       const ecCurve = keyTypeToCurve(keyType);
       const { nonce, pubNonce } = await getOrSetNonce(

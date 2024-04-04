@@ -49,7 +49,7 @@ import {
 import { getEd25519ExtendedPublicKey } from "@toruslabs/torus.js";
 import BN from "bn.js";
 import { ec as EllipticCurve } from "elliptic";
-import { getRandomBytesSync } from "ethereum-cryptography/random";
+import { getRandomBytes } from "ethereum-cryptography/random";
 import stringify from "json-stable-stringify";
 
 import AuthMetadata from "./authMetadata";
@@ -660,7 +660,7 @@ class ThresholdKey implements ITKey {
       const tmpPriv = importedKey || generatePrivate(this.keyType);
       this._setKey(new BN(tmpPriv));
     } else if (this.keyType === KeyType.ed25519) {
-      seed = importedKey || new BN(getRandomBytesSync(32));
+      seed = importedKey || new BN(await getRandomBytes(32));
       const keyPair = getEd25519ExtendedPublicKey(seed);
       // note this scalar is litte endian encoded
       // no need of converting to BE, since we only use this for encryption and decryption.
