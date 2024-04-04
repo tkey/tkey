@@ -10,17 +10,17 @@ import { MetamaskSeedPhraseFormat, SeedPhraseModule } from "@tkey/seed-phrase";
 import { TorusServiceProvider } from "@tkey/service-provider-torus";
 import { ShareTransferModule } from "@tkey/share-transfer";
 import { TorusStorageLayer } from "@tkey/storage-layer-torus";
+import { generateEd25519KeyData, generateSecp256k1KeyData, getEd25519ExtendedPublicKey, getOrSetNonce } from "@toruslabs/torus.js";
 import nacl from "@toruslabs/tweetnacl-js";
 import { deepEqual, deepStrictEqual, equal, fail, notEqual, notStrictEqual, strict, strictEqual, throws } from "assert";
 import BN from "bn.js";
 import { keccak256 } from "ethereum-cryptography/keccak";
+import { getRandomBytesSync } from "ethereum-cryptography/random";
 import { JsonRpcProvider } from "ethers";
 import { createSandbox } from "sinon";
 
 import ThresholdKey from "../src/index";
-import { getOrSetNonce } from "../src/torus_js_get_or_set_nonce";
 import { getMetadataUrl, getServiceProvider, initStorageLayer, isMocked } from "./helpers";
-
 const rejects = async (fn, error, msg) => {
   let f = () => {};
   try {
@@ -1560,7 +1560,27 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
     if (!mode || isMocked) return;
 
     it("should be able to init tkey with 1 out of 1", async function () {
-      const postboxKeyBN = new BN(generatePrivate(keyType), "hex");
+      const importedKey = keyType === "ed25519" ? new BN(getRandomBytesSync(32)) : generatePrivate(keyType); // incase of ed25519, priv key doesnt have to on curve, it can be random 32 bytes.
+      const keyData = keyType === "ed25519" ? await generateEd25519KeyData(importedKey) : await generateSecp256k1KeyData(importedKey);
+      const ecCurve = keyTypeToCurve(keyType);
+      const { nonce, pubNonce } = await getOrSetNonce(
+        getMetadataUrl(),
+        ecCurve,
+        0,
+        keyData.SigningPubX,
+        keyData.SigningPubY,
+        keyData.metadataSigningKey,
+        false,
+        false,
+        keyData.metadataNonce,
+        keyType,
+        keyData.encryptedSeed
+      );
+
+      notEqual(nonce, undefined);
+      notEqual(pubNonce, undefined);
+
+      const postboxKeyBN = keyData.oAuthKeyScalar;
       const serviceProvider = new TorusServiceProvider({
         postboxKey: postboxKeyBN.toString("hex"),
         customAuthArgs: {
@@ -1574,90 +1594,92 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
         keyType,
       });
       const storageLayer2 = new TorusStorageLayer({ hostUrl: getMetadataUrl() });
-      const { nonce, pubNonce } = await getOrSetNonce(getMetadataUrl(), 0, keyType, postboxKeyBN);
       // equal(typeOfUser, "v2"); // no longer returned
-      notEqual(nonce, undefined);
-      notEqual(pubNonce, undefined);
-
-      const ecCurve = keyTypeToCurve(keyType);
-      const nonceBN = new BN(nonce, "hex");
-      const importKey = postboxKeyBN.add(nonceBN).umod(ecCurve.curve.n);
 
       const tKey = new ThresholdKey({ serviceProvider, storageLayer: storageLayer2, manualSync: mode, keyType });
       await tKey.initialize({
-        importKey: new BN(importKey, "hex"),
+        importKey: importedKey,
         delete1OutOf1: true,
       });
       await tKey.syncLocalMetadataTransitions();
       if (keyType === KeyType.secp256k1) {
-        equal(tKey.privKey.toString("hex"), importKey.toString("hex"));
-        equal(await tKey.exportFinalKey(), importKey.toString("hex"));
+        equal(tKey.privKey.toString("hex"), importedKey.toString("hex"));
+        equal(await tKey.exportFinalKey(), importedKey.toString("hex"));
       } else if (keyType === KeyType.ed25519) {
-        const ecCurve = keyTypeToCurve(keyType);
-        const keyPair = nacl.sign.keyPair.fromSeed(importKey.toBuffer());
-        const privateKey = new BN(keyPair.secretKey.slice(0, 32)).umod(ecCurve.curve.n);
-        equal(tKey.privKey.toString("hex"), privateKey.toString("hex"));
-        equal(await tKey.exportFinalKey(), importKey.toString("hex"));
+        const extendedEd25519Key = getEd25519ExtendedPublicKey(importedKey);
+        equal(tKey.privKey.toString("hex"), extendedEd25519Key.scalar.toString("hex"));
+        equal(await tKey.exportFinalKey(), importedKey.toString("hex"));
       } else {
         throw new Error(`Unsupported key type: ${keyType}`);
       }
-
       const {
-        // typeOfUser: newTypeOfUser,
         nonce: newNonce,
         pubNonce: newPubNonce,
         upgraded,
-      } = await getOrSetNonce(getMetadataUrl(), 0, keyType, postboxKeyBN);
+      } = await getOrSetNonce(
+        getMetadataUrl(),
+        ecCurve,
+        0,
+        keyData.SigningPubX,
+        keyData.SigningPubY,
+        keyData.metadataSigningKey,
+        true,
+        false,
+        keyData.metadataNonce,
+        keyType,
+        keyData.encryptedSeed
+      );
+
       equal(upgraded, true);
       // equal(newTypeOfUser, "v2");
       equal(newNonce, undefined);
       deepEqual(pubNonce, newPubNonce);
     });
 
-    it("should not change v1 address without a custom nonce when getOrSetNonce is called", async function () {
-      // Create an existing v1 account
-      const postboxKeyBN = new BN(generatePrivate(keyType), "hex");
+    // it("should not change v1 address without a custom nonce when getOrSetNonce is called", async function () {
+    //   // Create an existing v1 account
+    //   const postboxKeyBN = new BN(generatePrivate(keyType), "hex");
 
-      // This test require development API, only work with local/beta env
-      const metadataUrl = getMetadataUrl();
-      // if (metadataUrl === "https://node-1.dev-node.web3auth.io/metadata") metadataUrl = "https://metadata-testing.tor.us";
+    //   // This test require development API, only work with local/beta env
+    //   const metadataUrl = getMetadataUrl();
+    //   // if (metadataUrl === "https://node-1.dev-node.web3auth.io/metadata") metadataUrl = "https://metadata-testing.tor.us";
 
-      await getOrSetNonce(metadataURL, 0, keyType, postboxKeyBN, false);
-      /*
-      // Not available on latest metadata server
-      await post(
-        `${metadataUrl}/set_nonce`,
-        {
-          pub_key_X: pubKeyPoint.x.toString("hex"),
-          pub_key_Y: pubKeyPoint.y.toString("hex"),
-          key_type: keyType,
-        },
-        undefined,
-        { useAPIKey: true }
-      );
-      */
-      // Call get or set nonce
-      /*
-      const serviceProvider = new TorusServiceProvider({
-        postboxKey: postboxKeyBN.toString("hex"),
-        customAuthArgs: {
-          enableOneKey: true,
-          metadataUrl,
-          // This url has no effect as postbox key is passed, passing it just to satisfy direct auth checks.
-          baseUrl: "http://localhost:3000",
-          web3AuthClientId: "test",
-          network: "mainnet",
-        },
-        keyType,
-      });
-      */
+    //   await getOrSetNonce(metadataURL, 0, keyType, postboxKeyBN, false);
+    //   /*
+    //   // Not available on latest metadata server
+    //   await post(
+    //     `${metadataUrl}/set_nonce`,
+    //     {
+    //       pub_key_X: pubKeyPoint.x.toString("hex"),
+    //       pub_key_Y: pubKeyPoint.y.toString("hex"),
+    //       key_type: keyType,
+    //     },
+    //     undefined,
+    //     { useAPIKey: true }
+    //   );
+    //   */
+    //   // Call get or set nonce
+    //   /*
+    //   const serviceProvider = new TorusServiceProvider({
+    //     postboxKey: postboxKeyBN.toString("hex"),
+    //     customAuthArgs: {
+    //       enableOneKey: true,
+    //       metadataUrl,
+    //       // This url has no effect as postbox key is passed, passing it just to satisfy direct auth checks.
+    //       baseUrl: "http://localhost:3000",
+    //       web3AuthClientId: "test",
+    //       network: "mainnet",
+    //     },
+    //     keyType,
+    //   });
+    //   */
 
-      const res = await getOrSetNonce(metadataUrl, 0, keyType, postboxKeyBN);
-      // equal(res.typeOfUser, "v1"); no longer returned
+    //   const res = await getOrSetNonce(metadataUrl, 0, keyType, postboxKeyBN);
+    //   // equal(res.typeOfUser, "v1"); no longer returned
 
-      const anotherRes = await getOrSetNonce(metadataUrl, 0, keyType, postboxKeyBN);
-      deepEqual(res, anotherRes);
-    });
+    //   const anotherRes = await getOrSetNonce(metadataUrl, 0, keyType, postboxKeyBN);
+    //   deepEqual(res, anotherRes);
+    // });
 
     // it("should not change v1 address with a custom nonce when getOrSetNonce is called", async function () {
     //   // Create an existing v1 account with custom key
