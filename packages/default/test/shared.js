@@ -11,7 +11,6 @@ import { TorusServiceProvider } from "@tkey/service-provider-torus";
 import { ShareTransferModule } from "@tkey/share-transfer";
 import { TorusStorageLayer } from "@tkey/storage-layer-torus";
 import { generateEd25519KeyData, generateSecp256k1KeyData, getEd25519ExtendedPublicKey, getOrSetNonce } from "@toruslabs/torus.js";
-import nacl from "@toruslabs/tweetnacl-js";
 import { deepEqual, deepStrictEqual, equal, fail, notEqual, notStrictEqual, strict, strictEqual, throws } from "assert";
 import BN from "bn.js";
 import { keccak256 } from "ethereum-cryptography/keccak";
@@ -113,7 +112,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
       }
     });
     it(`#should be able to reconstruct key when initializing with import key, manualSync=${mode}`, async function () {
-      const importedKey = new BN(generatePrivate(keyType));
+      const importedKey = keyType === "ed25519" ? new BN(getRandomBytesSync(32)) : new BN(generatePrivate(keyType));
 
       const resp1 = await tb._initializeNewKey({ importedKey, initializeModules: true });
       await tb.syncLocalMetadataTransitions();
@@ -128,10 +127,8 @@ export const sharedTestCases = (mode, torusSP, storageLayer, keyType) => {
           fail("key should be able to be reconstructed");
         }
       } else if (keyType === KeyType.ed25519) {
-        const ecCurve = keyTypeToCurve(keyType);
-        const keyPair = nacl.sign.keyPair.fromSeed(importedKey.toBuffer());
-        const privateKey = new BN(keyPair.secretKey.slice(0, 32)).umod(ecCurve.curve.n);
-        if (privateKey.cmp(reconstructedKey.privKey) !== 0) {
+        const ed25519ExtendedKey = getEd25519ExtendedPublicKey(importedKey);
+        if (ed25519ExtendedKey.scalar.cmp(reconstructedKey.privKey) !== 0) {
           fail("key should be able to be reconstructed");
         }
       } else {
