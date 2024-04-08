@@ -11,8 +11,7 @@
   "jsdelivr": "dist/seedPhrase.umd.min.js",
   "types": "dist/types/index.d.ts",
   "files": [
-    "dist",
-    "src"
+    "dist"
   ],
   "publishConfig": {
     "access": "public"
@@ -43,10 +42,10 @@
   "dependencies": {
     "@tkey/common-types": "^12.0.0",
     "bn.js": "^5.2.1",
-    "ethers": "^6.8.0"
+    "ethers": "^6.11.1"
   },
   "devDependencies": {
-    "@types/bn.js": "^5.1.2"
+    "@types/bn.js": "^5.1.5"
   },
   "lint-staged": {
     "!(*d).ts": [

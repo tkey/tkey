@@ -30,22 +30,21 @@
     "url": "git+https://github.com/tkey/tkey.git"
   },
   "files": [
-    "dist",
-    "src"
+    "dist"
   ],
   "dependencies": {
     "@tkey/common-types": "^12.0.0",
     "@toruslabs/eccrypto": "^4.0.0",
-    "@toruslabs/http-helpers": "^5.0.0",
-    "@toruslabs/torus.js": "^12.0.1",
+    "@toruslabs/http-helpers": "^6.1.1",
+    "@toruslabs/torus.js": "^12.2.0",
     "bn.js": "^5.2.1",
-    "elliptic": "^6.5.4",
-    "json-stable-stringify": "^1.0.2"
+    "elliptic": "^6.5.5",
+    "json-stable-stringify": "^1.1.1"
   },
   "devDependencies": {
-    "@types/bn.js": "^5.1.2",
-    "@types/elliptic": "^6.4.15",
-    "@types/json-stable-stringify": "^1.0.34"
+    "@types/bn.js": "^5.1.5",
+    "@types/elliptic": "^6.4.18",
+    "@types/json-stable-stringify": "^1.0.36"
   },
   "peerDependencies": {
     "@babel/runtime": "7.x"
