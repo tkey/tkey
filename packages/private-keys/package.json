@@ -1,6 +1,6 @@
 {
   "name": "@tkey/private-keys",
-  "version": "12.0.0",
+  "version": "12.1.0",
   "description": "TKey Private Keys Module",
   "author": "Torus Labs",
   "homepage": "https://github.com/tkey/tkey#readme",
@@ -40,7 +40,7 @@
     "@types/bn.js": "^5.1.5"
   },
   "dependencies": {
-    "@tkey/common-types": "^12.0.0",
+    "@tkey/common-types": "^12.1.0",
     "@toruslabs/tweetnacl-js": "^1.0.4",
     "bn.js": "^5.2.1"
   },
