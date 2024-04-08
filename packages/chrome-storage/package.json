@@ -11,8 +11,7 @@
   "jsdelivr": "dist/chromeStorage.umd.min.js",
   "types": "dist/types/index.d.ts",
   "files": [
-    "dist",
-    "src"
+    "dist"
   ],
   "publishConfig": {
     "access": "public"
@@ -45,8 +44,8 @@
     "webextension-polyfill": "^0.10.0"
   },
   "devDependencies": {
-    "@types/chrome": "^0.0.246",
-    "@types/webextension-polyfill": "^0.10.4"
+    "@types/chrome": "^0.0.266",
+    "@types/webextension-polyfill": "^0.10.7"
   },
   "lint-staged": {
     "!(*d).ts": [

@@ -11,8 +11,7 @@
   "jsdelivr": "dist/privateKeys.umd.min.js",
   "types": "dist/types/index.d.ts",
   "files": [
-    "dist",
-    "src"
+    "dist"
   ],
   "publishConfig": {
     "access": "public"
@@ -38,7 +37,7 @@
     "@babel/runtime": "7.x"
   },
   "devDependencies": {
-    "@types/bn.js": "^5.1.2"
+    "@types/bn.js": "^5.1.5"
   },
   "dependencies": {
     "@tkey/common-types": "^12.0.0",

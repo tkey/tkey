@@ -11,8 +11,7 @@
   "jsdelivr": "dist/serviceProviderTorus.umd.min.js",
   "types": "dist/types/index.d.ts",
   "files": [
-    "dist",
-    "src"
+    "dist"
   ],
   "publishConfig": {
     "access": "public"
@@ -40,14 +39,14 @@
   "dependencies": {
     "@tkey/common-types": "^12.0.0",
     "@tkey/service-provider-base": "^12.0.0",
-    "@toruslabs/customauth": "^17.0.0",
-    "@toruslabs/torus.js": "^12.0.1",
+    "@toruslabs/customauth": "^18.0.0",
+    "@toruslabs/torus.js": "^12.2.0",
     "bn.js": "^5.2.1",
-    "elliptic": "^6.5.4"
+    "elliptic": "^6.5.5"
   },
   "devDependencies": {
-    "@types/bn.js": "^5.1.2",
-    "@types/elliptic": "^6.4.15"
+    "@types/bn.js": "^5.1.5",
+    "@types/elliptic": "^6.4.18"
   },
   "bugs": {
     "url": "https://github.com/tkey/tkey/issues"
