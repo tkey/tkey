@@ -1,7 +1,9 @@
-import { Point } from "@tkey/common-types";
+import { Point, TorusServiceProviderArgs } from "@tkey/common-types";
 import { TorusServiceProvider } from "@tkey/service-provider-torus";
 import { PointHex } from "@toruslabs/rss-client";
-import { TorusPublicKey } from "@toruslabs/torus.js";
+import TorusUtils, { KeyType } from "@toruslabs/torus.js";
+
+import { getExtendedVerifierId } from "./util";
 
 export class TSSTorusServiceProvider extends TorusServiceProvider {
   verifierName?: string;
@@ -15,6 +17,20 @@ export class TSSTorusServiceProvider extends TorusServiceProvider {
     serverPubKeys: PointHex[];
     serverThreshold: number;
   };
+
+  torus: TorusUtils;
+
+  constructor(args: TorusServiceProviderArgs & { enableOneKey?: boolean; tssKeyType: string }) {
+    super(args);
+    const { customAuthArgs, enableOneKey, tssKeyType } = args;
+    this.torus = new TorusUtils({
+      network: customAuthArgs.network,
+      clientId: customAuthArgs.web3AuthClientId,
+      enableOneKey,
+      keyType: tssKeyType as KeyType,
+    });
+    TorusUtils.setAPIKey(customAuthArgs.apiKey);
+  }
 
   async getSSSNodeDetails(): Promise<{ serverEndpoints: string[]; serverPubKeys: PointHex[]; serverThreshold: number }> {
     if (!this.verifierId) throw new Error("no verifierId, not logged in");
@@ -65,16 +81,13 @@ export class TSSTorusServiceProvider extends TorusServiceProvider {
     nodeIndexes?: number[];
   }> {
     if (!this.verifierName || !this.verifierId) throw new Error("verifier userinfo not found, not logged in yet");
-    const { serverPubKeys, serverEndpoints } = await this.getSSSNodeDetails();
-    const tssServerPub = (await this.customAuthInstance.torus.getPublicAddress(
-      serverEndpoints,
-      serverPubKeys.map((node) => ({ X: node.x, Y: node.y })),
-      {
-        verifier: this.verifierName,
-        verifierId: this.verifierId,
-        extendedVerifierId: `${this.verifierId}\u0015${tssTag || "default"}\u0016${tssNonce || 0}`,
-      }
-    )) as TorusPublicKey;
+
+    const nodeDetails = await this.customAuthInstance.nodeDetailManager.getNodeDetails({ verifier: this.verifierName, verifierId: this.verifierId });
+    const tssServerPub = await this.torus.getPublicAddress(nodeDetails.torusNodeSSSEndpoints, nodeDetails.torusNodePub, {
+      verifier: this.verifierName,
+      verifierId: this.verifierId,
+      extendedVerifierId: getExtendedVerifierId(this.verifierId, tssTag, tssNonce),
+    });
 
     return {
       pubKey: new Point(tssServerPub.finalKeyData.X, tssServerPub.finalKeyData.Y),

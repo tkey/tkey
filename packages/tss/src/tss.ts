@@ -1,18 +1,30 @@
-import { decrypt, ecCurve, encrypt, getPubKeyPoint, KeyDetails, LocalMetadataTransitions, Point, ShareStore, TKeyArgs } from "@tkey/common-types";
-import ThresholdKey, { CoreError, lagrangeInterpolation, Metadata } from "@tkey/core";
-import { generatePrivate } from "@toruslabs/eccrypto";
-import { dotProduct, ecPoint, getLagrangeCoeffs, hexPoint, PointHex, randomSelection, RSSClient } from "@toruslabs/rss-client";
+import { decrypt, encrypt, KeyDetails, LocalMetadataTransitions, Point, ShareStore, TKeyArgs } from "@tkey/common-types";
+import ThresholdKey, { CoreError, Metadata } from "@tkey/core";
+import { dotProduct, ecPoint, hexPoint, PointHex, randomSelection, RSSClient } from "@toruslabs/rss-client";
 import BN from "bn.js";
+import { ec as EC } from "elliptic";
 import { keccak256 } from "ethereum-cryptography/keccak";
 
 import { TSSTorusServiceProvider } from ".";
 import { FactorEnc, IAccountSaltStore, InitializeNewTSSKeyResult } from "./common";
-import { generateSalt, kCombinations } from "./util";
+import {
+  BasePoint,
+  generateSalt,
+  getLagrangeCoeffs,
+  getPubKeyPoint,
+  kCombinations,
+  lagrangeInterpolation,
+  pointToElliptic,
+  pointToHex,
+} from "./util";
 
 export const TSS_MODULE = "tssModule";
 
+export const FACTOR_KEY_CURVE = new EC("secp256k1");
+
 export interface TSSTKeyArgs extends TKeyArgs {
   serviceProvider: TSSTorusServiceProvider;
+  tssKeyType: string;
   tssTag?: string;
 }
 
@@ -35,20 +47,30 @@ export interface TKeyTSSInitArgs extends TKeyInitArgs {
 export class TKeyTSS extends ThresholdKey {
   serviceProvider: TSSTorusServiceProvider = null;
 
+  private _tssKeyType: string;
+
+  private _tssCurve: EC;
+
   private _tssTag: string;
 
   private _accountSalt: string;
 
   constructor(args?: TSSTKeyArgs) {
     super(args);
-    const { serviceProvider, storageLayer, tssTag = "default" } = args;
+    const { serviceProvider, storageLayer, tssTag = "default", tssKeyType } = args;
     this.serviceProvider = serviceProvider;
     this.storageLayer = storageLayer;
     this._tssTag = tssTag;
+    this._tssKeyType = tssKeyType;
+    this._tssCurve = new EC(tssKeyType);
   }
 
   public get tssTag(): string {
     return this._tssTag;
+  }
+
+  public get tssKeyType(): string {
+    return this._tssKeyType;
   }
 
   async initialize(params?: TKeyTSSInitArgs): Promise<KeyDetails> {
@@ -58,7 +80,7 @@ export class TKeyTSS extends ThresholdKey {
       // if tss shares have not been created for this tssTag, create new tss sharing
       const { factorEncs, factorPubs, tssPolyCommits } = await this._initializeNewTSSKey(this.tssTag, params.deviceTSSShare, params.factorPub);
       this.metadata.addTSSData({ tssTag: this.tssTag, tssNonce: 0, tssPolyCommits, factorPubs, factorEncs });
-      const accountSalt = generateSalt();
+      const accountSalt = generateSalt(this._tssCurve);
       await this._setTKeyStoreItem(TSS_MODULE, {
         id: "accountSalt",
         value: accountSalt,
@@ -99,7 +121,7 @@ export class TKeyTSS extends ThresholdKey {
     tssShare: BN;
   }> {
     if (!this.privKey) throw CoreError.default("tss share cannot be returned until you've reconstructed tkey");
-    const factorPub = getPubKeyPoint(factorKey);
+    const factorPub = getPubKeyPoint(FACTOR_KEY_CURVE, factorKey);
     const factorEncs = this.getFactorEncs(factorPub);
     const { userEnc, serverEncs, tssIndex, type } = factorEncs;
     const userDecryption = await decrypt(Buffer.from(factorKey.toString(16, 64), "hex"), userEnc);
@@ -113,25 +135,26 @@ export class TKeyTSS extends ThresholdKey {
 
     const tssShareBNs = tssShareBufs.map((buf) => {
       if (buf === null) return null;
-      return new BN(buf.toString("hex"), "hex");
+      return new BN(buf);
     });
-    const tssCommits = this.getTSSCommits();
+
+    const ec = this._tssCurve;
+    const tssCommits = this.getTSSCommits().map((p) => {
+      return ec.keyFromPublic({ x: p.x.toString(16, 64), y: p.y.toString(16, 64) }).getPublic();
+    });
 
     const userDec = tssShareBNs[0];
 
     const { threshold, accountIndex } = opts || {};
     if (type === "direct") {
-      const tssSharePub = ecCurve.g.mul(userDec);
-      const tssCommitA0 = ecCurve.keyFromPublic({ x: tssCommits[0].x.toString(16, 64), y: tssCommits[0].y.toString(16, 64) }).getPublic();
-      const tssCommitA1 = ecCurve.keyFromPublic({ x: tssCommits[1].x.toString(16, 64), y: tssCommits[1].y.toString(16, 64) }).getPublic();
-      let _tssSharePub = tssCommitA0;
-      for (let j = 0; j < tssIndex; j++) {
-        _tssSharePub = _tssSharePub.add(tssCommitA1);
-      }
-      if (tssSharePub.getX().cmp(_tssSharePub.getX()) === 0 && tssSharePub.getY().cmp(_tssSharePub.getY()) === 0) {
+      const tssSharePub = ec.g.mul(userDec);
+      const tssCommitA0 = tssCommits[0];
+      const tssCommitA1 = tssCommits[1];
+      const _tssSharePub = tssCommitA0.add(tssCommitA1.mul(new BN(tssIndex)));
+      if (tssSharePub.eq(_tssSharePub)) {
         if (accountIndex && accountIndex > 0) {
           const nonce = this.computeAccountNonce(accountIndex);
-          const derivedShare = userDec.add(nonce).umod(ecCurve.n);
+          const derivedShare = userDec.add(nonce).umod(ec.n);
           return { tssIndex, tssShare: derivedShare };
         }
         return { tssIndex, tssShare: userDec };
@@ -150,21 +173,21 @@ export class TKeyTSS extends ThresholdKey {
       if (selectedServerDecs.includes(null)) continue;
 
       const selectedServerIndexes = serverIndexes.filter((_, j) => combi.indexOf(j) > -1);
-      const serverLagrangeCoeffs = selectedServerIndexes.map((x) => getLagrangeCoeffs(selectedServerIndexes, x));
-      const serverInterpolated = dotProduct(serverLagrangeCoeffs, selectedServerDecs, ecCurve.n);
-      const lagrangeCoeffs = [getLagrangeCoeffs([1, 99], 1), getLagrangeCoeffs([1, 99], 99)];
-      const tssShare = dotProduct(lagrangeCoeffs, [serverInterpolated, userDec], ecCurve.n);
-      const tssSharePub = ecCurve.g.mul(tssShare);
-      const tssCommitA0 = ecCurve.keyFromPublic({ x: tssCommits[0].x.toString(16, 64), y: tssCommits[0].y.toString(16, 64) }).getPublic();
-      const tssCommitA1 = ecCurve.keyFromPublic({ x: tssCommits[1].x.toString(16, 64), y: tssCommits[1].y.toString(16, 64) }).getPublic();
+      const serverLagrangeCoeffs = selectedServerIndexes.map((x) => getLagrangeCoeffs(ec, selectedServerIndexes, x));
+      const serverInterpolated = dotProduct(serverLagrangeCoeffs, selectedServerDecs, ec.n);
+      const lagrangeCoeffs = [getLagrangeCoeffs(ec, [1, 99], 1), getLagrangeCoeffs(ec, [1, 99], 99)];
+      const tssShare = dotProduct(lagrangeCoeffs, [serverInterpolated, userDec], ec.n);
+      const tssSharePub = ec.g.mul(tssShare);
+      const tssCommitA0 = tssCommits[0];
+      const tssCommitA1 = tssCommits[1];
       let _tssSharePub = tssCommitA0;
       for (let j = 0; j < tssIndex; j++) {
         _tssSharePub = _tssSharePub.add(tssCommitA1);
       }
-      if (tssSharePub.getX().cmp(_tssSharePub.getX()) === 0 && tssSharePub.getY().cmp(_tssSharePub.getY()) === 0) {
+      if (tssSharePub.eq(_tssSharePub)) {
         if (accountIndex && accountIndex > 0) {
           const nonce = this.computeAccountNonce(accountIndex);
-          const derivedShare = tssShare.add(nonce).umod(ecCurve.n);
+          const derivedShare = tssShare.add(nonce).umod(ec.n);
           return { tssIndex, tssShare: derivedShare };
         }
         return { tssIndex, tssShare };
@@ -183,14 +206,19 @@ export class TKeyTSS extends ThresholdKey {
   }
 
   getTSSPub(accountIndex?: number): Point {
+    if (accountIndex && this._tssKeyType === "ed25519") {
+      throw new Error("Account index not supported for ed25519");
+    }
+
+    const ec = this._tssCurve;
     const tssCommits = this.getTSSCommits();
     if (accountIndex && accountIndex > 0) {
       const nonce = this.computeAccountNonce(accountIndex);
       // we need to add the pub key nonce to the tssPub
-      const noncePub = ecCurve.keyFromPrivate(nonce.toString("hex")).getPublic();
-      const pubKeyPoint = ecCurve.keyFromPublic({ x: tssCommits[0].x.toString("hex"), y: tssCommits[0].y.toString("hex") }).getPublic();
+      const noncePub = ec.keyFromPrivate(nonce.toString("hex")).getPublic();
+      const pubKeyPoint = pointToElliptic(ec, tssCommits[0]);
       const devicePubKeyPoint = pubKeyPoint.add(noncePub);
-      return new Point(devicePubKeyPoint.getX().toString("hex"), devicePubKeyPoint.getY().toString("hex"));
+      return Point.fromCompressedPub(devicePubKeyPoint.encodeCompressed("hex"));
     }
     return tssCommits[0];
   }
@@ -222,6 +250,7 @@ export class TKeyTSS extends ThresholdKey {
       authSignatures: string[];
     }
   ): Promise<void> {
+    const ec = this._tssCurve;
     if (!this.privKey) throw CoreError.privateKeyUnavailable();
     if (!this.metadata) {
       throw CoreError.metadataUndefined();
@@ -252,7 +281,7 @@ export class TKeyTSS extends ThresholdKey {
       const newTssNonce: number = existingNonce && existingNonce > 0 ? existingNonce + 1 : 0;
       const verifierAndVerifierID = this.serviceProvider.getVerifierNameVerifierId();
       const label = `${verifierAndVerifierID}\u0015${this.tssTag}\u0016${newTssNonce}`;
-      const tssPubKey = hexPoint(ecCurve.g.mul(importKey));
+      const tssPubKey = hexPoint(ec.g.mul(importKey));
       const rssNodeDetails = await this._getRssNodeDetails();
       const { pubKey: newTSSServerPub, nodeIndexes } = await this.serviceProvider.getTSSPubKey(this.tssTag, newTssNonce);
       let finalSelectedServers = selectedServers;
@@ -277,18 +306,19 @@ export class TKeyTSS extends ThresholdKey {
         serverPubKeys,
         serverThreshold,
         tssPubKey,
+        keyType: this._tssKeyType,
       });
 
       const refreshResponses = await rssClient.import({
         importKey,
-        dkgNewPub: hexPoint(newTSSServerPub),
+        dkgNewPub: pointToHex(newTSSServerPub),
         selectedServers: finalSelectedServers,
-        factorPubs: factorPubs.map((f) => hexPoint(f)),
+        factorPubs: factorPubs.map((f) => pointToHex(f)),
         targetIndexes: tssIndexes,
         newLabel: label,
         sigs: authSignatures,
       });
-      const secondCommit = ecPoint(hexPoint(newTSSServerPub)).add(ecPoint(tssPubKey).neg());
+      const secondCommit = pointToElliptic(ec, newTSSServerPub).add(ecPoint(ec, tssPubKey).neg());
       const newTSSCommits = [
         Point.fromJSON(tssPubKey),
         Point.fromJSON({ x: secondCommit.getX().toString(16, 64), y: secondCommit.getY().toString(16, 64) }),
@@ -313,7 +343,7 @@ export class TKeyTSS extends ThresholdKey {
         factorEncs,
       });
       if (!this._accountSalt) {
-        const accountSalt = generateSalt();
+        const accountSalt = generateSalt(this._tssCurve);
         await this._setTKeyStoreItem(TSS_MODULE, {
           id: "accountSalt",
           value: accountSalt,
@@ -338,8 +368,8 @@ export class TKeyTSS extends ThresholdKey {
     // Assumption that there are only index 2 and 3 for tss shares
     // create complement index share
     const tempShareIndex = tssIndex === 2 ? 3 : 2;
-    const tempFactorKey = new BN(generatePrivate());
-    const tempFactorPub = getPubKeyPoint(tempFactorKey);
+    const tempFactorKey = FACTOR_KEY_CURVE.genKeyPair().getPrivate();
+    const tempFactorPub = getPubKeyPoint(FACTOR_KEY_CURVE, tempFactorKey);
 
     await this.addFactorPub({
       existingFactorKey: factorKey,
@@ -353,7 +383,8 @@ export class TKeyTSS extends ThresholdKey {
     const { tssShare: tempShare, tssIndex: tempIndex } = await this.getTSSShare(tempFactorKey);
 
     // reconstruct final key using sss
-    const finalKey = lagrangeInterpolation([tempShare, factorShare], [new BN(tempIndex), new BN(factorIndex)]);
+    const ec = this._tssCurve;
+    const finalKey = lagrangeInterpolation(ec, [tempShare, factorShare], [new BN(tempIndex), new BN(factorIndex)]);
 
     // deleted created tss share
     await this.deleteFactorPub({
@@ -387,7 +418,7 @@ export class TKeyTSS extends ThresholdKey {
     if (!tssCommits) throw CoreError.default(`tss commits not found for tssTag ${this.tssTag}`);
     if (tssCommits.length === 0) throw CoreError.default(`tssCommits is empty`);
     const tssPubKeyPoint = tssCommits[0];
-    const tssPubKey = hexPoint(tssPubKeyPoint);
+    const tssPubKey = pointToHex(tssPubKeyPoint);
     const { serverEndpoints, serverPubKeys, serverThreshold, selectedServers, authSignatures } = serverOpts;
 
     const rssClient = new RSSClient({
@@ -395,6 +426,7 @@ export class TKeyTSS extends ThresholdKey {
       serverPubKeys,
       serverThreshold,
       tssPubKey,
+      keyType: this.tssKeyType,
     });
 
     if (!this.metadata.factorPubs) throw CoreError.default(`factorPubs obj not found`);
@@ -414,18 +446,18 @@ export class TKeyTSS extends ThresholdKey {
       finalSelectedServers = nodeIndexes.slice(0, Math.min(selectedServers.length, nodeIndexes.length));
     }
     const refreshResponses = await rssClient.refresh({
-      factorPubs: factorPubs.map((f) => hexPoint(f)),
+      factorPubs: factorPubs.map((f) => pointToHex(f)),
       targetIndexes,
       oldLabel,
       newLabel,
       sigs: authSignatures,
-      dkgNewPub: hexPoint(newTSSServerPub),
+      dkgNewPub: pointToHex(newTSSServerPub),
       inputShare,
       inputIndex,
       selectedServers: finalSelectedServers,
     });
 
-    const secondCommit = ecPoint(hexPoint(newTSSServerPub)).add(ecPoint(tssPubKey).neg());
+    const secondCommit = pointToElliptic(this._tssCurve, newTSSServerPub).add(ecPoint(this._tssCurve, tssPubKey).neg());
     const newTSSCommits = [
       Point.fromJSON(tssPubKey),
       Point.fromJSON({ x: secondCommit.getX().toString(16, 64), y: secondCommit.getY().toString(16, 64) }),
@@ -448,21 +480,21 @@ export class TKeyTSS extends ThresholdKey {
   }
 
   async _initializeNewTSSKey(tssTag: string, deviceTSSShare: BN, factorPub: Point, deviceTSSIndex?: number): Promise<InitializeNewTSSKeyResult> {
+    const ec = this._tssCurve;
     let tss2: BN;
     const _tssIndex = deviceTSSIndex || 2; // TODO: fix
     if (deviceTSSShare) {
       tss2 = deviceTSSShare;
     } else {
-      tss2 = new BN(generatePrivate());
+      tss2 = this._tssCurve.genKeyPair().getPrivate();
     }
     const { pubKey: tss1Pub } = await this.serviceProvider.getTSSPubKey(tssTag, 0);
-    const tss1PubKey = ecCurve.keyFromPublic({ x: tss1Pub.x.toString(16, 64), y: tss1Pub.y.toString(16, 64) }).getPublic();
-    const tss2Pub = getPubKeyPoint(tss2);
-    const tss2PubKey = ecCurve.keyFromPublic({ x: tss2Pub.x.toString(16, 64), y: tss2Pub.y.toString(16, 64) }).getPublic();
+    const tss1PubKey = pointToElliptic(ec, tss1Pub);
+    const tss2PubKey = (this._tssCurve.g as BasePoint).mul(tss2);
 
-    const L1_0 = getLagrangeCoeffs([1, _tssIndex], 1, 0);
+    const L1_0 = getLagrangeCoeffs(ec, [1, _tssIndex], 1, 0);
     // eslint-disable-next-line camelcase
-    const LIndex_0 = getLagrangeCoeffs([1, _tssIndex], _tssIndex, 0);
+    const LIndex_0 = getLagrangeCoeffs(ec, [1, _tssIndex], _tssIndex, 0);
 
     const a0Pub = tss1PubKey.mul(L1_0).add(tss2PubKey.mul(LIndex_0));
     const a1Pub = tss1PubKey.add(a0Pub.neg());
@@ -503,7 +535,7 @@ export class TKeyTSS extends ThresholdKey {
     }
     let accountHash = keccak256(Buffer.from(`${index}${this._accountSalt}`));
     if (accountHash.length === 66) accountHash = accountHash.slice(2);
-    return index && index > 0 ? new BN(accountHash, "hex").umod(ecCurve.curve.n) : new BN(0);
+    return index && index > 0 ? new BN(accountHash, "hex").umod(this._tssCurve.n) : new BN(0);
   }
 
   // Generate new TSS share linked to given factor public key.
