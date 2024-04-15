@@ -1,7 +1,7 @@
-import { Point, TorusServiceProviderArgs } from "@tkey/common-types";
+import { KeyType, Point, TorusServiceProviderArgs } from "@tkey/common-types";
 import { TorusServiceProvider } from "@tkey/service-provider-torus";
 import { PointHex } from "@toruslabs/rss-client";
-import TorusUtils, { KeyType } from "@toruslabs/torus.js";
+import TorusUtils from "@toruslabs/torus.js";
 
 import { getExtendedVerifierId } from "./util";
 
@@ -18,16 +18,19 @@ export class TSSTorusServiceProvider extends TorusServiceProvider {
     serverThreshold: number;
   };
 
-  torus: TorusUtils;
+  tssTorus: TorusUtils;
 
-  constructor(args: TorusServiceProviderArgs & { enableOneKey?: boolean; tssKeyType: string }) {
+  tssKeyType: KeyType;
+
+  constructor(args: TorusServiceProviderArgs & { enableOneKey?: boolean; tssKeyType: KeyType }) {
     super(args);
     const { customAuthArgs, enableOneKey, tssKeyType } = args;
-    this.torus = new TorusUtils({
+    this.tssKeyType = tssKeyType;
+    this.tssTorus = new TorusUtils({
       network: customAuthArgs.network,
       clientId: customAuthArgs.web3AuthClientId,
       enableOneKey,
-      keyType: tssKeyType as KeyType,
+      keyType: tssKeyType,
     });
     TorusUtils.setAPIKey(customAuthArgs.apiKey);
   }
@@ -83,14 +86,14 @@ export class TSSTorusServiceProvider extends TorusServiceProvider {
     if (!this.verifierName || !this.verifierId) throw new Error("verifier userinfo not found, not logged in yet");
 
     const nodeDetails = await this.customAuthInstance.nodeDetailManager.getNodeDetails({ verifier: this.verifierName, verifierId: this.verifierId });
-    const tssServerPub = await this.torus.getPublicAddress(nodeDetails.torusNodeSSSEndpoints, nodeDetails.torusNodePub, {
+    const tssServerPub = await this.tssTorus.getPublicAddress(nodeDetails.torusNodeSSSEndpoints, nodeDetails.torusNodePub, {
       verifier: this.verifierName,
       verifierId: this.verifierId,
       extendedVerifierId: getExtendedVerifierId(this.verifierId, tssTag, tssNonce),
     });
 
     return {
-      pubKey: new Point(tssServerPub.finalKeyData.X, tssServerPub.finalKeyData.Y),
+      pubKey: new Point(tssServerPub.finalKeyData.X, tssServerPub.finalKeyData.Y, this.tssKeyType),
       nodeIndexes: tssServerPub.nodesData.nodeIndexes || [],
     };
   }

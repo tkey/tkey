@@ -1,4 +1,4 @@
-import { decrypt, encrypt, KeyDetails, LocalMetadataTransitions, Point, ShareStore, TKeyArgs } from "@tkey/common-types";
+import { decrypt, encrypt, KeyDetails, KeyType, keyTypeToCurve, LocalMetadataTransitions, Point, ShareStore, TKeyArgs } from "@tkey/common-types";
 import ThresholdKey, { CoreError, Metadata } from "@tkey/core";
 import { dotProduct, ecPoint, hexPoint, PointHex, randomSelection, RSSClient } from "@toruslabs/rss-client";
 import BN from "bn.js";
@@ -20,17 +20,19 @@ import {
 
 export const TSS_MODULE = "tssModule";
 
-export const FACTOR_KEY_CURVE = new EC("secp256k1");
+// This has to be fixed to secp256k1 for now because it is being used in
+// combination with eccrypto's `encrypt` and `decrypt`, which is secp256k1 only.
+export const FACTOR_KEY_TYPE = KeyType.secp256k1;
 
 export interface TSSTKeyArgs extends TKeyArgs {
   serviceProvider: TSSTorusServiceProvider;
-  tssKeyType: string;
+  tssKeyType: KeyType;
   tssTag?: string;
 }
 
 export interface TKeyInitArgs {
   withShare?: ShareStore;
-  importKey?: BN;
+  importKey?: Buffer;
   neverInitializeNewKey?: boolean;
   transitionMetadata?: Metadata;
   previouslyFetchedCloudMetadata?: Metadata;
@@ -47,7 +49,7 @@ export interface TKeyTSSInitArgs extends TKeyInitArgs {
 export class TKeyTSS extends ThresholdKey {
   serviceProvider: TSSTorusServiceProvider = null;
 
-  private _tssKeyType: string;
+  private _tssKeyType: KeyType;
 
   private _tssCurve: EC;
 
@@ -69,7 +71,7 @@ export class TKeyTSS extends ThresholdKey {
     return this._tssTag;
   }
 
-  public get tssKeyType(): string {
+  public get tssKeyType(): KeyType {
     return this._tssKeyType;
   }
 
@@ -79,7 +81,7 @@ export class TKeyTSS extends ThresholdKey {
     if (!this.metadata.tssPolyCommits[this.tssTag]) {
       // if tss shares have not been created for this tssTag, create new tss sharing
       const { factorEncs, factorPubs, tssPolyCommits } = await this._initializeNewTSSKey(this.tssTag, params.deviceTSSShare, params.factorPub);
-      this.metadata.addTSSData({ tssTag: this.tssTag, tssNonce: 0, tssPolyCommits, factorPubs, factorEncs });
+      this.metadata.addTSSData({ tssKeyType: this.tssKeyType, tssTag: this.tssTag, tssNonce: 0, tssPolyCommits, factorPubs, factorEncs });
       const accountSalt = generateSalt(this._tssCurve);
       await this._setTKeyStoreItem(TSS_MODULE, {
         id: "accountSalt",
@@ -121,7 +123,7 @@ export class TKeyTSS extends ThresholdKey {
     tssShare: BN;
   }> {
     if (!this.privKey) throw CoreError.default("tss share cannot be returned until you've reconstructed tkey");
-    const factorPub = getPubKeyPoint(FACTOR_KEY_CURVE, factorKey);
+    const factorPub = getPubKeyPoint(factorKey, FACTOR_KEY_TYPE);
     const factorEncs = this.getFactorEncs(factorPub);
     const { userEnc, serverEncs, tssIndex, type } = factorEncs;
     const userDecryption = await decrypt(Buffer.from(factorKey.toString(16, 64), "hex"), userEnc);
@@ -218,7 +220,7 @@ export class TKeyTSS extends ThresholdKey {
       const noncePub = ec.keyFromPrivate(nonce.toString("hex")).getPublic();
       const pubKeyPoint = pointToElliptic(ec, tssCommits[0]);
       const devicePubKeyPoint = pubKeyPoint.add(noncePub);
-      return Point.fromCompressedPub(devicePubKeyPoint.encodeCompressed("hex"));
+      return Point.fromSEC1(devicePubKeyPoint.encodeCompressed("hex"), this.tssKeyType);
     }
     return tssCommits[0];
   }
@@ -341,6 +343,7 @@ export class TKeyTSS extends ThresholdKey {
         tssPolyCommits: newTSSCommits,
         factorPubs,
         factorEncs,
+        tssKeyType: this.tssKeyType,
       });
       if (!this._accountSalt) {
         const accountSalt = generateSalt(this._tssCurve);
@@ -368,8 +371,9 @@ export class TKeyTSS extends ThresholdKey {
     // Assumption that there are only index 2 and 3 for tss shares
     // create complement index share
     const tempShareIndex = tssIndex === 2 ? 3 : 2;
-    const tempFactorKey = FACTOR_KEY_CURVE.genKeyPair().getPrivate();
-    const tempFactorPub = getPubKeyPoint(FACTOR_KEY_CURVE, tempFactorKey);
+    const ecFactorKey = keyTypeToCurve(FACTOR_KEY_TYPE);
+    const tempFactorKey = ecFactorKey.genKeyPair().getPrivate();
+    const tempFactorPub = getPubKeyPoint(tempFactorKey, FACTOR_KEY_TYPE);
 
     await this.addFactorPub({
       existingFactorKey: factorKey,
@@ -475,7 +479,14 @@ export class TKeyTSS extends ThresholdKey {
       };
     }
 
-    this.metadata.addTSSData({ tssTag: this.tssTag, tssNonce: tssNonce + 1, tssPolyCommits: newTSSCommits, factorPubs, factorEncs });
+    this.metadata.addTSSData({
+      tssKeyType: this.tssKeyType,
+      tssTag: this.tssTag,
+      tssNonce: tssNonce + 1,
+      tssPolyCommits: newTSSCommits,
+      factorPubs,
+      factorEncs,
+    });
     if (updateMetadata) await this._syncShareMetadata();
   }
 
@@ -500,8 +511,8 @@ export class TKeyTSS extends ThresholdKey {
     const a1Pub = tss1PubKey.add(a0Pub.neg());
 
     const tssPolyCommits = [
-      new Point(a0Pub.getX().toString(16, 64), a0Pub.getY().toString(16, 64)),
-      new Point(a1Pub.getX().toString(16, 64), a1Pub.getY().toString(16, 64)),
+      Point.fromSEC1(a0Pub.encodeCompressed("hex"), this.tssKeyType),
+      Point.fromSEC1(a1Pub.encodeCompressed("hex"), this.tssKeyType),
     ];
     const factorPubs = [factorPub];
     const factorEncs: { [factorPubID: string]: FactorEnc } = {};
@@ -512,10 +523,7 @@ export class TKeyTSS extends ThresholdKey {
       factorEncs[factorPubID] = {
         tssIndex: _tssIndex,
         type: "direct",
-        userEnc: await encrypt(
-          Buffer.concat([Buffer.from("04", "hex"), Buffer.from(f.x.toString(16, 64), "hex"), Buffer.from(f.y.toString(16, 64), "hex")]),
-          Buffer.from(tss2.toString(16, 64), "hex")
-        ),
+        userEnc: await encrypt(Buffer.from(f.toSEC1(false), "hex"), Buffer.from(tss2.toString(16, 64), "hex")),
         serverEncs: [],
       };
     }
@@ -562,6 +570,7 @@ export class TKeyTSS extends ThresholdKey {
       tssPolyCommits: this.metadata.tssPolyCommits[this.tssTag],
       factorPubs: updatedFactorPubs,
       factorEncs: this.metadata.factorEncs[this.tssTag],
+      tssKeyType: this.tssKeyType,
     });
 
     const verifierId = this.serviceProvider.getVerifierNameVerifierId();
@@ -602,7 +611,7 @@ export class TKeyTSS extends ThresholdKey {
     if (found.length === 0) throw CoreError.default("could not find factorPub to delete");
     if (found.length > 1) throw CoreError.default("found two or more factorPubs that match, error in metadata");
     const updatedFactorPubs = existingFactorPubs.filter((f) => !f.x.eq(deleteFactorPub.x) || !f.y.eq(deleteFactorPub.y));
-    this.metadata.addTSSData({ tssTag: this.tssTag, factorPubs: updatedFactorPubs });
+    this.metadata.addTSSData({ tssKeyType: this.tssKeyType, tssTag: this.tssTag, factorPubs: updatedFactorPubs });
     const rssNodeDetails = await this._getRssNodeDetails();
     const randomSelectedServers = randomSelection(
       new Array(rssNodeDetails.serverEndpoints.length).fill(null).map((_, i) => i + 1),

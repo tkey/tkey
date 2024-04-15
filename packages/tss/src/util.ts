@@ -1,4 +1,4 @@
-import { Point } from "@tkey/common-types";
+import { KeyType, keyTypeToCurve, Point } from "@tkey/common-types";
 import { PointHex } from "@toruslabs/rss-client";
 import BN from "bn.js";
 import { curve, ec as EC } from "elliptic";
@@ -91,9 +91,10 @@ export function pointToElliptic(ec: EC, p: Point): BasePoint {
   return ec.keyFromPublic(pointToHex(p)).getPublic();
 }
 
-export function getPubKeyPoint(ec: EC, s: BN): Point {
+export function getPubKeyPoint(s: BN, keyType: KeyType): Point {
+  const ec = keyTypeToCurve(keyType);
   const p = (ec.g as BasePoint).mul(s);
-  return Point.fromCompressedPub(p.encodeCompressed("hex"));
+  return Point.fromSEC1(p.encodeCompressed("hex"), keyType);
 }
 
 export const DELIMITERS = {
