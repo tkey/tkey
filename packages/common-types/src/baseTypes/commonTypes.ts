@@ -1,6 +1,6 @@
 import type { CustomAuthArgs } from "@toruslabs/customauth";
 import BN from "bn.js";
-import { curve, ec as EllipticCurve } from "elliptic";
+import { curve, ec, ec as EllipticCurve } from "elliptic";
 
 export enum KeyType {
   secp256k1 = "secp256k1",
@@ -72,6 +72,12 @@ export interface IServiceProvider extends ISerializable {
   retrievePubKey(type: PubKeyType): Buffer;
   retrievePubKeyPoint(): curve.base.BasePoint;
   sign(msg: BNString): string;
+  metadataSign(msg: BNString): {
+    signer: ec.KeyPair;
+    sig: string;
+    pubX: string;
+    pubY: string;
+  };
 }
 export type TorusStorageLayerAPIParams = {
   pub_key_X: string;

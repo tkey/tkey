@@ -242,13 +242,13 @@ export type IAuthMetadatas = IAuthMetadata[];
 export type ShareStores = ShareStore[];
 export type IMessageMetadatas = IMessageMetadata[];
 export type LocalTransitionShares = BN[];
-export type LocalTransitionData = [...IAuthMetadatas, ...ShareStores, ...IMessageMetadatas];
+export type LocalTransitionData = (ShareStore | IAuthMetadata | IMessageMetadata)[];
 export type LocalMetadataTransitions = [LocalTransitionShares, LocalTransitionData];
 
 export interface ITKeyApi {
   getMetadata(): IMetadata;
   getStorageLayer(): IStorageLayer;
-  initialize(params: { input?: ShareStore; importKey?: BN; neverInitializeNewKey?: boolean }): Promise<KeyDetails>;
+  initialize(params: { input?: ShareStore; importKey?: Buffer; neverInitializeNewKey?: boolean }): Promise<KeyDetails>;
   catchupToLatestShare(params: {
     shareStore: ShareStore;
     polyID?: string;
@@ -305,7 +305,7 @@ export interface ITKey extends ITKeyApi, ISerializable {
 
   _shareSerializationMiddleware: ShareSerializationMiddleware;
 
-  initialize(params: { input?: ShareStore; importKey?: BN; neverInitializeNewKey?: boolean }): Promise<KeyDetails>;
+  initialize(params: { input?: ShareStore; importKey?: Buffer; neverInitializeNewKey?: boolean }): Promise<KeyDetails>;
 
   reconstructKey(): Promise<ReconstructedKeyResult>;
 

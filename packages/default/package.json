@@ -36,6 +36,7 @@
   "dependencies": {
     "@tkey/common-types": "^12.0.0",
     "@tkey/core": "^12.0.0",
+    "@toruslabs/torus.js": "13.0.0-alpha.3",
     "@tkey/security-questions": "^12.0.0",
     "@tkey/service-provider-base": "^12.0.0",
     "@tkey/service-provider-torus": "^12.0.0",
@@ -46,8 +47,7 @@
     "ethereum-cryptography": "^2.1.3",
     "elliptic": "^6.5.4",
     "json-stable-stringify": "^1.0.2",
-    "@toruslabs/http-helpers": "^6.0.0",
-    "@toruslabs/tweetnacl-js": "^1.0.4"
+    "@toruslabs/http-helpers": "^6.0.0"
   },
   "devDependencies": {
     "@tkey/private-keys": "^12.0.0",

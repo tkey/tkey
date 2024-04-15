@@ -46,9 +46,10 @@ import {
   TKeyArgs,
   TkeyStoreItemType,
 } from "@tkey/common-types";
-import nacl from "@toruslabs/tweetnacl-js";
+import { getEd25519ExtendedPublicKey } from "@toruslabs/torus.js";
 import BN from "bn.js";
 import { ec as EllipticCurve } from "elliptic";
+import { getRandomBytes } from "ethereum-cryptography/random";
 import stringify from "json-stable-stringify";
 
 import AuthMetadata from "./authMetadata";
@@ -222,7 +223,7 @@ class ThresholdKey implements ITKey {
 
   async initialize(params?: {
     withShare?: ShareStore;
-    importKey?: BN;
+    importKey?: Buffer;
     neverInitializeNewKey?: boolean;
     transitionMetadata?: Metadata;
     previouslyFetchedCloudMetadata?: Metadata;
@@ -651,18 +652,24 @@ class ThresholdKey implements ITKey {
   }: {
     determinedShare?: BN;
     initializeModules?: boolean;
-    importedKey?: BN;
+    importedKey?: Buffer;
     delete1OutOf1?: boolean;
   } = {}): Promise<InitializeNewKeyResult> {
-    let seed: Uint8Array = new Uint8Array();
+    let seed: Buffer;
     if (this.keyType === KeyType.secp256k1) {
-      const tmpPriv = importedKey || generatePrivate(this.keyType);
+      const tmpPriv = importedKey ? new BN(importedKey) : generatePrivate(this.keyType);
       this._setKey(new BN(tmpPriv));
     } else if (this.keyType === KeyType.ed25519) {
-      seed = importedKey ? new Uint8Array(importedKey.toBuffer(undefined, 32)) : nacl.randomBytes(32);
-      const keyPair = nacl.sign.keyPair.fromSeed(seed);
-      const tempPriv = new BN(keyPair.secretKey.slice(0, 32)).umod(this.ecCurve.curve.n);
-      this._setKey(tempPriv);
+      seed = importedKey && importedKey;
+      if (!seed) {
+        const newEd25519Seed = await getRandomBytes(32);
+        seed = Buffer.from(newEd25519Seed);
+      }
+      const keyPair = getEd25519ExtendedPublicKey(seed);
+      // note this scalar is litte endian encoded
+      // no need of converting to BE, since we only use this for encryption and decryption.
+      const ed25519Scalar = keyPair.scalar;
+      this._setKey(ed25519Scalar);
     } else {
       throw CoreError.default("Invalid KeyType");
     }
@@ -707,7 +714,10 @@ class ThresholdKey implements ITKey {
     // acquireLock: false. Force push
     await this.addLocalMetadataTransitions({ input: [...authMetadatas, shareStore], privKey: [...sharesToPush, undefined] });
     if (delete1OutOf1) {
-      await this.addLocalMetadataTransitions({ input: [{ message: ONE_KEY_DELETE_NONCE }], privKey: [this.serviceProvider.postboxKey] });
+      await this.addLocalMetadataTransitions({
+        input: [{ message: ONE_KEY_DELETE_NONCE }],
+        privKey: [this.serviceProvider.postboxKey],
+      });
     }
 
     // store metadata on metadata respective to shares
@@ -733,7 +743,7 @@ class ThresholdKey implements ITKey {
     // ed25519 store seed after tkey is initialized
     if (this.keyType === KeyType.ed25519) {
       // encrypt and add to general store domain
-      this.metadata.setGeneralStoreDomain("ed25519Seed", { message: await this.encrypt(Buffer.from(seed)) });
+      this.metadata.setGeneralStoreDomain("ed25519Seed", { message: await this.encrypt(seed) });
     }
     return result;
   }
