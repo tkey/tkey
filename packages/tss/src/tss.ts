@@ -1,4 +1,15 @@
-import { decrypt, encrypt, KeyDetails, KeyType, keyTypeToCurve, LocalMetadataTransitions, Point, ShareStore, TKeyArgs } from "@tkey/common-types";
+import {
+  decrypt,
+  encrypt,
+  KeyDetails,
+  KeyType,
+  keyTypeToCurve,
+  LocalMetadataTransitions,
+  Point,
+  ReconstructedKeyResult,
+  ShareStore,
+  TKeyArgs,
+} from "@tkey/common-types";
 import ThresholdKey, { CoreError, Metadata } from "@tkey/core";
 import { dotProduct, ecPoint, hexPoint, PointHex, randomSelection, RSSClient } from "@toruslabs/rss-client";
 import BN from "bn.js";
@@ -98,7 +109,6 @@ export class TKeyTSS extends ThresholdKey {
       } as IAccountSaltStore);
       this._accountSalt = accountSalt;
     }
-
     return keyDetails;
   }
 
@@ -555,12 +565,39 @@ export class TKeyTSS extends ThresholdKey {
     return index && index > 0 ? new BN(accountHash, "hex").umod(this._tssCurve.n) : new BN(0);
   }
 
+  async reconstructKey(_reconstructKeyMiddleware?: boolean): Promise<ReconstructedKeyResult> {
+    const k = await super.reconstructKey(_reconstructKeyMiddleware);
+
+    // only valid for use Tss
+    // assign account salt from tKey store if it exists
+    if (Object.keys(this.metadata.tssPolyCommits).length > 0) {
+      const accountSalt = (await this.getTKeyStoreItem(TSS_MODULE, "accountSalt")) as IAccountSaltStore;
+      if (accountSalt && accountSalt.value) {
+        this._accountSalt = accountSalt.value;
+      } else {
+        const newSalt = generateSalt(this._tssCurve);
+        await this._setTKeyStoreItem(TSS_MODULE, {
+          id: "accountSalt",
+          value: newSalt,
+        } as IAccountSaltStore);
+        this._accountSalt = newSalt;
+        // this is very specific case where exisiting user do not have salt.
+        // sync metadata to cloud to ensure salt is stored incase of manual sync mode
+        // new user or importKey should not hit this cases
+        // NOTE this is not mistake, we force sync for this case
+        if (this.manualSync) await this.syncLocalMetadataTransitions();
+      }
+    }
+
+    return k;
+  }
+
   // Generate new TSS share linked to given factor public key.
-  private async addFactorPub(tssOptions: {
+  public async addFactorPub(tssOptions: {
     existingFactorKey: BN;
     newFactorPub: Point;
     newTSSIndex: number;
-    selectedServers: number[];
+    selectedServers?: number[];
     authSignatures: string[];
   }) {
     if (!this.metadata) throw CoreError.metadataUndefined("metadata is undefined");
@@ -589,7 +626,7 @@ export class TKeyTSS extends ThresholdKey {
       Math.ceil(rssNodeDetails.serverEndpoints.length / 2)
     );
 
-    const finalServer = selectedServers.length ? selectedServers : randomSelectedServers;
+    const finalServer = selectedServers || randomSelectedServers;
 
     const existingTSSIndexes = existingFactorPubs.map((fb) => this.getFactorEncs(fb).tssIndex);
     const updatedTSSIndexes = existingTSSIndexes.concat([newTSSIndex]);
@@ -603,10 +640,10 @@ export class TKeyTSS extends ThresholdKey {
   }
 
   // Delete TSS Share linked to given factor public key.
-  private async deleteFactorPub(tssOptions: {
+  public async deleteFactorPub(tssOptions: {
     factorKey: BN;
     deleteFactorPub: Point;
-    selectedServers: number[];
+    selectedServers?: number[];
     authSignatures: string[];
   }): Promise<void> {
     if (!this.metadata) throw CoreError.metadataUndefined("metadata is undefined");
@@ -627,7 +664,7 @@ export class TKeyTSS extends ThresholdKey {
       Math.ceil(rssNodeDetails.serverEndpoints.length / 2)
     );
 
-    const finalServer = selectedServers.length ? selectedServers : randomSelectedServers;
+    const finalServer = selectedServers || randomSelectedServers;
     const updatedTSSIndexes = updatedFactorPubs.map((fb) => this.getFactorEncs(fb).tssIndex);
 
     await this._refreshTSSShares(false, tssShare, tssIndex, updatedFactorPubs, updatedTSSIndexes, this.serviceProvider.getVerifierNameVerifierId(), {
