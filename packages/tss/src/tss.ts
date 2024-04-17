@@ -84,7 +84,12 @@ export class TKeyTSS extends ThresholdKey {
 
     if (!this.metadata.tssPolyCommits[this.tssTag]) {
       // if tss shares have not been created for this tssTag, create new tss sharing
-      const { factorEncs, factorPubs, tssPolyCommits } = await this._initializeNewTSSKey(this.tssTag, params.deviceTSSShare, params.factorPub);
+      const { factorEncs, factorPubs, tssPolyCommits } = await this._initializeNewTSSKey(
+        this.tssTag,
+        params.deviceTSSShare,
+        params.factorPub,
+        params.deviceTSSIndex
+      );
       this.metadata.addTSSData({ tssKeyType: this.tssKeyType, tssTag: this.tssTag, tssNonce: 0, tssPolyCommits, factorPubs, factorEncs });
       const accountSalt = generateSalt(this._tssCurve);
       await this._setTKeyStoreItem(TSS_MODULE, {
