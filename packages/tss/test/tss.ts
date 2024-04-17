@@ -233,143 +233,137 @@ describe("TSS tests", function () {
     equal(tssPrivKeyImported.toString("hex"), importedKey.toString("hex"));
   });
 
-  // it(`#should be able to unsafe export final tss key, manualSync=${mode}`, async function () {
-  //   const sp = customSP;
+  it(`#should be able to unsafe export final tss key, manualSync=${manualSync}`, async function () {
+    const sp = torusSP;
 
-  //   if (!sp.useTSS) this.skip();
-  //   // skip if not mock for now as we need to set key on server to test
-  //   if (!isMocked) this.skip();
+    const deviceTSSShare = ecTSS.genKeyPair().getPrivate();
+    const deviceTSSIndex = 3;
 
-  //   const deviceTSSShare = new BN(generatePrivate());
-  //   const deviceTSSIndex = 3;
+    sp.verifierName = "torus-test-health";
+    sp.verifierId = "exportUser@example.com";
+    const { signatures, postboxkey } = await fetchPostboxKeyAndSigs({
+      serviceProvider: sp,
+      verifierName: sp.verifierName,
+      verifierId: sp.verifierId,
+    });
+    sp.postboxKey = postboxkey;
+    const { serverDKGPrivKeys } = await assignTssDkgKeys({
+      serviceProvider: sp,
+      verifierName: sp.verifierName,
+      verifierId: sp.verifierId,
+      maxTSSNonceToSimulate: 1,
+    });
 
-  //   sp.verifierName = "torus-test-health";
-  //   sp.verifierId = "exportUser@example.com";
-  //   const { signatures, postboxkey } = await fetchPostboxKeyAndSigs({
-  //     serviceProvider: sp,
-  //     verifierName: sp.verifierName,
-  //     verifierId: sp.verifierId,
-  //   });
-  //   sp.postboxKey = postboxkey;
-  //   const { serverDKGPrivKeys } = await assignTssDkgKeys({
-  //     serviceProvider: sp,
-  //     verifierName: sp.verifierName,
-  //     verifierId: sp.verifierId,
-  //     maxTSSNonceToSimulate: 1,
-  //   });
+    const tb = new ThresholdKey({ serviceProvider: sp, storageLayer: torusSL, manualSync, keyType: TKEY_KEY_TYPE, tssKeyType: TSS_KEY_TYPE });
 
-  //   const tb = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync: mode });
+    // factor key needs to passed from outside of tKey
+    const factorKeyPair = ecFactor.genKeyPair();
+    const factorKey = factorKeyPair.getPrivate();
+    const factorPub = Point.fromSEC1(factorKeyPair.getPublic().encodeCompressed("hex"), FACTOR_KEY_TYPE);
 
-  //   // factor key needs to passed from outside of tKey
-  //   const factorKey = new BN(generatePrivate());
-  //   const factorPub = getPubKeyPoint(factorKey);
-  //   // 2/2
-  //   await tb.initialize({ useTSS: true, factorPub, deviceTSSShare, deviceTSSIndex });
-  //   const newShare = await tb.generateNewShare();
+    // 2/2
+    await tb.initialize({ factorPub, deviceTSSShare, deviceTSSIndex });
+    const newShare = await tb.generateNewShare();
 
-  //   const reconstructedKey = await tb.reconstructKey();
-  //   await tb.syncLocalMetadataTransitions();
+    const reconstructedKey = await tb.reconstructKey();
+    await tb.syncLocalMetadataTransitions();
 
-  //   if (tb.privKey.cmp(reconstructedKey.privKey) !== 0) {
-  //     fail("key should be able to be reconstructed");
-  //   }
-  //   const { tssShare: retrievedTSS, tssIndex: retrievedTSSIndex } = await tb.getTSSShare(factorKey);
-  //   const tssCommits = tb.getTSSCommits();
-  //   const tssPrivKey = getLagrangeCoeffs([1, retrievedTSSIndex], 1)
-  //     .mul(serverDKGPrivKeys[0])
-  //     .add(getLagrangeCoeffs([1, retrievedTSSIndex], retrievedTSSIndex).mul(retrievedTSS))
-  //     .umod(ecCurve.n);
-  //   const tssPubKey = getPubKeyPoint(tssPrivKey);
+    if (tb.privKey.cmp(reconstructedKey.privKey) !== 0) {
+      fail("key should be able to be reconstructed");
+    }
+    const { tssShare: retrievedTSS, tssIndex: retrievedTSSIndex } = await tb.getTSSShare(factorKey);
+    const tssCommits = tb.getTSSCommits();
+    const tssPrivKey = getLagrangeCoeffs(ecTSS, [1, retrievedTSSIndex], 1)
+      .mul(serverDKGPrivKeys[0])
+      .add(getLagrangeCoeffs(ecTSS, [1, retrievedTSSIndex], retrievedTSSIndex).mul(retrievedTSS))
+      .umod(ecTSS.n);
+    const tssPubKey = (ecTSS.g as BasePoint).mul(tssPrivKey);
 
-  //   strictEqual(tssPubKey.x.toString(16, 64), tssCommits[0].x.toString(16, 64));
-  //   strictEqual(tssPubKey.y.toString(16, 64), tssCommits[0].y.toString(16, 64));
+    const tssCommits0 = pointToElliptic(ecTSS, tssCommits[0]);
+    equal(tssPubKey.eq(tssCommits0), true);
 
-  //   const { serverDKGPrivKeys: serverDKGPrivKeys1 } = await assignTssDkgKeys({
-  //     tssTag: "imported",
-  //     serviceProvider: sp,
-  //     verifierName: sp.verifierName,
-  //     verifierId: sp.verifierId,
-  //     maxTSSNonceToSimulate: 1,
-  //   });
-  //   // import key
-  //   const importedKey = new BN(generatePrivate());
-  //   const importedIndex = 2;
-  //   await tb.importTssKey(
-  //     { tag: "imported", importKey: importedKey, factorPub, newTSSIndex: importedIndex },
-  //     {
-  //       authSignatures: signatures,
-  //     }
-  //   );
-  //   // tag is switched to imported
-  //   await tb.syncLocalMetadataTransitions();
-  //   // for imported key
-  //   {
-  //     const finalPubKey = tb.getTSSCommits()[0];
+    await assignTssDkgKeys({
+      tssTag: "imported",
+      serviceProvider: sp,
+      verifierName: sp.verifierName,
+      verifierId: sp.verifierId,
+      maxTSSNonceToSimulate: 1,
+    });
+    // import key
+    const importedKey = ecTSS.genKeyPair().getPrivate();
+    const importedIndex = 2;
+    await tb.importTssKey(
+      { tag: "imported", importKey: importedKey, factorPub, newTSSIndex: importedIndex },
+      {
+        authSignatures: signatures,
+      }
+    );
+    // tag is switched to imported
+    await tb.syncLocalMetadataTransitions();
+    // for imported key
+    {
+      const finalPubKey = pointToElliptic(ecTSS, tb.getTSSCommits()[0]);
 
-  //     const finalTssKey = await tb._UNSAFE_exportTssKey({
-  //       factorKey,
-  //       selectedServers: [1, 2, 3],
-  //       authSignatures: signatures,
-  //     });
-  //     const tssPubKeyImported = getPubKeyPoint(finalTssKey);
+      const finalTssKey = await tb._UNSAFE_exportTssKey({
+        factorKey,
+        selectedServers: [1, 2, 3],
+        authSignatures: signatures,
+      });
+      const tssPubKeyImported = (ecTSS.g as BasePoint).mul(importedKey);
 
-  //     strictEqual(finalTssKey.toString("hex"), importedKey.toString("hex"));
-  //     strictEqual(tssPubKeyImported.x.toString(16, 64), finalPubKey.x.toString(16, 64));
-  //     strictEqual(tssPubKeyImported.y.toString(16, 64), finalPubKey.y.toString(16, 64));
-  //   }
-  //   {
-  //     tb.tssTag = "default";
+      equal(finalTssKey.toString("hex"), importedKey.toString("hex"));
+      equal(tssPubKeyImported.eq(finalPubKey), true);
+    }
+    {
+      tb.tssTag = "default";
 
-  //     const finalPubKey = tb.getTSSCommits()[0];
+      const finalPubKey = pointToElliptic(ecTSS, tb.getTSSCommits()[0]);
 
-  //     const finalTssKey = await tb._UNSAFE_exportTssKey({
-  //       factorKey,
-  //       selectedServers: [1, 2, 3],
-  //       authSignatures: signatures,
-  //     });
-  //     const tssPubKeyImported = getPubKeyPoint(finalTssKey);
+      const finalTssKey = await tb._UNSAFE_exportTssKey({
+        factorKey,
+        selectedServers: [1, 2, 3],
+        authSignatures: signatures,
+      });
+      const tssPubKeyImported = (ecTSS.g as BasePoint).mul(finalTssKey);
 
-  //     strictEqual(tssPubKeyImported.x.toString(16, 64), finalPubKey.x.toString(16, 64));
-  //     strictEqual(tssPubKeyImported.y.toString(16, 64), finalPubKey.y.toString(16, 64));
-  //   }
+      equal(tssPubKeyImported.eq(finalPubKey), true);
+    }
 
-  //   const tb2 = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync: mode });
+    const tb2 = new ThresholdKey({ serviceProvider: sp, storageLayer: torusSL, manualSync, keyType: TKEY_KEY_TYPE, tssKeyType: TSS_KEY_TYPE });
 
-  //   await tb2.initialize({ useTSS: true, factorPub });
-  //   tb2.inputShareStore(newShare.newShareStores[newShare.newShareIndex.toString("hex")]);
-  //   const reconstructedKey2 = await tb2.reconstructKey();
-  //   await tb2.syncLocalMetadataTransitions();
-  //   {
-  //     tb2.tssTag = "imported";
-  //     const finalPubKey = tb2.getTSSCommits()[0];
+    await tb2.initialize({ factorPub });
+    tb2.inputShareStore(newShare.newShareStores[newShare.newShareIndex.toString("hex")]);
+    await tb2.reconstructKey();
+    await tb2.syncLocalMetadataTransitions();
+    {
+      tb2.tssTag = "imported";
+      const finalPubKey = pointToElliptic(ecTSS, tb2.getTSSCommits()[0]);
 
-  //     const finalTssKey = await tb2._UNSAFE_exportTssKey({
-  //       factorKey,
-  //       selectedServers: [1, 2, 3],
-  //       authSignatures: signatures,
-  //     });
-  //     const tssPubKeyImported = getPubKeyPoint(finalTssKey);
+      const finalTssKey = await tb2._UNSAFE_exportTssKey({
+        factorKey,
+        selectedServers: [1, 2, 3],
+        authSignatures: signatures,
+      });
+      const tssPubKeyImported = (ecTSS.g as BasePoint).mul(finalTssKey);
 
-  //     strictEqual(finalTssKey.toString("hex"), importedKey.toString("hex"));
-  //     strictEqual(tssPubKeyImported.x.toString(16, 64), finalPubKey.x.toString(16, 64));
-  //     strictEqual(tssPubKeyImported.y.toString(16, 64), finalPubKey.y.toString(16, 64));
-  //   }
-  //   {
-  //     tb2.tssTag = "default";
+      equal(finalTssKey.toString("hex"), importedKey.toString("hex"));
+      equal(tssPubKeyImported.eq(finalPubKey), true);
+    }
+    {
+      tb2.tssTag = "default";
 
-  //     const finalPubKey = tb2.getTSSCommits()[0];
+      const finalPubKey = pointToElliptic(ecTSS, tb2.getTSSCommits()[0]);
 
-  //     const finalTssKey = await tb2._UNSAFE_exportTssKey({
-  //       factorKey,
-  //       selectedServers: [1, 2, 3],
-  //       authSignatures: signatures,
-  //     });
-  //     const tssPubKeyImported = getPubKeyPoint(finalTssKey);
+      const finalTssKey = await tb2._UNSAFE_exportTssKey({
+        factorKey,
+        selectedServers: [1, 2, 3],
+        authSignatures: signatures,
+      });
+      const tssPubKeyImported = (ecTSS.g as BasePoint).mul(finalTssKey);
 
-  //     strictEqual(tssPubKeyImported.x.toString(16, 64), finalPubKey.x.toString(16, 64));
-  //     strictEqual(tssPubKeyImported.y.toString(16, 64), finalPubKey.y.toString(16, 64));
-  //   }
-  // });
+      equal(tssPubKeyImported.eq(finalPubKey), true);
+    }
+  });
 
   // it("#should be able to serialize and deserialize with tss even with rss", async function () {
   //   const sp = customSP;
