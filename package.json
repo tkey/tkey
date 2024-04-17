@@ -70,6 +70,9 @@
     "tslib": "^2.6.2",
     "typescript": "^5.4.4"
   },
+  "optionalDependencies": {
+    "@nx/nx-linux-x64-gnu": "16.10.0"
+  },
   "author": "Torus Labs",
   "license": "MIT",
   "husky": {
