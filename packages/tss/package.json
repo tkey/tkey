@@ -16,7 +16,7 @@
     "@tkey/common-types": "^12.0.0",
     "@tkey/core": "^12.0.0",
     "@tkey/service-provider-torus": "^12.0.0",
-    "@toruslabs/rss-client": "file:../../../rss/rss-client",
+    "@toruslabs/rss-client": "^2.0.0-0",
     "@toruslabs/torus.js": "13.0.0-alpha.3",
     "@types/bn.js": "^5.1.5",
     "bn.js": "^5.2.1",
