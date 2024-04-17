@@ -209,6 +209,10 @@ export type TkeyStoreItemType = {
   id: string;
 };
 
+export type IAccountSaltStore = TkeyStoreItemType & {
+  value: string;
+};
+
 export type ISeedPhraseStore = TkeyStoreItemType & {
   seedPhrase: string;
   type: string;
