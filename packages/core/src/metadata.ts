@@ -114,6 +114,9 @@ class Metadata implements IMetadata {
     if (tkeyStore) metadata.tkeyStore = tkeyStore;
     if (scopedStore) metadata.scopedStore = scopedStore;
     if (nonce) metadata.nonce = nonce;
+    if (tssKeyType) {
+      metadata.tssKeyType = tssKeyType;
+    }
     if (tssPolyCommits) {
       metadata.tssPolyCommits = {};
       for (const key in tssPolyCommits) {
