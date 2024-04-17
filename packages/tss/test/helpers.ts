@@ -1,6 +1,7 @@
 import { IStorageLayer } from "@tkey/common-types";
 import { MockStorageLayer, TorusStorageLayer } from "@tkey/storage-layer-torus";
 import Torus from "@toruslabs/torus.js";
+import { BN } from "bn.js";
 import { KJUR } from "jsrsasign";
 
 import { TSSTorusServiceProvider } from "../src";
@@ -37,8 +38,8 @@ function generateIdToken(email: string): string {
   return token;
 }
 
-export async function fetchPostboxKeyAndSigs(opts: { serviceProvider: TSSTorusServiceProvider; verifier: string; verifierId: string }) {
-  const { serviceProvider, verifier, verifierId } = opts;
+export async function fetchPostboxKeyAndSigs(opts: { serviceProvider: TSSTorusServiceProvider; verifierName: string; verifierId: string }) {
+  const { serviceProvider, verifierName: verifier, verifierId } = opts;
 
   const nodeDetails = await serviceProvider.customAuthInstance.nodeDetailManager.getNodeDetails({ verifier, verifierId });
   const token = generateIdToken(verifierId);
@@ -57,6 +58,45 @@ export async function fetchPostboxKeyAndSigs(opts: { serviceProvider: TSSTorusSe
   const localPrivKey = Torus.getPostboxKey(tKey);
   return {
     signatures,
-    postboxkey: localPrivKey,
+    postboxkey: new BN(localPrivKey, "hex"),
+  };
+}
+
+// This function is only for testing and will return tss shares only for test verifiers.
+export async function assignTssDkgKeys(opts: {
+  serviceProvider: TSSTorusServiceProvider;
+  verifierName: string;
+  verifierId: string;
+  maxTSSNonceToSimulate: number;
+  tssTag?: string;
+}) {
+  let { serviceProvider, verifierName: verifier, verifierId, maxTSSNonceToSimulate, tssTag } = opts;
+  tssTag = tssTag || "default";
+  maxTSSNonceToSimulate = maxTSSNonceToSimulate || 1;
+  // set tssShares on servers
+  const serverDKGPrivKeys = [];
+  // const serverDKGPubKeys = [];
+
+  for (let j = 0; j < maxTSSNonceToSimulate; j++) {
+    const token = generateIdToken(verifierId);
+    const extendedVerifierId = `${verifierId}\u0015${tssTag}\u0016${j}`;
+
+    const nodeDetails = await serviceProvider.customAuthInstance.nodeDetailManager.getNodeDetails({ verifier, verifierId });
+
+    const tKey = await serviceProvider.customAuthInstance.torus.retrieveShares(
+      nodeDetails.torusNodeEndpoints,
+      nodeDetails.torusIndexes,
+      verifier,
+      { verifier_id: verifierId, extended_verifier_id: extendedVerifierId },
+      token,
+      nodeDetails.torusNodePub
+    );
+    const localPrivKey = Torus.getPostboxKey(tKey);
+
+    serverDKGPrivKeys.push(new BN(localPrivKey, "hex"));
+  }
+
+  return {
+    serverDKGPrivKeys,
   };
 }

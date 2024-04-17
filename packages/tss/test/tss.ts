@@ -3,13 +3,13 @@ import { equal, fail } from "assert";
 import BN from "bn.js";
 
 import { FACTOR_KEY_TYPE, TKeyTSS as ThresholdKey, TSSTorusServiceProvider } from "../src";
-import { pointToElliptic } from "../src/util";
-import { fetchPostboxKeyAndSigs, initStorageLayer } from "./helpers";
+import { BasePoint, getLagrangeCoeffs, pointToElliptic } from "../src/util";
+import { assignTssDkgKeys, fetchPostboxKeyAndSigs, initStorageLayer } from "./helpers";
 
 const TKEY_KEY_TYPE = KeyType.secp256k1; // TODO iterate over secp256k1 and ed25519
 const TSS_KEY_TYPE = KeyType.secp256k1; // TODO iterate over secp256k1 and ed25519
 
-const factorEC = keyTypeToCurve(FACTOR_KEY_TYPE);
+const ecFactor = keyTypeToCurve(FACTOR_KEY_TYPE);
 const ecTSS = keyTypeToCurve(TSS_KEY_TYPE);
 
 const torusSP = new TSSTorusServiceProvider({
@@ -21,43 +21,37 @@ const torusSP = new TSSTorusServiceProvider({
   tssKeyType: TSS_KEY_TYPE,
 });
 
-// const torusSL = initStorageLayer();
+const torusSL = initStorageLayer();
 
-const manualSyncMode = true;
-
-const mode = manualSyncMode;
-// const storageLayer = torusSL;
-
-const customSP = torusSP;
-// const customSL = torusSL;
+const manualSync = true;
 
 describe("TSS tests", function () {
   it("#should be able to reconstruct tssShare from factor key", async function () {
-    const sp = customSP;
+    const sp = torusSP;
 
     const deviceTSSShare = ecTSS.genKeyPair().getPrivate();
-    const deviceTSSIndex = 2;
+    const deviceTSSIndex = 3;
 
     sp.verifierName = "torus-test-health";
     sp.verifierId = "test@example.com";
     const { postboxkey } = await fetchPostboxKeyAndSigs({
       serviceProvider: sp,
-      verifier: sp.verifierName,
+      verifierName: sp.verifierName,
       verifierId: sp.verifierId,
     });
-    sp.postboxKey = new BN(postboxkey, "hex");
+    sp.postboxKey = postboxkey;
 
     const storageLayer2 = initStorageLayer();
     const tb1 = new ThresholdKey({
       serviceProvider: sp,
       storageLayer: storageLayer2,
-      manualSync: mode,
+      manualSync,
       keyType: TKEY_KEY_TYPE,
       tssKeyType: TSS_KEY_TYPE,
     });
 
     // factor key needs to passed from outside of tKey
-    const factorKeyPair = factorEC.genKeyPair();
+    const factorKeyPair = ecFactor.genKeyPair();
     const factorKey = factorKeyPair.getPrivate();
     const factorPub = Point.fromSEC1(factorKeyPair.getPublic().encodeCompressed("hex"), FACTOR_KEY_TYPE);
 
@@ -77,168 +71,167 @@ describe("TSS tests", function () {
     equal(tss2Pub.eq(_tss2Pub), true);
   });
 
-  // it("#should be able to reconstruct tss key from factor key", async function () {
-  //   const sp = customSP;
+  it("#should be able to reconstruct tss key from factor key", async function () {
+    const sp = torusSP;
 
-  //   if (!sp.useTSS) this.skip();
+    sp.verifierName = "torus-test-health";
+    sp.verifierId = "test18@example.com";
+    const { serverDKGPrivKeys } = await assignTssDkgKeys({
+      serviceProvider: sp,
+      verifierName: sp.verifierName,
+      verifierId: sp.verifierId,
+      maxTSSNonceToSimulate: 2,
+    });
 
-  //   sp.verifierName = "torus-test-health";
-  //   sp.verifierId = "test18@example.com";
-  //   const { serverDKGPrivKeys } = await assignTssDkgKeys({
-  //     serviceProvider: sp,
-  //     verifierName: sp.verifierName,
-  //     verifierId: sp.verifierId,
-  //     maxTSSNonceToSimulate: 2,
-  //   });
+    const tss1 = new BN(serverDKGPrivKeys[0], "hex");
+    const deviceTSSShare = ecTSS.genKeyPair().getPrivate();
+    const deviceTSSIndex = 2;
+    const { postboxkey } = await fetchPostboxKeyAndSigs({
+      serviceProvider: sp,
+      verifierName: sp.verifierName,
+      verifierId: sp.verifierId,
+    });
+    sp.postboxKey = postboxkey;
+    const storageLayer = initStorageLayer();
+    const tb1 = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync, keyType: TKEY_KEY_TYPE, tssKeyType: TSS_KEY_TYPE });
 
-  //   const tss1 = new BN(serverDKGPrivKeys[0], "hex");
-  //   const deviceTSSShare = new BN(generatePrivate());
-  //   const deviceTSSIndex = 2;
-  //   const { postboxkey } = await fetchPostboxKeyAndSigs({
-  //     serviceProvider: sp,
-  //     verifierName: sp.verifierName,
-  //     verifierId: sp.verifierId,
-  //   });
-  //   sp.postboxKey = postboxkey;
-  //   const storageLayer = initStorageLayer({ hostUrl: metadataURL });
-  //   const tb1 = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync: mode });
+    // factor key needs to passed from outside of tKey
+    const factorKeyPair = ecFactor.genKeyPair();
+    const factorKey = factorKeyPair.getPrivate();
+    const factorPub = Point.fromSEC1(factorKeyPair.getPublic().encodeCompressed("hex"), FACTOR_KEY_TYPE);
 
-  //   // factor key needs to passed from outside of tKey
-  //   const factorKey = new BN(generatePrivate());
-  //   const factorPub = getPubKeyPoint(factorKey);
+    await tb1.initialize({ factorPub, deviceTSSShare, deviceTSSIndex });
+    const reconstructedKey = await tb1.reconstructKey();
+    await tb1.syncLocalMetadataTransitions();
+    if (tb1.privKey.cmp(reconstructedKey.privKey) !== 0) {
+      fail("key should be able to be reconstructed");
+    }
 
-  //   await tb1.initialize({ useTSS: true, factorPub, deviceTSSShare, deviceTSSIndex });
-  //   const reconstructedKey = await tb1.reconstructKey();
-  //   await tb1.syncLocalMetadataTransitions();
-  //   if (tb1.privKey.cmp(reconstructedKey.privKey) !== 0) {
-  //     fail("key should be able to be reconstructed");
-  //   }
+    const { tssShare: tss2 } = await tb1.getTSSShare(factorKey);
+    const tssCommits = tb1.getTSSCommits();
 
-  //   const { tssShare: tss2 } = await tb1.getTSSShare(factorKey);
-  //   const tssCommits = tb1.getTSSCommits();
+    const tssPrivKey = getLagrangeCoeffs(ecTSS, [1, deviceTSSIndex], 1)
+      .mul(tss1)
+      .add(getLagrangeCoeffs(ecTSS, [1, deviceTSSIndex], deviceTSSIndex).mul(tss2))
+      .umod(ecTSS.n);
 
-  //   const tssPrivKey = getLagrangeCoeffs([1, deviceTSSIndex], 1)
-  //     .mul(tss1)
-  //     .add(getLagrangeCoeffs([1, deviceTSSIndex], deviceTSSIndex).mul(tss2))
-  //     .umod(ecCurve.n);
+    const tssPubKey = (ecTSS.g as BasePoint).mul(tssPrivKey);
+    const tssCommits0 = pointToElliptic(ecTSS, tssCommits[0]);
+    equal(tssPubKey.eq(tssCommits0), true);
+  });
 
-  //   const tssPubKey = getPubKeyPoint(tssPrivKey);
-  //   strictEqual(tssPubKey.x.toString(16, 64), tssCommits[0].x.toString(16, 64));
-  //   strictEqual(tssPubKey.y.toString(16, 64), tssCommits[0].y.toString(16, 64));
-  // });
+  it(`#should be able to import a tss key, manualSync=${manualSync}`, async function () {
+    const sp = torusSP;
 
-  // it(`#should be able to import a tss key, manualSync=${mode}`, async function () {
-  //   const sp = customSP;
+    const deviceTSSShare = ecTSS.genKeyPair().getPrivate();
+    const deviceTSSIndex = 2;
+    const newTSSIndex = 3;
 
-  //   if (!sp.useTSS) this.skip();
-  //   // skip if not mock for now as we need to set key on server to test
-  //   if (!isMocked) this.skip();
-  //   const deviceTSSShare = new BN(generatePrivate());
-  //   const deviceTSSIndex = 3;
+    sp.verifierName = "torus-test-health";
+    sp.verifierId = "importeduser@example.com";
+    const { signatures, postboxkey } = await fetchPostboxKeyAndSigs({
+      serviceProvider: sp,
+      verifierName: sp.verifierName,
+      verifierId: sp.verifierId,
+    });
+    sp.postboxKey = postboxkey;
+    const { serverDKGPrivKeys } = await assignTssDkgKeys({
+      serviceProvider: sp,
+      verifierName: sp.verifierName,
+      verifierId: sp.verifierId,
+      maxTSSNonceToSimulate: 1,
+    });
 
-  //   sp.verifierName = "torus-test-health";
-  //   sp.verifierId = "importeduser@example.com";
-  //   const { signatures, postboxkey } = await fetchPostboxKeyAndSigs({
-  //     serviceProvider: sp,
-  //     verifierName: sp.verifierName,
-  //     verifierId: sp.verifierId,
-  //   });
-  //   sp.postboxKey = postboxkey;
-  //   const { serverDKGPrivKeys } = await assignTssDkgKeys({
-  //     serviceProvider: sp,
-  //     verifierName: sp.verifierName,
-  //     verifierId: sp.verifierId,
-  //     maxTSSNonceToSimulate: 1,
-  //   });
+    const tb = new ThresholdKey({ serviceProvider: sp, storageLayer: torusSL, manualSync, keyType: TKEY_KEY_TYPE, tssKeyType: TSS_KEY_TYPE });
 
-  //   const tb = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync: mode });
+    // factor key needs to passed from outside of tKey
+    const factorKeyPair = ecFactor.genKeyPair();
+    const factorKey = factorKeyPair.getPrivate();
+    const factorPub = Point.fromSEC1(factorKeyPair.getPublic().encodeCompressed("hex"), FACTOR_KEY_TYPE);
+    // 2/2
+    await tb.initialize({ factorPub, deviceTSSShare, deviceTSSIndex });
+    const newShare = await tb.generateNewShare();
 
-  //   // factor key needs to passed from outside of tKey
-  //   const factorKey = new BN(generatePrivate());
-  //   const factorPub = getPubKeyPoint(factorKey);
-  //   // 2/2
-  //   await tb.initialize({ useTSS: true, factorPub, deviceTSSShare, deviceTSSIndex });
-  //   const newShare = await tb.generateNewShare();
+    const reconstructedKey = await tb.reconstructKey();
+    await tb.syncLocalMetadataTransitions();
 
-  //   const reconstructedKey = await tb.reconstructKey();
-  //   await tb.syncLocalMetadataTransitions();
+    if (tb.privKey.cmp(reconstructedKey.privKey) !== 0) {
+      fail("key should be able to be reconstructed");
+    }
+    const { tssShare: retrievedTSS, tssIndex: retrievedTSSIndex } = await tb.getTSSShare(factorKey);
+    const tssCommits = tb.getTSSCommits();
+    const tssPrivKey = getLagrangeCoeffs(ecTSS, [1, retrievedTSSIndex], 1)
+      .mul(serverDKGPrivKeys[0])
+      .add(getLagrangeCoeffs(ecTSS, [1, retrievedTSSIndex], retrievedTSSIndex).mul(retrievedTSS))
+      .umod(ecTSS.n);
+    const tssPubKey = (ecTSS.g as BasePoint).mul(tssPrivKey);
 
-  //   if (tb.privKey.cmp(reconstructedKey.privKey) !== 0) {
-  //     fail("key should be able to be reconstructed");
-  //   }
-  //   const { tssShare: retrievedTSS, tssIndex: retrievedTSSIndex } = await tb.getTSSShare(factorKey);
-  //   const tssCommits = tb.getTSSCommits();
-  //   const tssPrivKey = getLagrangeCoeffs([1, retrievedTSSIndex], 1)
-  //     .mul(serverDKGPrivKeys[0])
-  //     .add(getLagrangeCoeffs([1, retrievedTSSIndex], retrievedTSSIndex).mul(retrievedTSS))
-  //     .umod(ecCurve.n);
-  //   const tssPubKey = getPubKeyPoint(tssPrivKey);
+    const tssCommits0 = pointToElliptic(ecTSS, tssCommits[0]);
+    equal(tssPubKey.eq(tssCommits0), true);
 
-  //   strictEqual(tssPubKey.x.toString(16, 64), tssCommits[0].x.toString(16, 64));
-  //   strictEqual(tssPubKey.y.toString(16, 64), tssCommits[0].y.toString(16, 64));
+    const { serverDKGPrivKeys: serverDKGPrivKeys1 } = await assignTssDkgKeys({
+      tssTag: "imported",
+      serviceProvider: sp,
+      verifierName: sp.verifierName,
+      verifierId: sp.verifierId,
+      maxTSSNonceToSimulate: 1,
+    });
 
-  //   const { serverDKGPrivKeys: serverDKGPrivKeys1 } = await assignTssDkgKeys({
-  //     tssTag: "imported",
-  //     serviceProvider: sp,
-  //     verifierName: sp.verifierName,
-  //     verifierId: sp.verifierId,
-  //     maxTSSNonceToSimulate: 1,
-  //   });
-  //   // import key
-  //   const importedKey = new BN(generatePrivate());
-  //   await tb.importTssKey(
-  //     { tag: "imported", importKey: importedKey, factorPub, newTSSIndex: 2 },
-  //     {
-  //       authSignatures: signatures,
-  //     }
-  //   );
-  //   // tag is switched to imported
-  //   await tb.syncLocalMetadataTransitions();
-  //   // for imported key
-  //   const { tssShare: retrievedTSS1, tssIndex: retrievedTSSIndex1 } = await tb.getTSSShare(factorKey);
+    // import key
+    const importedKey = ecTSS.genKeyPair().getPrivate();
+    await tb.importTssKey(
+      { tag: "imported", importKey: importedKey, factorPub, newTSSIndex },
+      {
+        authSignatures: signatures,
+      }
+    );
+    // tag is switched to imported
+    await tb.syncLocalMetadataTransitions();
+    // for imported key
+    const { tssShare: retrievedTSS1, tssIndex: retrievedTSSIndex1 } = await tb.getTSSShare(factorKey);
 
-  //   const tssCommits1 = tb.getTSSCommits();
-  //   const tssPrivKey1 = getLagrangeCoeffs([1, retrievedTSSIndex1], 1)
-  //     .mul(serverDKGPrivKeys1[0])
-  //     .add(getLagrangeCoeffs([1, retrievedTSSIndex1], retrievedTSSIndex1).mul(retrievedTSS1))
-  //     .umod(ecCurve.n);
-  //   const tssPubKey1 = getPubKeyPoint(tssPrivKey1);
+    const tssCommits1 = tb.getTSSCommits();
+    const tssPrivKey1 = getLagrangeCoeffs(ecTSS, [1, retrievedTSSIndex1], 1)
+      .mul(serverDKGPrivKeys1[0])
+      .add(getLagrangeCoeffs(ecTSS, [1, retrievedTSSIndex1], retrievedTSSIndex1).mul(retrievedTSS1))
+      .umod(ecTSS.n);
+    const tssPubKey1 = (ecTSS.g as BasePoint).mul(tssPrivKey1);
 
-  //   strictEqual(tssPubKey1.x.toString(16, 64), tssCommits1[0].x.toString(16, 64));
-  //   strictEqual(tssPubKey1.y.toString(16, 64), tssCommits1[0].y.toString(16, 64));
-  //   strictEqual(tssPrivKey1.toString("hex"), importedKey.toString("hex"));
+    const tssCommits10 = pointToElliptic(ecTSS, tssCommits1[0]);
+    equal(tssPubKey1.eq(tssCommits10), true);
+    equal(tssPrivKey1.toString("hex"), importedKey.toString("hex"));
 
-  //   const tb2 = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync: mode });
+    const tb2 = new ThresholdKey({ serviceProvider: sp, storageLayer: torusSL, manualSync, keyType: TKEY_KEY_TYPE, tssKeyType: TSS_KEY_TYPE });
 
-  //   await tb2.initialize({ useTSS: true, factorPub });
-  //   tb2.inputShareStore(newShare.newShareStores[newShare.newShareIndex.toString("hex")]);
-  //   const reconstructedKey2 = await tb2.reconstructKey();
-  //   await tb2.syncLocalMetadataTransitions();
+    await tb2.initialize({ factorPub });
+    tb2.inputShareStore(newShare.newShareStores[newShare.newShareIndex.toString("hex")]);
+    const reconstructedKey2 = await tb2.reconstructKey();
+    await tb2.syncLocalMetadataTransitions();
 
-  //   if (tb2.privKey.cmp(reconstructedKey2.privKey) !== 0) {
-  //     fail("key should be able to be reconstructed");
-  //   }
-  //   const tssCommits2 = tb2.getTSSCommits();
-  //   strictEqual(tssPubKey.x.toString(16, 64), tssCommits2[0].x.toString(16, 64));
-  //   strictEqual(tssPubKey.y.toString(16, 64), tssCommits2[0].y.toString(16, 64));
+    if (tb2.privKey.cmp(reconstructedKey2.privKey) !== 0) {
+      fail("key should be able to be reconstructed");
+    }
+    const tssCommits2 = tb2.getTSSCommits();
+    const tssCommits20 = pointToElliptic(ecTSS, tssCommits2[0]);
+    equal(tssPubKey.eq(tssCommits20), true);
 
-  //   // switch to imported account
-  //   tb2.tssTag = "imported";
-  //   const { tssShare: retrievedTSSImported, tssIndex: retrievedTSSIndexImported } = await tb2.getTSSShare(factorKey);
+    // switch to imported account
+    tb2.tssTag = "imported";
+    const { tssShare: retrievedTSSImported, tssIndex: retrievedTSSIndexImported } = await tb2.getTSSShare(factorKey);
 
-  //   const tssCommitsImported = tb2.getTSSCommits();
+    const tssCommitsImported = tb2.getTSSCommits();
 
-  //   const tssPrivKeyImported = getLagrangeCoeffs([1, retrievedTSSIndexImported], 1)
-  //     .mul(serverDKGPrivKeys1[0])
-  //     .add(getLagrangeCoeffs([1, retrievedTSSIndexImported], retrievedTSSIndexImported).mul(retrievedTSSImported))
-  //     .umod(ecCurve.n);
+    const tssPrivKeyImported = getLagrangeCoeffs(ecTSS, [1, retrievedTSSIndexImported], 1)
+      .mul(serverDKGPrivKeys1[0])
+      .add(getLagrangeCoeffs(ecTSS, [1, retrievedTSSIndexImported], retrievedTSSIndexImported).mul(retrievedTSSImported))
+      .umod(ecTSS.n);
 
-  //   const tssPubKeyImported = getPubKeyPoint(tssPrivKeyImported);
+    const tssPubKeyImported = (ecTSS.g as BasePoint).mul(tssPrivKeyImported);
 
-  //   strictEqual(tssPubKeyImported.x.toString(16, 64), tssCommitsImported[0].x.toString(16, 64));
-  //   strictEqual(tssPubKeyImported.y.toString(16, 64), tssCommitsImported[0].y.toString(16, 64));
-  //   strictEqual(tssPrivKeyImported.toString("hex"), importedKey.toString("hex"));
-  // });
+    const tssCommitsImported0 = pointToElliptic(ecTSS, tssCommitsImported[0]);
+    equal(tssPubKeyImported.eq(tssCommitsImported0), true);
+    equal(tssPrivKeyImported.toString("hex"), importedKey.toString("hex"));
+  });
 
   // it(`#should be able to unsafe export final tss key, manualSync=${mode}`, async function () {
   //   const sp = customSP;
