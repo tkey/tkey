@@ -75,6 +75,10 @@ export class TKeyTSS extends ThresholdKey {
     return this._tssKeyType;
   }
 
+  public set tssTag(tag: string) {
+    this._tssTag = tag;
+  }
+
   async initialize(params?: TKeyTSSInitArgs): Promise<KeyDetails> {
     const keyDetails = await super.initialize(params);
 
