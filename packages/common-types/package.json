@@ -1,6 +1,6 @@
 {
   "name": "@tkey/common-types",
-  "version": "12.0.0",
+  "version": "12.1.0",
   "description": "TKey common types",
   "author": "Torus Labs",
   "homepage": "https://github.com/tkey/tkey#readme",
@@ -11,8 +11,7 @@
   "jsdelivr": "dist/commonTypes.umd.min.js",
   "types": "dist/types/index.d.ts",
   "files": [
-    "dist",
-    "src"
+    "dist"
   ],
   "publishConfig": {
     "access": "public"
@@ -47,14 +46,14 @@
     "@toruslabs/eccrypto": "^4.0.0",
     "@toruslabs/torus.js": "13.0.0-alpha.3",
     "bn.js": "^5.2.1",
-    "elliptic": "^6.5.4",
+    "elliptic": "^6.5.5",
     "ethereum-cryptography": "^2.1.3",
     "serialize-error": "^8.1.0",
     "ts-custom-error": "^3.3.1"
   },
   "devDependencies": {
-    "@types/bn.js": "^5.1.2",
-    "@types/elliptic": "^6.4.15"
+    "@types/bn.js": "^5.1.5",
+    "@types/elliptic": "^6.4.18"
   },
   "bugs": {
     "url": "https://github.com/tkey/tkey/issues"

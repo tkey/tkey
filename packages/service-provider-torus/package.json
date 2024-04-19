@@ -1,6 +1,6 @@
 {
   "name": "@tkey/service-provider-torus",
-  "version": "12.0.0",
+  "version": "12.1.0",
   "description": "TKey Torus Service Provider Module",
   "author": "Torus Labs",
   "homepage": "https://github.com/tkey/tkey#readme",
@@ -11,8 +11,7 @@
   "jsdelivr": "dist/serviceProviderTorus.umd.min.js",
   "types": "dist/types/index.d.ts",
   "files": [
-    "dist",
-    "src"
+    "dist"
   ],
   "publishConfig": {
     "access": "public"
@@ -43,11 +42,11 @@
     "@toruslabs/customauth": "19.0.0-alpha.3",
     "@toruslabs/torus.js": "13.0.0-alpha.3",
     "bn.js": "^5.2.1",
-    "elliptic": "^6.5.4"
+    "elliptic": "^6.5.5"
   },
   "devDependencies": {
-    "@types/bn.js": "^5.1.2",
-    "@types/elliptic": "^6.4.15"
+    "@types/bn.js": "^5.1.5",
+    "@types/elliptic": "^6.4.18"
   },
   "bugs": {
     "url": "https://github.com/tkey/tkey/issues"

@@ -1,6 +1,6 @@
 {
   "name": "@tkey/chrome-storage",
-  "version": "12.0.0",
+  "version": "12.1.0",
   "description": "TKey Chrome Storage Module",
   "author": "Torus Labs",
   "homepage": "https://github.com/tkey/tkey#readme",
@@ -11,8 +11,7 @@
   "jsdelivr": "dist/chromeStorage.umd.min.js",
   "types": "dist/types/index.d.ts",
   "files": [
-    "dist",
-    "src"
+    "dist"
   ],
   "publishConfig": {
     "access": "public"
@@ -41,12 +40,12 @@
     "@babel/runtime": "7.x"
   },
   "dependencies": {
-    "@tkey/common-types": "^12.0.0",
+    "@tkey/common-types": "^12.1.0",
     "webextension-polyfill": "^0.10.0"
   },
   "devDependencies": {
-    "@types/chrome": "^0.0.246",
-    "@types/webextension-polyfill": "^0.10.4"
+    "@types/chrome": "^0.0.266",
+    "@types/webextension-polyfill": "^0.10.7"
   },
   "lint-staged": {
     "!(*d).ts": [
