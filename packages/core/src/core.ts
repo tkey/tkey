@@ -230,6 +230,10 @@ class ThresholdKey implements ITKey {
     previousLocalMetadataTransitions?: LocalMetadataTransitions;
     delete1OutOf1?: boolean;
   }): Promise<KeyDetails> {
+    if (this.serviceProvider.keyType !== this.keyType)
+      throw CoreError.invalidKeyType(
+        `Service provider keyType is not matching tkey keyType, expected: ${this.keyType} found: ${this.serviceProvider.keyType}`
+      );
     // setup initial params/states
     const p = params || {};
 
