@@ -117,7 +117,28 @@ describe("TSS tests", function () {
 
     const tssPubKey = (ecTSS.g as BasePoint).mul(tssPrivKey);
     const tssCommits0 = pointToElliptic(ecTSS, tssCommits[0]);
+    const tssPub = pointToElliptic(ecTSS, tb1.getTSSPub());
     equal(tssPubKey.eq(tssCommits0), true);
+    equal(tssPub.eq(tssPubKey), true);
+
+    // With account index.
+    {
+      const accountIndex = Math.floor(Math.random() * 99) + 1;
+      const tss1Account = (() => {
+        const share = new BN(serverDKGPrivKeys[0], "hex");
+        const nonce = tb1.computeAccountNonce(accountIndex);
+        return share.add(nonce).umod(ecTSS.n);
+      })();
+      const { tssShare: tss2Account } = await tb1.getTSSShare(factorKey, { accountIndex });
+
+      const coefficient1 = getLagrangeCoeffs(ecTSS, [1, deviceTSSIndex], 1);
+      const coefficient2 = getLagrangeCoeffs(ecTSS, [1, deviceTSSIndex], deviceTSSIndex);
+      const tssKey = coefficient1.mul(tss1Account).add(coefficient2.mul(tss2Account)).umod(ecTSS.n);
+
+      const tssKeyPub = (ecTSS.g as BasePoint).mul(tssKey);
+      const tssPubAccount = pointToElliptic(ecTSS, tb1.getTSSPub(accountIndex));
+      equal(tssPubAccount.eq(tssKeyPub), true, "should equal account pub key");
+    }
   });
 
   it(`#should be able to import a tss key, manualSync=${manualSync}`, async function () {
