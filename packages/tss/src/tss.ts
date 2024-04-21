@@ -136,6 +136,7 @@ export class TKeyTSS extends ThresholdKey {
     opts?: {
       threshold?: number;
       accountIndex?: number;
+      coefficient?: BN;
     }
   ): Promise<{
     tssIndex: number;
@@ -166,19 +167,16 @@ export class TKeyTSS extends ThresholdKey {
 
     const userDec = tssShareBNs[0];
 
-    const { threshold, accountIndex } = opts || {};
+    const accountIndex = opts?.accountIndex || 0;
+    const coefficient = opts?.coefficient || new BN(1);
     if (type === "direct") {
       const tssSharePub = ec.g.mul(userDec);
       const tssCommitA0 = tssCommits[0];
       const tssCommitA1 = tssCommits[1];
       const _tssSharePub = tssCommitA0.add(tssCommitA1.mul(new BN(tssIndex)));
       if (tssSharePub.eq(_tssSharePub)) {
-        if (accountIndex && accountIndex > 0) {
-          const nonce = this.computeAccountNonce(accountIndex);
-          const derivedShare = userDec.add(nonce).umod(ec.n);
-          return { tssIndex, tssShare: derivedShare };
-        }
-        return { tssIndex, tssShare: userDec };
+        const adjustedShare = this.adjustTssShare(userDec, accountIndex, coefficient);
+        return { tssIndex, tssShare: adjustedShare };
       }
       throw new Error("user decryption does not match tss commitments...");
     }
@@ -187,7 +185,8 @@ export class TKeyTSS extends ThresholdKey {
     const serverDecs = tssShareBNs.slice(1); // 5 elems
     const serverIndexes = new Array(serverDecs.length).fill(null).map((_, i) => i + 1);
 
-    const combis = kCombinations(serverDecs.length, threshold || Math.ceil(serverDecs.length / 2));
+    const threshold = opts?.threshold || Math.ceil(serverDecs.length / 2);
+    const combis = kCombinations(serverDecs.length, threshold);
     for (let i = 0; i < combis.length; i++) {
       const combi = combis[i];
       const selectedServerDecs = serverDecs.filter((_, j) => combi.indexOf(j) > -1);
@@ -206,12 +205,8 @@ export class TKeyTSS extends ThresholdKey {
         _tssSharePub = _tssSharePub.add(tssCommitA1);
       }
       if (tssSharePub.eq(_tssSharePub)) {
-        if (accountIndex && accountIndex > 0) {
-          const nonce = this.computeAccountNonce(accountIndex);
-          const derivedShare = tssShare.add(nonce).umod(ec.n);
-          return { tssIndex, tssShare: derivedShare };
-        }
-        return { tssIndex, tssShare };
+        const adjustedShare = this.adjustTssShare(tssShare, accountIndex, coefficient);
+        return { tssIndex, tssShare: adjustedShare };
       }
     }
     throw new Error("could not find any combination of server decryptions that match tss commitments...");
@@ -673,5 +668,10 @@ export class TKeyTSS extends ThresholdKey {
       authSignatures,
     });
     await this._syncShareMetadata();
+  }
+
+  protected adjustTssShare(share: BN, accountIndex: number, coefficient: BN): BN {
+    const nonce = this.computeAccountNonce(accountIndex);
+    return share.mul(coefficient).add(nonce).umod(this._tssCurve.n);
   }
 }
