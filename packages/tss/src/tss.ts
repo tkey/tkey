@@ -222,10 +222,6 @@ export class TKeyTSS extends ThresholdKey {
   }
 
   getTSSPub(accountIndex?: number): Point {
-    if (accountIndex && this._tssKeyType === "ed25519") {
-      throw new Error("Account index not supported for ed25519");
-    }
-
     const ec = this._tssCurve;
     const tssCommits = this.getTSSCommits();
     if (accountIndex && accountIndex > 0) {
