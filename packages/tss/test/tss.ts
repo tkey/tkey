@@ -432,7 +432,7 @@ const TKEY_KEY_TYPE = KeyType.secp256k1; // TODO iterate over secp256k1 and ed25
 
       it("should be able to add factor for same index", async function () {
         newFactorKeySameIndex = ecFactor.genKeyPair().getPrivate();
-        const newFactorPub = (ecTSS.g as BasePoint).mul(newFactorKeySameIndex);
+        const newFactorPub = (ecFactor.g as BasePoint).mul(newFactorKeySameIndex);
         await tb.addFactorPub({
           authSignatures: signatures,
           existingFactorKey: factorKey,
@@ -444,7 +444,7 @@ const TKEY_KEY_TYPE = KeyType.secp256k1; // TODO iterate over secp256k1 and ed25
 
       it("should be able to add factor for different index", async function () {
         newFactorKeyNewIndex = ecFactor.genKeyPair().getPrivate();
-        const newFactorPub = (ecTSS.g as BasePoint).mul(newFactorKeyNewIndex);
+        const newFactorPub = (ecFactor.g as BasePoint).mul(newFactorKeyNewIndex);
         await tb.addFactorPub({
           authSignatures: signatures,
           existingFactorKey: factorKey,
@@ -455,7 +455,7 @@ const TKEY_KEY_TYPE = KeyType.secp256k1; // TODO iterate over secp256k1 and ed25
       });
 
       it("should be able to remove factor for same index", async function () {
-        const newFactorPub = (ecTSS.g as BasePoint).mul(newFactorKeySameIndex);
+        const newFactorPub = (ecFactor.g as BasePoint).mul(newFactorKeySameIndex);
         await tb.deleteFactorPub({
           factorKey,
           deleteFactorPub: Point.fromSEC1(newFactorPub.encodeCompressed("hex"), FACTOR_KEY_TYPE),
@@ -469,7 +469,7 @@ const TKEY_KEY_TYPE = KeyType.secp256k1; // TODO iterate over secp256k1 and ed25
       });
 
       it("should be able to remove factor for different index", async function () {
-        const newFactorPub = (ecTSS.g as BasePoint).mul(newFactorKeyNewIndex);
+        const newFactorPub = (ecFactor.g as BasePoint).mul(newFactorKeyNewIndex);
         await tb.deleteFactorPub({
           factorKey,
           deleteFactorPub: Point.fromSEC1(newFactorPub.encodeCompressed("hex"), FACTOR_KEY_TYPE),
