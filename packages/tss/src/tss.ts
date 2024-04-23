@@ -1,6 +1,7 @@
 import {
   decrypt,
   encrypt,
+  EncryptedMessage,
   KeyDetails,
   KeyType,
   keyTypeToCurve,
@@ -22,6 +23,7 @@ import { FactorEnc, IAccountSaltStore, InitializeNewTSSKeyResult } from "./commo
 import {
   BasePoint,
   generateSalt,
+  getEd25519SeedStoreDomainKey,
   getLagrangeCoeffs,
   getPubKeyPoint,
   kCombinations,
@@ -31,6 +33,7 @@ import {
 } from "./util";
 
 export const TSS_MODULE = "tssModule";
+export const TSS_TAG_DEFAULT = "default";
 
 // This has to be fixed to secp256k1 for now because it is being used in
 // combination with eccrypto's `encrypt` and `decrypt`, which is secp256k1 only.
@@ -275,11 +278,12 @@ export class TKeyTSS extends ThresholdKey {
         return new BN(importKey);
       } else if (this.tssKeyType === KeyType.ed25519) {
         // Store seed in metadata.
-        const result = this.metadata.getGeneralStoreDomain("ed25519Seed") as Record<string, unknown>;
+        const domainKey = getEd25519SeedStoreDomainKey(this.tssTag || TSS_TAG_DEFAULT);
+        const result = this.metadata.getGeneralStoreDomain(domainKey) as Record<string, unknown>;
         if (result) {
           throw new Error("Seed already exists");
         }
-        this.metadata.setGeneralStoreDomain("ed25519Seed", { message: await this.encrypt(importKey) });
+        this.metadata.setGeneralStoreDomain(domainKey, { message: await this.encrypt(importKey) });
 
         const { scalar } = getEd25519ExtendedPublicKey(importKey);
         return scalar;

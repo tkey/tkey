@@ -107,3 +107,7 @@ export const DELIMITERS = {
 export function getExtendedVerifierId(verifierId: string, tssTag: string, tssNonce: number): string {
   return `${verifierId}${DELIMITERS.Delimiter2}${tssTag}${DELIMITERS.Delimiter3}${tssNonce}`;
 }
+
+export function getEd25519SeedStoreDomainKey(tssTag?: string): string {
+  return tssTag ? `ed25519Seed/${tssTag}` : "ed25519Seed";
+}
