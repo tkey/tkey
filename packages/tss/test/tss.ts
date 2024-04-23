@@ -4,7 +4,7 @@ import BN from "bn.js";
 
 import { FACTOR_KEY_TYPE, TKeyTSS as ThresholdKey, TKeyTSS, TSSTorusServiceProvider } from "../src";
 import { BasePoint, getLagrangeCoeffs, pointToElliptic } from "../src/util";
-import { assignTssDkgKeys, fetchPostboxKeyAndSigs, initStorageLayer } from "./helpers";
+import { assignTssDkgKeys, fetchPostboxKeyAndSigs, generateKey, initStorageLayer } from "./helpers";
 
 const TKEY_KEY_TYPE = KeyType.secp256k1; // TODO iterate over secp256k1 and ed25519
 
@@ -199,7 +199,7 @@ const TKEY_KEY_TYPE = KeyType.secp256k1; // TODO iterate over secp256k1 and ed25
       });
 
       // import key
-      const importedKey = ecTSS.genKeyPair().getPrivate();
+      const { raw: importedKey, scalar: importedScalar } = generateKey(TSS_KEY_TYPE);
       await tb.importTssKey(
         { tag: "imported", importKey: importedKey, factorPub, newTSSIndex },
         {
@@ -220,7 +220,7 @@ const TKEY_KEY_TYPE = KeyType.secp256k1; // TODO iterate over secp256k1 and ed25
 
       const tssCommits10 = pointToElliptic(ecTSS, tssCommits1[0]);
       equal(tssPubKey1.eq(tssCommits10), true);
-      equal(tssPrivKey1.toString("hex"), importedKey.toString("hex"));
+      equal(tssPrivKey1.toString("hex"), importedScalar.toString("hex"));
 
       const tb2 = new ThresholdKey({ serviceProvider: sp, storageLayer: torusSL, manualSync, keyType: TKEY_KEY_TYPE, tssKeyType: TSS_KEY_TYPE });
 
@@ -251,7 +251,7 @@ const TKEY_KEY_TYPE = KeyType.secp256k1; // TODO iterate over secp256k1 and ed25
 
       const tssCommitsImported0 = pointToElliptic(ecTSS, tssCommitsImported[0]);
       equal(tssPubKeyImported.eq(tssCommitsImported0), true);
-      equal(tssPrivKeyImported.toString("hex"), importedKey.toString("hex"));
+      equal(tssPrivKeyImported.toString("hex"), importedScalar.toString("hex"));
     });
 
     it(`#should be able to unsafe export final tss key, manualSync=${manualSync}`, async function () {
@@ -311,7 +311,7 @@ const TKEY_KEY_TYPE = KeyType.secp256k1; // TODO iterate over secp256k1 and ed25
         maxTSSNonceToSimulate: 1,
       });
       // import key
-      const importedKey = ecTSS.genKeyPair().getPrivate();
+      const { raw: importedKey, scalar: importedScalar } = generateKey(TSS_KEY_TYPE);
       const importedIndex = 2;
       await tb.importTssKey(
         { tag: "imported", importKey: importedKey, factorPub, newTSSIndex: importedIndex },
@@ -330,9 +330,9 @@ const TKEY_KEY_TYPE = KeyType.secp256k1; // TODO iterate over secp256k1 and ed25
           selectedServers: [1, 2, 3],
           authSignatures: signatures,
         });
-        const tssPubKeyImported = (ecTSS.g as BasePoint).mul(importedKey);
+        const tssPubKeyImported = (ecTSS.g as BasePoint).mul(importedScalar);
 
-        equal(finalTssKey.toString("hex"), importedKey.toString("hex"));
+        equal(finalTssKey.toString("hex"), importedScalar.toString("hex"));
         equal(tssPubKeyImported.eq(finalPubKey), true);
       }
       {
@@ -367,7 +367,7 @@ const TKEY_KEY_TYPE = KeyType.secp256k1; // TODO iterate over secp256k1 and ed25
         });
         const tssPubKeyImported = (ecTSS.g as BasePoint).mul(finalTssKey);
 
-        equal(finalTssKey.toString("hex"), importedKey.toString("hex"));
+        equal(finalTssKey.toString("hex"), importedScalar.toString("hex"));
         equal(tssPubKeyImported.eq(finalPubKey), true);
       }
       {

@@ -12,6 +12,7 @@ import {
 } from "@tkey/common-types";
 import ThresholdKey, { CoreError, Metadata } from "@tkey/core";
 import { dotProduct, ecPoint, hexPoint, PointHex, randomSelection, RSSClient } from "@toruslabs/rss-client";
+import { getEd25519ExtendedPublicKey } from "@toruslabs/torus.js";
 import BN from "bn.js";
 import { ec as EC } from "elliptic";
 import { keccak256 } from "ethereum-cryptography/keccak";
@@ -253,7 +254,7 @@ export class TKeyTSS extends ThresholdKey {
   async importTssKey(
     params: {
       tag: string;
-      importKey: BN;
+      importKey: Buffer;
       factorPub: Point;
       newTSSIndex: number;
     },
@@ -268,7 +269,25 @@ export class TKeyTSS extends ThresholdKey {
       throw CoreError.metadataUndefined();
     }
     const { importKey, factorPub, newTSSIndex, tag } = params;
-    if (!importKey || importKey.eq(new BN("0"))) {
+
+    const importScalar = await (async () => {
+      if (this.tssKeyType === KeyType.secp256k1) {
+        return new BN(importKey);
+      } else if (this.tssKeyType === KeyType.ed25519) {
+        // Store seed in metadata.
+        const result = this.metadata.getGeneralStoreDomain("ed25519Seed") as Record<string, unknown>;
+        if (result) {
+          throw new Error("Seed already exists");
+        }
+        this.metadata.setGeneralStoreDomain("ed25519Seed", { message: await this.encrypt(importKey) });
+
+        const { scalar } = getEd25519ExtendedPublicKey(importKey);
+        return scalar;
+      }
+      throw new Error("Invalid key type");
+    })();
+
+    if (!importScalar || importScalar.eq(new BN("0"))) {
       throw new Error("Invalid importedKey");
     }
 
@@ -293,7 +312,7 @@ export class TKeyTSS extends ThresholdKey {
       const newTssNonce: number = existingNonce && existingNonce > 0 ? existingNonce + 1 : 0;
       const verifierAndVerifierID = this.serviceProvider.getVerifierNameVerifierId();
       const label = `${verifierAndVerifierID}\u0015${this.tssTag}\u0016${newTssNonce}`;
-      const tssPubKey = hexPoint(ec.g.mul(importKey));
+      const tssPubKey = hexPoint(ec.g.mul(importScalar));
       const rssNodeDetails = await this._getRssNodeDetails();
       const { pubKey: newTSSServerPub, nodeIndexes } = await this.serviceProvider.getTSSPubKey(this.tssTag, newTssNonce);
       let finalSelectedServers = selectedServers;
@@ -322,7 +341,7 @@ export class TKeyTSS extends ThresholdKey {
       });
 
       const refreshResponses = await rssClient.import({
-        importKey,
+        importKey: importScalar,
         dkgNewPub: pointToHex(newTSSServerPub),
         selectedServers: finalSelectedServers,
         factorPubs: factorPubs.map((f) => pointToHex(f)),

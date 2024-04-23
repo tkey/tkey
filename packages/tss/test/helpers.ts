@@ -1,7 +1,7 @@
-import { IStorageLayer } from "@tkey/common-types";
+import { IStorageLayer, KeyType } from "@tkey/common-types";
 import { MockStorageLayer, TorusStorageLayer } from "@tkey/storage-layer-torus";
-import Torus from "@toruslabs/torus.js";
-import { BN } from "bn.js";
+import Torus, { getEd25519ExtendedPublicKey, secp256k1Curve } from "@toruslabs/torus.js";
+import BN from "bn.js";
 import { KJUR } from "jsrsasign";
 
 import { TSSTorusServiceProvider } from "../src";
@@ -99,4 +99,27 @@ export async function assignTssDkgKeys(opts: {
   return {
     serverDKGPrivKeys,
   };
+}
+
+export function generateKey(keyType: KeyType): {
+  raw: Buffer;
+  scalar: BN;
+} {
+  if (keyType === KeyType.secp256k1) {
+    const scalar = secp256k1Curve.genKeyPair().getPrivate();
+    return {
+      raw: scalar.toBuffer("be", 32),
+      scalar,
+    };
+  } else if (keyType === KeyType.ed25519) {
+    const buf = new Uint32Array(32);
+    crypto.getRandomValues(buf);
+    const raw = Buffer.from(buf);
+    const { scalar } = getEd25519ExtendedPublicKey(raw);
+    return {
+      raw,
+      scalar,
+    };
+  }
+  throw new Error("unsupported key type");
 }
