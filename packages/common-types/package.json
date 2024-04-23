@@ -42,9 +42,9 @@
     "@babel/runtime": "7.x"
   },
   "dependencies": {
-    "@toruslabs/customauth": "19.0.0-alpha.3",
+    "@toruslabs/customauth": "19.0.0-alpha.4",
     "@toruslabs/eccrypto": "^4.0.0",
-    "@toruslabs/torus.js": "13.0.0-alpha.3",
+    "@toruslabs/torus.js": "13.0.0-alpha.4",
     "bn.js": "^5.2.1",
     "elliptic": "^6.5.5",
     "ethereum-cryptography": "^2.1.3",

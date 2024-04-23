@@ -35,7 +35,7 @@
   "dependencies": {
     "@tkey/common-types": "^12.0.0",
     "@toruslabs/http-helpers": "^6.1.1",
-    "@toruslabs/torus.js": "13.0.0-alpha.3",
+    "@toruslabs/torus.js": "13.0.0-alpha.4",
     "bn.js": "^5.2.1",
     "elliptic": "^6.5.5",
     "ethereum-cryptography": "^2.1.3",
