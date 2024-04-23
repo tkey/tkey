@@ -59,6 +59,7 @@ export interface TKeyTSSInitArgs extends TKeyInitArgs {
   deviceTSSShare?: BN;
   deviceTSSIndex?: number;
   factorPub?: Point;
+  skipTssInit?: boolean;
 }
 
 export class TKeyTSS extends ThresholdKey {
@@ -97,7 +98,7 @@ export class TKeyTSS extends ThresholdKey {
   async initialize(params?: TKeyTSSInitArgs): Promise<KeyDetails> {
     const keyDetails = await super.initialize(params);
 
-    if (!this.metadata.tssPolyCommits[this.tssTag]) {
+    if (!this.metadata.tssPolyCommits[this.tssTag] && !params?.skipTssInit) {
       // if tss shares have not been created for this tssTag, create new tss sharing
       const { factorEncs, factorPubs, tssPolyCommits } = await this._initializeNewTSSKey(
         this.tssTag,
