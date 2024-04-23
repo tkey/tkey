@@ -149,7 +149,7 @@ const TKEY_KEY_TYPE = KeyType.secp256k1; // TODO iterate over secp256k1 and ed25
       const newTSSIndex = 3;
 
       sp.verifierName = "torus-test-health";
-      sp.verifierId = "importeduser@example.com";
+      sp.verifierId = `importeduser${TSS_KEY_TYPE}@example.com`;
       const { signatures, postboxkey } = await fetchPostboxKeyAndSigs({
         serviceProvider: sp,
         verifierName: sp.verifierName,
@@ -261,7 +261,7 @@ const TKEY_KEY_TYPE = KeyType.secp256k1; // TODO iterate over secp256k1 and ed25
       const deviceTSSIndex = 3;
 
       sp.verifierName = "torus-test-health";
-      sp.verifierId = "exportUser@example.com";
+      sp.verifierId = `exportUser${TSS_KEY_TYPE}@example.com`;
       const { signatures, postboxkey } = await fetchPostboxKeyAndSigs({
         serviceProvider: sp,
         verifierName: sp.verifierName,
@@ -399,7 +399,7 @@ const TKEY_KEY_TYPE = KeyType.secp256k1; // TODO iterate over secp256k1 and ed25
       before("setup", async function () {
         const sp = torusSP;
         sp.verifierName = "torus-test-health";
-        sp.verifierId = "test192@example.com";
+        sp.verifierId = `test192${TSS_KEY_TYPE}@example.com`;
         const { signatures: authSignatures, postboxkey } = await fetchPostboxKeyAndSigs({
           serviceProvider: sp,
           verifierName: sp.verifierName,
