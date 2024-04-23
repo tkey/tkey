@@ -222,6 +222,11 @@ const TKEY_KEY_TYPE = KeyType.secp256k1; // TODO iterate over secp256k1 and ed25
       equal(tssPubKey1.eq(tssCommits10), true);
       equal(tssPrivKey1.toString("hex"), importedScalar.toString("hex"));
 
+      if (TSS_KEY_TYPE === KeyType.ed25519) {
+        const seed = await tb._UNSAFE_exportEd25519Seed();
+        equal(seed.equals(importedKey), true);
+      }
+
       const tb2 = new ThresholdKey({ serviceProvider: sp, storageLayer: torusSL, manualSync, keyType: TKEY_KEY_TYPE, tssKeyType: TSS_KEY_TYPE });
 
       await tb2.initialize({ factorPub });
@@ -334,6 +339,11 @@ const TKEY_KEY_TYPE = KeyType.secp256k1; // TODO iterate over secp256k1 and ed25
 
         equal(finalTssKey.toString("hex"), importedScalar.toString("hex"));
         equal(tssPubKeyImported.eq(finalPubKey), true);
+
+        if (TSS_KEY_TYPE === KeyType.ed25519) {
+          const seed = await tb._UNSAFE_exportEd25519Seed();
+          equal(seed.equals(importedKey), true);
+        }
       }
       {
         tb.tssTag = "default";

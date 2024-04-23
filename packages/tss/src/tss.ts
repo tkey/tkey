@@ -273,6 +273,9 @@ export class TKeyTSS extends ThresholdKey {
     }
     const { importKey, factorPub, newTSSIndex, tag } = params;
 
+    const oldTag = this.tssTag;
+    this._tssTag = tag;
+
     const importScalar = await (async () => {
       if (this.tssKeyType === KeyType.secp256k1) {
         return new BN(importKey);
@@ -295,10 +298,8 @@ export class TKeyTSS extends ThresholdKey {
       throw new Error("Invalid importedKey");
     }
 
-    const oldTag = this.tssTag;
     try {
       const { selectedServers = [], authSignatures = [] } = serverOpts || {};
-      this._tssTag = tag;
 
       if (!tag) throw CoreError.default(`invalid param, tag is required`);
       if (!factorPub) throw CoreError.default(`invalid param, newFactorPub is required`);
@@ -432,6 +433,18 @@ export class TKeyTSS extends ThresholdKey {
     });
 
     return finalKey;
+  }
+
+  async _UNSAFE_exportEd25519Seed(): Promise<Buffer> {
+    if (!this.metadata) throw CoreError.metadataUndefined("metadata is undefined");
+    if (!this.privKey) throw new Error("Tkey is not reconstructed");
+    if (!this.metadata.tssPolyCommits[this.tssTag]) throw new Error(`tss key has not been initialized for tssTag ${this.tssTag}`);
+
+    // Try to export ed25519 seed. This is only available if import key was being used.
+    const domainKey = getEd25519SeedStoreDomainKey(this.tssTag || TSS_TAG_DEFAULT);
+    const result = this.metadata.getGeneralStoreDomain(domainKey) as Record<string, EncryptedMessage>;
+    const seed = await this.decrypt(result.message);
+    return seed;
   }
 
   async _refreshTSSShares(
