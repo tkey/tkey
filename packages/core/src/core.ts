@@ -1307,7 +1307,7 @@ class ThresholdKey implements ITKey {
       return this.privKey.toString("hex");
     } else if (this.keyType === KeyType.ed25519) {
       const result = this.metadata.getGeneralStoreDomain("ed25519Seed") as Record<string, EncryptedMessage>;
-      const seed = new BN(await this.decrypt(result.message));
+      const seed = await this.decrypt(result.message);
       return seed.toString("hex");
     }
     throw CoreError.default("Invalid KeyType");
