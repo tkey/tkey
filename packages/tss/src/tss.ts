@@ -41,7 +41,7 @@ export const FACTOR_KEY_TYPE = KeyType.secp256k1;
 
 export interface TSSTKeyArgs extends TKeyArgs {
   serviceProvider: TSSTorusServiceProvider;
-  tssKeyType: KeyType;
+  tssKeyType?: KeyType;
   tssTag?: string;
 }
 
@@ -73,9 +73,18 @@ export class TKeyTSS extends ThresholdKey {
 
   private _accountSalt: string;
 
-  constructor(args?: TSSTKeyArgs) {
+  /**
+   * Initializes this TKeyTSS instance. If `tssKeyType` is not provided, it
+   * defaults to the value of `keyType`.
+   */
+  constructor(args: TSSTKeyArgs) {
     super(args);
-    const { serviceProvider, storageLayer, tssTag = "default", tssKeyType } = args;
+    const { serviceProvider, storageLayer, tssTag = "default", tssKeyType = this.keyType } = args;
+
+    if (serviceProvider.tssKeyType !== tssKeyType) {
+      throw CoreError.default(`service provider tssKeyType mismatch: ${serviceProvider.tssKeyType} !== ${tssKeyType}`);
+    }
+
     this.serviceProvider = serviceProvider;
     this.storageLayer = storageLayer;
     this._tssTag = tssTag;

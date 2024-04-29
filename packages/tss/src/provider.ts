@@ -20,15 +20,19 @@ export class TSSTorusServiceProvider extends TorusServiceProvider {
 
   tssKeyType: KeyType;
 
-  constructor(args: TorusServiceProviderArgs & { enableOneKey?: boolean; tssKeyType: KeyType }) {
+  /**
+   * Initializes this service provider instance. If `tssKeyType` is not
+   * provided, it defaults to the value of `keyType`.
+   */
+  constructor(args: TorusServiceProviderArgs & { enableOneKey?: boolean; tssKeyType?: KeyType }) {
     super(args);
     const { customAuthArgs, enableOneKey, tssKeyType } = args;
-    this.tssKeyType = tssKeyType;
+    this.tssKeyType = tssKeyType || this.keyType;
     this.tssTorus = new TorusUtils({
       network: customAuthArgs.network,
       clientId: customAuthArgs.web3AuthClientId,
       enableOneKey,
-      keyType: tssKeyType,
+      keyType: this.tssKeyType,
     });
     TorusUtils.setAPIKey(customAuthArgs.apiKey);
   }
