@@ -1,4 +1,4 @@
-import { ecCurve, generateID, IPrivateKeyFormat, IPrivateKeyStore } from "@tkey/common-types";
+import { generateID, IPrivateKeyFormat, IPrivateKeyStore, KeyType, keyTypeToCurve } from "@tkey/common-types";
 import BN from "bn.js";
 import nodeCrypto from "crypto";
 
@@ -25,8 +25,8 @@ export class SECP256K1Format implements IPrivateKeyFormat {
 
   constructor(privateKey: BN) {
     this.privateKey = privateKey;
-    this.ecParams = ecCurve.curve;
     this.type = "secp256k1n";
+    this.ecParams = keyTypeToCurve(KeyType.secp256k1);
   }
 
   validatePrivateKey(privateKey: BN): boolean {

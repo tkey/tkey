@@ -1,4 +1,4 @@
 {
   "extends": "../../tsconfig.json",
-  "include": ["src", "test"]
+  "include": ["src", "test", "../default/src/torus_js_get_or_set_nonce.ts"]
 }

@@ -1,24 +1,32 @@
-import { getPublic } from "@toruslabs/eccrypto";
 import BN from "bn.js";
-import type { curve, ec } from "elliptic";
+import { curve, ec as EllipticCurve } from "elliptic";
 
-import { BNString } from "../baseTypes/commonTypes";
-import { ecCurve } from "../utils";
-import Point from "./Point";
+import { BNString, KeyType, keyTypeToCurve } from "../baseTypes/commonTypes";
+import { Point } from "./Point";
 
 // These functions are here because BN can't be extended
-export const toPrivKeyEC = (bn: BN): ec.KeyPair => ecCurve.keyFromPrivate(bn.toString("hex", 64));
-
-export const toPrivKeyECC = (bn: BNString): Buffer => {
-  const tmp = new BN(bn, "hex");
-  return Buffer.from(tmp.toString("hex", 64), "hex");
+export const toPrivKeyEC = (bn: BN, keyType: KeyType): EllipticCurve.KeyPair => {
+  const ec = keyTypeToCurve(keyType);
+  const key = ec.keyFromPrivate(bn.toString("hex", 64), "hex");
+  return key;
 };
 
-export const getPubKeyEC = (bn: BN): curve.base.BasePoint => ecCurve.keyFromPrivate(bn.toString("hex", 64)).getPublic();
+export const toPrivKeyECC = (bn: BNString, keyType: KeyType): Buffer => {
+  const tmp = new BN(bn, "hex");
+  const key = toPrivKeyEC(tmp, keyType);
+  const privatePart = key.getPrivate();
+  return Buffer.from(privatePart.toString("hex", 64), "hex");
+};
 
-export const getPubKeyECC = (bn: BN): Buffer => getPublic(toPrivKeyECC(bn));
+export const getPubKeyEC = (bn: BN, keyType: KeyType): curve.base.BasePoint => {
+  return toPrivKeyEC(bn, keyType).getPublic();
+};
 
-export const getPubKeyPoint = (bn: BN): Point => {
-  const pubKeyEc = getPubKeyEC(bn);
-  return new Point(pubKeyEc.getX().toString("hex"), pubKeyEc.getY().toString("hex"));
+export const getPubKeyECC = (bn: BN, keyType: KeyType, compressed: boolean): Buffer => {
+  return Buffer.from(getPubKeyEC(bn, keyType).encode("array", compressed));
+};
+
+export const getPubKeyPoint = (bn: BN, keyType: KeyType): Point => {
+  const pubKeyEc = getPubKeyEC(bn, keyType);
+  return new Point(pubKeyEc.getX().toString("hex"), pubKeyEc.getY().toString("hex"), keyType);
 };

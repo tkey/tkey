@@ -1,20 +1,40 @@
-import { decrypt as ecDecrypt, encrypt as ecEncrypt, generatePrivate } from "@toruslabs/eccrypto";
-import { keccak256, toChecksumAddress } from "@toruslabs/torus.js";
+import { decrypt as ecDecrypt, encrypt as ecEncrypt } from "@toruslabs/eccrypto";
+import { getSecpKeyFromEd25519, keccak256, toChecksumAddress } from "@toruslabs/torus.js";
 import BN from "bn.js";
-import { ec as EC } from "elliptic";
+import { ec } from "elliptic";
 import { serializeError } from "serialize-error";
 
-import { EncryptedMessage } from "./baseTypes/commonTypes";
+import { toPrivKeyEC, toPrivKeyECC } from "./base";
+import { EncryptedMessage, KeyType, keyTypeToCurve } from "./baseTypes/commonTypes";
 
-// const privKeyBnToEcc = (bnPrivKey) => {
-//   return bnPrivKey.toBuffer("be", 32);
-// };
+export const generatePrivate = (keyType: KeyType): BN => {
+  const ecCurve = keyTypeToCurve(keyType);
+  const key = ecCurve.genKeyPair();
+  return key.getPrivate();
+};
 
-// const privKeyBnToPubKeyECC = (bnPrivKey) => {
-//   return getPublic(privKeyBnToEcc(bnPrivKey));
-// };
+function getPrivateKeyForEncryption(privateKey: BN, keyType: KeyType): ec.KeyPair {
+  // If the key is an edwards25519 scalar, then we derive a fresh secp256k1 scalar from it, which is required for our encryption scheme.
+  // We do that by first hashing and then computing the result modulo the curve order.
+  if (keyType === KeyType.ed25519) {
+    const { scalar } = getSecpKeyFromEd25519(privateKey);
+    return toPrivKeyEC(scalar, KeyType.secp256k1);
+  }
+  return toPrivKeyEC(privateKey, keyType);
+}
 
-export const ecCurve = new EC("secp256k1");
+export function getPrivateKeyForSigning(privateKey: BN, keyType: KeyType): ec.KeyPair {
+  return getPrivateKeyForEncryption(privateKey, keyType);
+}
+
+export function getEncryptionPrivateKey(privateKey: BN, keyType: KeyType): Buffer {
+  return toPrivKeyECC(getPrivateKeyForEncryption(privateKey, keyType).getPrivate(), KeyType.secp256k1);
+}
+
+export function getEncryptionPublicKey(privateKey: BN, keyType: KeyType): Buffer {
+  const encPubKey = getPrivateKeyForEncryption(privateKey, keyType).getPublic();
+  return Buffer.from(encPubKey.encodeCompressed("hex"), "hex");
+}
 
 // Wrappers around ECC encrypt/decrypt to use the hex serialization
 // TODO: refactor to take BN
@@ -29,7 +49,7 @@ export async function encrypt(publicKey: Buffer, msg: Buffer): Promise<Encrypted
   };
 }
 
-export async function decrypt(privKey: Buffer, msg: EncryptedMessage): Promise<Buffer> {
+export async function decrypt(privateKey: Buffer, msg: EncryptedMessage): Promise<Buffer> {
   const bufferEncDetails = {
     ciphertext: Buffer.from(msg.ciphertext, "hex"),
     ephemPublicKey: Buffer.from(msg.ephemPublicKey, "hex"),
@@ -37,7 +57,7 @@ export async function decrypt(privKey: Buffer, msg: EncryptedMessage): Promise<B
     mac: Buffer.from(msg.mac, "hex"),
   };
 
-  return ecDecrypt(privKey, bufferEncDetails);
+  return ecDecrypt(privateKey, bufferEncDetails);
 }
 
 export function isEmptyObject(obj: unknown): boolean {
@@ -78,10 +98,10 @@ export function normalize(input: number | string): string {
   return `0x${hexString}`;
 }
 
-export function generatePrivateExcludingIndexes(shareIndexes: Array<BN>): BN {
-  const key = new BN(generatePrivate());
+export function generatePrivateExcludingIndexes(shareIndexes: Array<BN>, keyType: KeyType): BN {
+  const key = generatePrivate(keyType);
   if (shareIndexes.find((el) => el.eq(key))) {
-    return generatePrivateExcludingIndexes(shareIndexes);
+    return generatePrivateExcludingIndexes(shareIndexes, keyType);
   }
   return key;
 }

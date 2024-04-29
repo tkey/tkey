@@ -26,6 +26,7 @@ class CoreError extends TkeyError {
     1001: "Unable to delete service provider share",
     1002: "Wrong share index",
     1003: "Unable to updateSDK",
+    1004: "Invalid keyType param",
     // metadata
     1101: "metadata not found, SDK likely not initialized",
     1102: "getMetadata errored",
@@ -70,6 +71,10 @@ class CoreError extends TkeyError {
 
   public static default(extraMessage = ""): ITkeyError {
     return new CoreError(1000, `${CoreError.messages[1000]} ${extraMessage}`);
+  }
+
+  public static invalidKeyType(extraMessage = ""): ITkeyError {
+    return new CoreError(1004, `${CoreError.messages[1000]} ${extraMessage}`);
   }
 
   // Custom methods

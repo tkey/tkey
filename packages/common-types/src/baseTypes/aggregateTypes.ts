@@ -20,6 +20,7 @@ import {
   ISerializable,
   IServiceProvider,
   IStorageLayer,
+  KeyType,
   PolyIDAndShares,
   PolynomialID,
   ShareDescriptionMap,
@@ -41,7 +42,7 @@ export type ModuleMap = {
 };
 
 export type RefreshMiddlewareMap = {
-  [moduleName: string]: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap) => unknown;
+  [moduleName: string]: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap, keyType: KeyType) => unknown;
 };
 
 export type ReconstructKeyMiddlewareMap = {
@@ -55,6 +56,8 @@ export type ShareSerializationMiddleware = {
 
 export interface IMetadata extends ISerializable {
   pubKey: Point;
+
+  keyType: KeyType;
 
   publicPolynomials: PublicPolynomialMap;
 
@@ -141,6 +144,7 @@ export type TKeyArgs = {
   customAuthArgs?: CustomAuthArgs;
   manualSync?: boolean;
   serverTimeOffset?: number;
+  keyType: KeyType;
 };
 
 export interface SecurityQuestionStoreArgs {
@@ -153,6 +157,8 @@ export interface SecurityQuestionStoreArgs {
   polynomialID: PolynomialID;
 
   questions: string;
+
+  keyType: KeyType;
 }
 
 export interface TkeyStoreDataArgs {
@@ -222,6 +228,7 @@ export interface IPrivateKeyFormat {
 }
 
 export interface IAuthMetadata {
+  keyType: KeyType;
   metadata: IMetadata;
   privKey?: BN;
 }
@@ -241,7 +248,7 @@ export type LocalMetadataTransitions = [LocalTransitionShares, LocalTransitionDa
 export interface ITKeyApi {
   getMetadata(): IMetadata;
   getStorageLayer(): IStorageLayer;
-  initialize(params: { input?: ShareStore; importKey?: BN; neverInitializeNewKey?: boolean }): Promise<KeyDetails>;
+  initialize(params: { input?: ShareStore; importKey?: Buffer; neverInitializeNewKey?: boolean }): Promise<KeyDetails>;
   catchupToLatestShare(params: {
     shareStore: ShareStore;
     polyID?: string;
@@ -253,7 +260,7 @@ export interface ITKeyApi {
   addShareDescription(shareIndex: string, description: string, updateMetadata?: boolean): Promise<void>;
   _addRefreshMiddleware(
     moduleName: string,
-    middleware: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap) => unknown
+    middleware: (generalStore: unknown, oldShareStores: ShareStoreMap, newShareStores: ShareStoreMap, keyType: KeyType) => unknown
   ): void;
   _addReconstructKeyMiddleware(moduleName: string, middleware: () => Promise<Array<BN>>): void;
   _addShareSerializationMiddleware(
@@ -266,8 +273,8 @@ export interface ITKeyApi {
   outputShare(shareIndex: BNString, type?: string): Promise<unknown>;
   inputShareStore(shareStore: ShareStore): void;
   deleteShare(shareIndex: BNString): Promise<DeleteShareResult>;
-  encrypt(data: Buffer): Promise<EncryptedMessage>;
-  decrypt(encryptedMesage: EncryptedMessage): Promise<Buffer>;
+  encrypt(data: Buffer, keyType: KeyType): Promise<EncryptedMessage>;
+  decrypt(encryptedMesage: EncryptedMessage, keyType: KeyType): Promise<Buffer>;
 
   getTKeyStoreItem(moduleName: string, id: string): Promise<TkeyStoreItemType>;
   getTKeyStore(moduleName: string): Promise<TkeyStoreItemType[]>;
@@ -286,6 +293,8 @@ export interface ITKey extends ITKeyApi, ISerializable {
 
   privKey: BN;
 
+  keyType: KeyType;
+
   _localMetadataTransitions: LocalMetadataTransitions;
 
   manualSync: boolean;
@@ -296,7 +305,7 @@ export interface ITKey extends ITKeyApi, ISerializable {
 
   _shareSerializationMiddleware: ShareSerializationMiddleware;
 
-  initialize(params: { input?: ShareStore; importKey?: BN; neverInitializeNewKey?: boolean }): Promise<KeyDetails>;
+  initialize(params: { input?: ShareStore; importKey?: Buffer; neverInitializeNewKey?: boolean }): Promise<KeyDetails>;
 
   reconstructKey(): Promise<ReconstructedKeyResult>;
 

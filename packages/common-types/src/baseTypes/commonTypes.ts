@@ -1,6 +1,24 @@
 import type { CustomAuthArgs } from "@toruslabs/customauth";
 import BN from "bn.js";
-import type { curve } from "elliptic";
+import { curve, ec, ec as EllipticCurve } from "elliptic";
+
+export enum KeyType {
+  secp256k1 = "secp256k1",
+  ed25519 = "ed25519",
+}
+const curveED25519 = new EllipticCurve("ed25519");
+const curveSECP256K1 = new EllipticCurve("secp256k1");
+
+export function keyTypeToCurve(keyType: KeyType): EllipticCurve {
+  switch (keyType) {
+    case KeyType.ed25519:
+      return curveED25519;
+    case KeyType.secp256k1:
+      return curveSECP256K1;
+    default:
+      throw new Error("Invalid key type");
+  }
+}
 
 export type PubKeyType = "ecc";
 
@@ -20,6 +38,7 @@ export interface EncryptedMessage {
 export interface ServiceProviderArgs {
   enableLogging?: boolean;
   postboxKey?: string;
+  keyType?: KeyType;
 }
 
 export interface TorusServiceProviderArgs extends ServiceProviderArgs {
@@ -36,7 +55,7 @@ export interface ISerializable {
 export interface IPoint extends ISerializable {
   x: BN;
   y: BN;
-  encode(enc: string, params?: unknown): Buffer;
+  toSEC1(compressed: boolean): string;
 }
 
 export interface IServiceProvider extends ISerializable {
@@ -44,13 +63,21 @@ export interface IServiceProvider extends ISerializable {
 
   postboxKey: BN;
 
+  keyType: KeyType;
+
   serviceProviderName: string;
 
-  encrypt(msg: Buffer): Promise<EncryptedMessage>;
-  decrypt(msg: EncryptedMessage): Promise<Buffer>;
+  encrypt(msg: Buffer, keyType: KeyType): Promise<EncryptedMessage>;
+  decrypt(msg: EncryptedMessage, keyType: KeyType): Promise<Buffer>;
   retrievePubKey(type: PubKeyType): Buffer;
   retrievePubKeyPoint(): curve.base.BasePoint;
   sign(msg: BNString): string;
+  metadataSign(msg: BNString): {
+    signer: ec.KeyPair;
+    sig: string;
+    pubX: string;
+    pubY: string;
+  };
 }
 export type TorusStorageLayerAPIParams = {
   pub_key_X: string;
@@ -58,20 +85,21 @@ export type TorusStorageLayerAPIParams = {
   set_data: unknown;
   signature: string;
   namespace: string;
+  key_type: string;
 };
 
 export interface IStorageLayer extends ISerializable {
   storageLayerName: string;
 
-  getMetadata<T>(params: { serviceProvider?: IServiceProvider; privKey?: BN }): Promise<T>;
+  getMetadata<T>(params: { serviceProvider?: IServiceProvider; privKey?: BN; keyType: KeyType }): Promise<T>;
 
-  setMetadata<T>(params: { input: T; serviceProvider?: IServiceProvider; privKey?: BN }): Promise<{ message: string }>;
+  setMetadata<T>(params: { input: T; serviceProvider?: IServiceProvider; privKey?: BN; keyType: KeyType }): Promise<{ message: string }>;
 
-  setMetadataStream<T>(params: { input: T[]; serviceProvider?: IServiceProvider; privKey?: BN[] }): Promise<{ message: string }>;
+  setMetadataStream<T>(params: { input: T[]; serviceProvider?: IServiceProvider; privKey?: BN[]; keyType: KeyType }): Promise<{ message: string }>;
 
-  acquireWriteLock(params: { serviceProvider?: IServiceProvider; privKey?: BN }): Promise<{ status: number; id?: string }>;
+  acquireWriteLock(params: { serviceProvider?: IServiceProvider; privKey?: BN; keyType: KeyType }): Promise<{ status: number; id?: string }>;
 
-  releaseWriteLock(params: { id: string; serviceProvider?: IServiceProvider; privKey?: BN }): Promise<{ status: number }>;
+  releaseWriteLock(params: { id: string; serviceProvider?: IServiceProvider; privKey?: BN; keyType: KeyType }): Promise<{ status: number }>;
 }
 
 export type TorusStorageLayerArgs = {

@@ -25,7 +25,7 @@
     "coverage": "nyc npm test",
     "coverage-production": "nyc npm run test-production",
     "test-development": "cross-env MOCKED=false METADATA=http://localhost:5051 mocha --config ../../.mocharc.json ",
-    "test-production": "cross-env MOCKED=false METADATA=https://metadata.tor.us mocha --config ../../.mocharc.json ",
+    "test-production": "cross-env MOCKED=false METADATA=https://node-1.dev-node.web3auth.io/metadata mocha --config ../../.mocharc.json ",
     "test-debugger": "mocha --config ../../.mocharc.json --inspect-brk",
     "dev": "rimraf dist/ && cross-env NODE_ENV=development torus-scripts build",
     "build": "rimraf dist/ && cross-env NODE_ENV=production torus-scripts build",
@@ -37,13 +37,16 @@
     "@babel/runtime": "7.x"
   },
   "dependencies": {
-    "@tkey/common-types": "^12.1.0",
+    "@toruslabs/torus.js": "13.0.0-alpha.3",
+    "elliptic": "^6.5.5",
     "@toruslabs/eccrypto": "^4.0.0",
+    "@tkey/common-types": "^12.0.0",
     "@toruslabs/http-helpers": "^6.1.1",
     "bn.js": "^5.2.1"
   },
   "devDependencies": {
-    "@types/bn.js": "^5.1.5"
+    "@types/bn.js": "^5.1.2",
+    "@types/elliptic": "^6.4.15"
   },
   "bugs": {
     "url": "https://github.com/tkey/tkey/issues"

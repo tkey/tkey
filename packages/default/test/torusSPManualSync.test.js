@@ -1,24 +1,40 @@
+import { generatePrivate, KeyType } from "@tkey/common-types";
 import ServiceProviderTorus from "@tkey/service-provider-torus";
-import { generatePrivate } from "@toruslabs/eccrypto";
 
 import { getMetadataUrl, initStorageLayer } from "./helpers";
 import { sharedTestCases } from "./shared";
 
-const PRIVATE_KEY = generatePrivate().toString("hex");
-const torusSp = new ServiceProviderTorus({
-  postboxKey: PRIVATE_KEY,
-  customAuthArgs: {
-    baseUrl: "http://localhost:3000",
-    web3AuthClientId: "test",
-    network: "mainnet",
-  },
-});
 const metadataURL = getMetadataUrl();
 
 const torusSL = initStorageLayer({ hostUrl: metadataURL });
 
-const MANUAL_SYNC = true;
-describe(`TorusServiceProvider with manualSync: ${MANUAL_SYNC}`, function () {
-  // eslint-disable-next-line mocha/no-setup-in-describe
-  sharedTestCases(MANUAL_SYNC, torusSp, torusSL);
+const testVariables = [
+  {
+    keyType: KeyType.secp256k1,
+    MANUAL_SYNC: true,
+  },
+  {
+    keyType: KeyType.ed25519,
+    MANUAL_SYNC: true,
+  },
+];
+
+testVariables.forEach((testVariable) => {
+  const { keyType, MANUAL_SYNC } = testVariable;
+  // eslint-disable-next-line mocha/no-async-describe
+  describe(`TorusServiceProvider with manualSync: ${MANUAL_SYNC}, keyType ${keyType}`, async function () {
+    // eslint-disable-next-line mocha/no-setup-in-describe
+    const PRIVATE_KEY = generatePrivate(keyType).toString("hex");
+    const torusSp = new ServiceProviderTorus({
+      postboxKey: PRIVATE_KEY,
+      customAuthArgs: {
+        baseUrl: "http://localhost:3000",
+        web3AuthClientId: "test",
+        network: "mainnet",
+      },
+      keyType,
+    });
+    // eslint-disable-next-line mocha/no-setup-in-describe
+    sharedTestCases(MANUAL_SYNC, torusSp, torusSL, keyType);
+  });
 });
