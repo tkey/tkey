@@ -277,28 +277,6 @@ export class TKeyTSS extends ThresholdKey {
     const oldTag = this.tssTag;
     this._tssTag = tag;
 
-    const importScalar = await (async () => {
-      if (this.tssKeyType === KeyType.secp256k1) {
-        return new BN(importKey);
-      } else if (this.tssKeyType === KeyType.ed25519) {
-        // Store seed in metadata.
-        const domainKey = getEd25519SeedStoreDomainKey(this.tssTag || TSS_TAG_DEFAULT);
-        const result = this.metadata.getGeneralStoreDomain(domainKey) as Record<string, unknown>;
-        if (result) {
-          throw new Error("Seed already exists");
-        }
-        this.metadata.setGeneralStoreDomain(domainKey, { message: await this.encrypt(importKey) });
-
-        const { scalar } = getEd25519ExtendedPublicKey(importKey);
-        return scalar;
-      }
-      throw new Error("Invalid key type");
-    })();
-
-    if (!importScalar || importScalar.eq(new BN("0"))) {
-      throw new Error("Invalid importedKey");
-    }
-
     try {
       const { selectedServers = [], authSignatures = [] } = serverOpts || {};
 
@@ -312,6 +290,28 @@ export class TKeyTSS extends ThresholdKey {
         throw CoreError.default(`Duplicate account tag, please use a unique tag for importing key`);
       }
       const factorPubs = [factorPub];
+
+      const importScalar = await (async () => {
+        if (this.tssKeyType === KeyType.secp256k1) {
+          return new BN(importKey);
+        } else if (this.tssKeyType === KeyType.ed25519) {
+          // Store seed in metadata.
+          const domainKey = getEd25519SeedStoreDomainKey(this.tssTag || TSS_TAG_DEFAULT);
+          const result = this.metadata.getGeneralStoreDomain(domainKey) as Record<string, unknown>;
+          if (result) {
+            throw new Error("Seed already exists");
+          }
+          this.metadata.setGeneralStoreDomain(domainKey, { message: await this.encrypt(importKey) });
+
+          const { scalar } = getEd25519ExtendedPublicKey(importKey);
+          return scalar;
+        }
+        throw new Error("Invalid key type");
+      })();
+
+      if (!importScalar || importScalar.eq(new BN("0"))) {
+        throw new Error("Invalid importedKey");
+      }
 
       const tssIndexes = [newTSSIndex];
       const existingNonce = this.metadata.tssNonces[this.tssTag];
