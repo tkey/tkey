@@ -459,9 +459,9 @@ export class TKeyTSS extends ThresholdKey {
     const domainKey = getEd25519SeedStoreDomainKey(this.tssTag || TSS_TAG_DEFAULT);
     const result = this.metadata.getGeneralStoreDomain(domainKey) as Record<string, EncryptedMessage>;
 
-    const decKey = getSecpKeyFromEd25519(edScalar);
+    const decKey = getSecpKeyFromEd25519(edScalar).scalar;
 
-    const seed = await decrypt(decKey.scalar.toBuffer("be", 64), result.message);
+    const seed = await decrypt(decKey.toBuffer("be", 32), result.message);
     return seed;
   }
 
