@@ -114,6 +114,10 @@ export class TKeyTSS extends ThresholdKey {
       } as IAccountSaltStore);
       this._accountSalt = accountSalt;
     }
+
+    if (this.metadata.tssKeyType !== this.tssKeyType) {
+      throw CoreError.default(`tssKeyType mismatch: ${this.metadata.tssKeyType} !== ${this.tssKeyType}`);
+    }
     return keyDetails;
   }
 
