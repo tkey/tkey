@@ -596,14 +596,22 @@ export class TKeyTSS extends ThresholdKey {
     };
   }
 
-  computeAccountNonce(index: number): BN {
+  computeAccountNonce(index?: number): BN {
+    if (!index || index === 0) {
+      return new BN(0);
+    }
+
+    if (this.tssKeyType === KeyType.ed25519) {
+      throw new Error("account index not supported with ed25519");
+    }
+
     // generation should occur during tkey.init, fails if accountSalt is absent
     if (!this._accountSalt) {
       throw Error("account salt undefined");
     }
     let accountHash = keccak256(Buffer.from(`${index}${this._accountSalt}`));
     if (accountHash.length === 66) accountHash = accountHash.slice(2);
-    return index && index > 0 ? new BN(accountHash, "hex").umod(this._tssCurve.n) : new BN(0);
+    return new BN(accountHash, "hex").umod(this._tssCurve.n);
   }
 
   async reconstructKey(_reconstructKeyMiddleware?: boolean): Promise<ReconstructedKeyResult> {
