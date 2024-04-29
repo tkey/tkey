@@ -6,11 +6,17 @@ import { FACTOR_KEY_TYPE, TKeyTSS as ThresholdKey, TKeyTSS, TSSTorusServiceProvi
 import { BasePoint, getLagrangeCoeffs, pointToElliptic } from "../src/util";
 import { assignTssDkgKeys, fetchPostboxKeyAndSigs, generateKey, initStorageLayer } from "./helpers";
 
-const TKEY_KEY_TYPE = KeyType.secp256k1; // TODO iterate over secp256k1 and ed25519
+const TEST_KEY_TYPES: {
+  keyType: KeyType;
+  tssKeyType?: KeyType;
+}[] = [{ keyType: KeyType.secp256k1 }, { keyType: KeyType.ed25519 }, { keyType: KeyType.secp256k1, tssKeyType: KeyType.ed25519 }];
 
-[KeyType.secp256k1, KeyType.ed25519].forEach((TSS_KEY_TYPE) => {
+TEST_KEY_TYPES.forEach((kt) => {
+  const TKEY_KEY_TYPE = kt.keyType;
+  const TSS_KEY_TYPE = kt.tssKeyType;
+
   const ecFactor = keyTypeToCurve(FACTOR_KEY_TYPE);
-  const ecTSS = keyTypeToCurve(TSS_KEY_TYPE);
+  const ecTSS = keyTypeToCurve(TSS_KEY_TYPE || TKEY_KEY_TYPE);
 
   const torusSP = new TSSTorusServiceProvider({
     customAuthArgs: {
@@ -18,6 +24,7 @@ const TKEY_KEY_TYPE = KeyType.secp256k1; // TODO iterate over secp256k1 and ed25
       web3AuthClientId: "YOUR_CLIENT_ID",
       baseUrl: "http://localhost:3000",
     },
+    keyType: TKEY_KEY_TYPE,
     tssKeyType: TSS_KEY_TYPE,
   });
 
@@ -25,7 +32,7 @@ const TKEY_KEY_TYPE = KeyType.secp256k1; // TODO iterate over secp256k1 and ed25
 
   const manualSync = true;
 
-  describe(`TSS tests, tssKeyType=${TSS_KEY_TYPE}`, function () {
+  describe(`TSS tests, keyType=${TKEY_KEY_TYPE}, tssKeyType=${TSS_KEY_TYPE}`, function () {
     it("#should be able to reconstruct tss share from factor key", async function () {
       const sp = torusSP;
 
@@ -122,7 +129,7 @@ const TKEY_KEY_TYPE = KeyType.secp256k1; // TODO iterate over secp256k1 and ed25
       equal(tssPub.eq(tssPubKey), true);
 
       // With account index.
-      {
+      if (tb1.tssKeyType !== KeyType.ed25519) {
         const accountIndex = Math.floor(Math.random() * 99) + 1;
         const tss1Account = (() => {
           const share = new BN(serverDKGPrivKeys[0], "hex");
@@ -149,7 +156,7 @@ const TKEY_KEY_TYPE = KeyType.secp256k1; // TODO iterate over secp256k1 and ed25
       const newTSSIndex = 3;
 
       sp.verifierName = "torus-test-health";
-      sp.verifierId = `importeduser${TSS_KEY_TYPE}@example.com`;
+      sp.verifierId = `importeduser${TKEY_KEY_TYPE}${TSS_KEY_TYPE || TKEY_KEY_TYPE}@example.com`;
       const { signatures, postboxkey } = await fetchPostboxKeyAndSigs({
         serviceProvider: sp,
         verifierName: sp.verifierName,
@@ -199,7 +206,7 @@ const TKEY_KEY_TYPE = KeyType.secp256k1; // TODO iterate over secp256k1 and ed25
       });
 
       // import key
-      const { raw: importedKey, scalar: importedScalar } = generateKey(TSS_KEY_TYPE);
+      const { raw: importedKey, scalar: importedScalar } = generateKey(TSS_KEY_TYPE || TKEY_KEY_TYPE);
       await tb.importTssKey(
         { tag: "imported", importKey: importedKey, factorPub, newTSSIndex },
         {
@@ -266,7 +273,7 @@ const TKEY_KEY_TYPE = KeyType.secp256k1; // TODO iterate over secp256k1 and ed25
       const deviceTSSIndex = 3;
 
       sp.verifierName = "torus-test-health";
-      sp.verifierId = `exportUser${TSS_KEY_TYPE}@example.com`;
+      sp.verifierId = `exportUser${TKEY_KEY_TYPE}${TSS_KEY_TYPE || TKEY_KEY_TYPE}@example.com`;
       const { signatures, postboxkey } = await fetchPostboxKeyAndSigs({
         serviceProvider: sp,
         verifierName: sp.verifierName,
@@ -316,7 +323,7 @@ const TKEY_KEY_TYPE = KeyType.secp256k1; // TODO iterate over secp256k1 and ed25
         maxTSSNonceToSimulate: 1,
       });
       // import key
-      const { raw: importedKey, scalar: importedScalar } = generateKey(TSS_KEY_TYPE);
+      const { raw: importedKey, scalar: importedScalar } = generateKey(TSS_KEY_TYPE || TKEY_KEY_TYPE);
       const importedIndex = 2;
       await tb.importTssKey(
         { tag: "imported", importKey: importedKey, factorPub, newTSSIndex: importedIndex },
@@ -409,7 +416,7 @@ const TKEY_KEY_TYPE = KeyType.secp256k1; // TODO iterate over secp256k1 and ed25
       before("setup", async function () {
         const sp = torusSP;
         sp.verifierName = "torus-test-health";
-        sp.verifierId = `test192${TSS_KEY_TYPE}@example.com`;
+        sp.verifierId = `test192${TKEY_KEY_TYPE}${TSS_KEY_TYPE || TKEY_KEY_TYPE}@example.com`;
         const { signatures: authSignatures, postboxkey } = await fetchPostboxKeyAndSigs({
           serviceProvider: sp,
           verifierName: sp.verifierName,
