@@ -230,7 +230,11 @@ TEST_KEY_TYPES.forEach((kt) => {
       equal(tssPrivKey1.toString("hex"), importedScalar.toString("hex"));
 
       if (TSS_KEY_TYPE === KeyType.ed25519) {
-        const seed = await tb._UNSAFE_exportEd25519Seed();
+        const seed = await tb._UNSAFE_exportTssEd25519Seed({
+          factorKey,
+          selectedServers: [1, 2, 3],
+          authSignatures: signatures,
+        });
         equal(seed.equals(importedKey), true);
       }
 
@@ -348,7 +352,11 @@ TEST_KEY_TYPES.forEach((kt) => {
         equal(tssPubKeyImported.eq(finalPubKey), true);
 
         if (TSS_KEY_TYPE === KeyType.ed25519) {
-          const seed = await tb._UNSAFE_exportEd25519Seed();
+          const seed = await tb._UNSAFE_exportTssEd25519Seed({
+            factorKey,
+            selectedServers: [3, 4, 5],
+            authSignatures: signatures,
+          });
           equal(seed.equals(importedKey), true);
         }
       }

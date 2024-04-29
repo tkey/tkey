@@ -13,7 +13,7 @@ import {
 } from "@tkey/common-types";
 import ThresholdKey, { CoreError, Metadata } from "@tkey/core";
 import { dotProduct, ecPoint, hexPoint, PointHex, randomSelection, RSSClient } from "@toruslabs/rss-client";
-import { getEd25519ExtendedPublicKey } from "@toruslabs/torus.js";
+import { getEd25519ExtendedPublicKey, getSecpKeyFromEd25519 } from "@toruslabs/torus.js";
 import BN from "bn.js";
 import { ec as EC } from "elliptic";
 import { keccak256 } from "ethereum-cryptography/keccak";
@@ -314,9 +314,12 @@ export class TKeyTSS extends ThresholdKey {
           if (result) {
             throw new Error("Seed already exists");
           }
-          this.metadata.setGeneralStoreDomain(domainKey, { message: await this.encrypt(importKey) });
 
           const { scalar } = getEd25519ExtendedPublicKey(importKey);
+          const encKey = Buffer.from(getSecpKeyFromEd25519(scalar).point.encodeCompressed("hex"), "hex");
+          const msg = await encrypt(encKey, importKey);
+          this.metadata.setGeneralStoreDomain(domainKey, { message: msg });
+
           return scalar;
         }
         throw new Error("Invalid key type");
@@ -449,15 +452,16 @@ export class TKeyTSS extends ThresholdKey {
     return finalKey;
   }
 
-  async _UNSAFE_exportEd25519Seed(): Promise<Buffer> {
-    if (!this.metadata) throw CoreError.metadataUndefined("metadata is undefined");
-    if (!this.privKey) throw new Error("Tkey is not reconstructed");
-    if (!this.metadata.tssPolyCommits[this.tssTag]) throw new Error(`tss key has not been initialized for tssTag ${this.tssTag}`);
+  async _UNSAFE_exportTssEd25519Seed(tssOptions: { factorKey: BN; selectedServers: number[]; authSignatures: string[] }): Promise<Buffer> {
+    const edScalar = await this._UNSAFE_exportTssKey(tssOptions);
 
     // Try to export ed25519 seed. This is only available if import key was being used.
     const domainKey = getEd25519SeedStoreDomainKey(this.tssTag || TSS_TAG_DEFAULT);
     const result = this.metadata.getGeneralStoreDomain(domainKey) as Record<string, EncryptedMessage>;
-    const seed = await this.decrypt(result.message);
+
+    const decKey = getSecpKeyFromEd25519(edScalar);
+
+    const seed = await decrypt(decKey.scalar.toBuffer("be", 64), result.message);
     return seed;
   }
 
