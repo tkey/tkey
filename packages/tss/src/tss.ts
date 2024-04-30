@@ -106,6 +106,7 @@ export class TKeyTSS extends ThresholdKey {
 
   async initialize(params?: TKeyTSSInitArgs): Promise<KeyDetails> {
     const keyDetails = await super.initialize(params);
+    // TODO add documentation
 
     if (!this.metadata.tssPolyCommits[this.tssTag] && !params?.skipTssInit) {
       // if tss shares have not been created for this tssTag, create new tss sharing
@@ -340,11 +341,11 @@ export class TKeyTSS extends ThresholdKey {
       let finalSelectedServers = selectedServers;
 
       if (nodeIndexes?.length > 0) {
-        if (selectedServers.length) {
-          finalSelectedServers = nodeIndexes.slice(0, Math.min(selectedServers.length, nodeIndexes.length));
-        } else {
-          finalSelectedServers = nodeIndexes.slice(0, 3);
-        }
+        // if (selectedServers.length) {
+        //   finalSelectedServers = nodeIndexes.slice(0, Math.min(selectedServers.length, nodeIndexes.length));
+        // } else {
+        //   finalSelectedServers = nodeIndexes.slice(0, 3);
+        // }
       } else if (selectedServers?.length === 0) {
         finalSelectedServers = randomSelection(
           new Array(rssNodeDetails.serverEndpoints.length).fill(null).map((_, i) => i + 1),
@@ -362,6 +363,8 @@ export class TKeyTSS extends ThresholdKey {
         keyType: this._tssKeyType,
       });
 
+      console.log("finalSelectedServers", finalSelectedServers);
+      console.log("label", label);
       const refreshResponses = await rssClient.import({
         importKey: importScalar,
         dkgNewPub: pointToHex(newTSSServerPub),
@@ -426,6 +429,7 @@ export class TKeyTSS extends ThresholdKey {
     const tempFactorKey = ecFactorKey.genKeyPair().getPrivate();
     const tempFactorPub = getPubKeyPoint(tempFactorKey, FACTOR_KEY_TYPE);
 
+    console.log("selectedServers", selectedServers);
     await this.addFactorPub({
       existingFactorKey: factorKey,
       newFactorPub: tempFactorPub,
@@ -453,6 +457,10 @@ export class TKeyTSS extends ThresholdKey {
   }
 
   async _UNSAFE_exportTssEd25519Seed(tssOptions: { factorKey: BN; selectedServers: number[]; authSignatures: string[] }): Promise<Buffer> {
+    if (this.tssKeyType !== KeyType.ed25519) {
+      throw new Error("This method is only available for ed25519 keys");
+    }
+
     const edScalar = await this._UNSAFE_exportTssKey(tssOptions);
 
     // Try to export ed25519 seed. This is only available if import key was being used.
@@ -508,10 +516,10 @@ export class TKeyTSS extends ThresholdKey {
     const newLabel = `${verifierNameVerifierId}\u0015${this.tssTag}\u0016${tssNonce + 1}`;
 
     const { pubKey: newTSSServerPub, nodeIndexes } = await this.serviceProvider.getTSSPubKey(this.tssTag, tssNonce + 1);
-    let finalSelectedServers = selectedServers;
+    const finalSelectedServers = selectedServers;
 
     if (nodeIndexes?.length > 0) {
-      finalSelectedServers = nodeIndexes.slice(0, Math.min(selectedServers.length, nodeIndexes.length));
+      // finalSelectedServers = nodeIndexes.slice(0, Math.min(selectedServers.length, nodeIndexes.length));
     }
     const refreshResponses = await rssClient.refresh({
       factorPubs: factorPubs.map((f) => pointToHex(f)),
@@ -680,6 +688,7 @@ export class TKeyTSS extends ThresholdKey {
     );
 
     const finalServer = selectedServers || randomSelectedServers;
+    console.log("finalServer", finalServer);
 
     const existingTSSIndexes = existingFactorPubs.map((fb) => this.getFactorEncs(fb).tssIndex);
     const updatedTSSIndexes = existingTSSIndexes.concat([newTSSIndex]);

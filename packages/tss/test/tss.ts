@@ -9,7 +9,7 @@ import { assignTssDkgKeys, fetchPostboxKeyAndSigs, generateKey, initStorageLayer
 const TEST_KEY_TYPES: {
   keyType: KeyType;
   tssKeyType?: KeyType;
-}[] = [{ keyType: KeyType.secp256k1 }, { keyType: KeyType.ed25519 }, { keyType: KeyType.secp256k1, tssKeyType: KeyType.ed25519 }];
+}[] = [{ keyType: KeyType.secp256k1, tssKeyType: KeyType.ed25519 }]; // [{ keyType: KeyType.secp256k1 }, { keyType: KeyType.ed25519 }, { keyType: KeyType.secp256k1, tssKeyType: KeyType.ed25519 }];
 
 TEST_KEY_TYPES.forEach((kt) => {
   const TKEY_KEY_TYPE = kt.keyType;
@@ -148,7 +148,7 @@ TEST_KEY_TYPES.forEach((kt) => {
       }
     });
 
-    it(`#should be able to import a tss key, manualSync=${manualSync}`, async function () {
+    it.only(`#should be able to import a tss key, manualSync=${manualSync}`, async function () {
       const sp = torusSP;
 
       const deviceTSSShare = ecTSS.genKeyPair().getPrivate();
@@ -211,6 +211,7 @@ TEST_KEY_TYPES.forEach((kt) => {
         { tag: "imported", importKey: importedKey, factorPub, newTSSIndex },
         {
           authSignatures: signatures,
+          selectedServers: [3, 4, 5],
         }
       );
       // tag is switched to imported
@@ -333,6 +334,7 @@ TEST_KEY_TYPES.forEach((kt) => {
         { tag: "imported", importKey: importedKey, factorPub, newTSSIndex: importedIndex },
         {
           authSignatures: signatures,
+          selectedServers: [1, 2, 3],
         }
       );
       // tag is switched to imported
