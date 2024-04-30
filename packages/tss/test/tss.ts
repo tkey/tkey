@@ -156,7 +156,7 @@ TEST_KEY_TYPES.forEach((kt) => {
       const newTSSIndex = 3;
 
       sp.verifierName = "torus-test-health";
-      sp.verifierId = `importeduser${TKEY_KEY_TYPE}${TSS_KEY_TYPE || TKEY_KEY_TYPE}@example.com`;
+      sp.verifierId = `importeduser${TSS_KEY_TYPE || TKEY_KEY_TYPE}@example.com`;
       const { signatures, postboxkey } = await fetchPostboxKeyAndSigs({
         serviceProvider: sp,
         verifierName: sp.verifierName,
@@ -277,7 +277,7 @@ TEST_KEY_TYPES.forEach((kt) => {
       const deviceTSSIndex = 3;
 
       sp.verifierName = "torus-test-health";
-      sp.verifierId = `exportUser${TKEY_KEY_TYPE}${TSS_KEY_TYPE || TKEY_KEY_TYPE}@example.com`;
+      sp.verifierId = `exportUser${TSS_KEY_TYPE || TKEY_KEY_TYPE}@example.com`;
       const { signatures, postboxkey } = await fetchPostboxKeyAndSigs({
         serviceProvider: sp,
         verifierName: sp.verifierName,
@@ -424,7 +424,7 @@ TEST_KEY_TYPES.forEach((kt) => {
       before("setup", async function () {
         const sp = torusSP;
         sp.verifierName = "torus-test-health";
-        sp.verifierId = `test192${TKEY_KEY_TYPE}${TSS_KEY_TYPE || TKEY_KEY_TYPE}@example.com`;
+        sp.verifierId = `test192${TSS_KEY_TYPE || TKEY_KEY_TYPE}@example.com`;
         const { signatures: authSignatures, postboxkey } = await fetchPostboxKeyAndSigs({
           serviceProvider: sp,
           verifierName: sp.verifierName,
