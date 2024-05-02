@@ -54,6 +54,15 @@ export type ShareSerializationMiddleware = {
   deserialize: (serializedShare: unknown, type: string) => Promise<BN>;
 };
 
+export type FactorEncType = "direct" | "hierarchical";
+
+export type FactorEnc = {
+  tssIndex: number;
+  type: FactorEncType;
+  userEnc: EncryptedMessage;
+  serverEncs: EncryptedMessage[];
+};
+
 export interface IMetadata extends ISerializable {
   pubKey: Point;
 
@@ -96,6 +105,15 @@ export interface IMetadata extends ISerializable {
   deleteShareDescription(shareIndex: string, description: string): void;
   updateShareDescription(shareIndex: string, oldDescription: string, newDescription: string): void;
   clone(): IMetadata;
+  addTSSData(tssData: {
+    tssTag?: string;
+    tssNonce?: number;
+    tssPolyCommits?: Point[];
+    factorPubs?: Point[];
+    factorEncs?: {
+      [factorPubID: string]: FactorEnc;
+    };
+  }): void;
 }
 
 export type InitializeNewKeyResult = {
@@ -189,6 +207,10 @@ export interface ShareRequestArgs {
 
 export type TkeyStoreItemType = {
   id: string;
+};
+
+export type IAccountSaltStore = TkeyStoreItemType & {
+  value: string;
 };
 
 export type ISeedPhraseStore = TkeyStoreItemType & {
