@@ -10,12 +10,6 @@ export class TSSTorusServiceProvider extends TorusServiceProvider {
 
   verifierId?: string;
 
-  sssNodeDetails: {
-    serverEndpoints: string[];
-    serverPubKeys: PointHex[];
-    serverThreshold: number;
-  };
-
   tssTorus: TorusUtils;
 
   tssKeyType: KeyType;
