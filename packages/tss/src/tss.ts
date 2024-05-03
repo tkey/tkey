@@ -74,7 +74,7 @@ export class TKeyTSS extends ThresholdKey {
    */
   constructor(args: TSSTKeyArgs) {
     super(args);
-    const { serviceProvider, storageLayer, tssTag = "default", keyType = this.keyType } = args;
+    const { serviceProvider, storageLayer, tssTag = "default", keyType } = args;
 
     if (serviceProvider.keyType !== keyType) {
       throw CoreError.default(`service provider keyType mismatch: ${serviceProvider.keyType} !== ${keyType}`);
