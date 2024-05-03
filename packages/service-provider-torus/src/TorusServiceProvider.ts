@@ -20,23 +20,26 @@ class TorusServiceProvider extends ServiceProviderBase {
 
   customAuthArgs: CustomAuthArgs;
 
-  constructor({ enableLogging = false, postboxKey, customAuthArgs, keyType }: TorusServiceProviderArgs) {
+  constructor({ enableLogging = false, postboxKey, customAuthArgs }: TorusServiceProviderArgs) {
     super({ enableLogging, postboxKey });
     this.customAuthArgs = customAuthArgs;
     this.customAuthInstance = new CustomAuth(customAuthArgs);
     this.serviceProviderName = "TorusServiceProvider";
-    this.keyType = keyType in KeyType ? keyType : KeyType.secp256k1;
+    if (customAuthArgs?.keyType && customAuthArgs?.keyType === "ed25519") {
+      this.keyType = KeyType.ed25519;
+    } else {
+      this.keyType = KeyType.secp256k1;
+    }
   }
 
   static fromJSON(value: StringifiedType): TorusServiceProvider {
-    const { enableLogging, postboxKey, customAuthArgs, serviceProviderName, keyType } = value;
+    const { enableLogging, postboxKey, customAuthArgs, serviceProviderName } = value;
     if (serviceProviderName !== "TorusServiceProvider") return undefined;
 
     return new TorusServiceProvider({
       enableLogging,
       postboxKey,
       customAuthArgs,
-      keyType,
     });
   }
 
