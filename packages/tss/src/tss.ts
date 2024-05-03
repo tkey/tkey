@@ -2,6 +2,7 @@ import {
   decrypt,
   encrypt,
   EncryptedMessage,
+  FACTOR_KEY_TYPE,
   KeyDetails,
   KeyType,
   keyTypeToCurve,

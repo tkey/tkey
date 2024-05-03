@@ -1,8 +1,8 @@
-import { KeyType, keyTypeToCurve, Point } from "@tkey/common-types";
+import { FACTOR_KEY_TYPE, KeyType, keyTypeToCurve, Point } from "@tkey/common-types";
 import { equal, fail, rejects } from "assert";
 import BN from "bn.js";
 
-import { FACTOR_KEY_TYPE, TKeyTSS as ThresholdKey, TKeyTSS, TSSTorusServiceProvider } from "../src";
+import { TKeyTSS as ThresholdKey, TKeyTSS, TSSTorusServiceProvider } from "../src";
 import { BasePoint, getLagrangeCoeffs, pointToElliptic } from "../src/util";
 import { assignTssDkgKeys, fetchPostboxKeyAndSigs, generateKey, initStorageLayer } from "./helpers";
 
