@@ -21,8 +21,8 @@ TEST_KEY_TYPES.forEach((kt) => {
       network: "sapphire_devnet",
       web3AuthClientId: "YOUR_CLIENT_ID",
       baseUrl: "http://localhost:3000",
-      keyType: KEY_TYPE,
     },
+    keyType: KEY_TYPE,
   });
 
   const torusSL = initStorageLayer();
