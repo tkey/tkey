@@ -125,7 +125,7 @@ TEST_KEY_TYPES.forEach((kt) => {
       equal(tssPub.eq(tssPubKey), true);
 
       // With account index.
-      if (tb1.tssKeyType !== KeyType.ed25519) {
+      if (tb1.keyType !== KeyType.ed25519) {
         const accountIndex = Math.floor(Math.random() * 99) + 1;
         const tss1Account = (() => {
           const share = new BN(serverDKGPrivKeys[0], "hex");

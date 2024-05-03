@@ -35,10 +35,6 @@ import {
 export const TSS_MODULE = "tssModule";
 export const TSS_TAG_DEFAULT = "default";
 
-// This has to be fixed to secp256k1 for now because it is being used in
-// combination with eccrypto's `encrypt` and `decrypt`, which is secp256k1 only.
-export const FACTOR_KEY_TYPE = KeyType.secp256k1;
-
 export interface TSSTKeyArgs extends TKeyArgs {
   serviceProvider: TSSTorusServiceProvider;
   tssKeyType?: KeyType;
@@ -65,8 +61,6 @@ export interface TKeyTSSInitArgs extends TKeyInitArgs {
 export class TKeyTSS extends ThresholdKey {
   serviceProvider: TSSTorusServiceProvider = null;
 
-  private _tssKeyType: KeyType;
-
   private _tssCurve: EC;
 
   private _tssTag: string;
@@ -88,16 +82,12 @@ export class TKeyTSS extends ThresholdKey {
     this.serviceProvider = serviceProvider;
     this.storageLayer = storageLayer;
     this._tssTag = tssTag;
-    this._tssKeyType = keyType;
+    this.keyType = keyType;
     this._tssCurve = new EC(keyType);
   }
 
   public get tssTag(): string {
     return this._tssTag;
-  }
-
-  public get tssKeyType(): KeyType {
-    return this._tssKeyType;
   }
 
   public set tssTag(tag: string) {
@@ -121,7 +111,7 @@ export class TKeyTSS extends ThresholdKey {
         params.factorPub,
         params.deviceTSSIndex
       );
-      this.metadata.addTSSData({ tssKeyType: this.tssKeyType, tssTag: this.tssTag, tssNonce: 0, tssPolyCommits, factorPubs, factorEncs });
+      this.metadata.addTSSData({ keyType: this.keyType, tssTag: this.tssTag, tssNonce: 0, tssPolyCommits, factorPubs, factorEncs });
       const accountSalt = generateSalt(this._tssCurve);
       await this._setTKeyStoreItem(TSS_MODULE, {
         id: "accountSalt",
@@ -130,9 +120,6 @@ export class TKeyTSS extends ThresholdKey {
       this._accountSalt = accountSalt;
     }
 
-    if (this.metadata.tssKeyType !== this.tssKeyType) {
-      throw CoreError.default(`tssKeyType mismatch: ${this.metadata.tssKeyType} !== ${this.tssKeyType}`);
-    }
     return keyDetails;
   }
 
@@ -261,7 +248,7 @@ export class TKeyTSS extends ThresholdKey {
       const noncePub = ec.keyFromPrivate(nonce.toString("hex")).getPublic();
       const pubKeyPoint = pointToElliptic(ec, tssCommits[0]);
       const devicePubKeyPoint = pubKeyPoint.add(noncePub);
-      return Point.fromSEC1(devicePubKeyPoint.encodeCompressed("hex"), this.tssKeyType);
+      return Point.fromSEC1(devicePubKeyPoint.encodeCompressed("hex"), this.keyType);
     }
     return tssCommits[0];
   }
@@ -325,9 +312,9 @@ export class TKeyTSS extends ThresholdKey {
       const factorPubs = [factorPub];
 
       const importScalar = await (async () => {
-        if (this.tssKeyType === KeyType.secp256k1) {
+        if (this.keyType === KeyType.secp256k1) {
           return new BN(importKey);
-        } else if (this.tssKeyType === KeyType.ed25519) {
+        } else if (this.keyType === KeyType.ed25519) {
           // Store seed in metadata.
           const domainKey = getEd25519SeedStoreDomainKey(this.tssTag || TSS_TAG_DEFAULT);
           const result = this.metadata.getGeneralStoreDomain(domainKey) as Record<string, unknown>;
@@ -379,7 +366,7 @@ export class TKeyTSS extends ThresholdKey {
         serverPubKeys,
         serverThreshold,
         tssPubKey,
-        keyType: this._tssKeyType,
+        keyType: this.keyType,
       });
 
       const refreshResponses = await rssClient.import({
@@ -414,7 +401,7 @@ export class TKeyTSS extends ThresholdKey {
         tssPolyCommits: newTSSCommits,
         factorPubs,
         factorEncs,
-        tssKeyType: this.tssKeyType,
+        keyType: this.keyType,
       });
       if (!this._accountSalt) {
         const accountSalt = generateSalt(this._tssCurve);
@@ -531,7 +518,7 @@ export class TKeyTSS extends ThresholdKey {
       serverPubKeys,
       serverThreshold,
       tssPubKey,
-      keyType: this.tssKeyType,
+      keyType: this.keyType,
     });
 
     if (!this.metadata.factorPubs) throw CoreError.default(`factorPubs obj not found`);
@@ -581,7 +568,7 @@ export class TKeyTSS extends ThresholdKey {
     }
 
     this.metadata.addTSSData({
-      tssKeyType: this.tssKeyType,
+      keyType: this.keyType,
       tssTag: this.tssTag,
       tssNonce: tssNonce + 1,
       tssPolyCommits: newTSSCommits,
@@ -599,7 +586,7 @@ export class TKeyTSS extends ThresholdKey {
       return new BN(0);
     }
 
-    if (this.tssKeyType === KeyType.ed25519) {
+    if (this.keyType === KeyType.ed25519) {
       throw new Error("account index not supported with ed25519");
     }
 
@@ -668,7 +655,7 @@ export class TKeyTSS extends ThresholdKey {
       tssPolyCommits: this.metadata.tssPolyCommits[this.tssTag],
       factorPubs: updatedFactorPubs,
       factorEncs: this.metadata.factorEncs[this.tssTag],
-      tssKeyType: this.tssKeyType,
+      keyType: this.keyType,
     });
 
     const verifierId = this.serviceProvider.getVerifierNameVerifierId();
@@ -711,7 +698,7 @@ export class TKeyTSS extends ThresholdKey {
     if (found.length === 0) throw CoreError.default("could not find factorPub to delete");
     if (found.length > 1) throw CoreError.default("found two or more factorPubs that match, error in metadata");
     const updatedFactorPubs = existingFactorPubs.filter((f) => !f.x.eq(deleteFactorPub.x) || !f.y.eq(deleteFactorPub.y));
-    this.metadata.addTSSData({ tssKeyType: this.tssKeyType, tssTag: this.tssTag, factorPubs: updatedFactorPubs });
+    this.metadata.addTSSData({ keyType: this.keyType, tssTag: this.tssTag, factorPubs: updatedFactorPubs });
     const rssNodeDetails = await this._getRssNodeDetails();
     const randomSelectedServers = randomSelection(
       new Array(rssNodeDetails.serverEndpoints.length).fill(null).map((_, i) => i + 1),
@@ -766,10 +753,7 @@ export class TKeyTSS extends ThresholdKey {
     const a0Pub = tss1PubKey.mul(L1_0).add(tss2PubKey.mul(LIndex_0));
     const a1Pub = tss1PubKey.add(a0Pub.neg());
 
-    const tssPolyCommits = [
-      Point.fromSEC1(a0Pub.encodeCompressed("hex"), this.tssKeyType),
-      Point.fromSEC1(a1Pub.encodeCompressed("hex"), this.tssKeyType),
-    ];
+    const tssPolyCommits = [Point.fromSEC1(a0Pub.encodeCompressed("hex"), this.keyType), Point.fromSEC1(a1Pub.encodeCompressed("hex"), this.keyType)];
     const factorPubs = [factorPub];
     const factorEncs: { [factorPubID: string]: FactorEnc } = {};
 

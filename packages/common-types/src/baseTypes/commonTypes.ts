@@ -125,3 +125,7 @@ export type FromJSONConstructor = {
 };
 
 export type DeviceShareDescription = { module: string; userAgent: string; dateAdded: number; customDeviceInfo?: string };
+
+// This has to be fixed to secp256k1 for now because it is being used in
+// combination with eccrypto's `encrypt` and `decrypt`, which is secp256k1 only.
+export const FACTOR_KEY_TYPE = KeyType.secp256k1;
