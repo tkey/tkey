@@ -79,17 +79,17 @@ export class TKeyTSS extends ThresholdKey {
    */
   constructor(args: TSSTKeyArgs) {
     super(args);
-    const { serviceProvider, storageLayer, tssTag = "default", tssKeyType = this.keyType } = args;
+    const { serviceProvider, storageLayer, tssTag = "default", keyType = this.keyType } = args;
 
-    if (serviceProvider.tssKeyType !== tssKeyType) {
-      throw CoreError.default(`service provider tssKeyType mismatch: ${serviceProvider.tssKeyType} !== ${tssKeyType}`);
+    if (serviceProvider.keyType !== keyType) {
+      throw CoreError.default(`service provider keyType mismatch: ${serviceProvider.keyType} !== ${keyType}`);
     }
 
     this.serviceProvider = serviceProvider;
     this.storageLayer = storageLayer;
     this._tssTag = tssTag;
-    this._tssKeyType = tssKeyType;
-    this._tssCurve = new EC(tssKeyType);
+    this._tssKeyType = keyType;
+    this._tssCurve = new EC(keyType);
   }
 
   public get tssTag(): string {

@@ -8,31 +8,28 @@ import { assignTssDkgKeys, fetchPostboxKeyAndSigs, generateKey, initStorageLayer
 
 const TEST_KEY_TYPES: {
   keyType: KeyType;
-  tssKeyType?: KeyType;
-}[] = [{ keyType: KeyType.secp256k1 }, { keyType: KeyType.ed25519 }, { keyType: KeyType.secp256k1, tssKeyType: KeyType.ed25519 }];
+}[] = [{ keyType: KeyType.secp256k1 }, { keyType: KeyType.ed25519 }];
 
 TEST_KEY_TYPES.forEach((kt) => {
-  const TKEY_KEY_TYPE = kt.keyType;
-  const TSS_KEY_TYPE = kt.tssKeyType;
+  const KEY_TYPE = kt.keyType;
 
   const ecFactor = keyTypeToCurve(FACTOR_KEY_TYPE);
-  const ecTSS = keyTypeToCurve(TSS_KEY_TYPE || TKEY_KEY_TYPE);
+  const ecTSS = keyTypeToCurve(KEY_TYPE);
 
   const torusSP = new TSSTorusServiceProvider({
     customAuthArgs: {
       network: "sapphire_devnet",
       web3AuthClientId: "YOUR_CLIENT_ID",
       baseUrl: "http://localhost:3000",
+      keyType: KEY_TYPE,
     },
-    keyType: TKEY_KEY_TYPE,
-    tssKeyType: TSS_KEY_TYPE,
   });
 
   const torusSL = initStorageLayer();
 
   const manualSync = true;
 
-  describe(`TSS tests, keyType=${TKEY_KEY_TYPE}, tssKeyType=${TSS_KEY_TYPE}`, function () {
+  describe(`TSS tests, keyType=${KEY_TYPE}`, function () {
     it("#should be able to reconstruct tss share from factor key", async function () {
       const sp = torusSP;
 
@@ -53,8 +50,7 @@ TEST_KEY_TYPES.forEach((kt) => {
         serviceProvider: sp,
         storageLayer: storageLayer2,
         manualSync,
-        keyType: TKEY_KEY_TYPE,
-        tssKeyType: TSS_KEY_TYPE,
+        keyType: KEY_TYPE,
       });
 
       // factor key needs to passed from outside of tKey
@@ -100,7 +96,7 @@ TEST_KEY_TYPES.forEach((kt) => {
       });
       sp.postboxKey = postboxkey;
       const storageLayer = initStorageLayer();
-      const tb1 = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync, keyType: TKEY_KEY_TYPE, tssKeyType: TSS_KEY_TYPE });
+      const tb1 = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync, keyType: KEY_TYPE });
 
       // factor key needs to passed from outside of tKey
       const factorKeyPair = ecFactor.genKeyPair();
@@ -156,7 +152,7 @@ TEST_KEY_TYPES.forEach((kt) => {
       const newTSSIndex = 3;
 
       sp.verifierName = "torus-test-health";
-      sp.verifierId = `importeduser${TSS_KEY_TYPE || TKEY_KEY_TYPE}@example.com`;
+      sp.verifierId = `importeduser${KEY_TYPE}@example.com`;
       const { signatures, postboxkey } = await fetchPostboxKeyAndSigs({
         serviceProvider: sp,
         verifierName: sp.verifierName,
@@ -170,7 +166,7 @@ TEST_KEY_TYPES.forEach((kt) => {
         maxTSSNonceToSimulate: 1,
       });
 
-      const tb = new ThresholdKey({ serviceProvider: sp, storageLayer: torusSL, manualSync, keyType: TKEY_KEY_TYPE, tssKeyType: TSS_KEY_TYPE });
+      const tb = new ThresholdKey({ serviceProvider: sp, storageLayer: torusSL, manualSync, keyType: KEY_TYPE });
 
       // factor key needs to passed from outside of tKey
       const factorKeyPair = ecFactor.genKeyPair();
@@ -206,7 +202,7 @@ TEST_KEY_TYPES.forEach((kt) => {
       });
 
       // import key
-      const { raw: importedKey, scalar: importedScalar } = generateKey(TSS_KEY_TYPE || TKEY_KEY_TYPE);
+      const { raw: importedKey, scalar: importedScalar } = generateKey(KEY_TYPE);
       await tb.importTssKey(
         { tag: "imported", importKey: importedKey, factorPub, newTSSIndex },
         {
@@ -229,7 +225,7 @@ TEST_KEY_TYPES.forEach((kt) => {
       equal(tssPubKey1.eq(tssCommits10), true);
       equal(tssPrivKey1.toString("hex"), importedScalar.toString("hex"));
 
-      if (TSS_KEY_TYPE === KeyType.ed25519) {
+      if (KEY_TYPE === KeyType.ed25519) {
         const seed = await tb._UNSAFE_exportTssEd25519Seed({
           factorKey,
           selectedServers: [1, 2, 3],
@@ -238,7 +234,7 @@ TEST_KEY_TYPES.forEach((kt) => {
         equal(seed.equals(importedKey), true);
       }
 
-      const tb2 = new ThresholdKey({ serviceProvider: sp, storageLayer: torusSL, manualSync, keyType: TKEY_KEY_TYPE, tssKeyType: TSS_KEY_TYPE });
+      const tb2 = new ThresholdKey({ serviceProvider: sp, storageLayer: torusSL, manualSync, keyType: KEY_TYPE });
 
       await tb2.initialize({ factorPub });
       tb2.inputShareStore(newShare.newShareStores[newShare.newShareIndex.toString("hex")]);
@@ -277,7 +273,7 @@ TEST_KEY_TYPES.forEach((kt) => {
       const deviceTSSIndex = 3;
 
       sp.verifierName = "torus-test-health";
-      sp.verifierId = `exportUser${TSS_KEY_TYPE || TKEY_KEY_TYPE}@example.com`;
+      sp.verifierId = `exportUser${KEY_TYPE}@example.com`;
       const { signatures, postboxkey } = await fetchPostboxKeyAndSigs({
         serviceProvider: sp,
         verifierName: sp.verifierName,
@@ -291,7 +287,7 @@ TEST_KEY_TYPES.forEach((kt) => {
         maxTSSNonceToSimulate: 1,
       });
 
-      const tb = new ThresholdKey({ serviceProvider: sp, storageLayer: torusSL, manualSync, keyType: TKEY_KEY_TYPE, tssKeyType: TSS_KEY_TYPE });
+      const tb = new ThresholdKey({ serviceProvider: sp, storageLayer: torusSL, manualSync, keyType: KEY_TYPE });
 
       // factor key needs to passed from outside of tKey
       const factorKeyPair = ecFactor.genKeyPair();
@@ -327,7 +323,7 @@ TEST_KEY_TYPES.forEach((kt) => {
         maxTSSNonceToSimulate: 1,
       });
       // import key
-      const { raw: importedKey, scalar: importedScalar } = generateKey(TSS_KEY_TYPE || TKEY_KEY_TYPE);
+      const { raw: importedKey, scalar: importedScalar } = generateKey(KEY_TYPE);
       const importedIndex = 2;
       await tb.importTssKey(
         { tag: "imported", importKey: importedKey, factorPub, newTSSIndex: importedIndex },
@@ -351,7 +347,7 @@ TEST_KEY_TYPES.forEach((kt) => {
         equal(finalTssKey.toString("hex"), importedScalar.toString("hex"));
         equal(tssPubKeyImported.eq(finalPubKey), true);
 
-        if (TSS_KEY_TYPE === KeyType.ed25519) {
+        if (KEY_TYPE === KeyType.ed25519) {
           const seed = await tb._UNSAFE_exportTssEd25519Seed({
             factorKey,
             selectedServers: [3, 4, 5],
@@ -375,7 +371,7 @@ TEST_KEY_TYPES.forEach((kt) => {
         equal(tssPubKeyImported.eq(finalPubKey), true);
       }
 
-      const tb2 = new ThresholdKey({ serviceProvider: sp, storageLayer: torusSL, manualSync, keyType: TKEY_KEY_TYPE, tssKeyType: TSS_KEY_TYPE });
+      const tb2 = new ThresholdKey({ serviceProvider: sp, storageLayer: torusSL, manualSync, keyType: KEY_TYPE });
 
       await tb2.initialize({ factorPub });
       tb2.inputShareStore(newShare.newShareStores[newShare.newShareIndex.toString("hex")]);
@@ -424,7 +420,7 @@ TEST_KEY_TYPES.forEach((kt) => {
       before("setup", async function () {
         const sp = torusSP;
         sp.verifierName = "torus-test-health";
-        sp.verifierId = `test192${TSS_KEY_TYPE || TKEY_KEY_TYPE}@example.com`;
+        sp.verifierId = `test192${KEY_TYPE}@example.com`;
         const { signatures: authSignatures, postboxkey } = await fetchPostboxKeyAndSigs({
           serviceProvider: sp,
           verifierName: sp.verifierName,
@@ -439,7 +435,7 @@ TEST_KEY_TYPES.forEach((kt) => {
           maxTSSNonceToSimulate: 4,
         });
 
-        tb = new ThresholdKey({ serviceProvider: sp, storageLayer: torusSL, manualSync, keyType: TKEY_KEY_TYPE, tssKeyType: TSS_KEY_TYPE });
+        tb = new ThresholdKey({ serviceProvider: sp, storageLayer: torusSL, manualSync, keyType: KEY_TYPE });
 
         // factor key needs to passed from outside of tKey
         const factorKeyPair = ecFactor.genKeyPair();
