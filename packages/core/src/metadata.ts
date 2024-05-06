@@ -1,5 +1,6 @@
 import {
   decrypt,
+  DEFAULT_KEY_TYPE,
   EncryptedMessage,
   FACTOR_KEY_TYPE,
   FactorEnc,
@@ -90,7 +91,7 @@ class Metadata implements IMetadata {
 
   static fromJSON(value: StringifiedType): Metadata {
     const { pubKey, polyIDList, generalStore, tkeyStore, scopedStore, nonce, keyType, tssNonces, tssPolyCommits, factorPubs, factorEncs } = value;
-    const type = keyType in KeyType ? keyType : KeyType.secp256k1;
+    const type = keyType in KeyType ? keyType : DEFAULT_KEY_TYPE;
 
     const point = Point.fromSEC1(pubKey, type);
     const metadata = new Metadata(point);

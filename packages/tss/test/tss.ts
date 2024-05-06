@@ -6,13 +6,9 @@ import { TKeyTSS as ThresholdKey, TKeyTSS, TSSTorusServiceProvider } from "../sr
 import { BasePoint, getLagrangeCoeffs, pointToElliptic } from "../src/util";
 import { assignTssDkgKeys, fetchPostboxKeyAndSigs, generateKey, initStorageLayer } from "./helpers";
 
-const TEST_KEY_TYPES: {
-  keyType: KeyType;
-}[] = [{ keyType: KeyType.secp256k1 }, { keyType: KeyType.ed25519 }];
+const TEST_KEY_TYPES = [KeyType.secp256k1, KeyType.ed25519];
 
-TEST_KEY_TYPES.forEach((kt) => {
-  const KEY_TYPE = kt.keyType;
-
+TEST_KEY_TYPES.forEach((KEY_TYPE) => {
   const ecFactor = keyTypeToCurve(FACTOR_KEY_TYPE);
   const ecTSS = keyTypeToCurve(KEY_TYPE);
 

@@ -32,13 +32,14 @@ class TorusServiceProvider extends ServiceProviderBase {
   }
 
   static fromJSON(value: StringifiedType): TorusServiceProvider {
-    const { enableLogging, postboxKey, customAuthArgs, serviceProviderName } = value;
+    const { enableLogging, postboxKey, customAuthArgs, serviceProviderName, keyType } = value;
     if (serviceProviderName !== "TorusServiceProvider") return undefined;
 
     return new TorusServiceProvider({
       enableLogging,
       postboxKey,
       customAuthArgs,
+      keyType,
     });
   }
 
