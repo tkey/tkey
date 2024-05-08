@@ -669,7 +669,7 @@ class ThresholdKey implements ITKey {
 
     // import/gen ed25519 seed
     if (this.keyType === KeyType.ed25519) {
-      await this.setupEd25519Seed(importedKey.toBuffer());
+      await this.setupEd25519Seed(importedKey.toBuffer("le"));
     }
 
     // create a random poly and respective shares
