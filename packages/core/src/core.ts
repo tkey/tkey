@@ -19,6 +19,7 @@ import {
   ITKeyApi,
   KEY_NOT_FOUND,
   KeyDetails,
+  KeyType,
   LocalMetadataTransitions,
   LocalTransitionData,
   LocalTransitionShares,
@@ -44,7 +45,9 @@ import {
   toPrivKeyECC,
 } from "@tkey/common-types";
 import { generatePrivate } from "@toruslabs/eccrypto";
+import { getEd25519ExtendedPublicKey } from "@toruslabs/torus.js";
 import BN from "bn.js";
+import { getRandomBytes } from "ethereum-cryptography/random";
 import stringify from "json-stable-stringify";
 
 import AuthMetadata from "./authMetadata";
@@ -65,7 +68,10 @@ class ThresholdKey implements ITKey {
 
   shares: ShareStorePolyIDShareIndexMap;
 
+  // secp256k1 key
   privKey: BN;
+
+  _ed25519Seed?: Buffer;
 
   lastFetchedCloudMetadata: Metadata;
 
@@ -87,6 +93,8 @@ class ThresholdKey implements ITKey {
 
   serverTimeOffset?: number = 0;
 
+  keyType: KeyType;
+
   constructor(args?: TKeyArgs) {
     const { enableLogging = false, modules = {}, serviceProvider, storageLayer, manualSync = false, serverTimeOffset } = args || {};
     this.enableLogging = enableLogging;
@@ -104,6 +112,13 @@ class ThresholdKey implements ITKey {
     this.setModuleReferences(); // Providing ITKeyApi access to modules
     this.haveWriteMetadataLock = "";
     this.serverTimeOffset = serverTimeOffset;
+  }
+
+  get finalKey(): Buffer {
+    if (this.keyType === KeyType.ed25519) {
+      return this._ed25519Seed;
+    }
+    return this.privKey.toBuffer();
   }
 
   static async fromJSON(value: StringifiedType, args: TKeyArgs): Promise<ThresholdKey> {
@@ -435,13 +450,22 @@ class ThresholdKey implements ITKey {
         Object.keys(this._reconstructKeyMiddleware).map(async (x: string) => {
           if (Object.prototype.hasOwnProperty.call(this._reconstructKeyMiddleware, x)) {
             const extraKeys = await this._reconstructKeyMiddleware[x]();
-            returnObject[x as keyof Omit<ReconstructedKeyResult, "privKey">] = extraKeys;
+            returnObject[x as keyof Omit<ReconstructedKeyResult, "privKey" | "ed25519Seed">] = extraKeys;
             (returnObject.allKeys as BN[]).push(...extraKeys);
           }
         })
       );
     }
-    return { privKey, ...returnObject };
+
+    // ed25519key
+    if (this.getEd25519PublicKey()) {
+      const seed = await this.retrieveEd25519Seed();
+      if (!seed) {
+        throw CoreError.default("Ed25519 seed not found");
+      }
+      this._ed25519Seed = seed;
+    }
+    return { privKey, ed25519Seed: this._ed25519Seed, ...returnObject };
   }
 
   reconstructLatestPoly(): Polynomial {
@@ -705,6 +729,53 @@ class ThresholdKey implements ITKey {
       result.userShare = new ShareStore(shares[shareIndexes[2].toString("hex")], poly.getPolynomialID());
     }
     return result;
+  }
+
+  getEd25519PublicKey(): string {
+    if (!this.metadata) {
+      throw CoreError.metadataUndefined();
+    }
+    if (!this.privKey) {
+      throw CoreError.privateKeyUnavailable();
+    }
+    const result = this.metadata.getGeneralStoreDomain("ed25519Seed") as { message: EncryptedMessage; publicKey: string };
+    return result.publicKey;
+  }
+
+  async setupEd25519Seed(): Promise<void> {
+    if (!this.privKey) {
+      throw CoreError.privateKeyUnavailable();
+    }
+    const newEd25519Seed = await getRandomBytes(32);
+    const seed = Buffer.from(newEd25519Seed);
+    await this.importEd25519Seed(seed);
+  }
+
+  async importEd25519Seed(seed: Buffer): Promise<void> {
+    if (!this.privKey) {
+      throw CoreError.privateKeyUnavailable();
+    }
+    if (this.getEd25519PublicKey()) {
+      throw CoreError.default("Ed25519 key already exists");
+    }
+
+    // derive public key
+    const keyPair = getEd25519ExtendedPublicKey(seed);
+
+    this.metadata.setGeneralStoreDomain("ed25519Seed", { message: await this.encrypt(seed), publicKey: keyPair.point.encode("hex", false) });
+  }
+
+  async retrieveEd25519Seed(): Promise<Buffer> {
+    if (!this.metadata) {
+      throw CoreError.metadataUndefined();
+    }
+    if (!this.privKey) {
+      throw CoreError.privateKeyUnavailable();
+    }
+
+    const result = this.metadata.getGeneralStoreDomain("ed25519Seed") as { message: EncryptedMessage; publicKey: string };
+    const seed = await this.decrypt(result.message);
+    return seed;
   }
 
   async addLocalMetadataTransitions(params: {
