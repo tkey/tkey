@@ -659,11 +659,17 @@ class ThresholdKey implements ITKey {
     importedKey?: BN;
     delete1OutOf1?: boolean;
   } = {}): Promise<InitializeNewKeyResult> {
-    if (!importedKey) {
+    // if keyType is ed25519, we generate a secp256k1 key
+    if (!importedKey || this.keyType === KeyType.ed25519) {
       const tmpPriv = generatePrivate();
       this._setKey(new BN(tmpPriv));
     } else {
       this._setKey(new BN(importedKey));
+    }
+
+    // import/gen ed25519 seed
+    if (this.keyType === KeyType.ed25519) {
+      await this.setupEd25519Seed(importedKey.toBuffer());
     }
 
     // create a random poly and respective shares
@@ -742,13 +748,16 @@ class ThresholdKey implements ITKey {
     return result.publicKey;
   }
 
-  async setupEd25519Seed(): Promise<void> {
+  async setupEd25519Seed(seed: Buffer): Promise<void> {
     if (!this.privKey) {
       throw CoreError.privateKeyUnavailable();
     }
-    const newEd25519Seed = await getRandomBytes(32);
-    const seed = Buffer.from(newEd25519Seed);
-    await this.importEd25519Seed(seed);
+    let seedToUse = seed;
+    if (!seed) {
+      const newEd25519Seed = await getRandomBytes(32);
+      seedToUse = Buffer.from(newEd25519Seed);
+    }
+    await this.importEd25519Seed(seedToUse);
   }
 
   async importEd25519Seed(seed: Buffer): Promise<void> {
@@ -976,6 +985,7 @@ class ThresholdKey implements ITKey {
 
     return {
       pubKey: this.metadata.pubKey,
+      ed25519PublicKey: this.getEd25519PublicKey(),
       requiredShares,
       threshold: poly.getThreshold(),
       totalShares: this.metadata.getShareIndexesForPolynomial(previousPolyID).length,
