@@ -210,7 +210,7 @@ class ThresholdKey implements ITKey {
     throw CoreError.metadataUndefined();
   }
 
-  getSecp2561kKey(): BN {
+  getSecp256k1Key(): BN {
     if (typeof this.privKey !== "undefined") {
       return this.privKey;
     }
@@ -680,9 +680,6 @@ class ThresholdKey implements ITKey {
       this._setKey(new BN(importedKey));
     }
 
-    // import/gen ed25519 seed
-    await this.setupEd25519Seed(importEd25519Seed);
-
     // create a random poly and respective shares
     // 1 is defined as the serviceProvider share
     // 0 is for tKey
@@ -705,6 +702,10 @@ class ThresholdKey implements ITKey {
     const serviceProviderShare = shares[shareIndexes[0].toString("hex")];
     const shareStore = new ShareStore(serviceProviderShare, poly.getPolynomialID());
     this.metadata = metadata;
+
+    // setup ed25519 seed after metadata is set
+    // import/gen ed25519 seed
+    await this.setupEd25519Seed(importEd25519Seed);
 
     // initialize modules
     if (initializeModules) {
@@ -748,15 +749,12 @@ class ThresholdKey implements ITKey {
     return result;
   }
 
-  getEd25519PublicKey(): string {
+  getEd25519PublicKey(): string | undefined {
     if (!this.metadata) {
       throw CoreError.metadataUndefined();
     }
-    if (!this.privKey) {
-      throw CoreError.privateKeyUnavailable();
-    }
     const result = this.metadata.getGeneralStoreDomain("ed25519Seed") as { message: EncryptedMessage; publicKey: string };
-    return result.publicKey;
+    return result?.publicKey;
   }
 
   async setupEd25519Seed(seed: Buffer): Promise<void> {
@@ -783,6 +781,7 @@ class ThresholdKey implements ITKey {
     const keyPair = getEd25519ExtendedPublicKey(seed);
 
     this.metadata.setGeneralStoreDomain("ed25519Seed", { message: await this.encrypt(seed), publicKey: keyPair.point.encode("hex", false) });
+    this._ed25519Seed = seed;
   }
 
   async retrieveEd25519Seed(): Promise<Buffer> {
@@ -795,6 +794,7 @@ class ThresholdKey implements ITKey {
 
     const result = this.metadata.getGeneralStoreDomain("ed25519Seed") as { message: EncryptedMessage; publicKey: string };
     const seed = await this.decrypt(result.message);
+    this._ed25519Seed = seed;
     return seed;
   }
 

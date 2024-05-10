@@ -19,6 +19,7 @@ import { JsonRpcProvider } from "ethers";
 import { createSandbox } from "sinon";
 
 import ThresholdKey from "../src/index";
+import { ed25519Tests } from "./ed25519/ed25519";
 import { getMetadataUrl, getServiceProvider, initStorageLayer, isMocked } from "./helpers";
 
 const rejects = async (fn, error, msg) => {
@@ -1658,4 +1659,6 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     //   equal(getOrSetNonce.nonce, getMetadataNonce.toString("hex"));
     // });
   });
+
+  ed25519Tests({ manualSync: mode, torusSP: customSP, storageLayer: customSL });
 };
