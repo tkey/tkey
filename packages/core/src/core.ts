@@ -19,7 +19,6 @@ import {
   ITKeyApi,
   KEY_NOT_FOUND,
   KeyDetails,
-  KeyType,
   LocalMetadataTransitions,
   LocalTransitionData,
   LocalTransitionShares,
@@ -93,8 +92,6 @@ class ThresholdKey implements ITKey {
 
   serverTimeOffset?: number = 0;
 
-  keyType: KeyType;
-
   constructor(args?: TKeyArgs) {
     const { enableLogging = false, modules = {}, serviceProvider, storageLayer, manualSync = false, serverTimeOffset } = args || {};
     this.enableLogging = enableLogging;
@@ -112,13 +109,6 @@ class ThresholdKey implements ITKey {
     this.setModuleReferences(); // Providing ITKeyApi access to modules
     this.haveWriteMetadataLock = "";
     this.serverTimeOffset = serverTimeOffset;
-  }
-
-  get finalKey(): Buffer {
-    if (this.keyType === KeyType.ed25519) {
-      return this._ed25519Seed;
-    }
-    return this.privKey.toBuffer();
   }
 
   static async fromJSON(value: StringifiedType, args: TKeyArgs): Promise<ThresholdKey> {
@@ -220,9 +210,25 @@ class ThresholdKey implements ITKey {
     throw CoreError.metadataUndefined();
   }
 
+  getSecp2561kKey(): BN {
+    if (typeof this.privKey !== "undefined") {
+      return this.privKey;
+    }
+
+    throw CoreError.privateKeyUnavailable();
+  }
+
+  getEd25519Key(): Buffer {
+    if (typeof this._ed25519Seed !== "undefined") {
+      return this._ed25519Seed;
+    }
+    throw CoreError.privKeyUnavailable();
+  }
+
   async initialize(params?: {
     withShare?: ShareStore;
     importKey?: BN;
+    importEd25519Seed?: Buffer;
     neverInitializeNewKey?: boolean;
     transitionMetadata?: Metadata;
     previouslyFetchedCloudMetadata?: Metadata;
@@ -268,7 +274,12 @@ class ThresholdKey implements ITKey {
           throw CoreError.default("key has not been generated yet");
         }
         // no metadata set, assumes new user
-        await this._initializeNewKey({ initializeModules: true, importedKey: importKey, delete1OutOf1: p.delete1OutOf1 });
+        await this._initializeNewKey({
+          initializeModules: true,
+          importedKey: importKey,
+          importEd25519Seed: params.importEd25519Seed,
+          delete1OutOf1: p.delete1OutOf1,
+        });
         return this.getKeyDetails();
       }
       // else we continue with catching up share and metadata
@@ -652,15 +663,17 @@ class ThresholdKey implements ITKey {
     determinedShare,
     initializeModules,
     importedKey,
+    importEd25519Seed,
     delete1OutOf1,
   }: {
     determinedShare?: BN;
     initializeModules?: boolean;
     importedKey?: BN;
+    importEd25519Seed?: Buffer;
     delete1OutOf1?: boolean;
   } = {}): Promise<InitializeNewKeyResult> {
     // if keyType is ed25519, we generate a secp256k1 key
-    if (!importedKey || this.keyType === KeyType.ed25519) {
+    if (!importedKey) {
       const tmpPriv = generatePrivate();
       this._setKey(new BN(tmpPriv));
     } else {
@@ -668,9 +681,7 @@ class ThresholdKey implements ITKey {
     }
 
     // import/gen ed25519 seed
-    if (this.keyType === KeyType.ed25519) {
-      await this.setupEd25519Seed(importedKey.toBuffer("le"));
-    }
+    await this.setupEd25519Seed(importEd25519Seed);
 
     // create a random poly and respective shares
     // 1 is defined as the serviceProvider share
