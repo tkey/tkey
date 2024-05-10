@@ -11,7 +11,7 @@ export function ed25519Tests(params: { manualSync: boolean; torusSP: TorusServic
   let customSP = params.torusSP;
   const customSL = params.storageLayer;
   const { manualSync } = params;
-  describe.only("tkey : ed25519 key", function () {
+  describe("tkey : ed25519 key", function () {
     let tb: ThresholdKey;
     beforeEach("Setup ThresholdKey", async function () {
       customSP = new TorusServiceProvider({
