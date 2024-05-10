@@ -97,12 +97,14 @@ export interface IMetadata extends ISerializable {
 
 export type InitializeNewKeyResult = {
   privKey: BN;
+  ed25519Seed?: Buffer;
   deviceShare?: ShareStore;
   userShare?: ShareStore;
 };
 
 export type ReconstructedKeyResult = {
   privKey: BN;
+  ed25519Seed?: Buffer;
   seedPhrase?: BN[];
   allKeys?: BN[];
 };
@@ -127,6 +129,7 @@ export type RefreshSharesResult = {
 
 export type KeyDetails = {
   pubKey: Point;
+  ed25519PublicKey?: string;
   requiredShares: number;
   threshold: number;
   totalShares: number;
