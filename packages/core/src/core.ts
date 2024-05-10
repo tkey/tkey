@@ -87,6 +87,8 @@ class ThresholdKey implements ITKey {
 
   serverTimeOffset?: number = 0;
 
+  private root: boolean = false;
+
   constructor(args?: TKeyArgs) {
     const { enableLogging = false, modules = {}, serviceProvider, storageLayer, manualSync = false, serverTimeOffset } = args || {};
     this.enableLogging = enableLogging;
@@ -203,6 +205,12 @@ class ThresholdKey implements ITKey {
     }
 
     throw CoreError.metadataUndefined();
+  }
+
+  requestRootMode(): void {
+    // log that tkey is in root mode
+    // will be reset to false after the next function call
+    this.root = true;
   }
 
   async initialize(params?: {
@@ -1289,18 +1297,26 @@ class ThresholdKey implements ITKey {
       throw CoreError.default("Please sync all local state before calling this function");
     }
 
-    // Construct all shares
-    const shareArray = this.getAllShareStoresForLatestPolynomial();
-    await this.addLocalMetadataTransitions({
-      input: [...Array(shareArray.length).fill({ message: SHARE_DELETED, dateAdded: Date.now() }), { message: KEY_NOT_FOUND }],
-      privKey: [...shareArray.map((x) => x.share.share), undefined],
-    });
-    await this.syncLocalMetadataTransitions(); // forcesync
+    // Require root mode
+    if (!this.root) {
+      throw CoreError.default("Please enable root mode before calling this function");
+    }
+    try {
+      // Construct all shares
+      const shareArray = this.getAllShareStoresForLatestPolynomial();
+      await this.addLocalMetadataTransitions({
+        input: [...Array(shareArray.length).fill({ message: SHARE_DELETED, dateAdded: Date.now() }), { message: KEY_NOT_FOUND }],
+        privKey: [...shareArray.map((x) => x.share.share), undefined],
+      });
+      await this.syncLocalMetadataTransitions(); // forcesync
 
-    this.privKey = undefined;
-    this.metadata = undefined;
-    this.shares = {};
-    this.lastFetchedCloudMetadata = undefined;
+      this.privKey = undefined;
+      this.metadata = undefined;
+      this.shares = {};
+      this.lastFetchedCloudMetadata = undefined;
+    } finally {
+      this.root = false;
+    }
   }
 
   getApi(): ITKeyApi {
