@@ -66,12 +66,18 @@ export function ed25519Tests(params: { manualSync: boolean; torusSP: TorusServic
 
       const newInstance = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync });
       await newInstance.initialize();
+      const edPub = newInstance.getEd25519PublicKey();
+      try {
+        await newInstance.getEd25519Key();
+        assert.fail("should not be able to get ed25519 key");
+      } catch (error) {}
+
       newInstance.inputShareStore(share.newShareStores[share.newShareIndex.toString("hex")]);
       await newInstance.reconstructKey();
 
       assert.strictEqual(secp.toString("hex"), newInstance.getSecp256k1Key().toString("hex"));
       assert.strictEqual(ed.toString("hex"), newInstance.getEd25519Key().toString("hex"));
-
+      assert.strictEqual(edPub, newInstance.getEd25519PublicKey());
       // should not able to reinitialize with import key
       const instance3 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync });
       try {
