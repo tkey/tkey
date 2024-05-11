@@ -90,10 +90,21 @@ class Metadata implements IMetadata {
   }
 
   static fromJSON(value: StringifiedType): Metadata {
-    const { pubKey, polyIDList, generalStore, tkeyStore, scopedStore, nonce, keyType, tssNonces, tssPolyCommits, factorPubs, factorEncs } = value;
-    const type = keyType in KeyType ? keyType : DEFAULT_KEY_TYPE;
+    const {
+      pubKey,
+      polyIDList,
+      generalStore,
+      tkeyStore,
+      scopedStore,
+      nonce,
+      keyType = DEFAULT_KEY_TYPE,
+      tssNonces,
+      tssPolyCommits,
+      factorPubs,
+      factorEncs,
+    } = value;
 
-    const point = Point.fromSEC1(pubKey, type);
+    const point = Point.fromSEC1(pubKey, keyType);
     const metadata = new Metadata(point);
     const unserializedPolyIDList: PolyIDAndShares[] = [];
 
@@ -132,7 +143,7 @@ class Metadata implements IMetadata {
       const pubPolyID = firstHalf.join("|");
       const pointCommitments: Point[] = [];
       firstHalf.forEach((compressedCommitment) => {
-        pointCommitments.push(Point.fromSEC1(compressedCommitment, type));
+        pointCommitments.push(Point.fromSEC1(compressedCommitment, keyType));
       });
       const publicPolynomial = new PublicPolynomial(pointCommitments);
       metadata.publicPolynomials[pubPolyID] = publicPolynomial;
