@@ -1,4 +1,4 @@
-import { IAuthMetadata, KeyType, keyTypeToCurve, StringifiedType, stripHexPrefix, toPrivKeyEC } from "@tkey/common-types";
+import { DEFAULT_KEY_TYPE, IAuthMetadata, KeyType, keyTypeToCurve, StringifiedType, stripHexPrefix, toPrivKeyEC } from "@tkey/common-types";
 import { keccak256 } from "@toruslabs/torus.js";
 import BN from "bn.js";
 import { ec as EllipticCurve } from "elliptic";
@@ -26,7 +26,7 @@ class AuthMetadata implements IAuthMetadata {
     const m = Metadata.fromJSON(data);
     if (!m.pubKey) throw CoreError.metadataPubKeyUnavailable();
 
-    const postKeyType = keyType in KeyType ? keyType : KeyType.secp256k1;
+    const postKeyType = keyType in KeyType ? keyType : DEFAULT_KEY_TYPE;
 
     const ecCurve: EllipticCurve = keyTypeToCurve(postKeyType);
 

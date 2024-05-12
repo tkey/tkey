@@ -130,4 +130,4 @@ export type DeviceShareDescription = { module: string; userAgent: string; dateAd
 // combination with eccrypto's `encrypt` and `decrypt`, which is secp256k1 only.
 export const FACTOR_KEY_TYPE = KeyType.secp256k1;
 
-export declare const DEFAULT_KEY_TYPE = KeyType.secp256k1;
+export const DEFAULT_KEY_TYPE = KeyType.secp256k1;
