@@ -1,6 +1,8 @@
 import {
   decrypt,
+  DEFAULT_KEY_TYPE,
   EncryptedMessage,
+  FACTOR_KEY_TYPE,
   FactorEnc,
   getEncryptionPrivateKey,
   getPubKeyPoint,
@@ -50,8 +52,6 @@ class Metadata implements IMetadata {
     [moduleName: string]: unknown;
   };
 
-  tssKeyType?: string;
-
   tssNonces?: {
     [tssTag: string]: number;
   };
@@ -97,16 +97,14 @@ class Metadata implements IMetadata {
       tkeyStore,
       scopedStore,
       nonce,
-      keyType,
+      keyType = DEFAULT_KEY_TYPE,
       tssNonces,
       tssPolyCommits,
       factorPubs,
       factorEncs,
-      tssKeyType,
     } = value;
-    const type = keyType in KeyType ? keyType : KeyType.secp256k1;
 
-    const point = Point.fromSEC1(pubKey, type);
+    const point = Point.fromSEC1(pubKey, keyType);
     const metadata = new Metadata(point);
     const unserializedPolyIDList: PolyIDAndShares[] = [];
 
@@ -114,13 +112,11 @@ class Metadata implements IMetadata {
     if (tkeyStore) metadata.tkeyStore = tkeyStore;
     if (scopedStore) metadata.scopedStore = scopedStore;
     if (nonce) metadata.nonce = nonce;
-    if (tssKeyType) {
-      metadata.tssKeyType = tssKeyType;
-    }
+
     if (tssPolyCommits) {
       metadata.tssPolyCommits = {};
       for (const key in tssPolyCommits) {
-        metadata.tssPolyCommits[key] = (tssPolyCommits as Record<string, Point[]>)[key].map((obj) => new Point(obj.x, obj.y, tssKeyType));
+        metadata.tssPolyCommits[key] = (tssPolyCommits as Record<string, Point[]>)[key].map((obj) => new Point(obj.x, obj.y, keyType));
       }
     }
     if (tssNonces) {
@@ -132,7 +128,7 @@ class Metadata implements IMetadata {
     if (factorPubs) {
       metadata.factorPubs = {};
       for (const key in factorPubs) {
-        metadata.factorPubs[key] = (factorPubs as Record<string, Point[]>)[key].map((obj) => new Point(obj.x, obj.y, keyType));
+        metadata.factorPubs[key] = (factorPubs as Record<string, Point[]>)[key].map((obj) => new Point(obj.x, obj.y, FACTOR_KEY_TYPE));
       }
     }
     if (factorEncs) metadata.factorEncs = factorEncs;
@@ -147,7 +143,7 @@ class Metadata implements IMetadata {
       const pubPolyID = firstHalf.join("|");
       const pointCommitments: Point[] = [];
       firstHalf.forEach((compressedCommitment) => {
-        pointCommitments.push(Point.fromSEC1(compressedCommitment, type));
+        pointCommitments.push(Point.fromSEC1(compressedCommitment, keyType));
       });
       const publicPolynomial = new PublicPolynomial(pointCommitments);
       metadata.publicPolynomials[pubPolyID] = publicPolynomial;
@@ -345,7 +341,6 @@ class Metadata implements IMetadata {
       tkeyStore: this.tkeyStore,
       nonce: this.nonce,
       keyType: this.keyType,
-      ...(this.tssKeyType && { tssKeyType: this.tssKeyType }),
       ...(this.tssNonces && { tssNonces: this.tssNonces }),
       ...(this.tssPolyCommits && { tssPolyCommits: this.tssPolyCommits }),
       ...(this.factorPubs && { factorPubs: this.factorPubs }),
@@ -354,7 +349,7 @@ class Metadata implements IMetadata {
   }
 
   addTSSData(tssData: {
-    tssKeyType: string;
+    keyType: KeyType;
     tssTag: string;
     tssNonce?: number;
     tssPolyCommits?: Point[];
@@ -363,8 +358,8 @@ class Metadata implements IMetadata {
       [factorPubID: string]: FactorEnc;
     };
   }): void {
-    const { tssKeyType, tssTag, tssNonce, tssPolyCommits, factorPubs, factorEncs } = tssData;
-    if (tssKeyType) this.tssKeyType = tssKeyType;
+    const { keyType, tssTag, tssNonce, tssPolyCommits, factorPubs, factorEncs } = tssData;
+    if (this.keyType) this.keyType = keyType;
     if (tssNonce !== undefined) this.tssNonces[tssTag] = tssNonce;
     if (tssPolyCommits) this.tssPolyCommits[tssTag] = tssPolyCommits;
     if (factorPubs) this.factorPubs[tssTag] = factorPubs;

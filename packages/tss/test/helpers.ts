@@ -83,7 +83,7 @@ export async function assignTssDkgKeys(opts: {
 
     const nodeDetails = await serviceProvider.customAuthInstance.nodeDetailManager.getNodeDetails({ verifier, verifierId });
 
-    const tKey = await serviceProvider.tssTorus.retrieveShares(
+    const tKey = await serviceProvider.customAuthInstance.torus.retrieveShares(
       nodeDetails.torusNodeEndpoints,
       nodeDetails.torusIndexes,
       verifier,

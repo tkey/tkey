@@ -793,6 +793,10 @@ class ThresholdKey implements ITKey {
     if (acquiredLock) await this.releaseWriteMetadataLock();
   }
 
+  async readMetadata<T>(privKey: BN): Promise<T> {
+    return this.storageLayer.getMetadata<T>({ privKey, keyType: this.keyType });
+  }
+
   // Returns a new instance of metadata with a clean state. All the previous state will be reset.
   async updateSDK(params?: { withShare?: ShareStore }): Promise<ThresholdKey> {
     const tb = new ThresholdKey({
