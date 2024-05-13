@@ -675,7 +675,6 @@ class ThresholdKey implements ITKey {
     importEd25519Seed?: Buffer;
     delete1OutOf1?: boolean;
   } = {}): Promise<InitializeNewKeyResult> {
-    // if keyType is ed25519, we generate a secp256k1 key
     if (!importedKey) {
       const tmpPriv = generatePrivate();
       this._setKey(new BN(tmpPriv));
