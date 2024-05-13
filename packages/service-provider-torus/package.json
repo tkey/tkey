@@ -39,8 +39,8 @@
   "dependencies": {
     "@tkey/common-types": "^12.1.0",
     "@tkey/service-provider-base": "^12.1.0",
-    "@toruslabs/customauth": "^18.0.0",
-    "@toruslabs/torus.js": "^12.2.0",
+    "@toruslabs/customauth": "19.0.0-alpha.4",
+    "@toruslabs/torus.js": "13.0.0-alpha.4",
     "bn.js": "^5.2.1",
     "elliptic": "^6.5.5"
   },

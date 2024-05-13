@@ -1,31 +1,33 @@
-import { FACTOR_KEY_TYPE, KeyType, keyTypeToCurve, Point } from "@tkey/common-types";
+import { KeyType, Point } from "@tkey/common-types";
 import { equal, fail, rejects } from "assert";
 import BN from "bn.js";
+import { ec as EC } from "elliptic";
 
 import { TKeyTSS as ThresholdKey, TKeyTSS, TSSTorusServiceProvider } from "../src";
+import { factorKeyCurve } from "../src/tss";
 import { BasePoint, getLagrangeCoeffs, pointToElliptic } from "../src/util";
 import { assignTssDkgKeys, fetchPostboxKeyAndSigs, generateKey, initStorageLayer } from "./helpers";
 
 const TEST_KEY_TYPES = [KeyType.secp256k1, KeyType.ed25519];
 
-TEST_KEY_TYPES.forEach((KEY_TYPE) => {
-  const ecFactor = keyTypeToCurve(FACTOR_KEY_TYPE);
-  const ecTSS = keyTypeToCurve(KEY_TYPE);
+TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
+  const ecFactor = factorKeyCurve;
+  const ecTSS = new EC(TSS_KEY_TYPE);
 
   const torusSP = new TSSTorusServiceProvider({
     customAuthArgs: {
       network: "sapphire_devnet",
       web3AuthClientId: "YOUR_CLIENT_ID",
       baseUrl: "http://localhost:3000",
+      keyType: TSS_KEY_TYPE,
     },
-    keyType: KEY_TYPE,
   });
 
   const torusSL = initStorageLayer();
 
   const manualSync = true;
 
-  describe(`TSS tests, keyType=${KEY_TYPE}`, function () {
+  describe(`TSS tests, keyType=${TSS_KEY_TYPE}`, function () {
     it("#should be able to reconstruct tss share from factor key", async function () {
       const sp = torusSP;
 
@@ -46,13 +48,13 @@ TEST_KEY_TYPES.forEach((KEY_TYPE) => {
         serviceProvider: sp,
         storageLayer: storageLayer2,
         manualSync,
-        keyType: KEY_TYPE,
+        tssKeyType: TSS_KEY_TYPE,
       });
 
       // factor key needs to passed from outside of tKey
       const factorKeyPair = ecFactor.genKeyPair();
       const factorKey = factorKeyPair.getPrivate();
-      const factorPub = Point.fromSEC1(factorKeyPair.getPublic().encodeCompressed("hex"), FACTOR_KEY_TYPE);
+      const factorPub = Point.fromElliptic(factorKeyPair.getPublic());
 
       await tb1.initialize({ factorPub, deviceTSSShare, deviceTSSIndex });
       const reconstructedKey = await tb1.reconstructKey();
@@ -92,12 +94,12 @@ TEST_KEY_TYPES.forEach((KEY_TYPE) => {
       });
       sp.postboxKey = postboxkey;
       const storageLayer = initStorageLayer();
-      const tb1 = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync, keyType: KEY_TYPE });
+      const tb1 = new ThresholdKey({ serviceProvider: sp, storageLayer, manualSync, tssKeyType: TSS_KEY_TYPE });
 
       // factor key needs to passed from outside of tKey
       const factorKeyPair = ecFactor.genKeyPair();
       const factorKey = factorKeyPair.getPrivate();
-      const factorPub = Point.fromSEC1(factorKeyPair.getPublic().encodeCompressed("hex"), FACTOR_KEY_TYPE);
+      const factorPub = Point.fromElliptic(factorKeyPair.getPublic());
 
       await tb1.initialize({ factorPub, deviceTSSShare, deviceTSSIndex });
       const reconstructedKey = await tb1.reconstructKey();
@@ -121,7 +123,7 @@ TEST_KEY_TYPES.forEach((KEY_TYPE) => {
       equal(tssPub.eq(tssPubKey), true);
 
       // With account index.
-      if (tb1.keyType !== KeyType.ed25519) {
+      if (tb1.tssKeyType !== KeyType.ed25519) {
         const accountIndex = Math.floor(Math.random() * 99) + 1;
         const tss1Account = (() => {
           const share = new BN(serverDKGPrivKeys[0], "hex");
@@ -148,7 +150,7 @@ TEST_KEY_TYPES.forEach((KEY_TYPE) => {
       const newTSSIndex = 3;
 
       sp.verifierName = "torus-test-health";
-      sp.verifierId = `importeduser${KEY_TYPE}@example.com`;
+      sp.verifierId = `importeduser${TSS_KEY_TYPE}@example.com`;
       const { signatures, postboxkey } = await fetchPostboxKeyAndSigs({
         serviceProvider: sp,
         verifierName: sp.verifierName,
@@ -162,12 +164,12 @@ TEST_KEY_TYPES.forEach((KEY_TYPE) => {
         maxTSSNonceToSimulate: 1,
       });
 
-      const tb = new ThresholdKey({ serviceProvider: sp, storageLayer: torusSL, manualSync, keyType: KEY_TYPE });
+      const tb = new ThresholdKey({ serviceProvider: sp, storageLayer: torusSL, manualSync, tssKeyType: TSS_KEY_TYPE });
 
       // factor key needs to passed from outside of tKey
       const factorKeyPair = ecFactor.genKeyPair();
       const factorKey = factorKeyPair.getPrivate();
-      const factorPub = Point.fromSEC1(factorKeyPair.getPublic().encodeCompressed("hex"), FACTOR_KEY_TYPE);
+      const factorPub = Point.fromElliptic(factorKeyPair.getPublic());
       // 2/2
       await tb.initialize({ factorPub, deviceTSSShare, deviceTSSIndex });
       const newShare = await tb.generateNewShare();
@@ -198,7 +200,7 @@ TEST_KEY_TYPES.forEach((KEY_TYPE) => {
       });
 
       // import key
-      const { raw: importedKey, scalar: importedScalar } = generateKey(KEY_TYPE);
+      const { raw: importedKey, scalar: importedScalar } = generateKey(TSS_KEY_TYPE);
       await tb.importTssKey(
         { tag: "imported", importKey: importedKey, factorPub, newTSSIndex },
         {
@@ -221,7 +223,7 @@ TEST_KEY_TYPES.forEach((KEY_TYPE) => {
       equal(tssPubKey1.eq(tssCommits10), true);
       equal(tssPrivKey1.toString("hex"), importedScalar.toString("hex"));
 
-      if (KEY_TYPE === KeyType.ed25519) {
+      if (TSS_KEY_TYPE === KeyType.ed25519) {
         const seed = await tb._UNSAFE_exportTssEd25519Seed({
           factorKey,
           selectedServers: [1, 2, 3],
@@ -230,7 +232,7 @@ TEST_KEY_TYPES.forEach((KEY_TYPE) => {
         equal(seed.equals(importedKey), true);
       }
 
-      const tb2 = new ThresholdKey({ serviceProvider: sp, storageLayer: torusSL, manualSync, keyType: KEY_TYPE });
+      const tb2 = new ThresholdKey({ serviceProvider: sp, storageLayer: torusSL, manualSync, tssKeyType: TSS_KEY_TYPE });
 
       await tb2.initialize({ factorPub });
       tb2.inputShareStore(newShare.newShareStores[newShare.newShareIndex.toString("hex")]);
@@ -269,7 +271,7 @@ TEST_KEY_TYPES.forEach((KEY_TYPE) => {
       const deviceTSSIndex = 3;
 
       sp.verifierName = "torus-test-health";
-      sp.verifierId = `exportUser${KEY_TYPE}@example.com`;
+      sp.verifierId = `exportUser${TSS_KEY_TYPE}@example.com`;
       const { signatures, postboxkey } = await fetchPostboxKeyAndSigs({
         serviceProvider: sp,
         verifierName: sp.verifierName,
@@ -283,12 +285,12 @@ TEST_KEY_TYPES.forEach((KEY_TYPE) => {
         maxTSSNonceToSimulate: 1,
       });
 
-      const tb = new ThresholdKey({ serviceProvider: sp, storageLayer: torusSL, manualSync, keyType: KEY_TYPE });
+      const tb = new ThresholdKey({ serviceProvider: sp, storageLayer: torusSL, manualSync, tssKeyType: TSS_KEY_TYPE });
 
       // factor key needs to passed from outside of tKey
       const factorKeyPair = ecFactor.genKeyPair();
       const factorKey = factorKeyPair.getPrivate();
-      const factorPub = Point.fromSEC1(factorKeyPair.getPublic().encodeCompressed("hex"), FACTOR_KEY_TYPE);
+      const factorPub = Point.fromElliptic(factorKeyPair.getPublic());
 
       // 2/2
       await tb.initialize({ factorPub, deviceTSSShare, deviceTSSIndex });
@@ -319,7 +321,7 @@ TEST_KEY_TYPES.forEach((KEY_TYPE) => {
         maxTSSNonceToSimulate: 1,
       });
       // import key
-      const { raw: importedKey, scalar: importedScalar } = generateKey(KEY_TYPE);
+      const { raw: importedKey, scalar: importedScalar } = generateKey(TSS_KEY_TYPE);
       const importedIndex = 2;
       await tb.importTssKey(
         { tag: "imported", importKey: importedKey, factorPub, newTSSIndex: importedIndex },
@@ -343,7 +345,7 @@ TEST_KEY_TYPES.forEach((KEY_TYPE) => {
         equal(finalTssKey.toString("hex"), importedScalar.toString("hex"));
         equal(tssPubKeyImported.eq(finalPubKey), true);
 
-        if (KEY_TYPE === KeyType.ed25519) {
+        if (TSS_KEY_TYPE === KeyType.ed25519) {
           const seed = await tb._UNSAFE_exportTssEd25519Seed({
             factorKey,
             selectedServers: [3, 4, 5],
@@ -367,7 +369,7 @@ TEST_KEY_TYPES.forEach((KEY_TYPE) => {
         equal(tssPubKeyImported.eq(finalPubKey), true);
       }
 
-      const tb2 = new ThresholdKey({ serviceProvider: sp, storageLayer: torusSL, manualSync, keyType: KEY_TYPE });
+      const tb2 = new ThresholdKey({ serviceProvider: sp, storageLayer: torusSL, manualSync, tssKeyType: TSS_KEY_TYPE });
 
       await tb2.initialize({ factorPub });
       tb2.inputShareStore(newShare.newShareStores[newShare.newShareIndex.toString("hex")]);
@@ -416,7 +418,7 @@ TEST_KEY_TYPES.forEach((KEY_TYPE) => {
       before("setup", async function () {
         const sp = torusSP;
         sp.verifierName = "torus-test-health";
-        sp.verifierId = `test192${KEY_TYPE}@example.com`;
+        sp.verifierId = `test192${TSS_KEY_TYPE}@example.com`;
         const { signatures: authSignatures, postboxkey } = await fetchPostboxKeyAndSigs({
           serviceProvider: sp,
           verifierName: sp.verifierName,
@@ -431,12 +433,12 @@ TEST_KEY_TYPES.forEach((KEY_TYPE) => {
           maxTSSNonceToSimulate: 4,
         });
 
-        tb = new ThresholdKey({ serviceProvider: sp, storageLayer: torusSL, manualSync, keyType: KEY_TYPE });
+        tb = new ThresholdKey({ serviceProvider: sp, storageLayer: torusSL, manualSync, tssKeyType: TSS_KEY_TYPE });
 
         // factor key needs to passed from outside of tKey
         const factorKeyPair = ecFactor.genKeyPair();
         factorKey = factorKeyPair.getPrivate();
-        const factorPub = Point.fromSEC1(factorKeyPair.getPublic().encodeCompressed("hex"), FACTOR_KEY_TYPE);
+        const factorPub = Point.fromElliptic(factorKeyPair.getPublic());
         const deviceTSSShare = ecTSS.genKeyPair().getPrivate();
         await tb.initialize({ factorPub, deviceTSSShare, deviceTSSIndex });
         const reconstructedKey = await tb.reconstructKey();
@@ -453,7 +455,7 @@ TEST_KEY_TYPES.forEach((KEY_TYPE) => {
         await tb.addFactorPub({
           authSignatures: signatures,
           existingFactorKey: factorKey,
-          newFactorPub: Point.fromSEC1(newFactorPub.encodeCompressed("hex"), FACTOR_KEY_TYPE),
+          newFactorPub: Point.fromElliptic(newFactorPub),
           newTSSIndex: deviceTSSIndex,
         });
         await tb.syncLocalMetadataTransitions();
@@ -465,7 +467,7 @@ TEST_KEY_TYPES.forEach((KEY_TYPE) => {
         await tb.addFactorPub({
           authSignatures: signatures,
           existingFactorKey: factorKey,
-          newFactorPub: Point.fromSEC1(newFactorPub.encodeCompressed("hex"), FACTOR_KEY_TYPE),
+          newFactorPub: Point.fromElliptic(newFactorPub),
           newTSSIndex,
         });
         await tb.syncLocalMetadataTransitions();
@@ -475,7 +477,7 @@ TEST_KEY_TYPES.forEach((KEY_TYPE) => {
         const newFactorPub = (ecFactor.g as BasePoint).mul(newFactorKeySameIndex);
         await tb.deleteFactorPub({
           factorKey,
-          deleteFactorPub: Point.fromSEC1(newFactorPub.encodeCompressed("hex"), FACTOR_KEY_TYPE),
+          deleteFactorPub: Point.fromElliptic(newFactorPub),
           authSignatures: signatures,
         });
         await tb.syncLocalMetadataTransitions();
@@ -489,7 +491,7 @@ TEST_KEY_TYPES.forEach((KEY_TYPE) => {
         const newFactorPub = (ecFactor.g as BasePoint).mul(newFactorKeyNewIndex);
         await tb.deleteFactorPub({
           factorKey,
-          deleteFactorPub: Point.fromSEC1(newFactorPub.encodeCompressed("hex"), FACTOR_KEY_TYPE),
+          deleteFactorPub: Point.fromElliptic(newFactorPub),
           authSignatures: signatures,
         });
         await tb.syncLocalMetadataTransitions();

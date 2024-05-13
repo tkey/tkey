@@ -1,6 +1,9 @@
 import type { CustomAuthArgs } from "@toruslabs/customauth";
 import BN from "bn.js";
-import type { curve } from "elliptic";
+import { curve, ec as EC } from "elliptic";
+
+export type EllipticPoint = curve.base.BasePoint;
+export type EllipticCurve = EC;
 
 export type PubKeyType = "ecc";
 
@@ -17,6 +20,7 @@ export interface EncryptedMessage {
   iv: string;
   mac: string;
 }
+
 export interface ServiceProviderArgs {
   enableLogging?: boolean;
   postboxKey?: string;
@@ -49,7 +53,7 @@ export interface IServiceProvider extends ISerializable {
   encrypt(msg: Buffer): Promise<EncryptedMessage>;
   decrypt(msg: EncryptedMessage): Promise<Buffer>;
   retrievePubKey(type: PubKeyType): Buffer;
-  retrievePubKeyPoint(): curve.base.BasePoint;
+  retrievePubKeyPoint(): EllipticPoint;
   sign(msg: BNString): string;
 }
 export type TorusStorageLayerAPIParams = {
@@ -97,3 +101,8 @@ export type FromJSONConstructor = {
 };
 
 export type DeviceShareDescription = { module: string; userAgent: string; dateAdded: number; customDeviceInfo?: string };
+
+export enum KeyType {
+  secp256k1 = "secp256k1",
+  ed25519 = "ed25519",
+}

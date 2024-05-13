@@ -1,18 +1,16 @@
 import {
   decrypt,
+  EllipticCurve,
   encrypt,
   EncryptedMessage,
-  FACTOR_KEY_TYPE,
   KeyDetails,
   KeyType,
-  keyTypeToCurve,
-  LocalMetadataTransitions,
   Point,
   ReconstructedKeyResult,
-  ShareStore,
   TKeyArgs,
+  TKeyInitArgs,
 } from "@tkey/common-types";
-import ThresholdKey, { CoreError, Metadata } from "@tkey/core";
+import ThresholdKey, { CoreError } from "@tkey/core";
 import { dotProduct, ecPoint, hexPoint, PointHex, randomSelection, RSSClient } from "@toruslabs/rss-client";
 import { getEd25519ExtendedPublicKey, getSecpKeyFromEd25519 } from "@toruslabs/torus.js";
 import BN from "bn.js";
@@ -36,20 +34,13 @@ import {
 export const TSS_MODULE = "tssModule";
 export const TSS_TAG_DEFAULT = "default";
 
+export const FACTOR_KEY_TYPE = "secp256k1";
+export const factorKeyCurve = new EC(FACTOR_KEY_TYPE);
+
 export interface TSSTKeyArgs extends TKeyArgs {
   serviceProvider: TSSTorusServiceProvider;
-  tssKeyType?: KeyType;
+  tssKeyType: KeyType;
   tssTag?: string;
-}
-
-export interface TKeyInitArgs {
-  withShare?: ShareStore;
-  importKey?: Buffer;
-  neverInitializeNewKey?: boolean;
-  transitionMetadata?: Metadata;
-  previouslyFetchedCloudMetadata?: Metadata;
-  previousLocalMetadataTransitions?: LocalMetadataTransitions;
-  delete1OutOf1?: boolean;
 }
 
 export interface TKeyTSSInitArgs extends TKeyInitArgs {
@@ -62,6 +53,8 @@ export interface TKeyTSSInitArgs extends TKeyInitArgs {
 export class TKeyTSS extends ThresholdKey {
   serviceProvider: TSSTorusServiceProvider = null;
 
+  private _tssKeyType: KeyType;
+
   private _tssCurve: EC;
 
   private _tssTag: string;
@@ -69,29 +62,39 @@ export class TKeyTSS extends ThresholdKey {
   private _accountSalt: string;
 
   /**
-   * Constructs a new TKeyTSS instance. If `tssKeyType` is not provided, it
-   * defaults to the value of `keyType`.
+   * Constructs a new TKeyTSS instance using the given parameters.
    */
   constructor(args: TSSTKeyArgs) {
     super(args);
-    const { serviceProvider, storageLayer, tssTag = "default", keyType } = args;
+    const { serviceProvider, storageLayer, tssTag = "default", tssKeyType } = args;
 
-    if (serviceProvider.keyType !== keyType) {
-      throw CoreError.default(`service provider keyType mismatch: ${serviceProvider.keyType} !== ${keyType}`);
+    if (serviceProvider.customAuthArgs.keyType !== tssKeyType) {
+      throw CoreError.default(`service provider keyType mismatch: ${serviceProvider.customAuthArgs.keyType} !== ${tssKeyType}`);
     }
 
     this.serviceProvider = serviceProvider;
     this.storageLayer = storageLayer;
     this._tssTag = tssTag;
-    this.keyType = keyType;
-    this._tssCurve = new EC(keyType);
+    this._tssKeyType = tssKeyType;
+    this._tssCurve = new EC(tssKeyType);
   }
 
   public get tssTag(): string {
     return this._tssTag;
   }
 
+  public get tssKeyType(): KeyType {
+    return this._tssKeyType;
+  }
+
+  public get tssCurve(): EllipticCurve {
+    return this._tssCurve;
+  }
+
   public set tssTag(tag: string) {
+    if (this.metadata.tssKeyTypes[this.tssTag] !== this.tssKeyType) {
+      throw CoreError.default(`tssKeyType mismatch: ${this.metadata.tssKeyTypes[this.tssTag]} !== ${this.tssKeyType}`);
+    }
     this._tssTag = tag;
   }
 
@@ -112,13 +115,17 @@ export class TKeyTSS extends ThresholdKey {
         params.factorPub,
         params.deviceTSSIndex
       );
-      this.metadata.addTSSData({ keyType: this.keyType, tssTag: this.tssTag, tssNonce: 0, tssPolyCommits, factorPubs, factorEncs });
+      this.metadata.addTSSData({ tssKeyType: this._tssKeyType, tssTag: this.tssTag, tssNonce: 0, tssPolyCommits, factorPubs, factorEncs });
       const accountSalt = generateSalt(this._tssCurve);
       await this._setTKeyStoreItem(TSS_MODULE, {
         id: "accountSalt",
         value: accountSalt,
       } as IAccountSaltStore);
       this._accountSalt = accountSalt;
+    }
+
+    if (this.metadata.tssKeyTypes[this.tssTag] !== this.tssKeyType) {
+      throw CoreError.default(`tssKeyType mismatch: ${this.metadata.tssKeyTypes[this.tssTag]} !== ${this.tssKeyType}`);
     }
 
     return keyDetails;
@@ -155,7 +162,7 @@ export class TKeyTSS extends ThresholdKey {
     tssShare: BN;
   }> {
     if (!this.privKey) throw CoreError.default("tss share cannot be returned until you've reconstructed tkey");
-    const factorPub = getPubKeyPoint(factorKey, FACTOR_KEY_TYPE);
+    const factorPub = getPubKeyPoint(factorKey, factorKeyCurve);
     const factorEncs = this.getFactorEncs(factorPub);
     const { userEnc, serverEncs, tssIndex, type } = factorEncs;
     const userDecryption = await decrypt(Buffer.from(factorKey.toString(16, 64), "hex"), userEnc);
@@ -244,12 +251,12 @@ export class TKeyTSS extends ThresholdKey {
     const ec = this._tssCurve;
     const tssCommits = this.getTSSCommits();
     if (accountIndex && accountIndex > 0) {
+      // Add account nonce to pub key.
       const nonce = this.computeAccountNonce(accountIndex);
-      // we need to add the pub key nonce to the tssPub
       const noncePub = ec.keyFromPrivate(nonce.toString("hex")).getPublic();
       const pubKeyPoint = pointToElliptic(ec, tssCommits[0]);
       const devicePubKeyPoint = pubKeyPoint.add(noncePub);
-      return Point.fromSEC1(devicePubKeyPoint.encodeCompressed("hex"), this.keyType);
+      return Point.fromSEC1(this._tssCurve, devicePubKeyPoint.encodeCompressed("hex"));
     }
     return tssCommits[0];
   }
@@ -273,8 +280,8 @@ export class TKeyTSS extends ThresholdKey {
   }
 
   /**
-   * Imports an existing key and makes it available for TSS under the specific
-   * factor key.
+   * Imports an existing private key for threshold signing. A corresponding user
+   * key share will be stored under the specified factor key.
    */
   async importTssKey(
     params: {
@@ -313,9 +320,9 @@ export class TKeyTSS extends ThresholdKey {
       const factorPubs = [factorPub];
 
       const importScalar = await (async () => {
-        if (this.keyType === KeyType.secp256k1) {
+        if (this._tssKeyType === KeyType.secp256k1) {
           return new BN(importKey);
-        } else if (this.keyType === KeyType.ed25519) {
+        } else if (this._tssKeyType === KeyType.ed25519) {
           // Store seed in metadata.
           const domainKey = getEd25519SeedStoreDomainKey(this.tssTag || TSS_TAG_DEFAULT);
           const result = this.metadata.getGeneralStoreDomain(domainKey) as Record<string, unknown>;
@@ -367,7 +374,7 @@ export class TKeyTSS extends ThresholdKey {
         serverPubKeys,
         serverThreshold,
         tssPubKey,
-        keyType: this.keyType,
+        keyType: this._tssKeyType,
       });
 
       const refreshResponses = await rssClient.import({
@@ -397,12 +404,12 @@ export class TKeyTSS extends ThresholdKey {
         };
       }
       this.metadata.addTSSData({
+        tssKeyType: this._tssKeyType,
         tssTag: this.tssTag,
         tssNonce: newTssNonce,
         tssPolyCommits: newTSSCommits,
         factorPubs,
         factorEncs,
-        keyType: this.keyType,
       });
       if (!this._accountSalt) {
         const accountSalt = generateSalt(this._tssCurve);
@@ -435,9 +442,8 @@ export class TKeyTSS extends ThresholdKey {
     // Assumption that there are only index 2 and 3 for tss shares
     // create complement index share
     const tempShareIndex = tssIndex === 2 ? 3 : 2;
-    const ecFactorKey = keyTypeToCurve(FACTOR_KEY_TYPE);
-    const tempFactorKey = ecFactorKey.genKeyPair().getPrivate();
-    const tempFactorPub = getPubKeyPoint(tempFactorKey, FACTOR_KEY_TYPE);
+    const tempFactorKey = factorKeyCurve.genKeyPair().getPrivate();
+    const tempFactorPub = getPubKeyPoint(tempFactorKey, factorKeyCurve);
 
     await this.addFactorPub({
       existingFactorKey: factorKey,
@@ -519,7 +525,7 @@ export class TKeyTSS extends ThresholdKey {
       serverPubKeys,
       serverThreshold,
       tssPubKey,
-      keyType: this.keyType,
+      keyType: this._tssKeyType,
     });
 
     if (!this.metadata.factorPubs) throw CoreError.default(`factorPubs obj not found`);
@@ -569,7 +575,7 @@ export class TKeyTSS extends ThresholdKey {
     }
 
     this.metadata.addTSSData({
-      keyType: this.keyType,
+      tssKeyType: this._tssKeyType,
       tssTag: this.tssTag,
       tssNonce: tssNonce + 1,
       tssPolyCommits: newTSSCommits,
@@ -587,7 +593,7 @@ export class TKeyTSS extends ThresholdKey {
       return new BN(0);
     }
 
-    if (this.keyType === KeyType.ed25519) {
+    if (this._tssKeyType === KeyType.ed25519) {
       throw new Error("account index not supported with ed25519");
     }
 
@@ -656,7 +662,7 @@ export class TKeyTSS extends ThresholdKey {
       tssPolyCommits: this.metadata.tssPolyCommits[this.tssTag],
       factorPubs: updatedFactorPubs,
       factorEncs: this.metadata.factorEncs[this.tssTag],
-      keyType: this.keyType,
+      tssKeyType: this._tssKeyType,
     });
 
     const verifierId = this.serviceProvider.getVerifierNameVerifierId();
@@ -699,7 +705,7 @@ export class TKeyTSS extends ThresholdKey {
     if (found.length === 0) throw CoreError.default("could not find factorPub to delete");
     if (found.length > 1) throw CoreError.default("found two or more factorPubs that match, error in metadata");
     const updatedFactorPubs = existingFactorPubs.filter((f) => !f.x.eq(deleteFactorPub.x) || !f.y.eq(deleteFactorPub.y));
-    this.metadata.addTSSData({ keyType: this.keyType, tssTag: this.tssTag, factorPubs: updatedFactorPubs });
+    this.metadata.addTSSData({ tssKeyType: this._tssKeyType, tssTag: this.tssTag, factorPubs: updatedFactorPubs });
     const rssNodeDetails = await this._getRssNodeDetails();
     const randomSelectedServers = randomSelection(
       new Array(rssNodeDetails.serverEndpoints.length).fill(null).map((_, i) => i + 1),
@@ -754,7 +760,10 @@ export class TKeyTSS extends ThresholdKey {
     const a0Pub = tss1PubKey.mul(L1_0).add(tss2PubKey.mul(LIndex_0));
     const a1Pub = tss1PubKey.add(a0Pub.neg());
 
-    const tssPolyCommits = [Point.fromSEC1(a0Pub.encodeCompressed("hex"), this.keyType), Point.fromSEC1(a1Pub.encodeCompressed("hex"), this.keyType)];
+    const tssPolyCommits = [
+      Point.fromSEC1(this._tssCurve, a0Pub.encodeCompressed("hex")),
+      Point.fromSEC1(this._tssCurve, a1Pub.encodeCompressed("hex")),
+    ];
     const factorPubs = [factorPub];
     const factorEncs: { [factorPubID: string]: FactorEnc } = {};
 
@@ -764,7 +773,7 @@ export class TKeyTSS extends ThresholdKey {
       factorEncs[factorPubID] = {
         tssIndex: _tssIndex,
         type: "direct",
-        userEnc: await encrypt(Buffer.from(f.toSEC1(false), "hex"), Buffer.from(tss2.toString(16, 64), "hex")),
+        userEnc: await encrypt(f.toSEC1(factorKeyCurve, false), Buffer.from(tss2.toString(16, 64), "hex")),
         serverEncs: [],
       };
     }

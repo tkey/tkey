@@ -1,4 +1,5 @@
 export * from "./common";
 export { TSSTorusServiceProvider } from "./provider";
-export { TKeyTSS } from "./tss";
+export * from "./tss";
+export * from "./util";
 export { randomSelection } from "@toruslabs/rss-client";
