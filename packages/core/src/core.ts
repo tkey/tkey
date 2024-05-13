@@ -22,6 +22,7 @@ import {
   LocalMetadataTransitions,
   LocalTransitionData,
   LocalTransitionShares,
+  MiddlewareExtraKeys,
   ModuleMap,
   ONE_KEY_DELETE_NONCE,
   Point,
@@ -53,6 +54,8 @@ import AuthMetadata from "./authMetadata";
 import CoreError from "./errors";
 import { generateRandomPolynomial, lagrangeInterpolatePolynomial, lagrangeInterpolation } from "./lagrangeInterpolatePolynomial";
 import Metadata from "./metadata";
+
+const ed25519SeedConst = "ed25519Seed";
 
 // TODO: handle errors for get and set with retries
 
@@ -277,7 +280,7 @@ class ThresholdKey implements ITKey {
         await this._initializeNewKey({
           initializeModules: true,
           importedKey: importKey,
-          importEd25519Seed: params.importEd25519Seed,
+          importEd25519Seed: params?.importEd25519Seed,
           delete1OutOf1: p.delete1OutOf1,
         });
         return this.getKeyDetails();
@@ -451,7 +454,7 @@ class ThresholdKey implements ITKey {
     }
     this._setKey(privKey);
 
-    const returnObject: Omit<ReconstructedKeyResult, "privKey"> = {
+    const returnObject: MiddlewareExtraKeys = {
       allKeys: [privKey],
     };
 
@@ -461,7 +464,7 @@ class ThresholdKey implements ITKey {
         Object.keys(this._reconstructKeyMiddleware).map(async (x: string) => {
           if (Object.prototype.hasOwnProperty.call(this._reconstructKeyMiddleware, x)) {
             const extraKeys = await this._reconstructKeyMiddleware[x]();
-            returnObject[x as keyof Omit<ReconstructedKeyResult, "privKey" | "ed25519Seed">] = extraKeys;
+            returnObject[x as keyof MiddlewareExtraKeys] = extraKeys;
             (returnObject.allKeys as BN[]).push(...extraKeys);
           }
         })
@@ -753,7 +756,7 @@ class ThresholdKey implements ITKey {
     if (!this.metadata) {
       throw CoreError.metadataUndefined();
     }
-    const result = this.metadata.getGeneralStoreDomain("ed25519Seed") as { message: EncryptedMessage; publicKey: string };
+    const result = this.metadata.getGeneralStoreDomain(ed25519SeedConst) as { message: EncryptedMessage; publicKey: string };
     return result?.publicKey;
   }
 
@@ -780,7 +783,7 @@ class ThresholdKey implements ITKey {
     // derive public key
     const keyPair = getEd25519ExtendedPublicKey(seed);
 
-    this.metadata.setGeneralStoreDomain("ed25519Seed", { message: await this.encrypt(seed), publicKey: keyPair.point.encode("hex", false) });
+    this.metadata.setGeneralStoreDomain(ed25519SeedConst, { message: await this.encrypt(seed), publicKey: keyPair.point.encode("hex", false) });
     this._ed25519Seed = seed;
   }
 
@@ -792,7 +795,7 @@ class ThresholdKey implements ITKey {
       throw CoreError.privateKeyUnavailable();
     }
 
-    const result = this.metadata.getGeneralStoreDomain("ed25519Seed") as { message: EncryptedMessage; publicKey: string };
+    const result = this.metadata.getGeneralStoreDomain(ed25519SeedConst) as { message: EncryptedMessage; publicKey: string };
     const seed = await this.decrypt(result.message);
     this._ed25519Seed = seed;
     return seed;

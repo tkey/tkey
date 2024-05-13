@@ -11,11 +11,6 @@ export type PolyIDAndShares = [PolynomialID, string[]];
 
 export type BNString = string | BN;
 
-export declare enum KeyType {
-  secp256k1 = "secp256k1",
-  ed25519 = "ed25519",
-}
-
 export interface EncryptedMessage {
   ciphertext: string;
   ephemPublicKey: string;

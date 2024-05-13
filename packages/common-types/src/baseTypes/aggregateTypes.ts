@@ -108,6 +108,7 @@ export type ReconstructedKeyResult = {
   seedPhrase?: BN[];
   allKeys?: BN[];
 };
+export type MiddlewareExtraKeys = Omit<ReconstructedKeyResult, "privKey" | "ed25519Seed">;
 
 export type CatchupToLatestShareResult = {
   latestShare: ShareStore;
