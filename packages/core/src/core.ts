@@ -779,7 +779,7 @@ class ThresholdKey implements ITKey {
       throw CoreError.default("Ed25519 key already exists");
     }
 
-    // derive public key
+    // derive key pair (scalar, public key point) from seed
     const keyPair = getEd25519ExtendedPublicKey(seed);
 
     this.metadata.setGeneralStoreDomain(ed25519SeedConst, { message: await this.encrypt(seed), publicKey: keyPair.point.encode("hex", false) });
