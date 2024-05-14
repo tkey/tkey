@@ -37,6 +37,8 @@ export const TSS_TAG_DEFAULT = "default";
 export const FACTOR_KEY_TYPE = "secp256k1";
 export const factorKeyCurve = new EC(FACTOR_KEY_TYPE);
 
+export const LEGACY_KEY_TYPE = "secp256k1";
+
 export interface TSSTKeyArgs extends TKeyArgs {
   serviceProvider: TSSTorusServiceProvider;
   tssKeyType: KeyType;
@@ -92,7 +94,7 @@ export class TKeyTSS extends ThresholdKey {
   }
 
   public set tssTag(tag: string) {
-    if (this.metadata.tssKeyTypes[this.tssTag] !== this.tssKeyType) {
+    if ((this.metadata.tssKeyTypes[this.tssTag] || LEGACY_KEY_TYPE) !== this.tssKeyType) {
       throw CoreError.default(`tssKeyType mismatch: ${this.metadata.tssKeyTypes[this.tssTag]} !== ${this.tssKeyType}`);
     }
     this._tssTag = tag;
@@ -124,7 +126,7 @@ export class TKeyTSS extends ThresholdKey {
       this._accountSalt = accountSalt;
     }
 
-    if (this.metadata.tssKeyTypes[this.tssTag] !== this.tssKeyType) {
+    if ((this.metadata.tssKeyTypes[this.tssTag] || LEGACY_KEY_TYPE) !== this.tssKeyType) {
       throw CoreError.default(`tssKeyType mismatch: ${this.metadata.tssKeyTypes[this.tssTag]} !== ${this.tssKeyType}`);
     }
 
