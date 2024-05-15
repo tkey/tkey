@@ -1566,6 +1566,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     it("should be able to init tkey with 1 out of 1", async function () {
       const postboxKeyBN = new BN(generatePrivate(), "hex");
       const pubKeyPoint = getPubKeyPoint(postboxKeyBN);
+      const metadataNonce = new BN(generatePrivate(), "hex");
 
       const serviceProvider = new TorusServiceProvider({
         postboxKey: postboxKeyBN.toString("hex"),
@@ -1580,17 +1581,21 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       });
       const storageLayer2 = new TorusStorageLayer({ hostUrl: getMetadataUrl() });
 
-      const { typeOfUser, nonce, pubNonce } = await getOrSetNonce(
+      const nonceRes = await getOrSetNonce(
         getMetadataUrl(),
         serviceProvider.customAuthInstance.torus.ec,
         0,
         pubKeyPoint.x.toString("hex"),
         pubKeyPoint.y.toString("hex"),
-        postboxKeyBN
+        postboxKeyBN,
+        false,
+        false,
+        metadataNonce
       );
-      equal(typeOfUser, "v2");
+      const { nonce, pubNonce, upgraded: isUpgraded } = nonceRes;
       notEqual(nonce, undefined);
       notEqual(pubNonce, undefined);
+      equal(isUpgraded, false);
 
       const nonceBN = new BN(nonce, "hex");
       const importKey = postboxKeyBN.add(nonceBN).umod(serviceProvider.customAuthInstance.torus.ec.curve.n).toString("hex");
@@ -1604,7 +1609,6 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       equal(tKey.privKey.toString("hex"), importKey);
 
       const {
-        typeOfUser: newTypeOfUser,
         nonce: newNonce,
         pubNonce: newPubNonce,
         upgraded,
@@ -1614,10 +1618,12 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         0,
         pubKeyPoint.x.toString("hex"),
         pubKeyPoint.y.toString("hex"),
-        postboxKeyBN
+        postboxKeyBN,
+        true, // passing nonce again should not have any effect as getOnly param is true
+        false,
+        metadataNonce
       );
       equal(upgraded, true);
-      equal(newTypeOfUser, "v2");
       equal(newNonce, undefined);
       deepEqual(pubNonce, newPubNonce);
     });
@@ -1629,7 +1635,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
 
       // This test require development API, only work with local/beta env
       let metadataUrl = getMetadataUrl();
-      if (metadataUrl === "https://metadata.tor.us") metadataUrl = "https://metadata-testing.tor.us";
+      if (metadataUrl === "https://metadata.tor.us" || metadataURL.indexOf("node.web3auth.io") > -1) metadataUrl = "https://metadata-testing.tor.us";
       await post(
         `${metadataUrl}/set_nonce`,
         {

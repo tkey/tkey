@@ -68,7 +68,7 @@ export function ed25519Tests(params: { manualSync: boolean; torusSP: TorusServic
       await newInstance.initialize();
       const edPub = newInstance.getEd25519PublicKey();
       try {
-        await newInstance.getEd25519Key();
+        newInstance.getEd25519Key();
         assert.fail("should not be able to get ed25519 key");
       } catch (error) {}
 
