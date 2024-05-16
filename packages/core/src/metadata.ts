@@ -338,7 +338,7 @@ class Metadata implements IMetadata {
   /**
    * Updates the TSS metadata for the given tag.
    */
-  addTSSData(tssData: {
+  updateTSSData(tssData: {
     tssTag: string;
     tssKeyType?: KeyType;
     tssNonce?: number;

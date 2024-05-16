@@ -117,7 +117,7 @@ export class TKeyTSS extends ThresholdKey {
         params.factorPub,
         params.deviceTSSIndex
       );
-      this.metadata.addTSSData({ tssKeyType: this._tssKeyType, tssTag: this.tssTag, tssNonce: 0, tssPolyCommits, factorPubs, factorEncs });
+      this.metadata.updateTSSData({ tssKeyType: this._tssKeyType, tssTag: this.tssTag, tssNonce: 0, tssPolyCommits, factorPubs, factorEncs });
       const accountSalt = generateSalt(this._tssCurve);
       await this._setTKeyStoreItem(TSS_MODULE, {
         id: "accountSalt",
@@ -405,7 +405,7 @@ export class TKeyTSS extends ThresholdKey {
           serverEncs: refreshResponse.serverFactorEncs,
         };
       }
-      this.metadata.addTSSData({
+      this.metadata.updateTSSData({
         tssKeyType: this._tssKeyType,
         tssTag: this.tssTag,
         tssNonce: newTssNonce,
@@ -576,7 +576,7 @@ export class TKeyTSS extends ThresholdKey {
       };
     }
 
-    this.metadata.addTSSData({
+    this.metadata.updateTSSData({
       tssKeyType: this._tssKeyType,
       tssTag: this.tssTag,
       tssNonce: tssNonce + 1,
@@ -674,7 +674,7 @@ export class TKeyTSS extends ThresholdKey {
         userEnc: await encrypt(newFactorPub.toSEC1(secp256k1, false), tssShare.toBuffer("be", 32)),
         serverEncs: [],
       };
-      this.metadata.addTSSData({
+      this.metadata.updateTSSData({
         tssKeyType: this.tssKeyType,
         tssTag: this.tssTag,
         factorPubs: updatedFactorPubs,
@@ -722,7 +722,7 @@ export class TKeyTSS extends ThresholdKey {
     if (found.length === 0) throw CoreError.default("could not find factorPub to delete");
     if (found.length > 1) throw CoreError.default("found two or more factorPubs that match, error in metadata");
     const updatedFactorPubs = existingFactorPubs.filter((f) => !f.x.eq(deleteFactorPub.x) || !f.y.eq(deleteFactorPub.y));
-    this.metadata.addTSSData({ tssKeyType: this._tssKeyType, tssTag: this.tssTag, factorPubs: updatedFactorPubs });
+    this.metadata.updateTSSData({ tssKeyType: this._tssKeyType, tssTag: this.tssTag, factorPubs: updatedFactorPubs });
     const rssNodeDetails = await this._getRssNodeDetails();
     const randomSelectedServers = randomSelection(
       new Array(rssNodeDetails.serverEndpoints.length).fill(null).map((_, i) => i + 1),

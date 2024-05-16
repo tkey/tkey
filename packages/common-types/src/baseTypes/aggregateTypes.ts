@@ -102,7 +102,7 @@ export interface IMetadata extends ISerializable {
   deleteShareDescription(shareIndex: string, description: string): void;
   updateShareDescription(shareIndex: string, oldDescription: string, newDescription: string): void;
   clone(): IMetadata;
-  addTSSData(tssData: {
+  updateTSSData(tssData: {
     tssTag: string;
     tssKeyType?: string;
     tssNonce?: number;
