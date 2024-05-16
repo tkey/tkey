@@ -1,7 +1,6 @@
-import { Point } from "@tkey/common-types";
+import { EllipticCurve, EllipticPoint, Point } from "@tkey/common-types";
 import { PointHex } from "@toruslabs/rss-client";
 import BN from "bn.js";
-import { curve, ec as EC } from "elliptic";
 
 export const kCombinations = (s: number | number[], k: number): number[][] => {
   let set = s;
@@ -33,11 +32,11 @@ export const kCombinations = (s: number | number[], k: number): number[][] => {
   return combs;
 };
 
-export function generateSalt(ec: EC) {
+export function generateSalt(ec: EllipticCurve) {
   return ec.genKeyPair().getPrivate().toString("hex", 64);
 }
 
-export function getLagrangeCoeffs(ecCurve: EC, _allIndexes: number[] | BN[], _myIndex: number | BN, _target: number | BN = 0) {
+export function getLagrangeCoeffs(ecCurve: EllipticCurve, _allIndexes: number[] | BN[], _myIndex: number | BN, _target: number | BN = 0) {
   const allIndexes: BN[] = _allIndexes.map((i) => new BN(i));
   const myIndex: BN = new BN(_myIndex);
   const target: BN = new BN(_target);
@@ -57,7 +56,7 @@ export function getLagrangeCoeffs(ecCurve: EC, _allIndexes: number[] | BN[], _my
   return upper.mul(lower.invm(ecCurve.curve.n)).umod(ecCurve.curve.n);
 }
 
-export function lagrangeInterpolation(ecCurve: EC, shares: BN[], nodeIndex: BN[]) {
+export function lagrangeInterpolation(ecCurve: EllipticCurve, shares: BN[], nodeIndex: BN[]) {
   if (shares.length !== nodeIndex.length) {
     return null;
   }
@@ -85,14 +84,8 @@ export function pointToHex(p: Point): PointHex {
   return { x: p.x.toString(16, 64), y: p.y.toString(16, 64) };
 }
 
-export type BasePoint = curve.base.BasePoint;
-
-export function pointToElliptic(ec: EC, p: Point): BasePoint {
-  return ec.keyFromPublic(pointToHex(p)).getPublic();
-}
-
-export function getPubKeyPoint(s: BN, ec: EC): Point {
-  const p = (ec.g as BasePoint).mul(s);
+export function getPubKeyPoint(s: BN, ec: EllipticCurve): Point {
+  const p = (ec.g as EllipticPoint).mul(s);
   return Point.fromElliptic(p);
 }
 

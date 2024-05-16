@@ -1,11 +1,12 @@
-import { KeyType, Point } from "@tkey/common-types";
+import { EllipticPoint, KeyType, Point } from "@tkey/common-types";
+import TorusUtils from "@toruslabs/torus.js";
 import { equal, fail, rejects } from "assert";
 import BN from "bn.js";
 import { ec as EC } from "elliptic";
 
 import { TKeyTSS as ThresholdKey, TKeyTSS, TSSTorusServiceProvider } from "../src";
 import { factorKeyCurve } from "../src/tss";
-import { BasePoint, getLagrangeCoeffs, pointToElliptic } from "../src/util";
+import { getLagrangeCoeffs } from "../src/util";
 import { assignTssDkgKeys, fetchPostboxKeyAndSigs, generateKey, initStorageLayer } from "./helpers";
 
 const TEST_KEY_TYPES = [KeyType.secp256k1, KeyType.ed25519];
@@ -68,8 +69,8 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
 
       const tssCommits = tb1.getTSSCommits();
       const tss2Pub = ecTSS.g.mul(tss2);
-      const tssCommitA0 = pointToElliptic(ecTSS, tssCommits[0]);
-      const tssCommitA1 = pointToElliptic(ecTSS, tssCommits[1]);
+      const tssCommitA0 = tssCommits[0].toEllipticPoint(ecTSS);
+      const tssCommitA1 = tssCommits[1].toEllipticPoint(ecTSS);
       const _tss2Pub = tssCommitA0.add(tssCommitA1.mul(new BN(deviceTSSIndex)));
       equal(tss2Pub.eq(_tss2Pub), true);
     });
@@ -118,9 +119,9 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
         .add(getLagrangeCoeffs(ecTSS, [1, deviceTSSIndex], deviceTSSIndex).mul(tss2))
         .umod(ecTSS.n);
 
-      const tssPubKey = (ecTSS.g as BasePoint).mul(tssPrivKey);
-      const tssCommits0 = pointToElliptic(ecTSS, tssCommits[0]);
-      const tssPub = pointToElliptic(ecTSS, tb1.getTSSPub());
+      const tssPubKey = (ecTSS.g as EllipticPoint).mul(tssPrivKey);
+      const tssCommits0 = tssCommits[0].toEllipticPoint(ecTSS);
+      const tssPub = tb1.getTSSPub().toEllipticPoint(ecTSS);
       equal(tssPubKey.eq(tssCommits0), true);
       equal(tssPub.eq(tssPubKey), true);
 
@@ -138,8 +139,8 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
         const coefficient2 = getLagrangeCoeffs(ecTSS, [1, deviceTSSIndex], deviceTSSIndex);
         const tssKey = coefficient1.mul(tss1Account).add(coefficient2.mul(tss2Account)).umod(ecTSS.n);
 
-        const tssKeyPub = (ecTSS.g as BasePoint).mul(tssKey);
-        const tssPubAccount = pointToElliptic(ecTSS, tb1.getTSSPub(accountIndex));
+        const tssKeyPub = (ecTSS.g as EllipticPoint).mul(tssKey);
+        const tssPubAccount = tb1.getTSSPub(accountIndex).toEllipticPoint(ecTSS);
         equal(tssPubAccount.eq(tssKeyPub), true, "should equal account pub key");
       }
     });
@@ -188,9 +189,9 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
         .mul(serverDKGPrivKeys[0])
         .add(getLagrangeCoeffs(ecTSS, [1, retrievedTSSIndex], retrievedTSSIndex).mul(retrievedTSS))
         .umod(ecTSS.n);
-      const tssPubKey = (ecTSS.g as BasePoint).mul(tssPrivKey);
+      const tssPubKey = (ecTSS.g as EllipticPoint).mul(tssPrivKey);
 
-      const tssCommits0 = pointToElliptic(ecTSS, tssCommits[0]);
+      const tssCommits0 = tssCommits[0].toEllipticPoint(ecTSS);
       equal(tssPubKey.eq(tssCommits0), true);
 
       const { serverDKGPrivKeys: serverDKGPrivKeys1 } = await assignTssDkgKeys({
@@ -219,9 +220,9 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
         .mul(serverDKGPrivKeys1[0])
         .add(getLagrangeCoeffs(ecTSS, [1, retrievedTSSIndex1], retrievedTSSIndex1).mul(retrievedTSS1))
         .umod(ecTSS.n);
-      const tssPubKey1 = (ecTSS.g as BasePoint).mul(tssPrivKey1);
+      const tssPubKey1 = (ecTSS.g as EllipticPoint).mul(tssPrivKey1);
 
-      const tssCommits10 = pointToElliptic(ecTSS, tssCommits1[0]);
+      const tssCommits10 = tssCommits1[0].toEllipticPoint(ecTSS);
       equal(tssPubKey1.eq(tssCommits10), true);
       equal(tssPrivKey1.toString("hex"), importedScalar.toString("hex"));
 
@@ -245,7 +246,7 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
         fail("key should be able to be reconstructed");
       }
       const tssCommits2 = tb2.getTSSCommits();
-      const tssCommits20 = pointToElliptic(ecTSS, tssCommits2[0]);
+      const tssCommits20 = tssCommits2[0].toEllipticPoint(ecTSS);
       equal(tssPubKey.eq(tssCommits20), true);
 
       // switch to imported account
@@ -259,9 +260,9 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
         .add(getLagrangeCoeffs(ecTSS, [1, retrievedTSSIndexImported], retrievedTSSIndexImported).mul(retrievedTSSImported))
         .umod(ecTSS.n);
 
-      const tssPubKeyImported = (ecTSS.g as BasePoint).mul(tssPrivKeyImported);
+      const tssPubKeyImported = (ecTSS.g as EllipticPoint).mul(tssPrivKeyImported);
 
-      const tssCommitsImported0 = pointToElliptic(ecTSS, tssCommitsImported[0]);
+      const tssCommitsImported0 = tssCommitsImported[0].toEllipticPoint(ecTSS);
       equal(tssPubKeyImported.eq(tssCommitsImported0), true);
       equal(tssPrivKeyImported.toString("hex"), importedScalar.toString("hex"));
     });
@@ -310,9 +311,9 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
         .mul(serverDKGPrivKeys[0])
         .add(getLagrangeCoeffs(ecTSS, [1, retrievedTSSIndex], retrievedTSSIndex).mul(retrievedTSS))
         .umod(ecTSS.n);
-      const tssPubKey = (ecTSS.g as BasePoint).mul(tssPrivKey);
+      const tssPubKey = (ecTSS.g as EllipticPoint).mul(tssPrivKey);
 
-      const tssCommits0 = pointToElliptic(ecTSS, tssCommits[0]);
+      const tssCommits0 = tssCommits[0].toEllipticPoint(ecTSS);
       equal(tssPubKey.eq(tssCommits0), true);
 
       await assignTssDkgKeys({
@@ -335,14 +336,14 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
       await tb.syncLocalMetadataTransitions();
       // for imported key
       {
-        const finalPubKey = pointToElliptic(ecTSS, tb.getTSSCommits()[0]);
+        const finalPubKey = tb.getTSSCommits()[0].toEllipticPoint(ecTSS);
 
         const finalTssKey = await tb._UNSAFE_exportTssKey({
           factorKey,
           selectedServers: [1, 2, 3],
           authSignatures: signatures,
         });
-        const tssPubKeyImported = (ecTSS.g as BasePoint).mul(importedScalar);
+        const tssPubKeyImported = (ecTSS.g as EllipticPoint).mul(importedScalar);
 
         equal(finalTssKey.toString("hex"), importedScalar.toString("hex"));
         equal(tssPubKeyImported.eq(finalPubKey), true);
@@ -359,14 +360,14 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
       {
         tb.tssTag = "default";
 
-        const finalPubKey = pointToElliptic(ecTSS, tb.getTSSCommits()[0]);
+        const finalPubKey = tb.getTSSCommits()[0].toEllipticPoint(ecTSS);
 
         const finalTssKey = await tb._UNSAFE_exportTssKey({
           factorKey,
           selectedServers: [1, 2, 3],
           authSignatures: signatures,
         });
-        const tssPubKeyImported = (ecTSS.g as BasePoint).mul(finalTssKey);
+        const tssPubKeyImported = (ecTSS.g as EllipticPoint).mul(finalTssKey);
 
         equal(tssPubKeyImported.eq(finalPubKey), true);
       }
@@ -379,14 +380,14 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
       await tb2.syncLocalMetadataTransitions();
       {
         tb2.tssTag = "imported";
-        const finalPubKey = pointToElliptic(ecTSS, tb2.getTSSCommits()[0]);
+        const finalPubKey = tb2.getTSSCommits()[0].toEllipticPoint(ecTSS);
 
         const finalTssKey = await tb2._UNSAFE_exportTssKey({
           factorKey,
           selectedServers: [1, 2, 3],
           authSignatures: signatures,
         });
-        const tssPubKeyImported = (ecTSS.g as BasePoint).mul(finalTssKey);
+        const tssPubKeyImported = (ecTSS.g as EllipticPoint).mul(finalTssKey);
 
         equal(finalTssKey.toString("hex"), importedScalar.toString("hex"));
         equal(tssPubKeyImported.eq(finalPubKey), true);
@@ -394,14 +395,14 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
       {
         tb2.tssTag = "default";
 
-        const finalPubKey = pointToElliptic(ecTSS, tb2.getTSSCommits()[0]);
+        const finalPubKey = tb2.getTSSCommits()[0].toEllipticPoint(ecTSS);
 
         const finalTssKey = await tb2._UNSAFE_exportTssKey({
           factorKey,
           selectedServers: [1, 2, 3],
           authSignatures: signatures,
         });
-        const tssPubKeyImported = (ecTSS.g as BasePoint).mul(finalTssKey);
+        const tssPubKeyImported = (ecTSS.g as EllipticPoint).mul(finalTssKey);
 
         equal(tssPubKeyImported.eq(finalPubKey), true);
       }
@@ -453,7 +454,7 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
 
       it("should be able to add factor for same index", async function () {
         newFactorKeySameIndex = ecFactor.genKeyPair().getPrivate();
-        const newFactorPub = (ecFactor.g as BasePoint).mul(newFactorKeySameIndex);
+        const newFactorPub = (ecFactor.g as EllipticPoint).mul(newFactorKeySameIndex);
         await tb.addFactorPub({
           authSignatures: signatures,
           existingFactorKey: factorKey,
@@ -465,7 +466,7 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
 
       it("should be able to add factor for different index", async function () {
         newFactorKeyNewIndex = ecFactor.genKeyPair().getPrivate();
-        const newFactorPub = (ecFactor.g as BasePoint).mul(newFactorKeyNewIndex);
+        const newFactorPub = (ecFactor.g as EllipticPoint).mul(newFactorKeyNewIndex);
         await tb.addFactorPub({
           authSignatures: signatures,
           existingFactorKey: factorKey,
@@ -476,7 +477,7 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
       });
 
       it("should be able to remove factor for same index", async function () {
-        const newFactorPub = (ecFactor.g as BasePoint).mul(newFactorKeySameIndex);
+        const newFactorPub = (ecFactor.g as EllipticPoint).mul(newFactorKeySameIndex);
         await tb.deleteFactorPub({
           factorKey,
           deleteFactorPub: Point.fromElliptic(newFactorPub),
@@ -490,7 +491,7 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
       });
 
       it("should be able to remove factor for different index", async function () {
-        const newFactorPub = (ecFactor.g as BasePoint).mul(newFactorKeyNewIndex);
+        const newFactorPub = (ecFactor.g as EllipticPoint).mul(newFactorKeyNewIndex);
         await tb.deleteFactorPub({
           factorKey,
           deleteFactorPub: Point.fromElliptic(newFactorPub),

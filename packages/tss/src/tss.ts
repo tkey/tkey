@@ -1,6 +1,7 @@
 import {
   decrypt,
   EllipticCurve,
+  EllipticPoint,
   encrypt,
   EncryptedMessage,
   KeyDetails,
@@ -20,14 +21,12 @@ import { keccak256 } from "ethereum-cryptography/keccak";
 import { TSSTorusServiceProvider } from ".";
 import { FactorEnc, IAccountSaltStore, InitializeNewTSSKeyResult } from "./common";
 import {
-  BasePoint,
   generateSalt,
   getEd25519SeedStoreDomainKey,
   getLagrangeCoeffs,
   getPubKeyPoint,
   kCombinations,
   lagrangeInterpolation,
-  pointToElliptic,
   pointToHex,
 } from "./util";
 
@@ -256,7 +255,7 @@ export class TKeyTSS extends ThresholdKey {
       // Add account nonce to pub key.
       const nonce = this.computeAccountNonce(accountIndex);
       const noncePub = ec.keyFromPrivate(nonce.toString("hex")).getPublic();
-      const pubKeyPoint = pointToElliptic(ec, tssCommits[0]);
+      const pubKeyPoint = tssCommits[0].toEllipticPoint(ec);
       const devicePubKeyPoint = pubKeyPoint.add(noncePub);
       return Point.fromSEC1(this._tssCurve, devicePubKeyPoint.encodeCompressed("hex"));
     }
@@ -388,7 +387,7 @@ export class TKeyTSS extends ThresholdKey {
         newLabel: label,
         sigs: authSignatures,
       });
-      const secondCommit = pointToElliptic(ec, newTSSServerPub).add(ecPoint(ec, tssPubKey).neg());
+      const secondCommit = newTSSServerPub.toEllipticPoint(ec).add(ecPoint(ec, tssPubKey).neg());
       const newTSSCommits = [
         Point.fromJSON(tssPubKey),
         Point.fromJSON({ x: secondCommit.getX().toString(16, 64), y: secondCommit.getY().toString(16, 64) }),
@@ -558,7 +557,7 @@ export class TKeyTSS extends ThresholdKey {
       selectedServers: finalSelectedServers,
     });
 
-    const secondCommit = pointToElliptic(this._tssCurve, newTSSServerPub).add(ecPoint(this._tssCurve, tssPubKey).neg());
+    const secondCommit = newTSSServerPub.toEllipticPoint(this._tssCurve).add(ecPoint(this._tssCurve, tssPubKey).neg());
     const newTSSCommits = [
       Point.fromJSON(tssPubKey),
       Point.fromJSON({ x: secondCommit.getX().toString(16, 64), y: secondCommit.getY().toString(16, 64) }),
@@ -752,8 +751,8 @@ export class TKeyTSS extends ThresholdKey {
       tss2 = this._tssCurve.genKeyPair().getPrivate();
     }
     const { pubKey: tss1Pub } = await this.serviceProvider.getTSSPubKey(tssTag, 0);
-    const tss1PubKey = pointToElliptic(ec, tss1Pub);
-    const tss2PubKey = (this._tssCurve.g as BasePoint).mul(tss2);
+    const tss1PubKey = tss1Pub.toEllipticPoint(ec);
+    const tss2PubKey = (this._tssCurve.g as EllipticPoint).mul(tss2);
 
     const L1_0 = getLagrangeCoeffs(ec, [1, _tssIndex], 1, 0);
     // eslint-disable-next-line camelcase
