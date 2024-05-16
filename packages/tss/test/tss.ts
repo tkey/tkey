@@ -10,6 +10,8 @@ import { assignTssDkgKeys, fetchPostboxKeyAndSigs, generateKey, initStorageLayer
 
 const TEST_KEY_TYPES = [KeyType.secp256k1, KeyType.ed25519];
 
+TorusUtils.enableLogging(false);
+
 TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
   const ecFactor = factorKeyCurve;
   const ecTSS = new EC(TSS_KEY_TYPE);

@@ -91,7 +91,7 @@ export async function assignTssDkgKeys(opts: {
       token,
       nodeDetails.torusNodePub
     );
-    const localPrivKey = Torus.getPostboxKey(tKey);
+    const localPrivKey = tKey.oAuthKeyData.privKey;
 
     serverDKGPrivKeys.push(new BN(localPrivKey, "hex"));
   }
