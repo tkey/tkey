@@ -8,6 +8,7 @@ import {
   KeyType,
   Point,
   ReconstructedKeyResult,
+  secp256k1,
   TKeyArgs,
   TKeyInitArgs,
 } from "@tkey/common-types";
@@ -635,66 +636,85 @@ export class TKeyTSS extends ThresholdKey {
 
   /**
    * Adds a factor key to the set of authorized keys.
+   *
+   * `refreshShares` - If this is true, then refresh the shares. If this is
+   * false, `newTSSIndex` must be the same as current factor key index.
    */
-  public async addFactorPub(tssOptions: {
+  public async addFactorPub(args: {
     existingFactorKey: BN;
     newFactorPub: Point;
     newTSSIndex: number;
     selectedServers?: number[];
     authSignatures: string[];
+    refreshShares?: boolean;
   }) {
     if (!this.metadata) throw CoreError.metadataUndefined("metadata is undefined");
     if (!this.privKey) throw new Error("Tkey is not reconstructed");
     if (!this.metadata.tssPolyCommits[this.tssTag]) throw new Error(`tss key has not been initialized for tssTag ${this.tssTag}`);
-    const { existingFactorKey, newFactorPub, newTSSIndex, selectedServers, authSignatures } = tssOptions;
+    const { existingFactorKey, newFactorPub, newTSSIndex, selectedServers, authSignatures, refreshShares } = args;
 
     const { tssShare, tssIndex } = await this.getTSSShare(existingFactorKey);
-    const existingFactorPubs = this.metadata.factorPubs[this.tssTag];
-    const updatedFactorPubs = existingFactorPubs.concat([newFactorPub]);
 
-    // only modify factorPubs
-    this.metadata.addTSSData({
-      tssTag: this.tssTag,
-      tssNonce: this.metadata.tssNonces[this.tssTag],
-      tssPolyCommits: this.metadata.tssPolyCommits[this.tssTag],
-      factorPubs: updatedFactorPubs,
-      factorEncs: this.metadata.factorEncs[this.tssTag],
-      tssKeyType: this._tssKeyType,
-    });
+    if (tssIndex !== newTSSIndex && !refreshShares) {
+      throw CoreError.default("newTSSIndex does not match existing tssIndex, set refreshShares to true to refresh shares");
+    }
 
-    const verifierId = this.serviceProvider.getVerifierNameVerifierId();
-    const rssNodeDetails = await this._getRssNodeDetails();
-    const randomSelectedServers = randomSelection(
-      new Array(rssNodeDetails.serverEndpoints.length).fill(null).map((_, i) => i + 1),
-      Math.ceil(rssNodeDetails.serverEndpoints.length / 2)
-    );
+    if (!refreshShares) {
+      // Just copy data stored under factor key.
+      if (tssIndex !== newTSSIndex) {
+        throw CoreError.default("newTSSIndex does not match existing tssIndex, set refreshShares to true to refresh shares");
+      }
 
-    const finalServer = selectedServers || randomSelectedServers;
+      const updatedFactorPubs = this.metadata.factorPubs[this.tssTag].concat([newFactorPub]);
+      const factorEncs = JSON.parse(JSON.stringify(this.metadata.factorEncs[this.tssTag]));
+      const factorPubID = newFactorPub.x.toString(16, 64);
+      factorEncs[factorPubID] = {
+        tssIndex,
+        type: "direct",
+        userEnc: await encrypt(newFactorPub.toSEC1(secp256k1, false), tssShare.toBuffer("be", 32)),
+        serverEncs: [],
+      };
+      this.metadata.addTSSData({
+        tssKeyType: this.tssKeyType,
+        tssTag: this.tssTag,
+        factorPubs: updatedFactorPubs,
+        factorEncs,
+      });
+    } else {
+      // Use RSS to create new TSS share and store it under new factor key.
+      const existingFactorPubs = this.metadata.factorPubs[this.tssTag];
+      const updatedFactorPubs = existingFactorPubs.concat([newFactorPub]);
 
-    const existingTSSIndexes = existingFactorPubs.map((fb) => this.getFactorEncs(fb).tssIndex);
-    const updatedTSSIndexes = existingTSSIndexes.concat([newTSSIndex]);
+      const verifierId = this.serviceProvider.getVerifierNameVerifierId();
+      const rssNodeDetails = await this._getRssNodeDetails();
+      const randomSelectedServers = randomSelection(
+        new Array(rssNodeDetails.serverEndpoints.length).fill(null).map((_, i) => i + 1),
+        Math.ceil(rssNodeDetails.serverEndpoints.length / 2)
+      );
 
-    await this._refreshTSSShares(false, tssShare, tssIndex, updatedFactorPubs, updatedTSSIndexes, verifierId, {
-      ...rssNodeDetails,
-      selectedServers: finalServer,
-      authSignatures,
-    });
+      const finalServer = selectedServers || randomSelectedServers;
+
+      const existingTSSIndexes = existingFactorPubs.map((fb) => this.getFactorEncs(fb).tssIndex);
+      const updatedTSSIndexes = existingTSSIndexes.concat([newTSSIndex]);
+
+      await this._refreshTSSShares(false, tssShare, tssIndex, updatedFactorPubs, updatedTSSIndexes, verifierId, {
+        ...rssNodeDetails,
+        selectedServers: finalServer,
+        authSignatures,
+      });
+    }
     await this._syncShareMetadata();
   }
 
   /**
-   * Removes a factor key from the set of authorized keys.
+   * Removes a factor key from the set of authorized keys and refreshes the TSS
+   * key shares.
    */
-  public async deleteFactorPub(tssOptions: {
-    factorKey: BN;
-    deleteFactorPub: Point;
-    selectedServers?: number[];
-    authSignatures: string[];
-  }): Promise<void> {
+  public async deleteFactorPub(args: { factorKey: BN; deleteFactorPub: Point; selectedServers?: number[]; authSignatures: string[] }): Promise<void> {
     if (!this.metadata) throw CoreError.metadataUndefined("metadata is undefined");
     if (!this.privKey) throw new Error("Tkey is not reconstructed");
     if (!this.metadata.tssPolyCommits[this.tssTag]) throw new Error(`tss key has not been initialized for tssTag ${this.tssTag}`);
-    const { factorKey, deleteFactorPub, selectedServers, authSignatures } = tssOptions;
+    const { factorKey, deleteFactorPub, selectedServers, authSignatures } = args;
     const existingFactorPubs = this.metadata.factorPubs[this.tssTag];
     const { tssShare, tssIndex } = await this.getTSSShare(factorKey);
 
