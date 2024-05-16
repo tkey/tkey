@@ -472,6 +472,7 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
           existingFactorKey: factorKey,
           newFactorPub: Point.fromElliptic(newFactorPub),
           newTSSIndex,
+          refreshShares: true,
         });
         await tb.syncLocalMetadataTransitions();
       });

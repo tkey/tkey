@@ -453,6 +453,7 @@ export class TKeyTSS extends ThresholdKey {
       newTSSIndex: tempShareIndex,
       authSignatures,
       selectedServers,
+      refreshShares: true,
     });
 
     const { tssShare: factorShare, tssIndex: factorIndex } = await this.getTSSShare(factorKey);
