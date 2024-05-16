@@ -613,25 +613,21 @@ export class TKeyTSS extends ThresholdKey {
   async reconstructKey(_reconstructKeyMiddleware?: boolean): Promise<ReconstructedKeyResult> {
     const k = await super.reconstructKey(_reconstructKeyMiddleware);
 
-    // only valid for use Tss
-    // assign account salt from tKey store if it exists
-    if (Object.keys(this.metadata.tssPolyCommits).length > 0) {
-      const accountSalt = (await this.getTKeyStoreItem(TSS_MODULE, "accountSalt")) as IAccountSaltStore;
-      if (accountSalt && accountSalt.value) {
-        this._accountSalt = accountSalt.value;
-      } else {
-        const newSalt = generateSalt(this._tssCurve);
-        await this._setTKeyStoreItem(TSS_MODULE, {
-          id: "accountSalt",
-          value: newSalt,
-        } as IAccountSaltStore);
-        this._accountSalt = newSalt;
-        // this is very specific case where exisiting user do not have salt.
-        // sync metadata to cloud to ensure salt is stored incase of manual sync mode
-        // new user or importKey should not hit this cases
-        // NOTE this is not mistake, we force sync for this case
-        if (this.manualSync) await this.syncLocalMetadataTransitions();
-      }
+    const accountSalt = (await this.getTKeyStoreItem(TSS_MODULE, "accountSalt")) as IAccountSaltStore;
+    if (accountSalt && accountSalt.value) {
+      this._accountSalt = accountSalt.value;
+    } else {
+      const newSalt = generateSalt(this._tssCurve);
+      await this._setTKeyStoreItem(TSS_MODULE, {
+        id: "accountSalt",
+        value: newSalt,
+      } as IAccountSaltStore);
+      this._accountSalt = newSalt;
+      // this is very specific case where exisiting user do not have salt.
+      // sync metadata to cloud to ensure salt is stored incase of manual sync mode
+      // new user or importKey should not hit this cases
+      // NOTE this is not mistake, we force sync for this case
+      if (this.manualSync) await this.syncLocalMetadataTransitions();
     }
 
     return k;
