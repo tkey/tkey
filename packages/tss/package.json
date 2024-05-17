@@ -1,6 +1,6 @@
 {
   "name": "@tkey/tss",
-  "version": "0.1.0",
+  "version": "13.0.0-alpha.0",
   "description": "Threshold signing for Tkey",
   "main": "dist/tss.cjs.js",
   "types": "dist/types/index.d.ts",
@@ -13,9 +13,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@tkey/common-types": "^12.0.0",
-    "@tkey/core": "^12.0.0",
-    "@tkey/service-provider-torus": "^12.0.0",
+    "@tkey/common-types": "^13.0.0-alpha.0",
+    "@tkey/core": "^13.0.0-alpha.0",
+    "@tkey/service-provider-torus": "^13.0.0-alpha.0",
     "@toruslabs/rss-client": "^2.0.0-0",
     "@toruslabs/torus.js": "13.0.0-alpha.6",
     "@types/bn.js": "^5.1.5",
@@ -24,7 +24,7 @@
     "ethereum-cryptography": "^2.1.3"
   },
   "devDependencies": {
-    "@tkey/storage-layer-torus": "^12.0.0",
+    "@tkey/storage-layer-torus": "^13.0.0-alpha.0",
     "@types/jsrsasign": "^10.5.13",
     "jsrsasign": "^11.1.0",
     "ts-node": "^10.9.2",
