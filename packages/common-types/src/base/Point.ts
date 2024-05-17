@@ -4,13 +4,18 @@ import { BNString, EllipticCurve, EllipticPoint, IPoint, StringifiedType } from 
 import { secp256k1 } from "../utils";
 
 class Point implements IPoint {
-  x: BN;
+  x: BN | null;
 
-  y: BN;
+  y: BN | null;
 
   constructor(x: BNString, y: BNString) {
     this.x = new BN(x, "hex");
     this.y = new BN(y, "hex");
+  }
+
+  static fromScalar(s: BN, ec: EllipticCurve): Point {
+    const p = (ec.g as EllipticPoint).mul(s);
+    return Point.fromElliptic(p);
   }
 
   /**
@@ -28,6 +33,9 @@ class Point implements IPoint {
   }
 
   static fromElliptic(p: EllipticPoint): Point {
+    if (p.isInfinity()) {
+      return new Point(null, null);
+    }
     return new Point(p.getX(), p.getY());
   }
 
@@ -35,9 +43,15 @@ class Point implements IPoint {
    * Construct a point from SEC1 format.
    */
   static fromSEC1(ec: EllipticCurve, encodedPoint: string): Point {
+    // "elliptic"@6.5.4 can't decode identity.
+    if (encodedPoint.length === 2 && encodedPoint === "00") {
+      const identity = (ec.g as EllipticPoint).mul(new BN(0));
+      return Point.fromElliptic(identity);
+    }
+
     const key = ec.keyFromPublic(encodedPoint, "hex");
     const pt = key.getPublic();
-    return new Point(pt.getX(), pt.getY());
+    return Point.fromElliptic(pt);
   }
 
   /**
@@ -60,6 +74,10 @@ class Point implements IPoint {
   }
 
   toEllipticPoint(ec: EllipticCurve): EllipticPoint {
+    if (this.isIdentity()) {
+      return (ec.g as EllipticPoint).mul(new BN(0));
+    }
+
     const keyPair = ec.keyFromPublic({ x: this.x.toString("hex"), y: this.y.toString("hex") }, "hex");
     return keyPair.getPublic();
   }
@@ -71,6 +89,11 @@ class Point implements IPoint {
    * @returns The SEC1-encoded point.
    */
   toSEC1(ec: EllipticCurve, compressed = false): Buffer {
+    // "elliptic"@6.5.4 can't encode identity.
+    if (this.isIdentity()) {
+      return Buffer.from("00", "hex");
+    }
+
     const p = this.toEllipticPoint(ec);
     return Buffer.from(p.encode("hex", compressed), "hex");
   }
@@ -80,6 +103,17 @@ class Point implements IPoint {
       x: this.x.toString("hex"),
       y: this.y.toString("hex"),
     };
+  }
+
+  isIdentity(): boolean {
+    return this.x === null && this.y === null;
+  }
+
+  equals(p: Point): boolean {
+    if (this.isIdentity()) {
+      return p.isIdentity();
+    }
+    return this.x.eq(p.x) && this.y.eq(p.y);
   }
 }
 

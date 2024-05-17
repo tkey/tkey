@@ -258,7 +258,7 @@ export class TKeyTSS extends ThresholdKey {
       const noncePub = ec.keyFromPrivate(nonce.toString("hex")).getPublic();
       const pubKeyPoint = tssCommits[0].toEllipticPoint(ec);
       const devicePubKeyPoint = pubKeyPoint.add(noncePub);
-      return Point.fromSEC1(this._tssCurve, devicePubKeyPoint.encodeCompressed("hex"));
+      return Point.fromElliptic(devicePubKeyPoint);
     }
     return tssCommits[0];
   }
@@ -778,10 +778,7 @@ export class TKeyTSS extends ThresholdKey {
     const a0Pub = tss1PubKey.mul(L1_0).add(tss2PubKey.mul(LIndex_0));
     const a1Pub = tss1PubKey.add(a0Pub.neg());
 
-    const tssPolyCommits = [
-      Point.fromSEC1(this._tssCurve, a0Pub.encodeCompressed("hex")),
-      Point.fromSEC1(this._tssCurve, a1Pub.encodeCompressed("hex")),
-    ];
+    const tssPolyCommits = [Point.fromElliptic(a0Pub), Point.fromElliptic(a1Pub)];
     const factorPubs = [factorPub];
     const factorEncs: { [factorPubID: string]: FactorEnc } = {};
 
