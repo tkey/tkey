@@ -41,10 +41,10 @@ import {
   ShareStorePolyIDShareIndexMap,
   StringifiedType,
   TKeyArgs,
+  TKeyInitArgs,
   TkeyStoreItemType,
   toPrivKeyECC,
 } from "@tkey/common-types";
-import { generatePrivate } from "@toruslabs/eccrypto";
 import { getEd25519ExtendedPublicKey } from "@toruslabs/torus.js";
 import BN from "bn.js";
 import { getRandomBytes } from "ethereum-cryptography/random";
@@ -52,7 +52,7 @@ import stringify from "json-stable-stringify";
 
 import AuthMetadata from "./authMetadata";
 import CoreError from "./errors";
-import { generateRandomPolynomial, lagrangeInterpolatePolynomial, lagrangeInterpolation } from "./lagrangeInterpolatePolynomial";
+import { generatePrivateBN, generateRandomPolynomial, lagrangeInterpolatePolynomial, lagrangeInterpolation } from "./lagrangeInterpolatePolynomial";
 import Metadata from "./metadata";
 
 const ed25519SeedConst = "ed25519Seed";
@@ -228,16 +228,7 @@ class ThresholdKey implements ITKey {
     throw CoreError.privKeyUnavailable();
   }
 
-  async initialize(params?: {
-    withShare?: ShareStore;
-    importKey?: BN;
-    importEd25519Seed?: Buffer;
-    neverInitializeNewKey?: boolean;
-    transitionMetadata?: Metadata;
-    previouslyFetchedCloudMetadata?: Metadata;
-    previousLocalMetadataTransitions?: LocalMetadataTransitions;
-    delete1OutOf1?: boolean;
-  }): Promise<KeyDetails> {
+  async initialize(params?: TKeyInitArgs): Promise<KeyDetails> {
     // setup initial params/states
     const p = params || {};
 
@@ -676,8 +667,8 @@ class ThresholdKey implements ITKey {
     delete1OutOf1?: boolean;
   } = {}): Promise<InitializeNewKeyResult> {
     if (!importedKey) {
-      const tmpPriv = generatePrivate();
-      this._setKey(new BN(tmpPriv));
+      const tmpPriv = generatePrivateBN();
+      this._setKey(tmpPriv);
     } else {
       this._setKey(new BN(importedKey));
     }
@@ -838,6 +829,10 @@ class ThresholdKey implements ITKey {
     this.lastFetchedCloudMetadata = this.metadata.clone();
     // release lock
     if (acquiredLock) await this.releaseWriteMetadataLock();
+  }
+
+  async readMetadata<T>(privKey: BN): Promise<T> {
+    return this.storageLayer.getMetadata<T>({ privKey });
   }
 
   // Returns a new instance of metadata with a clean state. All the previous state will be reset.

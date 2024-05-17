@@ -1,8 +1,7 @@
+import { generatePrivateBN } from "@tkey/core";
 import { TorusServiceProvider } from "@tkey/service-provider-torus";
 import { TorusStorageLayer } from "@tkey/storage-layer-torus";
-import { generatePrivate } from "@toruslabs/eccrypto";
 import assert from "assert";
-import { BN } from "bn.js";
 import { randomBytes } from "crypto";
 
 import ThresholdKey from "../../src/index";
@@ -13,10 +12,11 @@ export function ed25519Tests(params: { manualSync: boolean; torusSP: TorusServic
   const { manualSync } = params;
   describe("tkey : ed25519 key", function () {
     let tb: ThresholdKey;
+
     beforeEach("Setup ThresholdKey", async function () {
       customSP = new TorusServiceProvider({
         enableLogging: false,
-        postboxKey: new BN(generatePrivate()).toString("hex"),
+        postboxKey: generatePrivateBN().toString("hex"),
         customAuthArgs: { baseUrl: "http://localhost:3000", web3AuthClientId: "test", network: "mainnet" },
       });
       tb = new ThresholdKey({
@@ -48,14 +48,14 @@ export function ed25519Tests(params: { manualSync: boolean; torusSP: TorusServic
       // should not able to reinitialize with import key
       const instance3 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync });
       try {
-        await instance3.initialize({ importKey: new BN(generatePrivate()), importEd25519Seed: randomBytes(32) });
+        await instance3.initialize({ importKey: generatePrivateBN(), importEd25519Seed: randomBytes(32) });
         assert.fail("should not be able to reinitialize with import key");
       } catch (error) {}
     });
 
     it("should import key for ed25519 and secp256k1", async function () {
       const tb2 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync });
-      const secp = new BN(generatePrivate());
+      const secp = generatePrivateBN();
       const ed = randomBytes(32);
       await tb2.initialize({ importKey: secp, importEd25519Seed: ed });
 
@@ -68,7 +68,7 @@ export function ed25519Tests(params: { manualSync: boolean; torusSP: TorusServic
       await newInstance.initialize();
       const edPub = newInstance.getEd25519PublicKey();
       try {
-        await newInstance.getEd25519Key();
+        newInstance.getEd25519Key();
         assert.fail("should not be able to get ed25519 key");
       } catch (error) {}
 
@@ -81,7 +81,7 @@ export function ed25519Tests(params: { manualSync: boolean; torusSP: TorusServic
       // should not able to reinitialize with import key
       const instance3 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync });
       try {
-        await instance3.initialize({ importKey: new BN(generatePrivate()), importEd25519Seed: randomBytes(32) });
+        await instance3.initialize({ importKey: generatePrivateBN(), importEd25519Seed: randomBytes(32) });
         assert.fail("should not be able to reinitialize with import key");
       } catch (error) {}
     });

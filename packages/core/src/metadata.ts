@@ -1,9 +1,10 @@
 import {
   decrypt,
-  ecCurve,
   EncryptedMessage,
+  FactorEnc,
   getPubKeyPoint,
   IMetadata,
+  KeyType,
   Point,
   PolyIDAndShares,
   Polynomial,
@@ -12,6 +13,7 @@ import {
   PublicPolynomialMap,
   PublicShare,
   PublicSharePolyIDShareIndexMap,
+  secp256k1,
   Share,
   ShareDescriptionMap,
   ShareMap,
@@ -49,6 +51,28 @@ class Metadata implements IMetadata {
 
   nonce: number;
 
+  tssKeyTypes?: {
+    [tssTag: string]: KeyType;
+  };
+
+  tssNonces?: {
+    [tssTag: string]: number;
+  };
+
+  tssPolyCommits?: {
+    [tssTag: string]: Point[];
+  };
+
+  factorPubs?: {
+    [tssTag: string]: Point[];
+  };
+
+  factorEncs?: {
+    [tssTag: string]: {
+      [factorPubID: string]: FactorEnc;
+    };
+  };
+
   constructor(input: Point) {
     this.publicPolynomials = {};
     this.publicShares = {};
@@ -58,11 +82,16 @@ class Metadata implements IMetadata {
     this.pubKey = input;
     this.polyIDList = [];
     this.nonce = 0;
+    this.tssKeyTypes = {};
+    this.tssPolyCommits = {};
+    this.tssNonces = {};
+    this.factorPubs = {};
+    this.factorEncs = {};
   }
 
   static fromJSON(value: StringifiedType): Metadata {
-    const { pubKey, polyIDList, generalStore, tkeyStore, scopedStore, nonce } = value;
-    const point = Point.fromCompressedPub(pubKey);
+    const { pubKey, polyIDList, generalStore, tkeyStore, scopedStore, nonce, tssKeyTypes, tssPolyCommits, tssNonces, factorPubs, factorEncs } = value;
+    const point = Point.fromSEC1(secp256k1, pubKey);
     const metadata = new Metadata(point);
     const unserializedPolyIDList: PolyIDAndShares[] = [];
 
@@ -70,6 +99,32 @@ class Metadata implements IMetadata {
     if (tkeyStore) metadata.tkeyStore = tkeyStore;
     if (scopedStore) metadata.scopedStore = scopedStore;
     if (nonce) metadata.nonce = nonce;
+
+    if (tssKeyTypes) {
+      metadata.tssKeyTypes = {};
+      for (const key in tssKeyTypes) {
+        metadata.tssKeyTypes[key] = tssKeyTypes[key];
+      }
+    }
+    if (tssPolyCommits) {
+      metadata.tssPolyCommits = {};
+      for (const key in tssPolyCommits) {
+        metadata.tssPolyCommits[key] = (tssPolyCommits as Record<string, Point[]>)[key].map((obj) => new Point(obj.x, obj.y));
+      }
+    }
+    if (tssNonces) {
+      metadata.tssNonces = {};
+      for (const key in tssNonces) {
+        metadata.tssNonces[key] = tssNonces[key];
+      }
+    }
+    if (factorPubs) {
+      metadata.factorPubs = {};
+      for (const key in factorPubs) {
+        metadata.factorPubs[key] = (factorPubs as Record<string, Point[]>)[key].map((obj) => new Point(obj.x, obj.y));
+      }
+    }
+    if (factorEncs) metadata.factorEncs = factorEncs;
 
     for (let i = 0; i < polyIDList.length; i += 1) {
       const serializedPolyID: string = polyIDList[i];
@@ -114,10 +169,6 @@ class Metadata implements IMetadata {
     }
     this.publicShares[polynomialID][publicShare.shareIndex.toString("hex")] = publicShare;
   }
-
-  // getPublicShare(polynomialID: PolynomialID, shareIndex: BN): PublicShare {
-
-  // }
 
   setGeneralStoreDomain(key: string, obj: unknown): void {
     this.generalStore[key] = obj;
@@ -270,13 +321,39 @@ class Metadata implements IMetadata {
     }
 
     return {
-      pubKey: this.pubKey.encode("elliptic-compressed", { ec: ecCurve }).toString(),
+      pubKey: this.pubKey.toSEC1(secp256k1, true).toString("hex"),
       polyIDList: serializedPolyIDList,
       scopedStore: this.scopedStore,
       generalStore: this.generalStore,
       tkeyStore: this.tkeyStore,
       nonce: this.nonce,
+      ...(this.tssKeyTypes && { tssKeyTypes: this.tssKeyTypes }),
+      ...(this.tssNonces && { tssNonces: this.tssNonces }),
+      ...(this.tssPolyCommits && { tssPolyCommits: this.tssPolyCommits }),
+      ...(this.factorPubs && { factorPubs: this.factorPubs }),
+      ...(this.factorEncs && { factorEncs: this.factorEncs }),
     };
+  }
+
+  /**
+   * Updates the TSS metadata for the given tag.
+   */
+  updateTSSData(tssData: {
+    tssTag: string;
+    tssKeyType?: KeyType;
+    tssNonce?: number;
+    tssPolyCommits?: Point[];
+    factorPubs?: Point[];
+    factorEncs?: {
+      [factorPubID: string]: FactorEnc;
+    };
+  }): void {
+    const { tssKeyType, tssTag, tssNonce, tssPolyCommits, factorPubs, factorEncs } = tssData;
+    if (tssKeyType) this.tssKeyTypes[tssTag] = tssKeyType;
+    if (tssNonce !== undefined) this.tssNonces[tssTag] = tssNonce;
+    if (tssPolyCommits) this.tssPolyCommits[tssTag] = tssPolyCommits;
+    if (factorPubs) this.factorPubs[tssTag] = factorPubs;
+    if (factorEncs) this.factorEncs[tssTag] = factorEncs;
   }
 }
 

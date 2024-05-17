@@ -1,6 +1,5 @@
 import {
   decrypt,
-  ecCurve,
   encrypt,
   EncryptedMessage,
   getPubKeyECC,
@@ -11,6 +10,7 @@ import {
   ONE_KEY_DELETE_NONCE,
   ONE_KEY_NAMESPACE,
   prettyPrintError,
+  secp256k1,
   StringifiedType,
   toPrivKeyEC,
   toPrivKeyECC,
@@ -24,7 +24,7 @@ import { keccak256 } from "ethereum-cryptography/keccak";
 import stringify from "json-stable-stringify";
 
 function signDataWithPrivKey(data: { timestamp: number }, privKey: BN): string {
-  const sig = ecCurve.sign(keccak256(Buffer.from(stringify(data), "utf8")), toPrivKeyECC(privKey), "utf-8");
+  const sig = secp256k1.sign(keccak256(Buffer.from(stringify(data), "utf8")), toPrivKeyECC(privKey), "utf-8");
   return sig.toDER("hex");
 }
 
