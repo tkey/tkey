@@ -109,7 +109,7 @@ export class TKeyTSS extends ThresholdKey {
   async initialize(params?: TKeyTSSInitArgs): Promise<KeyDetails> {
     const keyDetails = await super.initialize(params);
 
-    if (!this.metadata.tssPolyCommits[this.tssTag] && !params?.skipTssInit) {
+    if (!this.metadata.tssPolyCommits[this.tssTag] && !(params?.skipTssInit || params?.neverInitializeNewKey)) {
       // if tss shares have not been created for this tssTag, create new tss sharing
       const { factorEncs, factorPubs, tssPolyCommits } = await this._initializeNewTSSKey(
         this.tssTag,
