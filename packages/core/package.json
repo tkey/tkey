@@ -1,6 +1,6 @@
 {
   "name": "@tkey/core",
-  "version": "13.0.0-alpha.0",
+  "version": "13.0.0-alpha.1",
   "description": "TKey Core library",
   "main": "dist/core.cjs.js",
   "module": "dist/core.esm.js",
@@ -33,7 +33,7 @@
     "dist"
   ],
   "dependencies": {
-    "@tkey/common-types": "^13.0.0-alpha.0",
+    "@tkey/common-types": "^13.0.0-alpha.1",
     "@toruslabs/http-helpers": "^6.1.1",
     "@toruslabs/torus.js": "^13.0.0-alpha.4",
     "bn.js": "^5.2.1",

@@ -1,6 +1,6 @@
 {
   "name": "@tkey/default",
-  "version": "13.0.0-alpha.0",
+  "version": "13.0.0-alpha.1",
   "description": "TKey default library",
   "main": "dist/default.cjs.js",
   "module": "dist/default.esm.js",
@@ -33,20 +33,20 @@
     "dist"
   ],
   "dependencies": {
-    "@tkey/common-types": "^13.0.0-alpha.0",
-    "@tkey/core": "^13.0.0-alpha.0",
-    "@tkey/security-questions": "^13.0.0-alpha.0",
-    "@tkey/service-provider-base": "^13.0.0-alpha.0",
-    "@tkey/service-provider-torus": "^13.0.0-alpha.0",
-    "@tkey/share-serialization": "^13.0.0-alpha.0",
-    "@tkey/share-transfer": "^13.0.0-alpha.0",
-    "@tkey/storage-layer-torus": "^13.0.0-alpha.0",
+    "@tkey/common-types": "^13.0.0-alpha.1",
+    "@tkey/core": "^13.0.0-alpha.1",
+    "@tkey/security-questions": "^13.0.0-alpha.1",
+    "@tkey/service-provider-base": "^13.0.0-alpha.1",
+    "@tkey/service-provider-torus": "^13.0.0-alpha.1",
+    "@tkey/share-serialization": "^13.0.0-alpha.1",
+    "@tkey/share-transfer": "^13.0.0-alpha.1",
+    "@tkey/storage-layer-torus": "^13.0.0-alpha.1",
     "@toruslabs/torus.js": "13.0.0-alpha.6",
     "bn.js": "^5.2.1"
   },
   "devDependencies": {
-    "@tkey/private-keys": "^13.0.0-alpha.0",
-    "@tkey/seed-phrase": "^13.0.0-alpha.0",
+    "@tkey/private-keys": "^13.0.0-alpha.1",
+    "@tkey/seed-phrase": "^13.0.0-alpha.1",
     "@toruslabs/http-helpers": "^6.1.1"
   },
   "peerDependencies": {
