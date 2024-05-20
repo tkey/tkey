@@ -38,8 +38,8 @@ export interface ISerializable {
 }
 
 export interface IPoint extends ISerializable {
-  x: BN;
-  y: BN;
+  x: BN | null;
+  y: BN | null;
   encode(enc: string, params?: unknown): Buffer;
 }
 

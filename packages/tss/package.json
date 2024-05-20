@@ -3,7 +3,13 @@
   "version": "13.0.0-alpha.0",
   "description": "Threshold signing for Tkey",
   "main": "dist/tss.cjs.js",
+  "module": "dist/tss.esm.js",
+  "unpkg": "dist/tss.umd.min.js",
+  "jsdelivr": "dist/tss.umd.min.js",
   "types": "dist/types/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "test": "METADATA=mocked TS_NODE_PROJECT=./test/tsconfig.json mocha",
     "dev": "rimraf dist/ && cross-env NODE_ENV=development torus-scripts build",
