@@ -1,6 +1,6 @@
 import { EllipticPoint, KeyType, Point } from "@tkey/common-types";
 import TorusUtils from "@toruslabs/torus.js";
-import { equal, fail, rejects } from "assert";
+import assert, { equal, fail, rejects } from "assert";
 import BN from "bn.js";
 import { ec as EC } from "elliptic";
 
@@ -145,7 +145,58 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
       }
     });
 
-    it(`#should be able to import a tss key, manualSync=${manualSync}`, async function () {
+    it(`#should be able to import a tss key for new account, manualSync=${manualSync}`, async function () {
+      const sp = torusSP;
+      sp.verifierName = "torus-test-health";
+      sp.verifierId = `importeduserfresh${TSS_KEY_TYPE}@example.com`;
+      const { signatures, postboxkey } = await fetchPostboxKeyAndSigs({
+        serviceProvider: sp,
+        verifierName: sp.verifierName,
+        verifierId: sp.verifierId,
+      });
+      sp.postboxKey = postboxkey;
+
+      const tb = new ThresholdKey({ serviceProvider: sp, storageLayer: torusSL, manualSync, tssKeyType: TSS_KEY_TYPE });
+
+      const factorKeyPair = ecFactor.genKeyPair();
+      const factorKey = factorKeyPair.getPrivate();
+      const factorPub = Point.fromElliptic(factorKeyPair.getPublic());
+
+      const importTssKey = generateKey(TSS_KEY_TYPE);
+      const newTSSIndex = 2;
+
+      await tb.initialize({ skipTssInit: true });
+      await tb.reconstructKey();
+      await tb.importTssKey(
+        { tag: "imported", importKey: importTssKey.raw, factorPub, newTSSIndex },
+        {
+          authSignatures: signatures,
+        }
+      );
+
+      await tb.syncLocalMetadataTransitions();
+
+      // Check pub key.
+      const importTssKeyPub = Point.fromScalar(importTssKey.scalar, tb.tssCurve);
+      const tssPub = await tb.getTSSPub();
+      assert(tssPub.equals(importTssKeyPub));
+
+      // Check exported key.
+      const exportedKey = await tb._UNSAFE_exportTssKey({
+        factorKey,
+        authSignatures: signatures,
+      });
+      assert(exportedKey.eq(importTssKey.scalar));
+      if (TSS_KEY_TYPE === KeyType.ed25519) {
+        const seed = await tb._UNSAFE_exportTssEd25519Seed({
+          factorKey,
+          authSignatures: signatures,
+        });
+        assert(seed.equals(importTssKey.raw));
+      }
+    });
+
+    it(`#should be able to import a tss key for existing account, manualSync=${manualSync}`, async function () {
       const sp = torusSP;
 
       const deviceTSSShare = ecTSS.genKeyPair().getPrivate();

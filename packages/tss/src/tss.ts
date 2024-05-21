@@ -126,7 +126,7 @@ export class TKeyTSS extends ThresholdKey {
       this._accountSalt = accountSalt;
     }
 
-    if ((this.metadata.tssKeyTypes[this.tssTag] || LEGACY_KEY_TYPE) !== this.tssKeyType) {
+    if (this.metadata.tssPolyCommits[this.tssTag] && (this.metadata.tssKeyTypes[this.tssTag] || LEGACY_KEY_TYPE) !== this.tssKeyType) {
       throw CoreError.default(`tssKeyType mismatch: ${this.metadata.tssKeyTypes[this.tssTag]} !== ${this.tssKeyType}`);
     }
 
@@ -479,7 +479,7 @@ export class TKeyTSS extends ThresholdKey {
    *
    * Reconstructs the TSS private key and exports the ed25519 private key seed.
    */
-  async _UNSAFE_exportTssEd25519Seed(tssOptions: { factorKey: BN; selectedServers: number[]; authSignatures: string[] }): Promise<Buffer> {
+  async _UNSAFE_exportTssEd25519Seed(tssOptions: { factorKey: BN; selectedServers?: number[]; authSignatures: string[] }): Promise<Buffer> {
     const edScalar = await this._UNSAFE_exportTssKey(tssOptions);
 
     // Try to export ed25519 seed. This is only available if import key was being used.
