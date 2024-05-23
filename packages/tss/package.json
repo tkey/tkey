@@ -1,6 +1,6 @@
 {
   "name": "@tkey/tss",
-  "version": "13.0.0-alpha.1",
+  "version": "13.0.0-alpha.2",
   "description": "Threshold signing for Tkey",
   "main": "dist/tss.cjs.js",
   "module": "dist/tss.esm.js",
