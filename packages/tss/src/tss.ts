@@ -488,7 +488,7 @@ export class TKeyTSS extends ThresholdKey {
 
     const decKey = getSecpKeyFromEd25519(edScalar).scalar;
 
-    const seed = await decrypt(decKey.toBuffer("be", 32), result.message);
+    const seed = await decrypt(decKey.toArrayLike(Buffer, "be", 32), result.message);
     return seed;
   }
 
@@ -672,7 +672,7 @@ export class TKeyTSS extends ThresholdKey {
       factorEncs[factorPubID] = {
         tssIndex,
         type: "direct",
-        userEnc: await encrypt(newFactorPub.toSEC1(secp256k1, false), tssShare.toBuffer("be", 32)),
+        userEnc: await encrypt(newFactorPub.toSEC1(secp256k1, false), tssShare.toArrayLike(Buffer, "be", 32)),
         serverEncs: [],
       };
       this.metadata.updateTSSData({

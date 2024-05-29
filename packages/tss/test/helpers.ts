@@ -108,7 +108,7 @@ export function generateKey(keyType: KeyType): {
   if (keyType === KeyType.secp256k1) {
     const scalar = secp256k1Curve.genKeyPair().getPrivate();
     return {
-      raw: scalar.toBuffer("be", 32),
+      raw: scalar.toArrayLike(Buffer, "be", 32),
       scalar,
     };
   } else if (keyType === KeyType.ed25519) {
