@@ -23,6 +23,7 @@
     "@tkey/common-types": "^13.0.0-alpha.1",
     "@tkey/core": "^13.0.0-alpha.1",
     "@tkey/service-provider-torus": "^13.0.0-alpha.1",
+    "@toruslabs/customauth": "^19.0.0-alpha.6",
     "@toruslabs/rss-client": "^2.0.0-0",
     "@toruslabs/torus.js": "13.0.0-alpha.6",
     "@types/bn.js": "^5.1.5",
