@@ -172,7 +172,7 @@ class TorusStorageLayer implements IStorageLayer {
     let namespace = "tkey";
     const setTKeyStore = {
       data: message,
-      timestamp: new BN(~~((this.serverTimeOffset + Date.now()) / 1000)).toString(16),
+      timestamp: new BN(~~(this.serverTimeOffset + Date.now() / 1000)).toString(16),
     };
 
     // Overwrite bulk_set to allow deleting nonce v2 together with creating tKey.
