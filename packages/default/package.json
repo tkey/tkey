@@ -41,7 +41,7 @@
     "@tkey/share-serialization": "^13.0.0-alpha.1",
     "@tkey/share-transfer": "^13.0.0-alpha.1",
     "@tkey/storage-layer-torus": "^13.0.0-alpha.1",
-    "@toruslabs/torus.js": "13.0.0-alpha.6",
+    "@toruslabs/torus.js": "13.0.0-alpha.7",
     "bn.js": "^5.2.1"
   },
   "devDependencies": {
