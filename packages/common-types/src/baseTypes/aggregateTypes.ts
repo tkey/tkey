@@ -249,7 +249,7 @@ export type IAuthMetadatas = IAuthMetadata[];
 export type ShareStores = ShareStore[];
 export type IMessageMetadatas = IMessageMetadata[];
 export type LocalTransitionShares = BN[];
-export type LocalTransitionData = [...IAuthMetadatas, ...ShareStores, ...IMessageMetadatas];
+export type LocalTransitionData = (IAuthMetadata | IMessageMetadata | ShareStore)[];
 export type LocalMetadataTransitions = [LocalTransitionShares, LocalTransitionData];
 
 export interface ITKeyApi {
