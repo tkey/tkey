@@ -433,12 +433,17 @@ export class TKeyTSS extends ThresholdKey {
    *
    * Reconstructs and exports the TSS private key.
    */
-  async _UNSAFE_exportTssKey(tssOptions: { factorKey: BN; selectedServers?: number[]; authSignatures: string[] }): Promise<BN> {
+  async _UNSAFE_exportTssKey(tssOptions: {
+    factorKey: BN;
+    selectedServers?: number[];
+    authSignatures: string[];
+    accountIndex?: number;
+  }): Promise<BN> {
     if (!this.metadata) throw CoreError.metadataUndefined("metadata is undefined");
     if (!this.privKey) throw new Error("Tkey is not reconstructed");
     if (!this.metadata.tssPolyCommits[this.tssTag]) throw new Error(`tss key has not been initialized for tssTag ${this.tssTag}`);
 
-    const { factorKey, selectedServers, authSignatures } = tssOptions;
+    const { factorKey, selectedServers, authSignatures, accountIndex } = tssOptions;
 
     const { tssIndex } = await this.getTSSShare(factorKey);
     // Assumption that there are only index 2 and 3 for tss shares
@@ -461,9 +466,9 @@ export class TKeyTSS extends ThresholdKey {
 
     // reconstruct final key using sss
     const ec = this._tssCurve;
-    const finalKey = lagrangeInterpolation(ec, [tempShare, factorShare], [new BN(tempIndex), new BN(factorIndex)]);
+    const tssKey = lagrangeInterpolation(ec, [tempShare, factorShare], [new BN(tempIndex), new BN(factorIndex)]);
 
-    // deleted created tss share
+    // delete created tss share
     await this.deleteFactorPub({
       factorKey,
       deleteFactorPub: tempFactorPub,
@@ -471,7 +476,11 @@ export class TKeyTSS extends ThresholdKey {
       selectedServers,
     });
 
-    return finalKey;
+    // Derive key for account index.
+    const nonce = this.computeAccountNonce(accountIndex);
+    const derivedKey = tssKey.add(nonce).umod(this._tssCurve.n);
+
+    return derivedKey;
   }
 
   /**

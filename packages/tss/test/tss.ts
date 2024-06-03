@@ -193,6 +193,16 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
           authSignatures: signatures,
         });
         assert(seed.equals(importTssKey.raw));
+      } else {
+        // If not ed25519, then also check exporting with account index.
+        const exportedKeyIndex2 = await tb._UNSAFE_exportTssKey({
+          factorKey,
+          authSignatures: signatures,
+          accountIndex: 2,
+        });
+        const exportedPubKeyIndex2 = Point.fromScalar(exportedKeyIndex2, tb.tssCurve);
+        const pubKeyIndex2 = tb.getTSSPub(2);
+        assert(exportedPubKeyIndex2.equals(pubKeyIndex2));
       }
     });
 
