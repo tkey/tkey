@@ -1,6 +1,6 @@
 {
   "name": "@tkey-mpc/default",
-  "version": "9.2.0",
+  "version": "9.2.1",
   "description": "TKey default library",
   "main": "dist/default.cjs.js",
   "module": "dist/default.esm.js",
@@ -41,7 +41,7 @@
     "@tkey-mpc/service-provider-torus": "^9.2.0",
     "@tkey-mpc/share-serialization": "^9.2.0",
     "@tkey-mpc/share-transfer": "^9.2.0",
-    "@tkey-mpc/storage-layer-torus": "^9.2.0",
+    "@tkey-mpc/storage-layer-torus": "^9.2.1",
     "@toruslabs/rss-client": "^1.5.0",
     "bn.js": "^5.2.1"
   },

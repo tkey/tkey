@@ -1,6 +1,6 @@
 {
   "name": "@tkey-mpc/storage-layer-torus",
-  "version": "9.2.0",
+  "version": "9.2.1",
   "description": "TKey Torus Storage Layer Module",
   "author": "Torus Labs",
   "homepage": "https://github.com/tkey/tkey#readme",
