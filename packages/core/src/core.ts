@@ -737,14 +737,14 @@ class ThresholdKey implements ITKey {
         privKey: this._localMetadataTransitions[0],
         serviceProvider: this.serviceProvider,
       });
+      this._localMetadataTransitions = [[], []];
+      this.lastFetchedCloudMetadata = this.metadata.clone();
     } catch (error: unknown) {
       throw CoreError.metadataPostFailed(prettyPrintError(error as Error));
+    } finally {
+      // release lock
+      if (acquiredLock) await this.releaseWriteMetadataLock();
     }
-
-    this._localMetadataTransitions = [[], []];
-    this.lastFetchedCloudMetadata = this.metadata.clone();
-    // release lock
-    if (acquiredLock) await this.releaseWriteMetadataLock();
   }
 
   // Returns a new instance of metadata with a clean state. All the previous state will be reset.
