@@ -9,6 +9,7 @@ import CustomAuth, {
   TorusAggregateLoginResponse,
   TorusHybridAggregateLoginResponse,
   TorusLoginResponse,
+  UX_MODE,
 } from "@toruslabs/customauth";
 import Torus from "@toruslabs/torus.js";
 import BN from "bn.js";
@@ -44,6 +45,11 @@ class TorusServiceProvider extends ServiceProviderBase {
 
   async triggerLogin(params: SubVerifierDetails): Promise<TorusLoginResponse> {
     const obj = await this.customAuthInstance.triggerLogin(params);
+
+    if (this.customAuthInstance.config.uxMode === UX_MODE.REDIRECT) {
+      return null;
+    }
+
     const localPrivKey = Torus.getPostboxKey(obj);
     this.postboxKey = new BN(localPrivKey, "hex");
     return obj;
@@ -51,6 +57,11 @@ class TorusServiceProvider extends ServiceProviderBase {
 
   async triggerAggregateLogin(params: AggregateLoginParams): Promise<TorusAggregateLoginResponse> {
     const obj = await this.customAuthInstance.triggerAggregateLogin(params);
+
+    if (this.customAuthInstance.config.uxMode === UX_MODE.REDIRECT) {
+      return null;
+    }
+
     const localPrivKey = Torus.getPostboxKey(obj);
     this.postboxKey = new BN(localPrivKey, "hex");
     return obj;
@@ -58,6 +69,11 @@ class TorusServiceProvider extends ServiceProviderBase {
 
   async triggerHybridAggregateLogin(params: HybridAggregateLoginParams): Promise<TorusHybridAggregateLoginResponse> {
     const obj = await this.customAuthInstance.triggerHybridAggregateLogin(params);
+
+    if (this.customAuthInstance.config.uxMode === UX_MODE.REDIRECT) {
+      return null;
+    }
+
     const aggregateLoginKey = Torus.getPostboxKey(obj.aggregateLogins[0]);
     const singleLoginKey = Torus.getPostboxKey(obj.singleLogin);
     this.postboxKey = new BN(aggregateLoginKey, "hex");
