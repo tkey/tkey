@@ -42,26 +42,49 @@ class TorusServiceProvider extends ServiceProviderBase {
     return this.customAuthInstance.init(params);
   }
 
-  async triggerLogin(params: SubVerifierDetails): Promise<TorusLoginResponse> {
+  /**
+   * Trigger login flow. Returns `null` in redirect mode.
+   */
+  async triggerLogin(params: SubVerifierDetails): Promise<TorusLoginResponse | null> {
     const obj = await this.customAuthInstance.triggerLogin(params);
-    const localPrivKey = Torus.getPostboxKey(obj);
-    this.postboxKey = new BN(localPrivKey, "hex");
+
+    // `obj` maybe `null` in redirect mode.
+    if (obj) {
+      const localPrivKey = Torus.getPostboxKey(obj);
+      this.postboxKey = new BN(localPrivKey, "hex");
+    }
+
     return obj;
   }
 
+  /**
+   * Trigger login flow. Returns `null` in redirect mode.
+   */
   async triggerAggregateLogin(params: AggregateLoginParams): Promise<TorusAggregateLoginResponse> {
     const obj = await this.customAuthInstance.triggerAggregateLogin(params);
-    const localPrivKey = Torus.getPostboxKey(obj);
-    this.postboxKey = new BN(localPrivKey, "hex");
+
+    // `obj` maybe `null` in redirect mode.
+    if (obj) {
+      const localPrivKey = Torus.getPostboxKey(obj);
+      this.postboxKey = new BN(localPrivKey, "hex");
+    }
     return obj;
   }
 
+  /**
+   * Trigger login flow. Returns `null` in redirect mode.
+   */
   async triggerHybridAggregateLogin(params: HybridAggregateLoginParams): Promise<TorusHybridAggregateLoginResponse> {
     const obj = await this.customAuthInstance.triggerHybridAggregateLogin(params);
-    const aggregateLoginKey = Torus.getPostboxKey(obj.aggregateLogins[0]);
-    const singleLoginKey = Torus.getPostboxKey(obj.singleLogin);
-    this.postboxKey = new BN(aggregateLoginKey, "hex");
-    this.singleLoginKey = new BN(singleLoginKey, "hex");
+
+    // `obj` maybe `null` in redirect mode.
+    if (obj) {
+      const aggregateLoginKey = Torus.getPostboxKey(obj.aggregateLogins[0]);
+      const singleLoginKey = Torus.getPostboxKey(obj.singleLogin);
+      this.postboxKey = new BN(aggregateLoginKey, "hex");
+      this.singleLoginKey = new BN(singleLoginKey, "hex");
+    }
+
     return obj;
   }
 
