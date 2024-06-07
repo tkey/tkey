@@ -178,8 +178,16 @@ class ThresholdKey implements ITKey {
           shareToUseForSerialization = shares[latestPolyIDOnCloud][randomIndex];
         }
       }
+
       if (metadata) tempMetadata = Metadata.fromJSON(metadata);
+      const latestPolyId = tempMetadata.getLatestPublicPolynomial().getPolynomialID();
+      const foundPolyIdShare = tb.shares[latestPolyId];
+      if (!foundPolyIdShare) {
+        tempMetadata = undefined;
+      }
+
       if (lastFetchedCloudMetadata) tempCloud = Metadata.fromJSON(lastFetchedCloudMetadata);
+
       await tb.initialize({
         neverInitializeNewKey: true,
         transitionMetadata: tempMetadata,
