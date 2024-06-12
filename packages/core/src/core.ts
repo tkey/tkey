@@ -277,7 +277,7 @@ class ThresholdKey implements ITKey {
           const tempStateManualSync = this.manualSync;
           this.manualSync = true;
           await this._initializeNewKey({ initializeModules: true, importedKey: this.serviceProvider.migratableKey, delete1OutOf1: true });
-          await this.syncLocalMetadataTransitions();
+          if (!tempStateManualSync) await this.syncLocalMetadataTransitions(); // Only sync if we were not in manual sync mode
           // restore manual sync flag
           this.manualSync = tempStateManualSync;
         } else {

@@ -55,8 +55,6 @@ class SfaServiceProvider extends ServiceProviderBase {
     if (params.serverTimeOffset) {
       this.authInstance.serverTimeOffset = params.serverTimeOffset;
     }
-    // Does the key assign
-    // if (this.authInstance.isLegacyNetwork) await this.authInstance.getPublicAddress(torusNodeEndpoints, torusNodePub, { verifier, verifierId });
 
     let finalIdToken = idToken;
     let finalVerifierParams = { verifier_id: verifierId };
