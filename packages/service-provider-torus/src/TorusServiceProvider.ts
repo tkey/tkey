@@ -56,10 +56,10 @@ class TorusServiceProvider extends ServiceProviderBase {
     if (obj) {
       const localPrivKey = Torus.getPostboxKey(obj);
       this.torusKey = obj;
-      const { finalKeyData, oAuthKeyData } = obj;
-      const privKey = finalKeyData.privKey || oAuthKeyData.privKey;
 
       if (!obj.metadata.upgraded) {
+        const { finalKeyData, oAuthKeyData } = obj;
+        const privKey = finalKeyData.privKey || oAuthKeyData.privKey;
         this.migratableKey = new BN(privKey, "hex");
       }
 
@@ -78,10 +78,10 @@ class TorusServiceProvider extends ServiceProviderBase {
     if (obj) {
       const localPrivKey = Torus.getPostboxKey(obj);
       this.torusKey = obj;
-      const { finalKeyData, oAuthKeyData } = obj;
-      const privKey = finalKeyData.privKey || oAuthKeyData.privKey;
 
       if (!obj.metadata.upgraded) {
+        const { finalKeyData, oAuthKeyData } = obj;
+        const privKey = finalKeyData.privKey || oAuthKeyData.privKey;
         this.migratableKey = new BN(privKey, "hex");
       }
 
@@ -95,12 +95,12 @@ class TorusServiceProvider extends ServiceProviderBase {
    */
   async triggerHybridAggregateLogin(params: HybridAggregateLoginParams): Promise<TorusHybridAggregateLoginResponse> {
     const obj = await this.customAuthInstance.triggerHybridAggregateLogin(params);
+    this.torusKey = null; // Since there are multiple keys, we don't set the torusKey here.
 
     // `obj` maybe `null` in redirect mode.
     if (obj) {
       const aggregateLoginKey = Torus.getPostboxKey(obj.aggregateLogins[0]);
       const singleLoginKey = Torus.getPostboxKey(obj.singleLogin);
-      this.torusKey = null;
       this.postboxKey = new BN(aggregateLoginKey, "hex");
       this.singleLoginKey = new BN(singleLoginKey, "hex");
     }

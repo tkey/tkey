@@ -13,7 +13,7 @@ class SfaServiceProvider extends ServiceProviderBase {
 
   public torusKey: TorusKey;
 
-  public migratableKey: BN | null = null;
+  public migratableKey: BN | null = null; // Migration of key from SFA to tKey
 
   private nodeDetailManagerInstance: NodeDetailManager;
 
@@ -79,10 +79,10 @@ class SfaServiceProvider extends ServiceProviderBase {
 
     const torusKey = await this.authInstance.retrieveShares(torusNodeEndpoints, torusIndexes, verifier, finalVerifierParams, finalIdToken);
     this.torusKey = torusKey;
-    const { finalKeyData, oAuthKeyData } = torusKey;
-    const privKey = finalKeyData.privKey || oAuthKeyData.privKey;
 
     if (!torusKey.metadata.upgraded) {
+      const { finalKeyData, oAuthKeyData } = torusKey;
+      const privKey = finalKeyData.privKey || oAuthKeyData.privKey;
       this.migratableKey = new BN(privKey, "hex");
     }
     const postboxKey = Torus.getPostboxKey(torusKey);
