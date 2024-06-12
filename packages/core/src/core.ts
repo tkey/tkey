@@ -281,10 +281,10 @@ class ThresholdKey implements ITKey {
           // restore manual sync flag
           this.manualSync = tempStateManualSync;
         } else {
-          await this._initializeNewKey({ 
-            initializeModules: true, 
-            importedKey: importKey, 
-            delete1OutOf1: p.delete1OutOf1, 
+          await this._initializeNewKey({
+            initializeModules: true,
+            importedKey: importKey,
+            delete1OutOf1: p.delete1OutOf1,
             importEd25519Seed: params?.importEd25519Seed,
           });
         }

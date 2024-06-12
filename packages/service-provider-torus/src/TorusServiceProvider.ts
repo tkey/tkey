@@ -58,11 +58,11 @@ class TorusServiceProvider extends ServiceProviderBase {
       this.torusKey = obj;
       const { finalKeyData, oAuthKeyData } = obj;
       const privKey = finalKeyData.privKey || oAuthKeyData.privKey;
-  
+
       if (!obj.metadata.upgraded) {
         this.migratableKey = new BN(privKey, "hex");
       }
-  
+
       this.postboxKey = new BN(localPrivKey, "hex");
     }
 
