@@ -50,13 +50,13 @@ class SfaServiceProvider extends ServiceProviderBase {
     const verifierDetails = { verifier, verifierId };
 
     // fetch node details.
-    const { torusNodeEndpoints, torusNodePub, torusIndexes } = await this.nodeDetailManagerInstance.getNodeDetails(verifierDetails);
+    const { torusNodeEndpoints, torusIndexes } = await this.nodeDetailManagerInstance.getNodeDetails(verifierDetails);
 
     if (params.serverTimeOffset) {
       this.authInstance.serverTimeOffset = params.serverTimeOffset;
     }
     // Does the key assign
-    if (this.authInstance.isLegacyNetwork) await this.authInstance.getPublicAddress(torusNodeEndpoints, torusNodePub, { verifier, verifierId });
+    // if (this.authInstance.isLegacyNetwork) await this.authInstance.getPublicAddress(torusNodeEndpoints, torusNodePub, { verifier, verifierId });
 
     let finalIdToken = idToken;
     let finalVerifierParams = { verifier_id: verifierId };
