@@ -274,10 +274,10 @@ class ThresholdKey implements ITKey {
         // provided no importKey is provided ( importKey take precedent )
         if (this.serviceProvider.migratableKey && !importKey) {
           // importkey from server provider need to be atomic, hence manual sync is required.
-          const tempStateManualSync = this.manualSync;
-          this.manualSync = true;
+          const tempStateManualSync = this.manualSync; // temp store manual sync flag
+          this.manualSync = true; // Setting this as true since _initializeNewKey has a check where for importkey from server provider need to be atomic, hence manual sync is required.
           await this._initializeNewKey({ initializeModules: true, importedKey: this.serviceProvider.migratableKey, delete1OutOf1: true });
-          if (!tempStateManualSync) await this.syncLocalMetadataTransitions(); // Only sync if we were not in manual sync mode
+          if (!tempStateManualSync) await this.syncLocalMetadataTransitions(); // Only sync if we were not in manual sync mode, if manual sync is set by developer, they should handle it themselves
           // restore manual sync flag
           this.manualSync = tempStateManualSync;
         } else {
