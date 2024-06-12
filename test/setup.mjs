@@ -18,14 +18,13 @@ Register({
   rootMode: "upward",
 });
 
-
 const storeFn = {
   getItem(key) {
-    return this[key]
+    return this[key];
   },
   setItem(key, value) {
-    this[key] = value
+    this[key] = value;
   },
-}
-globalThis.localStorage = { ...storeFn }
-globalThis.sessionStorage = { ...storeFn }
+};
+globalThis.localStorage = { ...storeFn };
+globalThis.sessionStorage = { ...storeFn };

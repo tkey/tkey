@@ -10,13 +10,17 @@ import CustomAuth, {
   TorusHybridAggregateLoginResponse,
   TorusLoginResponse,
 } from "@toruslabs/customauth";
-import Torus from "@toruslabs/torus.js";
+import Torus, { TorusKey } from "@toruslabs/torus.js";
 import BN from "bn.js";
 
 class TorusServiceProvider extends ServiceProviderBase {
   customAuthInstance: CustomAuth;
 
   singleLoginKey: BN;
+
+  public torusKey: TorusKey;
+
+  public migratableKey: BN | null = null; // Migration of key from SFA to tKey
 
   customAuthArgs: CustomAuthArgs;
 
@@ -51,6 +55,14 @@ class TorusServiceProvider extends ServiceProviderBase {
     // `obj` maybe `null` in redirect mode.
     if (obj) {
       const localPrivKey = Torus.getPostboxKey(obj);
+      this.torusKey = obj;
+
+      if (!obj.metadata.upgraded) {
+        const { finalKeyData, oAuthKeyData } = obj;
+        const privKey = finalKeyData.privKey || oAuthKeyData.privKey;
+        this.migratableKey = new BN(privKey, "hex");
+      }
+
       this.postboxKey = new BN(localPrivKey, "hex");
     }
 
@@ -63,9 +75,16 @@ class TorusServiceProvider extends ServiceProviderBase {
   async triggerAggregateLogin(params: AggregateLoginParams): Promise<TorusAggregateLoginResponse> {
     const obj = await this.customAuthInstance.triggerAggregateLogin(params);
 
-    // `obj` maybe `null` in redirect mode.
     if (obj) {
       const localPrivKey = Torus.getPostboxKey(obj);
+      this.torusKey = obj;
+
+      if (!obj.metadata.upgraded) {
+        const { finalKeyData, oAuthKeyData } = obj;
+        const privKey = finalKeyData.privKey || oAuthKeyData.privKey;
+        this.migratableKey = new BN(privKey, "hex");
+      }
+
       this.postboxKey = new BN(localPrivKey, "hex");
     }
     return obj;
@@ -76,6 +95,7 @@ class TorusServiceProvider extends ServiceProviderBase {
    */
   async triggerHybridAggregateLogin(params: HybridAggregateLoginParams): Promise<TorusHybridAggregateLoginResponse> {
     const obj = await this.customAuthInstance.triggerHybridAggregateLogin(params);
+    this.torusKey = null; // Since there are multiple keys, we don't set the torusKey here.
 
     // `obj` maybe `null` in redirect mode.
     if (obj) {
