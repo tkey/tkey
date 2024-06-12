@@ -20,7 +20,7 @@ class TorusServiceProvider extends ServiceProviderBase {
 
   public torusKey: TorusKey;
 
-  public migratableKey: BN | null = null;
+  public migratableKey: BN | null = null; // Migration of key from SFA to tKey
 
   customAuthArgs: CustomAuthArgs;
 
