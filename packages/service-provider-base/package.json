@@ -1,6 +1,6 @@
 {
   "name": "@tkey/service-provider-base",
-  "version": "12.0.0",
+  "version": "13.0.0-alpha.4",
   "description": "TKey Base Service Provider Module",
   "author": "Torus Labs",
   "homepage": "https://github.com/tkey/tkey#readme",
@@ -11,8 +11,7 @@
   "jsdelivr": "dist/serviceProviderBase.umd.min.js",
   "types": "dist/types/index.d.ts",
   "files": [
-    "dist",
-    "src"
+    "dist"
   ],
   "publishConfig": {
     "access": "public"
@@ -43,13 +42,13 @@
     "@babel/runtime": "7.x"
   },
   "dependencies": {
-    "@tkey/common-types": "^12.0.0",
+    "@tkey/common-types": "^13.0.0-alpha.4",
     "bn.js": "^5.2.1",
-    "elliptic": "^6.5.4"
+    "elliptic": "^6.5.5"
   },
   "devDependencies": {
-    "@types/bn.js": "^5.1.2",
-    "@types/elliptic": "^6.4.15"
+    "@types/bn.js": "^5.1.5",
+    "@types/elliptic": "^6.4.18"
   },
   "bugs": {
     "url": "https://github.com/tkey/tkey/issues"

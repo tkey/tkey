@@ -22,6 +22,7 @@ import {
   LocalMetadataTransitions,
   LocalTransitionData,
   LocalTransitionShares,
+  MiddlewareExtraKeys,
   ModuleMap,
   ONE_KEY_DELETE_NONCE,
   Point,
@@ -40,17 +41,21 @@ import {
   ShareStorePolyIDShareIndexMap,
   StringifiedType,
   TKeyArgs,
+  TKeyInitArgs,
   TkeyStoreItemType,
   toPrivKeyECC,
 } from "@tkey/common-types";
-import { generatePrivate } from "@toruslabs/eccrypto";
+import { getEd25519ExtendedPublicKey } from "@toruslabs/torus.js";
 import BN from "bn.js";
+import { getRandomBytes } from "ethereum-cryptography/random";
 import stringify from "json-stable-stringify";
 
 import AuthMetadata from "./authMetadata";
 import CoreError from "./errors";
-import { generateRandomPolynomial, lagrangeInterpolatePolynomial, lagrangeInterpolation } from "./lagrangeInterpolatePolynomial";
+import { generatePrivateBN, generateRandomPolynomial, lagrangeInterpolatePolynomial, lagrangeInterpolation } from "./lagrangeInterpolatePolynomial";
 import Metadata from "./metadata";
+
+const ed25519SeedConst = "ed25519Seed";
 
 // TODO: handle errors for get and set with retries
 
@@ -65,7 +70,10 @@ class ThresholdKey implements ITKey {
 
   shares: ShareStorePolyIDShareIndexMap;
 
+  // secp256k1 key
   privKey: BN;
+
+  _ed25519Seed?: Buffer;
 
   lastFetchedCloudMetadata: Metadata;
 
@@ -205,15 +213,22 @@ class ThresholdKey implements ITKey {
     throw CoreError.metadataUndefined();
   }
 
-  async initialize(params?: {
-    withShare?: ShareStore;
-    importKey?: BN;
-    neverInitializeNewKey?: boolean;
-    transitionMetadata?: Metadata;
-    previouslyFetchedCloudMetadata?: Metadata;
-    previousLocalMetadataTransitions?: LocalMetadataTransitions;
-    delete1OutOf1?: boolean;
-  }): Promise<KeyDetails> {
+  getSecp256k1Key(): BN {
+    if (typeof this.privKey !== "undefined") {
+      return this.privKey;
+    }
+
+    throw CoreError.privateKeyUnavailable();
+  }
+
+  getEd25519Key(): Buffer {
+    if (typeof this._ed25519Seed !== "undefined") {
+      return this._ed25519Seed;
+    }
+    throw CoreError.privKeyUnavailable();
+  }
+
+  async initialize(params?: TKeyInitArgs): Promise<KeyDetails> {
     // setup initial params/states
     const p = params || {};
 
@@ -259,14 +274,19 @@ class ThresholdKey implements ITKey {
         // provided no importKey is provided ( importKey take precedent )
         if (this.serviceProvider.migratableKey && !importKey) {
           // importkey from server provider need to be atomic, hence manual sync is required.
-          const tempStateManualSync = this.manualSync;
-          this.manualSync = true;
+          const tempStateManualSync = this.manualSync; // temp store manual sync flag
+          this.manualSync = true; // Setting this as true since _initializeNewKey has a check where for importkey from server provider need to be atomic, hence manual sync is required.
           await this._initializeNewKey({ initializeModules: true, importedKey: this.serviceProvider.migratableKey, delete1OutOf1: true });
-          await this.syncLocalMetadataTransitions();
+          if (!tempStateManualSync) await this.syncLocalMetadataTransitions(); // Only sync if we were not in manual sync mode, if manual sync is set by developer, they should handle it themselves
           // restore manual sync flag
           this.manualSync = tempStateManualSync;
         } else {
-          await this._initializeNewKey({ initializeModules: true, importedKey: importKey, delete1OutOf1: p.delete1OutOf1 });
+          await this._initializeNewKey({
+            initializeModules: true,
+            importedKey: importKey,
+            delete1OutOf1: p.delete1OutOf1,
+            importEd25519Seed: params?.importEd25519Seed,
+          });
         }
 
         // return after created new tkey account ( skip other steps)
@@ -441,7 +461,7 @@ class ThresholdKey implements ITKey {
     }
     this._setKey(privKey);
 
-    const returnObject: Omit<ReconstructedKeyResult, "privKey"> = {
+    const returnObject: MiddlewareExtraKeys = {
       allKeys: [privKey],
     };
 
@@ -451,13 +471,22 @@ class ThresholdKey implements ITKey {
         Object.keys(this._reconstructKeyMiddleware).map(async (x: string) => {
           if (Object.prototype.hasOwnProperty.call(this._reconstructKeyMiddleware, x)) {
             const extraKeys = await this._reconstructKeyMiddleware[x]();
-            returnObject[x as keyof Omit<ReconstructedKeyResult, "privKey">] = extraKeys;
+            returnObject[x as keyof MiddlewareExtraKeys] = extraKeys;
             (returnObject.allKeys as BN[]).push(...extraKeys);
           }
         })
       );
     }
-    return { privKey, ...returnObject };
+
+    // ed25519key
+    if (this.getEd25519PublicKey()) {
+      const seed = await this.retrieveEd25519Seed();
+      if (!seed) {
+        throw CoreError.default("Ed25519 seed not found");
+      }
+      this._ed25519Seed = seed;
+    }
+    return { privKey, ed25519Seed: this._ed25519Seed, ...returnObject };
   }
 
   reconstructLatestPoly(): Polynomial {
@@ -644,16 +673,18 @@ class ThresholdKey implements ITKey {
     determinedShare,
     initializeModules,
     importedKey,
+    importEd25519Seed,
     delete1OutOf1,
   }: {
     determinedShare?: BN;
     initializeModules?: boolean;
     importedKey?: BN;
+    importEd25519Seed?: Buffer;
     delete1OutOf1?: boolean;
   } = {}): Promise<InitializeNewKeyResult> {
     if (!importedKey) {
-      const tmpPriv = generatePrivate();
-      this._setKey(new BN(tmpPriv));
+      const tmpPriv = generatePrivateBN();
+      this._setKey(tmpPriv);
     } else {
       this._setKey(new BN(importedKey));
     }
@@ -680,6 +711,10 @@ class ThresholdKey implements ITKey {
     const serviceProviderShare = shares[shareIndexes[0].toString("hex")];
     const shareStore = new ShareStore(serviceProviderShare, poly.getPolynomialID());
     this.metadata = metadata;
+
+    // setup ed25519 seed after metadata is set
+    // import/gen ed25519 seed
+    await this.setupEd25519Seed(importEd25519Seed);
 
     // initialize modules
     if (initializeModules) {
@@ -734,6 +769,55 @@ class ThresholdKey implements ITKey {
     return result;
   }
 
+  getEd25519PublicKey(): string | undefined {
+    if (!this.metadata) {
+      throw CoreError.metadataUndefined();
+    }
+    const result = this.metadata.getGeneralStoreDomain(ed25519SeedConst) as { message: EncryptedMessage; publicKey: string };
+    return result?.publicKey;
+  }
+
+  async setupEd25519Seed(seed: Buffer): Promise<void> {
+    if (!this.privKey) {
+      throw CoreError.privateKeyUnavailable();
+    }
+    let seedToUse = seed;
+    if (!seed) {
+      const newEd25519Seed = await getRandomBytes(32);
+      seedToUse = Buffer.from(newEd25519Seed);
+    }
+    await this.importEd25519Seed(seedToUse);
+  }
+
+  async importEd25519Seed(seed: Buffer): Promise<void> {
+    if (!this.privKey) {
+      throw CoreError.privateKeyUnavailable();
+    }
+    if (this.getEd25519PublicKey()) {
+      throw CoreError.default("Ed25519 key already exists");
+    }
+
+    // derive key pair (scalar, public key point) from seed
+    const keyPair = getEd25519ExtendedPublicKey(seed);
+
+    this.metadata.setGeneralStoreDomain(ed25519SeedConst, { message: await this.encrypt(seed), publicKey: keyPair.point.encode("hex", false) });
+    this._ed25519Seed = seed;
+  }
+
+  async retrieveEd25519Seed(): Promise<Buffer> {
+    if (!this.metadata) {
+      throw CoreError.metadataUndefined();
+    }
+    if (!this.privKey) {
+      throw CoreError.privateKeyUnavailable();
+    }
+
+    const result = this.metadata.getGeneralStoreDomain(ed25519SeedConst) as { message: EncryptedMessage; publicKey: string };
+    const seed = await this.decrypt(result.message);
+    this._ed25519Seed = seed;
+    return seed;
+  }
+
   async addLocalMetadataTransitions(params: {
     input: LocalTransitionData;
     serviceProvider?: IServiceProvider;
@@ -772,6 +856,10 @@ class ThresholdKey implements ITKey {
     this.lastFetchedCloudMetadata = this.metadata.clone();
     // release lock
     if (acquiredLock) await this.releaseWriteMetadataLock();
+  }
+
+  async readMetadata<T>(privKey: BN): Promise<T> {
+    return this.storageLayer.getMetadata<T>({ privKey });
   }
 
   // Returns a new instance of metadata with a clean state. All the previous state will be reset.
@@ -932,6 +1020,7 @@ class ThresholdKey implements ITKey {
 
     return {
       pubKey: this.metadata.pubKey,
+      ed25519PublicKey: this.getEd25519PublicKey(),
       requiredShares,
       threshold: poly.getThreshold(),
       totalShares: this.metadata.getShareIndexesForPolynomial(previousPolyID).length,

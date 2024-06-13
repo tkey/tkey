@@ -1,6 +1,6 @@
 {
   "name": "@tkey/seed-phrase",
-  "version": "12.0.0",
+  "version": "13.0.0-alpha.4",
   "description": "TKey Seed Phrase Module",
   "author": "Torus Labs",
   "homepage": "https://github.com/tkey/tkey#readme",
@@ -11,8 +11,7 @@
   "jsdelivr": "dist/seedPhrase.umd.min.js",
   "types": "dist/types/index.d.ts",
   "files": [
-    "dist",
-    "src"
+    "dist"
   ],
   "publishConfig": {
     "access": "public"
@@ -41,12 +40,12 @@
     "@babel/runtime": "7.x"
   },
   "dependencies": {
-    "@tkey/common-types": "^12.0.0",
+    "@tkey/common-types": "^13.0.0-alpha.4",
     "bn.js": "^5.2.1",
-    "ethers": "^6.8.0"
+    "ethers": "^6.11.1"
   },
   "devDependencies": {
-    "@types/bn.js": "^5.1.2"
+    "@types/bn.js": "^5.1.5"
   },
   "lint-staged": {
     "!(*d).ts": [

@@ -21,11 +21,6 @@ class SfaServiceProvider extends ServiceProviderBase {
 
   private torusNodeEndpointOrigin?: string;
 
-  private verifierDetails: {
-    verifier: string;
-    verifierId: string;
-  };
-
   constructor({ enableLogging = false, postboxKey, web3AuthOptions }: SfaServiceProviderArgs) {
     super({ enableLogging, postboxKey });
     this.web3AuthOptions = web3AuthOptions;
@@ -59,14 +54,12 @@ class SfaServiceProvider extends ServiceProviderBase {
     this.verifierDetails = { verifier, verifierId };
 
     // fetch node details.
-    const { torusNodeEndpoints, torusNodePub, torusIndexes } = await this.nodeDetailManagerInstance.getNodeDetails(this.verifierDetails);
+    const { torusNodeEndpoints, torusIndexes } = await this.nodeDetailManagerInstance.getNodeDetails(verifierDetails);
 
     this.torusNodeEndpointOrigin = `${new URL(torusNodeEndpoints[0]).origin}/metadata`;
     if (params.serverTimeOffset) {
       this.authInstance.serverTimeOffset = params.serverTimeOffset;
     }
-    // Does the key assign
-    if (this.authInstance.isLegacyNetwork) await this.authInstance.getPublicAddress(torusNodeEndpoints, torusNodePub, { verifier, verifierId });
 
     let finalIdToken = idToken;
     let finalVerifierParams = { verifier_id: verifierId };
@@ -89,10 +82,10 @@ class SfaServiceProvider extends ServiceProviderBase {
 
     const torusKey = await this.authInstance.retrieveShares(torusNodeEndpoints, torusIndexes, verifier, finalVerifierParams, finalIdToken);
     this.torusKey = torusKey;
-    const { finalKeyData, oAuthKeyData } = torusKey;
-    const privKey = finalKeyData.privKey || oAuthKeyData.privKey;
 
     if (!torusKey.metadata.upgraded) {
+      const { finalKeyData, oAuthKeyData } = torusKey;
+      const privKey = finalKeyData.privKey || oAuthKeyData.privKey;
       this.migratableKey = new BN(privKey, "hex");
     }
     const postboxKey = Torus.getPostboxKey(torusKey);

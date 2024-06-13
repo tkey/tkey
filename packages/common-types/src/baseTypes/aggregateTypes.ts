@@ -53,6 +53,15 @@ export type ShareSerializationMiddleware = {
   deserialize: (serializedShare: unknown, type: string) => Promise<BN>;
 };
 
+export type FactorEncType = "direct" | "hierarchical";
+
+export type FactorEnc = {
+  tssIndex: number;
+  type: FactorEncType;
+  userEnc: EncryptedMessage;
+  serverEncs: EncryptedMessage[];
+};
+
 export interface IMetadata extends ISerializable {
   pubKey: Point;
 
@@ -93,19 +102,32 @@ export interface IMetadata extends ISerializable {
   deleteShareDescription(shareIndex: string, description: string): void;
   updateShareDescription(shareIndex: string, oldDescription: string, newDescription: string): void;
   clone(): IMetadata;
+  updateTSSData(tssData: {
+    tssTag: string;
+    tssKeyType?: string;
+    tssNonce?: number;
+    tssPolyCommits?: Point[];
+    factorPubs?: Point[];
+    factorEncs?: {
+      [factorPubID: string]: FactorEnc;
+    };
+  }): void;
 }
 
 export type InitializeNewKeyResult = {
   privKey: BN;
+  ed25519Seed?: Buffer;
   deviceShare?: ShareStore;
   userShare?: ShareStore;
 };
 
 export type ReconstructedKeyResult = {
   privKey: BN;
+  ed25519Seed?: Buffer;
   seedPhrase?: BN[];
   allKeys?: BN[];
 };
+export type MiddlewareExtraKeys = Omit<ReconstructedKeyResult, "privKey" | "ed25519Seed">;
 
 export type CatchupToLatestShareResult = {
   latestShare: ShareStore;
@@ -127,6 +149,7 @@ export type RefreshSharesResult = {
 
 export type KeyDetails = {
   pubKey: Point;
+  ed25519PublicKey?: string;
   requiredShares: number;
   threshold: number;
   totalShares: number;
@@ -185,6 +208,10 @@ export type TkeyStoreItemType = {
   id: string;
 };
 
+export type IAccountSaltStore = TkeyStoreItemType & {
+  value: string;
+};
+
 export type ISeedPhraseStore = TkeyStoreItemType & {
   seedPhrase: string;
   type: string;
@@ -235,7 +262,7 @@ export type IAuthMetadatas = IAuthMetadata[];
 export type ShareStores = ShareStore[];
 export type IMessageMetadatas = IMessageMetadata[];
 export type LocalTransitionShares = BN[];
-export type LocalTransitionData = [...IAuthMetadatas, ...ShareStores, ...IMessageMetadatas];
+export type LocalTransitionData = (IAuthMetadata | IMessageMetadata | ShareStore)[];
 export type LocalMetadataTransitions = [LocalTransitionShares, LocalTransitionData];
 
 export interface ITKeyApi {
@@ -310,3 +337,14 @@ export interface ITKey extends ITKeyApi, ISerializable {
 
   getKeyDetails(): KeyDetails;
 }
+
+export type TKeyInitArgs = {
+  withShare?: ShareStore;
+  importKey?: BN;
+  importEd25519Seed?: Buffer;
+  neverInitializeNewKey?: boolean;
+  transitionMetadata?: IMetadata;
+  previouslyFetchedCloudMetadata?: IMetadata;
+  previousLocalMetadataTransitions?: LocalMetadataTransitions;
+  delete1OutOf1?: boolean;
+};
