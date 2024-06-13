@@ -46,6 +46,10 @@ class TorusServiceProvider extends ServiceProviderBase {
     return this.customAuthInstance.init(params);
   }
 
+  getHostURL(): string {
+    return this.customAuthArgs.metadataUrl;
+  }
+
   /**
    * Trigger login flow. Returns `null` in redirect mode.
    */

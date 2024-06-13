@@ -100,6 +100,10 @@ class MockStorageLayer implements IStorageLayer {
     return { status: 1 };
   }
 
+  getHostURL(): string {
+    return "";
+  }
+
   toJSON(): StringifiedType {
     return {
       dataMap: this.dataMap,
