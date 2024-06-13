@@ -21,6 +21,11 @@ class SfaServiceProvider extends ServiceProviderBase {
 
   private torusNodeEndpointOrigin?: string;
 
+  private verifierDetails: {
+    verifier: string;
+    verifierId: string;
+  };
+
   constructor({ enableLogging = false, postboxKey, web3AuthOptions }: SfaServiceProviderArgs) {
     super({ enableLogging, postboxKey });
     this.web3AuthOptions = web3AuthOptions;
@@ -54,7 +59,7 @@ class SfaServiceProvider extends ServiceProviderBase {
     this.verifierDetails = { verifier, verifierId };
 
     // fetch node details.
-    const { torusNodeEndpoints, torusIndexes } = await this.nodeDetailManagerInstance.getNodeDetails(verifierDetails);
+    const { torusNodeEndpoints, torusIndexes } = await this.nodeDetailManagerInstance.getNodeDetails(this.verifierDetails);
 
     this.torusNodeEndpointOrigin = `${new URL(torusNodeEndpoints[0]).origin}/metadata`;
     if (params.serverTimeOffset) {
