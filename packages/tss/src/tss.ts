@@ -241,7 +241,6 @@ export class TKeyTSS extends ThresholdKey {
    * shares, as stored in Metadata.
    */
   getTSSCommits(): Point[] {
-    if (!this.privKey) throw CoreError.default("tss pub cannot be returned until you've reconstructed tkey");
     if (!this.metadata) throw CoreError.metadataUndefined();
     const tssPolyCommits = this.metadata.tssPolyCommits[this.tssTag];
     if (!tssPolyCommits) throw CoreError.default(`tss poly commits not found for tssTag ${this.tssTag}`);
