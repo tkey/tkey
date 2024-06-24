@@ -53,6 +53,48 @@ export function ed25519Tests(params: { manualSync: boolean; torusSP: TorusServic
       } catch (error) {}
     });
 
+    it("should import key for ed25519", async function () {
+      // Test with migratable key.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (customSP as any).migratableKey = generatePrivateBN();
+
+      const tb2 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync });
+      const ed = randomBytes(32);
+      await tb2.initialize({ importEd25519Seed: ed });
+
+      const share = await tb2.generateNewShare();
+      if (manualSync) {
+        await tb2.syncLocalMetadataTransitions();
+      }
+
+      // Check exported seed = imported seed.
+      {
+        await tb2.reconstructKey();
+        const edExported = tb2.getEd25519Key();
+        assert.strictEqual(ed.toString("hex"), edExported.toString("hex"));
+      }
+
+      const newInstance = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync });
+      await newInstance.initialize();
+      const edPub = newInstance.getEd25519PublicKey();
+      try {
+        newInstance.getEd25519Key();
+        assert.fail("should not be able to get ed25519 key");
+      } catch (error) {}
+
+      newInstance.inputShareStore(share.newShareStores[share.newShareIndex.toString("hex")]);
+      await newInstance.reconstructKey();
+
+      assert.strictEqual(ed.toString("hex"), newInstance.getEd25519Key().toString("hex"));
+      assert.strictEqual(edPub, newInstance.getEd25519PublicKey());
+      // should not able to reinitialize with import key
+      const instance3 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync });
+      try {
+        await instance3.initialize({ importKey: generatePrivateBN(), importEd25519Seed: randomBytes(32) });
+        assert.fail("should not be able to reinitialize with import key");
+      } catch (error) {}
+    });
+
     it("should import key for ed25519 and secp256k1", async function () {
       const tb2 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync });
       const secp = generatePrivateBN();

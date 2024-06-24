@@ -234,7 +234,15 @@ class ThresholdKey implements ITKey {
 
     if (p.delete1OutOf1 && !this.manualSync) throw CoreError.delete1OutOf1OnlyManualSync();
 
-    const { withShare, importKey, neverInitializeNewKey, transitionMetadata, previouslyFetchedCloudMetadata, previousLocalMetadataTransitions } = p;
+    const {
+      withShare,
+      importKey,
+      importEd25519Seed,
+      neverInitializeNewKey,
+      transitionMetadata,
+      previouslyFetchedCloudMetadata,
+      previousLocalMetadataTransitions,
+    } = p;
 
     const previousLocalMetadataTransitionsExists =
       previousLocalMetadataTransitions && previousLocalMetadataTransitions[0].length > 0 && previousLocalMetadataTransitions[1].length > 0;
@@ -272,7 +280,7 @@ class ThresholdKey implements ITKey {
 
         // check for serviceprovider migratableKey for import key from service provider for new user
         // provided no importKey is provided ( importKey take precedent )
-        if (this.serviceProvider.migratableKey && !importKey) {
+        if (this.serviceProvider.migratableKey && !(importKey || importEd25519Seed)) {
           // importkey from server provider need to be atomic, hence manual sync is required.
           const tempStateManualSync = this.manualSync; // temp store manual sync flag
           this.manualSync = true; // Setting this as true since _initializeNewKey has a check where for importkey from server provider need to be atomic, hence manual sync is required.
@@ -285,7 +293,7 @@ class ThresholdKey implements ITKey {
             initializeModules: true,
             importedKey: importKey,
             delete1OutOf1: p.delete1OutOf1,
-            importEd25519Seed: params?.importEd25519Seed,
+            importEd25519Seed,
           });
         }
 

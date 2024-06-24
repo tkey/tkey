@@ -66,6 +66,7 @@ function compareReconstructedKeys(a, b, message) {
 export const sharedTestCases = (mode, torusSP, storageLayer) => {
   const customSP = torusSP;
   const customSL = storageLayer;
+
   describe("tkey", function () {
     let tb;
 
@@ -1402,6 +1403,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       }
     });
   });
+
   describe("tkey error cases", function () {
     let tb;
     let resp1;
