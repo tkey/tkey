@@ -1,6 +1,6 @@
 {
   "name": "@tkey/tss",
-  "version": "13.0.0-alpha.6",
+  "version": "13.0.0-alpha.7",
   "description": "Threshold signing for Tkey",
   "main": "dist/tss.cjs.js",
   "module": "dist/tss.esm.js",
@@ -21,7 +21,7 @@
   "license": "ISC",
   "dependencies": {
     "@tkey/common-types": "^13.0.0-alpha.6",
-    "@tkey/core": "^13.0.0-alpha.6",
+    "@tkey/core": "^13.0.0-alpha.7",
     "@tkey/service-provider-torus": "^13.0.0-alpha.6",
     "@toruslabs/customauth": "^19.0.0-alpha.6",
     "@toruslabs/rss-client": "^2.0.0-0",

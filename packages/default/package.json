@@ -1,6 +1,6 @@
 {
   "name": "@tkey/default",
-  "version": "13.0.0-alpha.6",
+  "version": "13.0.0-alpha.7",
   "description": "TKey default library",
   "main": "dist/default.cjs.js",
   "module": "dist/default.esm.js",
@@ -34,7 +34,7 @@
   ],
   "dependencies": {
     "@tkey/common-types": "^13.0.0-alpha.6",
-    "@tkey/core": "^13.0.0-alpha.6",
+    "@tkey/core": "^13.0.0-alpha.7",
     "@tkey/security-questions": "^13.0.0-alpha.6",
     "@tkey/service-provider-base": "^13.0.0-alpha.6",
     "@tkey/service-provider-torus": "^13.0.0-alpha.6",
