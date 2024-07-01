@@ -128,4 +128,22 @@ export function ed25519Tests(params: { manualSync: boolean; torusSP: TorusServic
       } catch (error) {}
     });
   });
+
+  it("should import key for ed25519 only once", async function () {
+    const tb2 = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync });
+    const ed = randomBytes(32);
+    const ed2 = randomBytes(32);
+    await tb2.initialize({ importEd25519Seed: ed });
+    const share = await tb2.generateNewShare();
+    if (manualSync) {
+      await tb2.syncLocalMetadataTransitions();
+    }
+    await tb2.reconstructKey();
+    const newInstance = new ThresholdKey({ serviceProvider: customSP, storageLayer: customSL, manualSync });
+    newInstance.inputShare(share);
+    // should not able to reinitialize with import key
+    assert.rejects(async function () {
+      await newInstance.initialize({ importEd25519Seed: ed2 });
+    }, Error("Ed25519 key already exists"));
+  });
 }
