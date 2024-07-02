@@ -250,6 +250,8 @@ class ThresholdKey implements ITKey {
     // in the case we're reinitializing whilst newKeyAssign has not been synced
     const reinitializingWithNewKeyAssign = reinitializing && previouslyFetchedCloudMetadata === undefined;
 
+    let newUserAssumed = false;
+
     let shareStore: ShareStore;
     if (withShare instanceof ShareStore) {
       shareStore = withShare;
@@ -270,6 +272,7 @@ class ThresholdKey implements ITKey {
           },
         },
       });
+
       const noKeyFound: { message?: string } = rawServiceProviderShare as { message?: string };
       if (noKeyFound.message === KEY_NOT_FOUND) {
         if (neverInitializeNewKey) {
@@ -277,7 +280,7 @@ class ThresholdKey implements ITKey {
         }
 
         // no metadata set, assumes new user
-
+        newUserAssumed = true;
         // check for serviceprovider migratableKey for import key from service provider for new user
         // provided no importKey is provided ( importKey take precedent )
         if (this.serviceProvider.migratableKey && !(importKey || importEd25519Seed)) {
@@ -350,6 +353,10 @@ class ThresholdKey implements ITKey {
     this.metadata = currentMetadata;
     const latestShare = latestShareDetails ? latestShareDetails.latestShare : shareStore;
     this.inputShareStore(latestShare);
+
+    if (!newUserAssumed && importEd25519Seed) {
+      await this.setupEd25519Seed(importEd25519Seed);
+    }
 
     // initialize modules
     await this.initializeModules();
