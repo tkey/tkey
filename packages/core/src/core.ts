@@ -270,6 +270,7 @@ class ThresholdKey implements ITKey {
           },
         },
       });
+
       const noKeyFound: { message?: string } = rawServiceProviderShare as { message?: string };
       if (noKeyFound.message === KEY_NOT_FOUND) {
         if (neverInitializeNewKey) {
@@ -277,7 +278,6 @@ class ThresholdKey implements ITKey {
         }
 
         // no metadata set, assumes new user
-
         // check for serviceprovider migratableKey for import key from service provider for new user
         // provided no importKey is provided ( importKey take precedent )
         if (this.serviceProvider.migratableKey && !(importKey || importEd25519Seed)) {
@@ -350,6 +350,10 @@ class ThresholdKey implements ITKey {
     this.metadata = currentMetadata;
     const latestShare = latestShareDetails ? latestShareDetails.latestShare : shareStore;
     this.inputShareStore(latestShare);
+
+    if (importEd25519Seed && this.getEd25519PublicKey()) {
+      throw CoreError.default("Ed25119 key already exists");
+    }
 
     // initialize modules
     await this.initializeModules();
