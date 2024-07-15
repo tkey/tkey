@@ -37,7 +37,7 @@ jobs:
         run: npm ci
 
       - name: Run Build
-        run: npm run build
+        run: npm run build && npx playwright install
 
       - name: Browser Test Development Chrome (Mocked)
         if: startsWith(matrix.browser, 'chromium')
