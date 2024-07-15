@@ -36,6 +36,9 @@ jobs:
       - name: Install Node.js dependencies
         run: npm ci
 
+      - name: Run Build
+        run: npm run build
+
       - name: Browser Test Development Chrome (Mocked)
         if: startsWith(matrix.browser, 'chromium')
         run: npm run browser-tests:local-mocked-chrome
