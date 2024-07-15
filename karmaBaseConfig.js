@@ -10,6 +10,8 @@ process.env.CHROME_BIN = playwright.chromium.executablePath();
 process.env.WEBKIT_HEADLESS_BIN = playwright.webkit.executablePath();
 
 const localBrowserConfig = (webpackConfig, karmaConfig, packageConfig) => {
+  // webpackConfig is an array of 2 objects, first object is for umd environment, second is for cjs environment
+  const { module, resolve, plugins } = webpackConfig[1] || webpackConfig[0];
   return {
     // base path that will be used to resolve all patterns (eg. files, exclude)
     basePath: "",
@@ -24,9 +26,9 @@ const localBrowserConfig = (webpackConfig, karmaConfig, packageConfig) => {
     frameworks: ["mocha", "webpack"],
 
     webpack: {
-      module: webpackConfig[1].module,
-      resolve: webpackConfig[1].resolve,
-      plugins: webpackConfig[1].plugins,
+      module,
+      resolve,
+      plugins,
     },
 
     plugins: ["karma-mocha-reporter", "karma-webkit-launcher", "karma-chrome-launcher", "karma-firefox-launcher", "karma-mocha", "karma-webpack"],
@@ -61,67 +63,70 @@ const localBrowserConfig = (webpackConfig, karmaConfig, packageConfig) => {
   };
 };
 
-const browserStackConfig = (webpackConfig, karmaConfig, packageConfig) => ({
-  browserStack: {
-    username: process.env.BROWSER_STACK_USERNAME,
-    accessKey: process.env.BROWSER_STACK_KEY,
-    project: packageConfig.name,
-  },
-  // base path that will be used to resolve all patterns (eg. files, exclude)
-  basePath: "",
-
-  files: [{ pattern: "./test/*.js" }],
-
-  preprocessors: {
-    "./test/*.js": ["webpack"],
-  },
-
-  // frameworks to us
-  frameworks: ["mocha", "webpack"],
-
-  webpack: {
-    module: webpackConfig[1].module,
-    resolve: webpackConfig[1].resolve,
-    plugins: webpackConfig[1].plugins,
-  },
-
-  plugins: ["karma-webpack", "karma-mocha", "karma-browserstack-launcher"],
-
-  client: {
-    mocha: {
-      timeout: 0,
+const browserStackConfig = (webpackConfig, karmaConfig, packageConfig) => {
+  const { module, resolve, plugins } = webpackConfig[1] || webpackConfig[0];
+  return {
+    browserStack: {
+      username: process.env.BROWSER_STACK_USERNAME,
+      accessKey: process.env.BROWSER_STACK_KEY,
+      project: packageConfig.name,
     },
-    args: packageConfig.args,
-  },
+    // base path that will be used to resolve all patterns (eg. files, exclude)
+    basePath: "",
 
-  reporters: ["progress", "BrowserStack"],
+    files: [{ pattern: "./test/*.js" }],
 
-  // web server port
-  port: 9876,
-
-  concurrency: 1,
-
-  singleRun: true,
-
-  // enable / disable colors in the output (reporters and logs)
-  colors: true,
-
-  // level of logging
-  logLevel: karmaConfig.LOG_INFO,
-
-  // define browsers
-  customLaunchers: {
-    bs_firefox_windows: {
-      base: "BrowserStack",
-      browser: "Chrome",
-      browser_version: "90.0",
-      os: "Windows",
-      os_version: "10",
-      video: false,
+    preprocessors: {
+      "./test/*.js": ["webpack"],
     },
-  },
 
-  browsers: ["bs_firefox_windows"],
-});
+    // frameworks to us
+    frameworks: ["mocha", "webpack"],
+
+    webpack: {
+      module,
+      resolve,
+      plugins,
+    },
+
+    plugins: ["karma-webpack", "karma-mocha", "karma-browserstack-launcher"],
+
+    client: {
+      mocha: {
+        timeout: 0,
+      },
+      args: packageConfig.args,
+    },
+
+    reporters: ["progress", "BrowserStack"],
+
+    // web server port
+    port: 9876,
+
+    concurrency: 1,
+
+    singleRun: true,
+
+    // enable / disable colors in the output (reporters and logs)
+    colors: true,
+
+    // level of logging
+    logLevel: karmaConfig.LOG_INFO,
+
+    // define browsers
+    customLaunchers: {
+      bs_firefox_windows: {
+        base: "BrowserStack",
+        browser: "Chrome",
+        browser_version: "90.0",
+        os: "Windows",
+        os_version: "10",
+        video: false,
+      },
+    },
+
+    browsers: ["bs_firefox_windows"],
+  };
+};
 
 module.exports = { localBrowserConfig, browserStackConfig };
