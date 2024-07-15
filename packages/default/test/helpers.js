@@ -1,6 +1,6 @@
-import ServiceProviderBase from "@tkey/service-provider-base";
-import ServiceProviderTorus from "@tkey/service-provider-torus";
-import TorusStorageLayer, { MockStorageLayer } from "@tkey/storage-layer-torus";
+import { ServiceProviderBase } from "@tkey/service-provider-base";
+import { TorusServiceProvider } from "@tkey/service-provider-torus";
+import { MockStorageLayer, TorusStorageLayer } from "@tkey/storage-layer-torus";
 import { generatePrivate } from "@toruslabs/eccrypto";
 
 let mocked;
@@ -31,7 +31,7 @@ export function getServiceProvider(params) {
   const { type, privKeyBN, isEmptyProvider } = params;
   const PRIVATE_KEY = privKeyBN ? privKeyBN.toString("hex") : generatePrivate().toString("hex");
   if (type === "TorusServiceProvider") {
-    return new ServiceProviderTorus({
+    return new TorusServiceProvider({
       postboxKey: isEmptyProvider ? null : PRIVATE_KEY,
       customAuthArgs: {
         // this url has no effect as postbox key is passed
