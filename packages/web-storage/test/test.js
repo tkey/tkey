@@ -1,4 +1,4 @@
-import ThresholdKey from "@tkey/core";
+import { TKey as ThresholdKey } from "@tkey/core";
 import { ServiceProviderBase } from "@tkey/service-provider-base";
 import { MockStorageLayer, TorusStorageLayer } from "@tkey/storage-layer-torus";
 import { deepStrictEqual, strictEqual, throws } from "assert";
@@ -43,6 +43,7 @@ manualSyncModes.forEach((mode) => {
   describe("web storage", function () {
     let tb;
     let tb2;
+
     beforeEach("Setup ThresholdKey", async function () {
       tb = new ThresholdKey({
         serviceProvider: defaultSP,

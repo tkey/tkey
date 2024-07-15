@@ -1,12 +1,12 @@
 import { IServiceProvider, IStorageLayer, StringifiedType, TKeyArgs } from "@tkey/common-types";
-import TKey from "@tkey/core";
+import { TKey } from "@tkey/core";
 import { ServiceProviderBase } from "@tkey/service-provider-base";
 import { TorusServiceProvider } from "@tkey/service-provider-torus";
 import { SHARE_SERIALIZATION_MODULE_NAME, ShareSerializationModule } from "@tkey/share-serialization";
 import { SHARE_TRANSFER_MODULE_NAME, ShareTransferModule } from "@tkey/share-transfer";
 import { MockStorageLayer, TorusStorageLayer } from "@tkey/storage-layer-torus";
 
-class ThresholdKey extends TKey {
+export class TKeyDefault extends TKey {
   constructor(args?: TKeyArgs) {
     const { modules = {}, serviceProvider, storageLayer, customAuthArgs, serverTimeOffset } = args || {};
     const defaultModules = {
@@ -28,7 +28,7 @@ class ThresholdKey extends TKey {
     super({ ...(args || {}), modules: { ...defaultModules, ...modules }, serviceProvider: finalServiceProvider, storageLayer: finalStorageLayer });
   }
 
-  static async fromJSON(value: StringifiedType, args?: TKeyArgs): Promise<ThresholdKey> {
+  static async fromJSON(value: StringifiedType, args?: TKeyArgs): Promise<TKeyDefault> {
     const { storageLayer: tempOldStorageLayer, serviceProvider: tempOldServiceProvider } = value;
     const { storageLayer, serviceProvider, modules = {}, customAuthArgs, serverTimeOffset = 0 } = args || {};
     const defaultModules = {
@@ -57,5 +57,3 @@ class ThresholdKey extends TKey {
     });
   }
 }
-
-export default ThresholdKey;

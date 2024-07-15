@@ -43,9 +43,9 @@
     "@babel/runtime": "7.x"
   },
   "dependencies": {
-    "@toruslabs/customauth": "^19.0.2",
+    "@toruslabs/customauth": "^19.0.3",
     "@toruslabs/eccrypto": "^5.0.4",
-    "@toruslabs/torus.js": "^14.0.0",
+    "@toruslabs/torus.js": "^14.0.1",
     "bn.js": "^5.2.1",
     "elliptic": "^6.5.5",
     "ts-custom-error": "^3.3.1"

@@ -1,11 +1,11 @@
-import ServiceProviderTorus from "@tkey/service-provider-torus";
+import { TorusServiceProvider } from "@tkey/service-provider-torus";
 import { generatePrivate } from "@toruslabs/eccrypto";
 
 import { getMetadataUrl, initStorageLayer } from "./helpers";
 import { sharedTestCases } from "./shared";
 
 const PRIVATE_KEY = generatePrivate().toString("hex");
-const torusSp = new ServiceProviderTorus({
+const torusSp = new TorusServiceProvider({
   postboxKey: PRIVATE_KEY,
   customAuthArgs: {
     baseUrl: "http://localhost:3000",

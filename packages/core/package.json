@@ -37,7 +37,7 @@
     "@tkey/common-types": "^12.1.2",
     "@toruslabs/eccrypto": "^5.0.4",
     "@toruslabs/http-helpers": "^7.0.0",
-    "@toruslabs/torus.js": "^14.0.0",
+    "@toruslabs/torus.js": "^14.0.1",
     "bn.js": "^5.2.1",
     "elliptic": "^6.5.5",
     "json-stable-stringify": "^1.1.1"
