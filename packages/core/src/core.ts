@@ -333,7 +333,8 @@ class ThresholdKey implements ITKey {
       if ((err as CoreError) && err.code === 1308) {
         throw err;
       }
-      throw CoreError.authMetadataGetUnavailable(`, ${prettyPrintError(err)}`);
+      const prettyError = await prettyPrintError(err);
+      throw CoreError.authMetadataGetUnavailable(`, ${prettyError.message}`);
     }
 
     try {
@@ -740,7 +741,8 @@ class ThresholdKey implements ITKey {
       this._localMetadataTransitions = [[], []];
       this.lastFetchedCloudMetadata = this.metadata.clone();
     } catch (error: unknown) {
-      throw CoreError.metadataPostFailed(prettyPrintError(error as Error));
+      const prettyError = await prettyPrintError(error);
+      throw CoreError.metadataPostFailed(prettyError.message);
     } finally {
       // release lock
       if (acquiredLock) await this.releaseWriteMetadataLock();
@@ -979,7 +981,8 @@ class ThresholdKey implements ITKey {
     try {
       raw = await this.storageLayer.getMetadata(params);
     } catch (err: unknown) {
-      throw CoreError.metadataGetFailed(`${prettyPrintError(err as Error)}`);
+      const prettyError = await prettyPrintError(err);
+      throw CoreError.metadataGetFailed(prettyError.message);
     }
     if ((raw as IMessageMetadata).message === SHARE_DELETED) {
       throw CoreError.fromCode(1308);
@@ -1059,7 +1062,8 @@ class ThresholdKey implements ITKey {
       try {
         specificShareMetadata = await this.getAuthMetadata({ privKey: share, includeLocalMetadataTransitions: true });
       } catch (err: unknown) {
-        throw CoreError.authMetadataGetUnavailable(`${prettyPrintError(err as Error)}`);
+        const prettyError = await prettyPrintError(err);
+        throw CoreError.authMetadataGetUnavailable(prettyError.message);
       }
 
       let scopedStoreToBeSet: Record<string, unknown>;

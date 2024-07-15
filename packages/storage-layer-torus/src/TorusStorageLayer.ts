@@ -80,7 +80,7 @@ class TorusStorageLayer implements IStorageLayer {
     const metadataResponse = await post<{ message: string }>(`${this.hostUrl}/get`, keyDetails);
     // returns empty object if object
     if (metadataResponse.message === "") {
-      return Object.create({ message: KEY_NOT_FOUND }) as T;
+      return { message: KEY_NOT_FOUND } as T;
     }
     const encryptedMessage = JSON.parse(base64url.decode(metadataResponse.message));
 
@@ -109,15 +109,8 @@ class TorusStorageLayer implements IStorageLayer {
       );
       return await post<{ message: string }>(`${this.hostUrl}/set`, metadataParams);
     } catch (error: unknown) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let apiError: any;
-      try {
-        apiError = await (error as Response).json();
-      } catch (error2) {
-        // ignore error2. it means not an api error
-        throw error;
-      }
-      if (apiError) throw new Error(prettyPrintError(apiError));
+      const prettyError = await prettyPrintError(error);
+      throw prettyError as Error;
     }
   }
 
@@ -153,15 +146,8 @@ class TorusStorageLayer implements IStorageLayer {
       };
       return await post<{ message: string }>(`${this.hostUrl}/bulk_set_stream`, FD, options, customOptions);
     } catch (error) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let apiError: any;
-      try {
-        apiError = await (error as Response).json();
-      } catch (error2) {
-        // ignore error2. it means not an api error
-        throw error;
-      }
-      if (apiError) throw new Error(prettyPrintError(apiError));
+      const prettyError = await prettyPrintError(error);
+      throw prettyError as Error;
     }
   }
 

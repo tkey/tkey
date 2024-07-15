@@ -77,6 +77,8 @@ class WebStorageModule implements IModule {
     try {
       shareStore = await getShareFromLocalStorage(tkeypubx);
     } catch (localErr) {
+      const prettyLocalError = await prettyPrintError(localErr);
+
       if (this.canUseFileStorage) {
         try {
           shareStore = await getShareFromFileStorage(tkeypubx);
@@ -85,12 +87,11 @@ class WebStorageModule implements IModule {
             // User has denied access to storage. stop asking for every share
             this.canUseFileStorage = false;
           }
-          throw WebStorageError.unableToReadFromStorage(
-            `Error inputShareFromWebStorage: ${prettyPrintError(localErr as Error)} and ${prettyPrintError(fileErr as Error)}`
-          );
+          const prettyFileError = await prettyPrintError(fileErr);
+          throw WebStorageError.unableToReadFromStorage(`Error inputShareFromWebStorage: ${prettyLocalError.message} and ${prettyFileError.message}`);
         }
       }
-      throw WebStorageError.unableToReadFromStorage(`Error inputShareFromWebStorage: ${prettyPrintError(localErr as Error)}`);
+      throw WebStorageError.unableToReadFromStorage(`Error inputShareFromWebStorage: ${prettyLocalError.message}`);
     }
     return shareStore;
   }

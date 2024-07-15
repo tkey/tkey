@@ -21,7 +21,7 @@ export class TKeyDefault extends TKey {
       finalServiceProvider = serviceProvider;
     }
     if (!storageLayer) {
-      finalStorageLayer = new TorusStorageLayer({ hostUrl: "https://metadata.tor.us", serverTimeOffset });
+      finalStorageLayer = new TorusStorageLayer({ hostUrl: "https://metadata.web3auth.io", serverTimeOffset });
     } else {
       finalStorageLayer = storageLayer;
     }
@@ -47,7 +47,7 @@ export class TKeyDefault extends TKey {
       storageLayer ||
       MockStorageLayer.fromJSON(tempOldStorageLayer) ||
       TorusStorageLayer.fromJSON(tempOldStorageLayer) ||
-      new TorusStorageLayer({ hostUrl: "https://metadata.tor.us", serverTimeOffset });
+      new TorusStorageLayer({ hostUrl: "https://metadata.web3auth.io", serverTimeOffset });
 
     return super.fromJSON(value, {
       ...(args || {}),
