@@ -5,11 +5,12 @@
   "author": "Torus Labs",
   "homepage": "https://github.com/tkey/tkey#readme",
   "license": "MIT",
-  "main": "dist/serviceProviderTorus.cjs.js",
-  "module": "dist/serviceProviderTorus.esm.js",
+  "main": "dist/lib.cjs/index.js",
+  "module": "dist/lib.esm/index.js",
   "unpkg": "dist/serviceProviderTorus.umd.min.js",
   "jsdelivr": "dist/serviceProviderTorus.umd.min.js",
   "types": "dist/types/index.d.ts",
+  "sideEffects": false,
   "files": [
     "dist"
   ],
@@ -39,8 +40,8 @@
   "dependencies": {
     "@tkey/common-types": "^12.1.2",
     "@tkey/service-provider-base": "^12.1.2",
-    "@toruslabs/customauth": "^18.1.0",
-    "@toruslabs/torus.js": "^12.3.6",
+    "@toruslabs/customauth": "^19.0.2",
+    "@toruslabs/torus.js": "^14.0.0",
     "bn.js": "^5.2.1",
     "elliptic": "^6.5.5"
   },

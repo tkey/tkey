@@ -5,11 +5,12 @@
   "author": "Torus Labs",
   "homepage": "https://github.com/tkey/tkey#readme",
   "license": "MIT",
-  "main": "dist/shareTransfer.cjs.js",
-  "module": "dist/shareTransfer.esm.js",
+  "main": "dist/lib.cjs/index.js",
+  "module": "dist/lib.esm/index.js",
   "unpkg": "dist/shareTransfer.umd.min.js",
   "jsdelivr": "dist/shareTransfer.umd.min.js",
   "types": "dist/types/index.d.ts",
+  "sideEffects": false,
   "files": [
     "dist"
   ],
@@ -38,8 +39,8 @@
   },
   "dependencies": {
     "@tkey/common-types": "^12.1.2",
-    "@toruslabs/eccrypto": "^4.0.0",
-    "@toruslabs/http-helpers": "^6.1.1",
+    "@toruslabs/eccrypto": "^5.0.4",
+    "@toruslabs/http-helpers": "^7.0.0",
     "bn.js": "^5.2.1"
   },
   "devDependencies": {

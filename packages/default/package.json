@@ -2,11 +2,12 @@
   "name": "@tkey/default",
   "version": "12.1.2",
   "description": "TKey default library",
-  "main": "dist/default.cjs.js",
-  "module": "dist/default.esm.js",
+  "main": "dist/lib.cjs/index.js",
+  "module": "dist/lib.esm/index.js",
   "unpkg": "dist/default.umd.min.js",
   "jsdelivr": "dist/default.umd.min.js",
   "types": "dist/types/index.d.ts",
+  "sideEffects": false,
   "scripts": {
     "test": "cross-env MOCKED=true mocha --config ../../.mocharc.json ",
     "coverage": "nyc npm test",
@@ -46,8 +47,8 @@
   "devDependencies": {
     "@tkey/private-keys": "^12.1.2",
     "@tkey/seed-phrase": "^12.1.2",
-    "@toruslabs/eccrypto": "^4.0.0",
-    "@toruslabs/http-helpers": "^6.1.1"
+    "@toruslabs/eccrypto": "^5.0.4",
+    "@toruslabs/http-helpers": "^7.0.0"
   },
   "peerDependencies": {
     "@babel/runtime": "7.x"

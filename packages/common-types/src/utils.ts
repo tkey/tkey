@@ -1,8 +1,8 @@
+import { serializeError } from "@toruslabs/customauth";
 import { decrypt as ecDecrypt, encrypt as ecEncrypt, generatePrivate } from "@toruslabs/eccrypto";
 import { keccak256, toChecksumAddress } from "@toruslabs/torus.js";
 import BN from "bn.js";
 import { ec as EC } from "elliptic";
-import { serializeError } from "serialize-error";
 
 import { EncryptedMessage } from "./baseTypes/commonTypes";
 
