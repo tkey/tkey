@@ -904,8 +904,8 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       await tb.syncLocalMetadataTransitions();
 
       await tb.modules.shareTransfer.resetShareTransferStore();
-      const newRequests = await tb.modules.shareTransfer.getShareTransferStore();
-      if (Object.keys(newRequests).length !== 0) {
+      const stStore = await tb.modules.shareTransfer.getShareTransferStore();
+      if (stStore.message !== KEY_NOT_FOUND) {
         fail("Unable to reset share store");
       }
     });
