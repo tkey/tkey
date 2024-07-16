@@ -1,6 +1,6 @@
 {
   "name": "@tkey/default",
-  "version": "14.0.0",
+  "version": "14.0.1",
   "description": "TKey default library",
   "main": "dist/lib.cjs/index.js",
   "module": "dist/lib.esm/index.js",
@@ -41,7 +41,7 @@
     "@tkey/service-provider-torus": "^14.0.0",
     "@tkey/share-serialization": "^14.0.0",
     "@tkey/share-transfer": "^14.0.0",
-    "@tkey/storage-layer-torus": "^14.0.0",
+    "@tkey/storage-layer-torus": "^14.0.1",
     "bn.js": "^5.2.1"
   },
   "devDependencies": {
