@@ -136,7 +136,7 @@ class TorusStorageLayer implements IStorageLayer {
         mode: "cors",
         method: "POST",
         headers: {
-          "Content-Type": undefined,
+          // don't set ContentType header here. it's handled in http-helpers
         },
       };
 
