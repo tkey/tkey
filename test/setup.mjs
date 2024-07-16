@@ -29,6 +29,9 @@ const storeFn = {
   setItem(key, value) {
     this[key] = value;
   },
+  removeItem(key) {
+    delete this[key];
+  },
 };
 globalThis.localStorage = { ...storeFn };
 globalThis.sessionStorage = { ...storeFn };

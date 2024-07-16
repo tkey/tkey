@@ -136,7 +136,7 @@ class TorusStorageLayer implements IStorageLayer {
         mode: "cors",
         method: "POST",
         headers: {
-          "Content-Type": undefined,
+          // don't set ContentType header here. it's handled in http-helpers
         },
       };
 
@@ -193,7 +193,7 @@ class TorusStorageLayer implements IStorageLayer {
   async acquireWriteLock(params: { serviceProvider?: IServiceProvider; privKey?: BN }): Promise<{ status: number; id?: string }> {
     const { serviceProvider, privKey } = params;
     const data = {
-      timestamp: Math.floor((this.serverTimeOffset + Date.now()) / 1000),
+      timestamp: Math.floor(this.serverTimeOffset + Date.now() / 1000),
     };
 
     let signature: string;
@@ -213,7 +213,7 @@ class TorusStorageLayer implements IStorageLayer {
   async releaseWriteLock(params: { id: string; serviceProvider?: IServiceProvider; privKey?: BN }): Promise<{ status: number }> {
     const { serviceProvider, privKey, id } = params;
     const data = {
-      timestamp: Math.floor((this.serverTimeOffset + Date.now()) / 1000),
+      timestamp: Math.floor(this.serverTimeOffset + Date.now() / 1000),
     };
 
     let signature: string;
