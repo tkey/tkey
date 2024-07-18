@@ -1,7 +1,8 @@
 import { StringifiedType, TorusServiceProviderArgs } from "@tkey/common-types";
 import { ServiceProviderBase } from "@tkey/service-provider-base";
-import CustomAuth, {
+import {
   AggregateLoginParams,
+  CustomAuth,
   CustomAuthArgs,
   HybridAggregateLoginParams,
   InitParams,

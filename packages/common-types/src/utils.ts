@@ -1,8 +1,8 @@
+import { serializeError } from "@toruslabs/customauth";
 import { decrypt as ecDecrypt, encrypt as ecEncrypt, generatePrivate } from "@toruslabs/eccrypto";
 import { keccak256, toChecksumAddress } from "@toruslabs/torus.js";
 import BN from "bn.js";
 import { ec as EC } from "elliptic";
-import { serializeError } from "serialize-error";
 
 import { EncryptedMessage } from "./baseTypes/commonTypes";
 
@@ -44,13 +44,13 @@ export function isEmptyObject(obj: unknown): boolean {
   return Object.keys(obj).length === 0 && obj.constructor === Object;
 }
 
-export const isErrorObj = (err: Error): boolean => err && err.stack && err.message !== "";
+export const isErrorObj = (err: unknown): boolean => err && (err as Error).stack && (err as Error).message !== "";
 
-export function prettyPrintError(error: Error): string {
+export async function prettyPrintError(error: unknown): Promise<Error> {
   if (isErrorObj(error)) {
-    return error.message;
+    return error as Error;
   }
-  return JSON.stringify(serializeError(error));
+  return serializeError(error);
 }
 
 export function generateAddressFromPublicKey(publicKey: Buffer): string {

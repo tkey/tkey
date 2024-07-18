@@ -80,7 +80,7 @@ class TorusStorageLayer implements IStorageLayer {
     const metadataResponse = await post<{ message: string }>(`${this.hostUrl}/get`, keyDetails);
     // returns empty object if object
     if (metadataResponse.message === "") {
-      return Object.create({ message: KEY_NOT_FOUND }) as T;
+      return { message: KEY_NOT_FOUND } as T;
     }
     const encryptedMessage = JSON.parse(base64url.decode(metadataResponse.message));
 
@@ -109,15 +109,8 @@ class TorusStorageLayer implements IStorageLayer {
       );
       return await post<{ message: string }>(`${this.hostUrl}/set`, metadataParams);
     } catch (error: unknown) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let apiError: any;
-      try {
-        apiError = await (error as Response).json();
-      } catch (error2) {
-        // ignore error2. it means not an api error
-        throw error;
-      }
-      if (apiError) throw new Error(prettyPrintError(apiError));
+      const prettyError = await prettyPrintError(error);
+      throw prettyError as Error;
     }
   }
 
@@ -143,7 +136,7 @@ class TorusStorageLayer implements IStorageLayer {
         mode: "cors",
         method: "POST",
         headers: {
-          "Content-Type": undefined,
+          // don't set ContentType header here. it's handled in http-helpers
         },
       };
 
@@ -153,15 +146,8 @@ class TorusStorageLayer implements IStorageLayer {
       };
       return await post<{ message: string }>(`${this.hostUrl}/bulk_set_stream`, FD, options, customOptions);
     } catch (error) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let apiError: any;
-      try {
-        apiError = await (error as Response).json();
-      } catch (error2) {
-        // ignore error2. it means not an api error
-        throw error;
-      }
-      if (apiError) throw new Error(prettyPrintError(apiError));
+      const prettyError = await prettyPrintError(error);
+      throw prettyError as Error;
     }
   }
 
@@ -172,7 +158,7 @@ class TorusStorageLayer implements IStorageLayer {
     let namespace = "tkey";
     const setTKeyStore = {
       data: message,
-      timestamp: new BN(~~((this.serverTimeOffset + Date.now()) / 1000)).toString(16),
+      timestamp: new BN(~~(this.serverTimeOffset + Date.now() / 1000)).toString(16),
     };
 
     // Overwrite bulk_set to allow deleting nonce v2 together with creating tKey.
@@ -207,7 +193,7 @@ class TorusStorageLayer implements IStorageLayer {
   async acquireWriteLock(params: { serviceProvider?: IServiceProvider; privKey?: BN }): Promise<{ status: number; id?: string }> {
     const { serviceProvider, privKey } = params;
     const data = {
-      timestamp: Math.floor((this.serverTimeOffset + Date.now()) / 1000),
+      timestamp: Math.floor(this.serverTimeOffset + Date.now() / 1000),
     };
 
     let signature: string;
@@ -227,7 +213,7 @@ class TorusStorageLayer implements IStorageLayer {
   async releaseWriteLock(params: { id: string; serviceProvider?: IServiceProvider; privKey?: BN }): Promise<{ status: number }> {
     const { serviceProvider, privKey, id } = params;
     const data = {
-      timestamp: Math.floor((this.serverTimeOffset + Date.now()) / 1000),
+      timestamp: Math.floor(this.serverTimeOffset + Date.now() / 1000),
     };
 
     let signature: string;

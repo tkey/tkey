@@ -1,1 +1,1 @@
-export { default, default as ServiceProviderBase } from "./ServiceProviderBase";
+export { default as ServiceProviderBase } from "./ServiceProviderBase";

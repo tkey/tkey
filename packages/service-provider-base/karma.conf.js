@@ -9,6 +9,7 @@ const { localBrowserConfig, browserStackConfig } = require("../../karmaBaseConfi
 module.exports = async (config) => {
   const generateWebpackConfig = await import("@toruslabs/torus-scripts/config/webpack.config.js");
   const torusConfig = (await import("@toruslabs/torus-scripts/config/torus.config.js")).default;
+  torusConfig.umd = true;
   const webpackConfig = generateWebpackConfig.default(torusConfig.name);
   if (process.env.INFRA === "LOCAL") {
     config.set({ ...localBrowserConfig(webpackConfig, config, { args: [process.env.MOCKED] }) });

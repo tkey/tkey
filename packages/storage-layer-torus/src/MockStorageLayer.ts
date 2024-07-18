@@ -47,7 +47,7 @@ class MockStorageLayer implements IStorageLayer {
 
     const fromMap = this.dataMap[usedKey.toString("hex")];
     if (!fromMap) {
-      return Object.create({ message: KEY_NOT_FOUND }) as T;
+      return { message: KEY_NOT_FOUND } as T;
     }
     return JSON.parse(this.dataMap[usedKey.toString("hex")] as string) as T;
   }
