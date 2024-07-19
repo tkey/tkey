@@ -6,14 +6,6 @@ import { ec as EC } from "elliptic";
 
 import { EncryptedMessage } from "./baseTypes/commonTypes";
 
-// const privKeyBnToEcc = (bnPrivKey) => {
-//   return bnPrivKey.toBuffer("be", 32);
-// };
-
-// const privKeyBnToPubKeyECC = (bnPrivKey) => {
-//   return getPublic(privKeyBnToEcc(bnPrivKey));
-// };
-
 export const secp256k1 = new EC("secp256k1");
 
 // Wrappers around ECC encrypt/decrypt to use the hex serialization

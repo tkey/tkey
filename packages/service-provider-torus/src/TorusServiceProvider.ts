@@ -11,7 +11,7 @@ import {
   TorusHybridAggregateLoginResponse,
   TorusLoginResponse,
 } from "@toruslabs/customauth";
-import Torus, { TorusKey } from "@toruslabs/torus.js";
+import { Torus, TorusKey } from "@toruslabs/torus.js";
 import BN from "bn.js";
 
 class TorusServiceProvider extends ServiceProviderBase {

@@ -1,7 +1,7 @@
 import { type StringifiedType } from "@tkey/common-types";
 import { ServiceProviderBase } from "@tkey/service-provider-base";
 import { NodeDetailManager } from "@toruslabs/fetch-node-details";
-import Torus, { keccak256, TorusKey } from "@toruslabs/torus.js";
+import { keccak256, Torus, TorusKey } from "@toruslabs/torus.js";
 import BN from "bn.js";
 
 import { AggregateVerifierParams, LoginParams, SfaServiceProviderArgs, Web3AuthOptions } from "./interfaces";
@@ -50,7 +50,7 @@ class SfaServiceProvider extends ServiceProviderBase {
     const verifierDetails = { verifier, verifierId };
 
     // fetch node details.
-    const { torusNodeEndpoints, torusIndexes } = await this.nodeDetailManagerInstance.getNodeDetails(verifierDetails);
+    const { torusNodeEndpoints, torusIndexes, torusNodePub } = await this.nodeDetailManagerInstance.getNodeDetails(verifierDetails);
 
     if (params.serverTimeOffset) {
       this.authInstance.serverTimeOffset = params.serverTimeOffset;
@@ -75,7 +75,15 @@ class SfaServiceProvider extends ServiceProviderBase {
       finalVerifierParams = aggregateVerifierParams;
     }
 
-    const torusKey = await this.authInstance.retrieveShares(torusNodeEndpoints, torusIndexes, verifier, finalVerifierParams, finalIdToken);
+    const torusKey = await this.authInstance.retrieveShares(
+      torusNodeEndpoints,
+      torusIndexes,
+      verifier,
+      finalVerifierParams,
+      finalIdToken,
+      torusNodePub
+    );
+
     this.torusKey = torusKey;
 
     if (!torusKey.metadata.upgraded) {
