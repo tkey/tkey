@@ -1707,4 +1707,102 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     //   equal(getOrSetNonce.nonce, getMetadataNonce.toString("hex"));
     // });
   });
+
+  describe("Multiple Service Provider", function () {
+    it("#should be able to reconstruct with multiple SP as independent shares", async function () {
+      // initiate tkey with 1st service provider
+      const postboxKey1 = new BN(getTempKey(), "hex");
+      const sp1 = customSP;
+      sp1.postboxKey = postboxKey1;
+
+      const tb = new ThresholdKey({ serviceProvider: sp1, storageLayer: customSL, manualSync: mode });
+      await tb.initialize();
+      const reconstructedKey = await tb.reconstructKey();
+
+      // generate new share and link it to sp2
+      const result = await tb.generateNewShare();
+      const index = result.newShareIndex.toString("hex");
+      const shareStore = result.newShareStores[index];
+
+      const postboxKey2 = new BN(getTempKey(), "hex");
+      await tb.storageLayer.setMetadata({ input: shareStore, privKey: postboxKey2 });
+
+      // try add new share
+      const newShare = await tb.generateNewShare();
+
+      await tb.syncLocalMetadataTransitions();
+
+      // try recreating tkey with 1st and 2nd service provider share using 1st service provider as tkey initiator
+      const tb2 = new ThresholdKey({ serviceProvider: sp1, storageLayer: customSL, manualSync: mode });
+
+      const shareStoreSP = await tb2.storageLayer.getMetadata({ privKey: postboxKey2 });
+      await tb2.initialize();
+      tb2.inputShareStore(shareStoreSP);
+      await tb2.reconstructKey();
+
+      // try delete share and and new share
+      await tb.deleteShare(newShare.newShareIndex);
+      await tb.generateNewShare();
+
+      await tb2.syncLocalMetadataTransitions();
+      if (tb2.privKey.cmp(reconstructedKey.privKey) !== 0) {
+        fail("key should be able to be reconstructed");
+      }
+
+      // try recreating tkey with 1st and 2nd service provider share using 2st service provider as tkey initiator
+      const sp2 = customSP;
+      sp2.postboxKey = postboxKey2;
+      const tb3 = new ThresholdKey({ serviceProvider: sp2, storageLayer: customSL, manualSync: mode });
+      const shareStoreSP3 = await tb3.storageLayer.getMetadata({ privKey: postboxKey1 });
+      await tb3.initialize();
+      tb3.inputShareStore(shareStoreSP3);
+      await tb3.reconstructKey();
+
+      await tb3.syncLocalMetadataTransitions();
+      if (tb3.privKey.cmp(reconstructedKey.privKey) !== 0) {
+        fail("key should be able to be reconstructed");
+      }
+    });
+
+    it("#should be able to reconstruct it with SP1 or SP2 which have the same share", async function () {
+      // initiate tkey with 1st service provider
+      const postboxKey1 = new BN(getTempKey(), "hex");
+      const sp1 = customSP;
+      sp1.postboxKey = postboxKey1;
+
+      const tb = new ThresholdKey({ serviceProvider: sp1, storageLayer: customSL, manualSync: mode });
+      await tb.initialize();
+      const reconstructedKey = await tb.reconstructKey();
+
+      // get shareA and link it to sp2
+      const shareStore = tb.outputShareStore("1");
+      const postboxKey2 = new BN(getTempKey(), "hex");
+      await tb.storageLayer.setMetadata({ input: shareStore, privKey: postboxKey2 });
+
+      // try delete share and and new share
+      const newShare = await tb.generateNewShare();
+      await tb.deleteShare(newShare.newShareIndex);
+      await tb.generateNewShare();
+
+      // get shareB (device share) for tkey 2 later
+      const tbIndex = tb.getCurrentShareIndexes();
+      const deviceShare = tb.outputShareStore(tbIndex[1]);
+
+      await tb.syncLocalMetadataTransitions();
+
+      // try recreate tkey with 2nd service provider
+      const sp2 = customSP;
+      sp2.postboxKey = postboxKey2;
+      const tb2 = new ThresholdKey({ serviceProvider: sp2, storageLayer: customSL, manualSync: mode });
+
+      await tb2.initialize();
+      tb2.inputShareStore(deviceShare);
+      await tb2.reconstructKey();
+
+      await tb2.syncLocalMetadataTransitions();
+      if (tb2.privKey.cmp(reconstructedKey.privKey) !== 0) {
+        fail("key should be able to be reconstructed");
+      }
+    });
+  });
 };
