@@ -45,6 +45,9 @@ class TorusServiceProvider extends ServiceProviderBase {
 
   async triggerLogin(params: SubVerifierDetails): Promise<TorusLoginResponse> {
     const obj = await this.customAuthInstance.triggerLogin(params);
+    // incase of redirectflow which return null
+    if (!obj) return;
+
     const localPrivKey = Torus.getPostboxKey(obj);
     this.postboxKey = new BN(localPrivKey, "hex");
     return obj;
@@ -52,6 +55,9 @@ class TorusServiceProvider extends ServiceProviderBase {
 
   async triggerAggregateLogin(params: AggregateLoginParams): Promise<TorusAggregateLoginResponse> {
     const obj = await this.customAuthInstance.triggerAggregateLogin(params);
+    // incase of redirectflow which return null
+    if (!obj) return;
+
     const localPrivKey = Torus.getPostboxKey(obj);
     this.postboxKey = new BN(localPrivKey, "hex");
     return obj;
