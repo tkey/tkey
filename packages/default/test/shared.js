@@ -1637,7 +1637,8 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
 
       // This test require development API, only work with local/beta env
       let metadataUrl = getMetadataUrl();
-      if (metadataUrl === "https://metadata.web3auth.io") metadataUrl = "https://metadata-testing.web3auth.io";
+      if (metadataUrl === "https://metadata.web3auth.io" || metadataURL.indexOf("node.web3auth.io") > -1)
+        metadataUrl = "https://metadata-testing.tor.us";
       await post(
         `${metadataUrl}/set_nonce`,
         {
