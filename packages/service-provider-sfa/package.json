@@ -40,7 +40,7 @@
   "dependencies": {
     "@tkey/service-provider-base": "^15.0.0-alpha.0",
     "@toruslabs/fetch-node-details": "^13.4.0",
-    "@toruslabs/torus.js": "^15.0.0-alpha.1",
+    "@toruslabs/torus.js": "^15.0.0",
     "bn.js": "^5.2.1"
   },
   "devDependencies": {

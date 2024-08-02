@@ -75,15 +75,14 @@ class SfaServiceProvider extends ServiceProviderBase {
       finalVerifierParams = aggregateVerifierParams;
     }
 
-    const torusKey = await this.authInstance.retrieveShares(
-      torusNodeEndpoints,
-      torusIndexes,
+    const torusKey = await this.authInstance.retrieveShares({
+      endpoints: torusNodeEndpoints,
+      indexes: torusIndexes,
       verifier,
-      finalVerifierParams,
-      finalIdToken,
-      torusNodePub
-    );
-
+      verifierParams: finalVerifierParams,
+      idToken: finalIdToken,
+      nodePubkeys: torusNodePub,
+    });
     this.torusKey = torusKey;
 
     if (!torusKey.metadata.upgraded) {

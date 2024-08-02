@@ -34,10 +34,10 @@
     "dist"
   ],
   "dependencies": {
-    "@tkey/common-types": "^15.0.0-alpha.0",
     "@toruslabs/eccrypto": "^5.0.4",
     "@toruslabs/http-helpers": "^7.0.0",
-    "@toruslabs/torus.js": "^15.0.0-alpha.1",
+    "@tkey/common-types": "^13.0.0-alpha.6",
+    "@toruslabs/torus.js": "^15.0.0",
     "bn.js": "^5.2.1",
     "elliptic": "^6.5.5",
     "ethereum-cryptography": "^2.1.3",
