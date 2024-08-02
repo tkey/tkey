@@ -44,14 +44,14 @@ export async function fetchPostboxKeyAndSigs(opts: { serviceProvider: TSSTorusSe
   const nodeDetails = await serviceProvider.customAuthInstance.nodeDetailManager.getNodeDetails({ verifier, verifierId });
   const token = generateIdToken(verifierId);
 
-  const tKey = await serviceProvider.customAuthInstance.torus.retrieveShares(
-    nodeDetails.torusNodeEndpoints,
-    nodeDetails.torusIndexes,
+  const tKey = await serviceProvider.customAuthInstance.torus.retrieveShares({
+    endpoints: nodeDetails.torusNodeEndpoints,
+    indexes: nodeDetails.torusIndexes,
     verifier,
-    { verifier_id: verifierId },
-    token,
-    nodeDetails.torusNodePub
-  );
+    verifierParams: { verifier_id: verifierId },
+    idToken: token,
+    nodePubkeys: nodeDetails.torusNodePub,
+  });
 
   const signatures = tKey.sessionData.sessionTokenData.map((session) => JSON.stringify({ data: session.token, sig: session.signature }));
 
@@ -70,7 +70,9 @@ export async function assignTssDkgKeys(opts: {
   maxTSSNonceToSimulate: number;
   tssTag?: string;
 }) {
-  let { serviceProvider, verifierName: verifier, verifierId, maxTSSNonceToSimulate, tssTag } = opts;
+  const { serviceProvider, verifierName: verifier, verifierId } = opts;
+
+  let { tssTag, maxTSSNonceToSimulate } = opts;
   tssTag = tssTag || "default";
   maxTSSNonceToSimulate = maxTSSNonceToSimulate || 1;
   // set tssShares on servers
@@ -83,14 +85,14 @@ export async function assignTssDkgKeys(opts: {
 
     const nodeDetails = await serviceProvider.customAuthInstance.nodeDetailManager.getNodeDetails({ verifier, verifierId });
 
-    const tKey = await serviceProvider.customAuthInstance.torus.retrieveShares(
-      nodeDetails.torusNodeEndpoints,
-      nodeDetails.torusIndexes,
+    const tKey = await serviceProvider.customAuthInstance.torus.retrieveShares({
+      endpoints: nodeDetails.torusNodeEndpoints,
+      indexes: nodeDetails.torusIndexes,
       verifier,
-      { verifier_id: verifierId, extended_verifier_id: extendedVerifierId },
-      token,
-      nodeDetails.torusNodePub
-    );
+      verifierParams: { verifier_id: verifierId, extended_verifier_id: extendedVerifierId },
+      idToken: token,
+      nodePubkeys: nodeDetails.torusNodePub,
+    });
     const localPrivKey = tKey.oAuthKeyData.privKey;
 
     serverDKGPrivKeys.push(new BN(localPrivKey, "hex"));
