@@ -1,7 +1,8 @@
 import { StringifiedType, TorusServiceProviderArgs } from "@tkey/common-types";
 import { ServiceProviderBase } from "@tkey/service-provider-base";
-import CustomAuth, {
+import {
   AggregateLoginParams,
+  CustomAuth,
   CustomAuthArgs,
   HybridAggregateLoginParams,
   InitParams,
@@ -10,7 +11,7 @@ import CustomAuth, {
   TorusHybridAggregateLoginResponse,
   TorusLoginResponse,
 } from "@toruslabs/customauth";
-import Torus, { TorusKey } from "@toruslabs/torus.js";
+import { Torus, TorusKey } from "@toruslabs/torus.js";
 import BN from "bn.js";
 
 class TorusServiceProvider extends ServiceProviderBase {

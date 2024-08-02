@@ -12,7 +12,7 @@ import {
   TKeyArgs,
   TKeyInitArgs,
 } from "@tkey/common-types";
-import ThresholdKey, { CoreError } from "@tkey/core";
+import { CoreError, TKey } from "@tkey/core";
 import { dotProduct, ecPoint, hexPoint, PointHex, randomSelection, RSSClient } from "@toruslabs/rss-client";
 import { getEd25519ExtendedPublicKey, getSecpKeyFromEd25519 } from "@toruslabs/torus.js";
 import BN from "bn.js";
@@ -52,7 +52,7 @@ export interface TKeyTSSInitArgs extends TKeyInitArgs {
   skipTssInit?: boolean;
 }
 
-export class TKeyTSS extends ThresholdKey {
+export class TKeyTSS extends TKey {
   serviceProvider: TSSTorusServiceProvider = null;
 
   private _tssKeyType: KeyType;

@@ -1,1 +1,1 @@
-export { default, default as TorusServiceProvider } from "./TorusServiceProvider";
+export { default as TorusServiceProvider } from "./TorusServiceProvider";

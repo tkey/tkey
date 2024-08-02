@@ -1,6 +1,6 @@
 import { IStorageLayer, KeyType } from "@tkey/common-types";
 import { MockStorageLayer, TorusStorageLayer } from "@tkey/storage-layer-torus";
-import Torus, { getEd25519ExtendedPublicKey, secp256k1Curve } from "@toruslabs/torus.js";
+import { getEd25519ExtendedPublicKey, getKeyCurve, Torus } from "@toruslabs/torus.js";
 import BN from "bn.js";
 import { KJUR } from "jsrsasign";
 
@@ -106,7 +106,7 @@ export function generateKey(keyType: KeyType): {
   scalar: BN;
 } {
   if (keyType === KeyType.secp256k1) {
-    const scalar = secp256k1Curve.genKeyPair().getPrivate();
+    const scalar = getKeyCurve(keyType).genKeyPair().getPrivate();
     return {
       raw: scalar.toArrayLike(Buffer, "be", 32),
       scalar,

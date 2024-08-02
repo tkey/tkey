@@ -1,17 +1,15 @@
 import { generateID, IPrivateKeyFormat, IPrivateKeyStore, secp256k1 } from "@tkey/common-types";
 import BN from "bn.js";
-import nodeCrypto from "crypto";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const browserCrypto = global.crypto || (global as any).msCrypto || {};
 
-export function randomBytes(size: number): Buffer {
-  const arr = new Uint8Array(size);
+function randomBytes(size: number): Buffer {
   if (typeof browserCrypto.getRandomValues === "undefined") {
-    return Buffer.from(nodeCrypto.randomBytes(size));
+    return Buffer.from(browserCrypto.randomBytes(size));
   }
+  const arr = new Uint8Array(size);
   browserCrypto.getRandomValues(arr);
-
   return Buffer.from(arr);
 }
 

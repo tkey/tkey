@@ -4,12 +4,12 @@
 
 import { getPubKeyPoint, KEY_NOT_FOUND, secp256k1, SHARE_DELETED, ShareStore } from "@tkey/common-types";
 import { Metadata } from "@tkey/core";
-import PrivateKeyModule, { ED25519Format, SECP256K1Format } from "@tkey/private-keys";
-import SecurityQuestionsModule from "@tkey/security-questions";
-import SeedPhraseModule, { MetamaskSeedPhraseFormat } from "@tkey/seed-phrase";
-import TorusServiceProvider from "@tkey/service-provider-torus";
-import ShareTransferModule from "@tkey/share-transfer";
-import TorusStorageLayer from "@tkey/storage-layer-torus";
+import { ED25519Format, PrivateKeyModule, SECP256K1Format } from "@tkey/private-keys";
+import { SecurityQuestionsModule } from "@tkey/security-questions";
+import { MetamaskSeedPhraseFormat, SeedPhraseModule } from "@tkey/seed-phrase";
+import { TorusServiceProvider } from "@tkey/service-provider-torus";
+import { ShareTransferModule } from "@tkey/share-transfer";
+import { TorusStorageLayer } from "@tkey/storage-layer-torus";
 import { generatePrivate } from "@toruslabs/eccrypto";
 import { post } from "@toruslabs/http-helpers";
 import { getOrSetNonce, keccak256 } from "@toruslabs/torus.js";
@@ -18,7 +18,7 @@ import BN from "bn.js";
 import { JsonRpcProvider } from "ethers";
 import { createSandbox } from "sinon";
 
-import ThresholdKey from "../src/index";
+import { TKeyDefault as ThresholdKey } from "../src/index";
 import { ed25519Tests } from "./ed25519/ed25519";
 import { getMetadataUrl, getServiceProvider, initStorageLayer, isMocked } from "./helpers";
 
@@ -906,8 +906,8 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       await tb.syncLocalMetadataTransitions();
 
       await tb.modules.shareTransfer.resetShareTransferStore();
-      const newRequests = await tb.modules.shareTransfer.getShareTransferStore();
-      if (Object.keys(newRequests).length !== 0) {
+      const stStore = await tb.modules.shareTransfer.getShareTransferStore();
+      if (stStore.message !== KEY_NOT_FOUND) {
         fail("Unable to reset share store");
       }
     });
@@ -1637,7 +1637,8 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
 
       // This test require development API, only work with local/beta env
       let metadataUrl = getMetadataUrl();
-      if (metadataUrl === "https://metadata.tor.us" || metadataURL.indexOf("node.web3auth.io") > -1) metadataUrl = "https://metadata-testing.tor.us";
+      if (metadataUrl === "https://metadata.web3auth.io" || metadataURL.indexOf("node.web3auth.io") > -1)
+        metadataUrl = "https://metadata-testing.tor.us";
       await post(
         `${metadataUrl}/set_nonce`,
         {

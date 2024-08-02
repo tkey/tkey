@@ -1,5 +1,4 @@
 import { EllipticPoint, KeyType, Point } from "@tkey/common-types";
-import TorusUtils from "@toruslabs/torus.js";
 import assert, { equal, fail, rejects } from "assert";
 import BN from "bn.js";
 import { ec as EC } from "elliptic";
@@ -10,8 +9,6 @@ import { getLagrangeCoeffs } from "../src/util";
 import { assignTssDkgKeys, fetchPostboxKeyAndSigs, generateKey, initStorageLayer } from "./helpers";
 
 const TEST_KEY_TYPES = [KeyType.secp256k1, KeyType.ed25519];
-
-TorusUtils.enableLogging(false);
 
 TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
   const ecFactor = factorKeyCurve;
