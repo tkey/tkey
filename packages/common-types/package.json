@@ -44,8 +44,8 @@
   },
   "dependencies": {
     "@toruslabs/eccrypto": "^5.0.4",
-    "@toruslabs/customauth": "^20.0.0",
-    "@toruslabs/torus.js": "^15.0.0",
+    "@toruslabs/customauth": "^20.0.3",
+    "@toruslabs/torus.js": "^15.0.2",
     "bn.js": "^5.2.1",
     "elliptic": "^6.5.5",
     "ts-custom-error": "^3.3.1"

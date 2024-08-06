@@ -1,6 +1,6 @@
 {
   "name": "@tkey/service-provider-sfa",
-  "version": "13.0.0-alpha.6",
+  "version": "15.0.0-alpha.0",
   "description": "TKey Torus Service Provider Module",
   "author": "Torus Labs",
   "homepage": "https://github.com/tkey/tkey#readme",
@@ -40,7 +40,7 @@
   "dependencies": {
     "@tkey/service-provider-base": "^15.0.0-alpha.0",
     "@toruslabs/fetch-node-details": "^13.4.0",
-    "@toruslabs/torus.js": "^15.0.0",
+    "@toruslabs/torus.js": "^15.0.2",
     "bn.js": "^5.2.1"
   },
   "devDependencies": {
