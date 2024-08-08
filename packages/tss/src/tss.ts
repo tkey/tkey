@@ -163,7 +163,6 @@ export class TKeyTSS extends TKey {
     tssIndex: number;
     tssShare: BN;
   }> {
-    if (!this.secp256k1Key) throw CoreError.default("tss share cannot be returned until you've reconstructed tkey");
     const factorPub = getPubKeyPoint(factorKey, factorKeyCurve);
     const factorEncs = this.getFactorEncs(factorPub);
     const { userEnc, serverEncs, tssIndex, type } = factorEncs;
