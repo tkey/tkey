@@ -53,6 +53,15 @@ export type ShareSerializationMiddleware = {
   deserialize: (serializedShare: unknown, type: string) => Promise<BN>;
 };
 
+export type FactorEncType = "direct" | "hierarchical";
+
+export type FactorEnc = {
+  tssIndex: number;
+  type: FactorEncType;
+  userEnc: EncryptedMessage;
+  serverEncs: EncryptedMessage[];
+};
+
 export interface IMetadata extends ISerializable {
   pubKey: Point;
 
@@ -93,19 +102,32 @@ export interface IMetadata extends ISerializable {
   deleteShareDescription(shareIndex: string, description: string): void;
   updateShareDescription(shareIndex: string, oldDescription: string, newDescription: string): void;
   clone(): IMetadata;
+  updateTSSData(tssData: {
+    tssTag: string;
+    tssKeyType?: string;
+    tssNonce?: number;
+    tssPolyCommits?: Point[];
+    factorPubs?: Point[];
+    factorEncs?: {
+      [factorPubID: string]: FactorEnc;
+    };
+  }): void;
 }
 
 export type InitializeNewKeyResult = {
-  privKey: BN;
+  secp256k1Key: BN;
+  ed25519Seed?: Buffer;
   deviceShare?: ShareStore;
   userShare?: ShareStore;
 };
 
 export type ReconstructedKeyResult = {
-  privKey: BN;
+  secp256k1Key: BN;
+  ed25519Seed?: Buffer;
   seedPhrase?: BN[];
   allKeys?: BN[];
 };
+export type MiddlewareExtraKeys = Omit<ReconstructedKeyResult, "secp256k1Key" | "ed25519Seed">;
 
 export type CatchupToLatestShareResult = {
   latestShare: ShareStore;
@@ -127,6 +149,7 @@ export type RefreshSharesResult = {
 
 export type KeyDetails = {
   pubKey: Point;
+  ed25519PublicKey?: string;
   requiredShares: number;
   threshold: number;
   totalShares: number;
@@ -183,6 +206,10 @@ export interface ShareRequestArgs {
 
 export type TkeyStoreItemType = {
   id: string;
+};
+
+export type IAccountSaltStore = TkeyStoreItemType & {
+  value: string;
 };
 
 export type ISeedPhraseStore = TkeyStoreItemType & {
@@ -284,11 +311,13 @@ export interface ITKey extends ITKeyApi, ISerializable {
 
   shares: ShareStorePolyIDShareIndexMap;
 
-  privKey: BN;
+  secp256k1Key: BN;
 
-  _localMetadataTransitions: LocalMetadataTransitions;
+  ed25519Key: Buffer;
 
   manualSync: boolean;
+
+  _localMetadataTransitions: LocalMetadataTransitions;
 
   _refreshMiddleware: RefreshMiddlewareMap;
 
@@ -302,11 +331,16 @@ export interface ITKey extends ITKeyApi, ISerializable {
 
   reconstructLatestPoly(): Polynomial;
 
-  _refreshShares(threshold: number, newShareIndexes: Array<string>, previousPolyID: PolynomialID): Promise<RefreshSharesResult>;
-
-  _initializeNewKey(params: { userInput?: BN; initializeModules?: boolean }): Promise<InitializeNewKeyResult>;
-
-  _setKey(privKey: BN): void;
-
   getKeyDetails(): KeyDetails;
 }
+
+export type TKeyInitArgs = {
+  withShare?: ShareStore;
+  importKey?: BN;
+  importEd25519Seed?: Buffer;
+  neverInitializeNewKey?: boolean;
+  transitionMetadata?: IMetadata;
+  previouslyFetchedCloudMetadata?: IMetadata;
+  previousLocalMetadataTransitions?: LocalMetadataTransitions;
+  delete1OutOf1?: boolean;
+};

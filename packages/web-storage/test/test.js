@@ -77,12 +77,10 @@ manualSyncModes.forEach((mode) => {
       await tb.syncLocalMetadataTransitions();
 
       await tb.reconstructKey();
-      // console.log(reconstructedKey2.privKey);
       await tb2.initialize();
       await tb2.modules[WEB_STORAGE_MODULE_NAME].inputShareFromWebStorage();
       const secondKey = await tb2.reconstructKey();
-      // console.log(reconstructedKey.privKey, secondKey.privKey);
-      strictEqual(reconstructedKey.privKey.toString("hex"), secondKey.privKey.toString("hex"), "Must be equal");
+      strictEqual(reconstructedKey.secp256k1Key.toString("hex"), secondKey.secp256k1Key.toString("hex"), "Must be equal");
     });
 
     it(`#should be able to input share from web storage after external share deletion, manualSync=${mode}`, async function () {
@@ -95,8 +93,7 @@ manualSyncModes.forEach((mode) => {
       await tb2.initialize();
       await tb2.modules[WEB_STORAGE_MODULE_NAME].inputShareFromWebStorage();
       const secondKey = await tb2.reconstructKey();
-      // console.log(reconstructedKey.privKey, secondKey.privKey);
-      strictEqual(reconstructedKey.privKey.toString("hex"), secondKey.privKey.toString("hex"), "Must be equal");
+      strictEqual(reconstructedKey.secp256k1Key.toString("hex"), secondKey.secp256k1Key.toString("hex"), "Must be equal");
     });
 
     it(`#should not be able to input share from web storage after deletion, manualSync=${mode}`, async function () {
@@ -144,7 +141,7 @@ manualSyncModes.forEach((mode) => {
       // console.log("%O", tb2.shares);
       await tb2.inputShareStore(newShare.newShareStores[newShare.newShareIndex.toString("hex")]);
       const secondKey = await tb2.reconstructKey();
-      strictEqual(reconstructedKey.privKey.toString("hex"), secondKey.privKey.toString("hex"), "Must be equal");
+      strictEqual(reconstructedKey.secp256k1Key.toString("hex"), secondKey.secp256k1Key.toString("hex"), "Must be equal");
     });
 
     it(`#should be able to add custom device share info, manualSync=${mode}`, async function () {

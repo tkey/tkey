@@ -1,10 +1,10 @@
 import {
-  ecCurve,
   GenerateNewShareResult,
   IModule,
   isEmptyObject,
   ISQAnswerStore,
   ITKeyApi,
+  secp256k1,
   SecurityQuestionStoreArgs,
   Share,
   ShareStore,
@@ -46,7 +46,7 @@ class SecurityQuestionsModule implements IModule {
     if (oldShareStores[sqIndex] && newShareStores[sqIndex]) {
       const sqAnswer = oldShareStores[sqIndex].share.share.sub(sqStore.nonce);
       let newNonce = newShareStores[sqIndex].share.share.sub(sqAnswer);
-      newNonce = newNonce.umod(ecCurve.curve.n);
+      newNonce = newNonce.umod(secp256k1.curve.n);
 
       return new SecurityQuestionStore({
         nonce: newNonce,
@@ -75,7 +75,7 @@ class SecurityQuestionsModule implements IModule {
     const newShareStore = newSharesDetails.newShareStores[newSharesDetails.newShareIndex.toString("hex")];
     const userInputHash = answerToUserInputHashBN(answerString);
     let nonce = newShareStore.share.share.sub(userInputHash);
-    nonce = nonce.umod(ecCurve.curve.n);
+    nonce = nonce.umod(secp256k1.curve.n);
     const sqStore = new SecurityQuestionStore({
       nonce,
       questions,
@@ -110,7 +110,7 @@ class SecurityQuestionsModule implements IModule {
     const sqStore = new SecurityQuestionStore(rawSqStore as SecurityQuestionStoreArgs);
     const userInputHash = answerToUserInputHashBN(answerString);
     let share = sqStore.nonce.add(userInputHash);
-    share = share.umod(ecCurve.curve.n);
+    share = share.umod(secp256k1.curve.n);
     const shareStore = new ShareStore(new Share(sqStore.shareIndex, share), sqStore.polynomialID);
     // validate if share is correct
     const derivedPublicShare = shareStore.share.getPublicShare();
@@ -134,7 +134,7 @@ class SecurityQuestionsModule implements IModule {
     const userInputHash = answerToUserInputHashBN(newAnswerString);
     const sqShare = this.tbSDK.outputShareStore(sqStore.shareIndex);
     let nonce = sqShare.share.share.sub(userInputHash);
-    nonce = nonce.umod(ecCurve.curve.n);
+    nonce = nonce.umod(secp256k1.curve.n);
 
     const newSqStore = new SecurityQuestionStore({
       nonce,
