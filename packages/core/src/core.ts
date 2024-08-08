@@ -45,7 +45,7 @@ import {
   TkeyStoreItemType,
   toPrivKeyECC,
 } from "@tkey/common-types";
-import { getEd25519ExtendedPublicKey } from "@toruslabs/torus.js";
+import { getEd25519ExtendedPublicKey as getEd25519KeyPairFromSeed } from "@toruslabs/torus.js";
 import BN from "bn.js";
 import { getRandomBytes } from "ethereum-cryptography/random";
 import stringify from "json-stable-stringify";
@@ -70,11 +70,6 @@ class ThresholdKey implements ITKey {
 
   shares: ShareStorePolyIDShareIndexMap;
 
-  // secp256k1 key
-  privKey: BN;
-
-  _ed25519Seed?: Buffer;
-
   lastFetchedCloudMetadata: Metadata;
 
   metadata: Metadata;
@@ -95,6 +90,11 @@ class ThresholdKey implements ITKey {
 
   serverTimeOffset?: number = 0;
 
+  // secp256k1 key
+  private privKey: BN;
+
+  private _ed25519Seed?: Buffer;
+
   constructor(args?: TKeyArgs) {
     const { enableLogging = false, modules = {}, serviceProvider, storageLayer, manualSync = false, serverTimeOffset } = args || {};
     this.enableLogging = enableLogging;
@@ -112,6 +112,29 @@ class ThresholdKey implements ITKey {
     this.setModuleReferences(); // Providing ITKeyApi access to modules
     this.haveWriteMetadataLock = "";
     this.serverTimeOffset = serverTimeOffset;
+  }
+
+  get secp256k1Key(): BN {
+    if (typeof this.privKey !== "undefined") {
+      return this.privKey;
+    }
+
+    throw CoreError.privateKeyUnavailable();
+  }
+
+  get ed25519Key(): Buffer {
+    if (typeof this._ed25519Seed !== "undefined") {
+      return this._ed25519Seed;
+    }
+    throw CoreError.privKeyUnavailable();
+  }
+
+  private set secp256k1Key(privKey: BN) {
+    this.privKey = privKey;
+  }
+
+  private set ed25519Key(seed: Buffer) {
+    this._ed25519Seed = seed;
   }
 
   static async fromJSON(value: StringifiedType, args: TKeyArgs): Promise<ThresholdKey> {
@@ -211,21 +234,6 @@ class ThresholdKey implements ITKey {
     }
 
     throw CoreError.metadataUndefined();
-  }
-
-  getSecp256k1Key(): BN {
-    if (typeof this.privKey !== "undefined") {
-      return this.privKey;
-    }
-
-    throw CoreError.privateKeyUnavailable();
-  }
-
-  getEd25519Key(): Buffer {
-    if (typeof this._ed25519Seed !== "undefined") {
-      return this._ed25519Seed;
-    }
-    throw CoreError.privKeyUnavailable();
   }
 
   async initialize(params?: TKeyInitArgs): Promise<KeyDetails> {
@@ -472,7 +480,7 @@ class ThresholdKey implements ITKey {
     if (this.metadata.pubKey.x.cmp(reconstructedPubKey.x) !== 0) {
       throw CoreError.incorrectReconstruction();
     }
-    this._setKey(privKey);
+    this.secp256k1Key = privKey;
 
     const returnObject: MiddlewareExtraKeys = {
       allKeys: [privKey],
@@ -499,7 +507,7 @@ class ThresholdKey implements ITKey {
       }
       this._ed25519Seed = seed;
     }
-    return { privKey, ed25519Seed: this._ed25519Seed, ...returnObject };
+    return { secp256k1Key: privKey, ed25519Seed: this._ed25519Seed, ...returnObject };
   }
 
   reconstructLatestPoly(): Polynomial {
@@ -565,7 +573,7 @@ class ThresholdKey implements ITKey {
     if (!this.metadata) {
       throw CoreError.metadataUndefined();
     }
-    if (!this.privKey) {
+    if (!this.secp256k1Key) {
       throw CoreError.privateKeyUnavailable();
     }
     const pubPoly = this.metadata.getLatestPublicPolynomial();
@@ -580,230 +588,12 @@ class ThresholdKey implements ITKey {
     return { newShareStores, newShareIndex };
   }
 
-  async _refreshShares(threshold: number, newShareIndexes: string[], previousPolyID: PolynomialID): Promise<RefreshSharesResult> {
-    if (!this.metadata) {
-      throw CoreError.metadataUndefined();
-    }
-    if (!this.privKey) {
-      throw CoreError.privateKeyUnavailable();
-    }
-    if (threshold > newShareIndexes.length) {
-      throw CoreError.default(`threshold should not be greater than share indexes. ${threshold} > ${newShareIndexes.length}`);
-    }
-
-    // update metadata nonce
-    this.metadata.nonce += 1;
-
-    const poly = generateRandomPolynomial(threshold - 1, this.privKey);
-    const shares = poly.generateShares(newShareIndexes);
-    const existingShareIndexes = this.metadata.getShareIndexesForPolynomial(previousPolyID);
-
-    const pointsArr = [];
-    const sharesForExistingPoly = Object.keys(this.shares[previousPolyID]);
-    if (sharesForExistingPoly.length < threshold) {
-      throw CoreError.unableToReconstruct("not enough shares for polynomial reconstruction");
-    }
-    for (let i = 0; i < threshold; i += 1) {
-      pointsArr.push(new Point(new BN(sharesForExistingPoly[i], "hex"), this.shares[previousPolyID][sharesForExistingPoly[i]].share.share));
-    }
-    const oldPoly = lagrangeInterpolatePolynomial(pointsArr);
-
-    const shareIndexesNeedingEncryption: string[] = [];
-    for (let index = 0; index < existingShareIndexes.length; index += 1) {
-      const shareIndexHex = existingShareIndexes[index];
-      // define shares that need encryption/relaying
-      if (newShareIndexes.includes(shareIndexHex)) {
-        shareIndexesNeedingEncryption.push(shareIndexHex);
-      }
-    }
-
-    // add metadata new poly to metadata
-    this.metadata.addFromPolynomialAndShares(poly, shares);
-
-    // change to share stores for public storing
-    const oldShareStores: Record<string, ShareStore> = {};
-    const newShareStores: Record<string, ShareStore> = {};
-    const polyID = poly.getPolynomialID();
-    newShareIndexes.forEach((shareIndexHex) => {
-      newShareStores[shareIndexHex] = new ShareStore(shares[shareIndexHex], polyID);
-    });
-
-    // evaluate oldPoly for old shares and set new metadata with encrypted share for new polynomial
-
-    const m = this.metadata.clone();
-    const newScopedStore: Record<string, EncryptedMessage> = {};
-    const sharesToPush = await Promise.all(
-      shareIndexesNeedingEncryption.map(async (shareIndex) => {
-        const oldShare = oldPoly.polyEval(new BN(shareIndex, "hex"));
-        const encryptedShare = await encrypt(getPubKeyECC(oldShare), Buffer.from(JSON.stringify(newShareStores[shareIndex])));
-        newScopedStore[getPubKeyPoint(oldShare).x.toString("hex")] = encryptedShare;
-        oldShareStores[shareIndex] = new ShareStore(new Share(shareIndex, oldShare), previousPolyID);
-        return oldShare;
-      })
-    );
-    m.setScopedStore("encryptedShares", newScopedStore);
-    const metadataToPush = Array(sharesToPush.length).fill(m);
-
-    // run refreshShare middleware
-    // If a shareIndex is left out during refresh shares, we assume that it being explicitly deleted.
-    for (const moduleName in this._refreshMiddleware) {
-      if (Object.prototype.hasOwnProperty.call(this._refreshMiddleware, moduleName)) {
-        const adjustedGeneralStore = this._refreshMiddleware[moduleName](
-          this.metadata.getGeneralStoreDomain(moduleName),
-          oldShareStores,
-          newShareStores
-        );
-        if (!adjustedGeneralStore) this.metadata.deleteGeneralStoreDomain(moduleName);
-        else this.metadata.setGeneralStoreDomain(moduleName, adjustedGeneralStore);
-      }
-    }
-
-    const newShareMetadataToPush: Metadata[] = [];
-    const newShareStoreSharesToPush = newShareIndexes.map((shareIndex) => {
-      const me = this.metadata.clone();
-      newShareMetadataToPush.push(me);
-      return newShareStores[shareIndex].share.share;
-    });
-
-    const AuthMetadatas = this.generateAuthMetadata({ input: [...metadataToPush, ...newShareMetadataToPush] });
-
-    // Combine Authmetadata and service provider ShareStore
-    await this.addLocalMetadataTransitions({
-      input: [...AuthMetadatas, newShareStores["1"]],
-      privKey: [...sharesToPush, ...newShareStoreSharesToPush, undefined],
-    });
-
-    // update this.shares with these new shares
-    for (let index = 0; index < newShareIndexes.length; index += 1) {
-      const shareIndex = newShareIndexes[index];
-      this.inputShareStore(newShareStores[shareIndex]);
-    }
-    // await this.releaseWriteMetadataLock();
-    return { shareStores: newShareStores };
-  }
-
-  async _initializeNewKey({
-    determinedShare,
-    initializeModules,
-    importedKey,
-    importEd25519Seed,
-    delete1OutOf1,
-  }: {
-    determinedShare?: BN;
-    initializeModules?: boolean;
-    importedKey?: BN;
-    importEd25519Seed?: Buffer;
-    delete1OutOf1?: boolean;
-  } = {}): Promise<InitializeNewKeyResult> {
-    if (!importedKey) {
-      const tmpPriv = generatePrivateBN();
-      this._setKey(tmpPriv);
-    } else {
-      this._setKey(new BN(importedKey));
-    }
-
-    // create a random poly and respective shares
-    // 1 is defined as the serviceProvider share
-    // 0 is for tKey
-    const shareIndexForDeviceStorage = generatePrivateExcludingIndexes([new BN(1), new BN(0)]);
-
-    const shareIndexes = [new BN(1), shareIndexForDeviceStorage];
-    let poly: Polynomial;
-    if (determinedShare) {
-      const shareIndexForDeterminedShare = generatePrivateExcludingIndexes([new BN(1), new BN(0)]);
-      poly = generateRandomPolynomial(1, this.privKey, [new Share(shareIndexForDeterminedShare, determinedShare)]);
-      shareIndexes.push(shareIndexForDeterminedShare);
-    } else {
-      poly = generateRandomPolynomial(1, this.privKey);
-    }
-    const shares = poly.generateShares(shareIndexes);
-
-    // create metadata to be stored
-    const metadata = new Metadata(getPubKeyPoint(this.privKey));
-    metadata.addFromPolynomialAndShares(poly, shares);
-    const serviceProviderShare = shares[shareIndexes[0].toString("hex")];
-    const shareStore = new ShareStore(serviceProviderShare, poly.getPolynomialID());
-    this.metadata = metadata;
-
-    // setup ed25519 seed after metadata is set
-    // import/gen ed25519 seed
-    await this.setupEd25519Seed(importEd25519Seed);
-
-    // initialize modules
-    if (initializeModules) {
-      await this.initializeModules();
-    }
-
-    const metadataToPush: Metadata[] = [];
-    const sharesToPush = shareIndexes.map((shareIndex) => {
-      metadataToPush.push(this.metadata);
-      return shares[shareIndex.toString("hex")].share;
-    });
-
-    const authMetadatas = this.generateAuthMetadata({ input: metadataToPush });
-
-    // because this is the first time we're setting metadata there is no need to acquire a lock
-    // acquireLock: false. Force push
-    await this.addLocalMetadataTransitions({ input: [...authMetadatas, shareStore], privKey: [...sharesToPush, undefined] });
-    if (delete1OutOf1) {
-      await this.addLocalMetadataTransitions({ input: [{ message: ONE_KEY_DELETE_NONCE }], privKey: [this.serviceProvider.postboxKey] });
-    }
-
-    // store metadata on metadata respective to shares
-    for (let index = 0; index < shareIndexes.length; index += 1) {
-      const shareIndex = shareIndexes[index];
-      // also add into our share store
-      this.inputShareStore(new ShareStore(shares[shareIndex.toString("hex")], poly.getPolynomialID()));
-    }
-
-    if (this.storeDeviceShare) {
-      await this.storeDeviceShare(new ShareStore(shares[shareIndexes[1].toString("hex")], poly.getPolynomialID()));
-    }
-
-    const result: InitializeNewKeyResult = {
-      privKey: this.privKey,
-      deviceShare: new ShareStore(shares[shareIndexes[1].toString("hex")], poly.getPolynomialID()),
-      userShare: undefined,
-    };
-    if (determinedShare) {
-      result.userShare = new ShareStore(shares[shareIndexes[2].toString("hex")], poly.getPolynomialID());
-    }
-    return result;
-  }
-
   getEd25519PublicKey(): string | undefined {
     if (!this.metadata) {
       throw CoreError.metadataUndefined();
     }
     const result = this.metadata.getGeneralStoreDomain(ed25519SeedConst) as { message: EncryptedMessage; publicKey: string };
     return result?.publicKey;
-  }
-
-  async setupEd25519Seed(seed: Buffer): Promise<void> {
-    if (!this.privKey) {
-      throw CoreError.privateKeyUnavailable();
-    }
-    let seedToUse = seed;
-    if (!seed) {
-      const newEd25519Seed = await getRandomBytes(32);
-      seedToUse = Buffer.from(newEd25519Seed);
-    }
-    await this.importEd25519Seed(seedToUse);
-  }
-
-  async importEd25519Seed(seed: Buffer): Promise<void> {
-    if (!this.privKey) {
-      throw CoreError.privateKeyUnavailable();
-    }
-    if (this.getEd25519PublicKey()) {
-      throw CoreError.default("Ed25519 key already exists");
-    }
-
-    // derive key pair (scalar, public key point) from seed
-    const keyPair = getEd25519ExtendedPublicKey(seed);
-
-    this.metadata.setGeneralStoreDomain(ed25519SeedConst, { message: await this.encrypt(seed), publicKey: keyPair.point.encode("hex", false) });
-    this._ed25519Seed = seed;
   }
 
   async retrieveEd25519Seed(): Promise<Buffer> {
@@ -988,10 +778,6 @@ class ThresholdKey implements ITKey {
     const shareMap = poly.generateShares([shareIndexParsed]);
 
     return new ShareStore(shareMap[shareIndexParsed.toString("hex")], polyIDToSearch);
-  }
-
-  _setKey(privKey: BN): void {
-    this.privKey = privKey;
   }
 
   getCurrentShareIndexes(): string[] {
@@ -1458,6 +1244,224 @@ class ThresholdKey implements ITKey {
 
   private async initializeModules() {
     return Promise.all(Object.keys(this.modules).map((x) => this.modules[x].initialize()));
+  }
+
+  private async _refreshShares(threshold: number, newShareIndexes: string[], previousPolyID: PolynomialID): Promise<RefreshSharesResult> {
+    if (!this.metadata) {
+      throw CoreError.metadataUndefined();
+    }
+    if (!this.privKey) {
+      throw CoreError.privateKeyUnavailable();
+    }
+    if (threshold > newShareIndexes.length) {
+      throw CoreError.default(`threshold should not be greater than share indexes. ${threshold} > ${newShareIndexes.length}`);
+    }
+
+    // update metadata nonce
+    this.metadata.nonce += 1;
+
+    const poly = generateRandomPolynomial(threshold - 1, this.privKey);
+    const shares = poly.generateShares(newShareIndexes);
+    const existingShareIndexes = this.metadata.getShareIndexesForPolynomial(previousPolyID);
+
+    const pointsArr = [];
+    const sharesForExistingPoly = Object.keys(this.shares[previousPolyID]);
+    if (sharesForExistingPoly.length < threshold) {
+      throw CoreError.unableToReconstruct("not enough shares for polynomial reconstruction");
+    }
+    for (let i = 0; i < threshold; i += 1) {
+      pointsArr.push(new Point(new BN(sharesForExistingPoly[i], "hex"), this.shares[previousPolyID][sharesForExistingPoly[i]].share.share));
+    }
+    const oldPoly = lagrangeInterpolatePolynomial(pointsArr);
+
+    const shareIndexesNeedingEncryption: string[] = [];
+    for (let index = 0; index < existingShareIndexes.length; index += 1) {
+      const shareIndexHex = existingShareIndexes[index];
+      // define shares that need encryption/relaying
+      if (newShareIndexes.includes(shareIndexHex)) {
+        shareIndexesNeedingEncryption.push(shareIndexHex);
+      }
+    }
+
+    // add metadata new poly to metadata
+    this.metadata.addFromPolynomialAndShares(poly, shares);
+
+    // change to share stores for public storing
+    const oldShareStores: Record<string, ShareStore> = {};
+    const newShareStores: Record<string, ShareStore> = {};
+    const polyID = poly.getPolynomialID();
+    newShareIndexes.forEach((shareIndexHex) => {
+      newShareStores[shareIndexHex] = new ShareStore(shares[shareIndexHex], polyID);
+    });
+
+    // evaluate oldPoly for old shares and set new metadata with encrypted share for new polynomial
+
+    const m = this.metadata.clone();
+    const newScopedStore: Record<string, EncryptedMessage> = {};
+    const sharesToPush = await Promise.all(
+      shareIndexesNeedingEncryption.map(async (shareIndex) => {
+        const oldShare = oldPoly.polyEval(new BN(shareIndex, "hex"));
+        const encryptedShare = await encrypt(getPubKeyECC(oldShare), Buffer.from(JSON.stringify(newShareStores[shareIndex])));
+        newScopedStore[getPubKeyPoint(oldShare).x.toString("hex")] = encryptedShare;
+        oldShareStores[shareIndex] = new ShareStore(new Share(shareIndex, oldShare), previousPolyID);
+        return oldShare;
+      })
+    );
+    m.setScopedStore("encryptedShares", newScopedStore);
+    const metadataToPush = Array(sharesToPush.length).fill(m);
+
+    // run refreshShare middleware
+    // If a shareIndex is left out during refresh shares, we assume that it being explicitly deleted.
+    for (const moduleName in this._refreshMiddleware) {
+      if (Object.prototype.hasOwnProperty.call(this._refreshMiddleware, moduleName)) {
+        const adjustedGeneralStore = this._refreshMiddleware[moduleName](
+          this.metadata.getGeneralStoreDomain(moduleName),
+          oldShareStores,
+          newShareStores
+        );
+        if (!adjustedGeneralStore) this.metadata.deleteGeneralStoreDomain(moduleName);
+        else this.metadata.setGeneralStoreDomain(moduleName, adjustedGeneralStore);
+      }
+    }
+
+    const newShareMetadataToPush: Metadata[] = [];
+    const newShareStoreSharesToPush = newShareIndexes.map((shareIndex) => {
+      const me = this.metadata.clone();
+      newShareMetadataToPush.push(me);
+      return newShareStores[shareIndex].share.share;
+    });
+
+    const AuthMetadatas = this.generateAuthMetadata({ input: [...metadataToPush, ...newShareMetadataToPush] });
+
+    // Combine Authmetadata and service provider ShareStore
+    await this.addLocalMetadataTransitions({
+      input: [...AuthMetadatas, newShareStores["1"]],
+      privKey: [...sharesToPush, ...newShareStoreSharesToPush, undefined],
+    });
+
+    // update this.shares with these new shares
+    for (let index = 0; index < newShareIndexes.length; index += 1) {
+      const shareIndex = newShareIndexes[index];
+      this.inputShareStore(newShareStores[shareIndex]);
+    }
+    // await this.releaseWriteMetadataLock();
+    return { shareStores: newShareStores };
+  }
+
+  private async _initializeNewKey({
+    determinedShare,
+    initializeModules,
+    importedKey,
+    importEd25519Seed,
+    delete1OutOf1,
+  }: {
+    determinedShare?: BN;
+    initializeModules?: boolean;
+    importedKey?: BN;
+    importEd25519Seed?: Buffer;
+    delete1OutOf1?: boolean;
+  } = {}): Promise<InitializeNewKeyResult> {
+    if (!importedKey) {
+      const tmpPriv = generatePrivateBN();
+      this.secp256k1Key = tmpPriv;
+    } else {
+      this.secp256k1Key = importedKey;
+    }
+
+    // create a random poly and respective shares
+    // 1 is defined as the serviceProvider share
+    // 0 is for tKey
+    const shareIndexForDeviceStorage = generatePrivateExcludingIndexes([new BN(1), new BN(0)]);
+
+    const shareIndexes = [new BN(1), shareIndexForDeviceStorage];
+    let poly: Polynomial;
+    if (determinedShare) {
+      const shareIndexForDeterminedShare = generatePrivateExcludingIndexes([new BN(1), new BN(0)]);
+      poly = generateRandomPolynomial(1, this.privKey, [new Share(shareIndexForDeterminedShare, determinedShare)]);
+      shareIndexes.push(shareIndexForDeterminedShare);
+    } else {
+      poly = generateRandomPolynomial(1, this.privKey);
+    }
+    const shares = poly.generateShares(shareIndexes);
+
+    // create metadata to be stored
+    const metadata = new Metadata(getPubKeyPoint(this.privKey));
+    metadata.addFromPolynomialAndShares(poly, shares);
+    const serviceProviderShare = shares[shareIndexes[0].toString("hex")];
+    const shareStore = new ShareStore(serviceProviderShare, poly.getPolynomialID());
+    this.metadata = metadata;
+
+    // setup ed25519 seed after metadata is set
+    // import/gen ed25519 seed
+    await this.setupEd25519Seed(importEd25519Seed);
+
+    // initialize modules
+    if (initializeModules) {
+      await this.initializeModules();
+    }
+
+    const metadataToPush: Metadata[] = [];
+    const sharesToPush = shareIndexes.map((shareIndex) => {
+      metadataToPush.push(this.metadata);
+      return shares[shareIndex.toString("hex")].share;
+    });
+
+    const authMetadatas = this.generateAuthMetadata({ input: metadataToPush });
+
+    // because this is the first time we're setting metadata there is no need to acquire a lock
+    // acquireLock: false. Force push
+    await this.addLocalMetadataTransitions({ input: [...authMetadatas, shareStore], privKey: [...sharesToPush, undefined] });
+    if (delete1OutOf1) {
+      await this.addLocalMetadataTransitions({ input: [{ message: ONE_KEY_DELETE_NONCE }], privKey: [this.serviceProvider.postboxKey] });
+    }
+
+    // store metadata on metadata respective to shares
+    for (let index = 0; index < shareIndexes.length; index += 1) {
+      const shareIndex = shareIndexes[index];
+      // also add into our share store
+      this.inputShareStore(new ShareStore(shares[shareIndex.toString("hex")], poly.getPolynomialID()));
+    }
+
+    if (this.storeDeviceShare) {
+      await this.storeDeviceShare(new ShareStore(shares[shareIndexes[1].toString("hex")], poly.getPolynomialID()));
+    }
+
+    const result: InitializeNewKeyResult = {
+      secp256k1Key: this.privKey,
+      deviceShare: new ShareStore(shares[shareIndexes[1].toString("hex")], poly.getPolynomialID()),
+      userShare: undefined,
+    };
+    if (determinedShare) {
+      result.userShare = new ShareStore(shares[shareIndexes[2].toString("hex")], poly.getPolynomialID());
+    }
+    return result;
+  }
+
+  private async importEd25519Seed(seed: Buffer): Promise<void> {
+    if (!this.privKey) {
+      throw CoreError.privateKeyUnavailable();
+    }
+    if (this.getEd25519PublicKey()) {
+      throw CoreError.default("Ed25519 key already exists");
+    }
+
+    // derive key pair (scalar, public key point) from seed
+    const keyPair = getEd25519KeyPairFromSeed(seed);
+
+    this.metadata.setGeneralStoreDomain(ed25519SeedConst, { message: await this.encrypt(seed), publicKey: keyPair.point.encode("hex", false) });
+    this._ed25519Seed = seed;
+  }
+
+  private async setupEd25519Seed(seed?: Buffer): Promise<void> {
+    if (!this.privKey) {
+      throw CoreError.privateKeyUnavailable();
+    }
+    let seedToUse = seed;
+    if (!seed) {
+      const newEd25519Seed = await getRandomBytes(32);
+      seedToUse = Buffer.from(newEd25519Seed);
+    }
+    await this.importEd25519Seed(seedToUse);
   }
 }
 

@@ -1,6 +1,6 @@
 import { IStorageLayer, KeyType } from "@tkey/common-types";
 import { MockStorageLayer, TorusStorageLayer } from "@tkey/storage-layer-torus";
-import { getEd25519ExtendedPublicKey, getKeyCurve, Torus } from "@toruslabs/torus.js";
+import { getEd25519ExtendedPublicKey as getEd25519KeyPairFromSeed, getKeyCurve, Torus } from "@toruslabs/torus.js";
 import BN from "bn.js";
 import { KJUR } from "jsrsasign";
 
@@ -117,7 +117,7 @@ export function generateKey(keyType: KeyType): {
     const buf = new Uint32Array(32);
     crypto.getRandomValues(buf);
     const raw = Buffer.from(buf);
-    const { scalar } = getEd25519ExtendedPublicKey(raw);
+    const { scalar } = getEd25519KeyPairFromSeed(raw);
     return {
       raw,
       scalar,

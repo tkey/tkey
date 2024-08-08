@@ -115,19 +115,19 @@ export interface IMetadata extends ISerializable {
 }
 
 export type InitializeNewKeyResult = {
-  privKey: BN;
+  secp256k1Key: BN;
   ed25519Seed?: Buffer;
   deviceShare?: ShareStore;
   userShare?: ShareStore;
 };
 
 export type ReconstructedKeyResult = {
-  privKey: BN;
+  secp256k1Key: BN;
   ed25519Seed?: Buffer;
   seedPhrase?: BN[];
   allKeys?: BN[];
 };
-export type MiddlewareExtraKeys = Omit<ReconstructedKeyResult, "privKey" | "ed25519Seed">;
+export type MiddlewareExtraKeys = Omit<ReconstructedKeyResult, "secp256k1Key" | "ed25519Seed">;
 
 export type CatchupToLatestShareResult = {
   latestShare: ShareStore;
@@ -311,11 +311,13 @@ export interface ITKey extends ITKeyApi, ISerializable {
 
   shares: ShareStorePolyIDShareIndexMap;
 
-  privKey: BN;
+  secp256k1Key: BN;
 
-  _localMetadataTransitions: LocalMetadataTransitions;
+  ed25519Key: Buffer;
 
   manualSync: boolean;
+
+  _localMetadataTransitions: LocalMetadataTransitions;
 
   _refreshMiddleware: RefreshMiddlewareMap;
 
@@ -328,12 +330,6 @@ export interface ITKey extends ITKeyApi, ISerializable {
   reconstructKey(): Promise<ReconstructedKeyResult>;
 
   reconstructLatestPoly(): Polynomial;
-
-  _refreshShares(threshold: number, newShareIndexes: Array<string>, previousPolyID: PolynomialID): Promise<RefreshSharesResult>;
-
-  _initializeNewKey(params: { userInput?: BN; initializeModules?: boolean }): Promise<InitializeNewKeyResult>;
-
-  _setKey(privKey: BN): void;
 
   getKeyDetails(): KeyDetails;
 }

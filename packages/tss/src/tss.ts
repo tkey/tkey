@@ -14,7 +14,7 @@ import {
 } from "@tkey/common-types";
 import { CoreError, TKey } from "@tkey/core";
 import { dotProduct, ecPoint, hexPoint, PointHex, randomSelection, RSSClient } from "@toruslabs/rss-client";
-import { getEd25519ExtendedPublicKey, getSecpKeyFromEd25519 } from "@toruslabs/torus.js";
+import { getEd25519ExtendedPublicKey as getEd25519KeyPairFromSeed, getSecpKeyFromEd25519 } from "@toruslabs/torus.js";
 import BN from "bn.js";
 import { ec as EC } from "elliptic";
 import { keccak256 } from "ethereum-cryptography/keccak";
@@ -163,7 +163,7 @@ export class TKeyTSS extends TKey {
     tssIndex: number;
     tssShare: BN;
   }> {
-    if (!this.privKey) throw CoreError.default("tss share cannot be returned until you've reconstructed tkey");
+    if (!this.secp256k1Key) throw CoreError.default("tss share cannot be returned until you've reconstructed tkey");
     const factorPub = getPubKeyPoint(factorKey, factorKeyCurve);
     const factorEncs = this.getFactorEncs(factorPub);
     const { userEnc, serverEncs, tssIndex, type } = factorEncs;
@@ -297,7 +297,7 @@ export class TKeyTSS extends TKey {
     }
   ): Promise<void> {
     const ec = this._tssCurve;
-    if (!this.privKey) throw CoreError.privateKeyUnavailable();
+    if (!this.secp256k1Key) throw CoreError.privateKeyUnavailable();
     if (!this.metadata) {
       throw CoreError.metadataUndefined();
     }
@@ -331,7 +331,7 @@ export class TKeyTSS extends TKey {
             throw new Error("Seed already exists");
           }
 
-          const { scalar } = getEd25519ExtendedPublicKey(importKey);
+          const { scalar } = getEd25519KeyPairFromSeed(importKey);
           const encKey = Buffer.from(getSecpKeyFromEd25519(scalar).point.encodeCompressed("hex"), "hex");
           const msg = await encrypt(encKey, importKey);
           this.metadata.setGeneralStoreDomain(domainKey, { message: msg });
@@ -439,7 +439,7 @@ export class TKeyTSS extends TKey {
     accountIndex?: number;
   }): Promise<BN> {
     if (!this.metadata) throw CoreError.metadataUndefined("metadata is undefined");
-    if (!this.privKey) throw new Error("Tkey is not reconstructed");
+    if (!this.secp256k1Key) throw new Error("Tkey is not reconstructed");
     if (!this.metadata.tssPolyCommits[this.tssTag]) throw new Error(`tss key has not been initialized for tssTag ${this.tssTag}`);
 
     const { factorKey, selectedServers, authSignatures, accountIndex } = tssOptions;
@@ -658,7 +658,7 @@ export class TKeyTSS extends TKey {
     refreshShares?: boolean;
   }) {
     if (!this.metadata) throw CoreError.metadataUndefined("metadata is undefined");
-    if (!this.privKey) throw new Error("Tkey is not reconstructed");
+    if (!this.secp256k1Key) throw new Error("Tkey is not reconstructed");
     if (!this.metadata.tssPolyCommits[this.tssTag]) throw new Error(`tss key has not been initialized for tssTag ${this.tssTag}`);
     const { existingFactorKey, newFactorPub, newTSSIndex, selectedServers, authSignatures, refreshShares } = args;
 
@@ -721,7 +721,7 @@ export class TKeyTSS extends TKey {
    */
   public async deleteFactorPub(args: { factorKey: BN; deleteFactorPub: Point; selectedServers?: number[]; authSignatures: string[] }): Promise<void> {
     if (!this.metadata) throw CoreError.metadataUndefined("metadata is undefined");
-    if (!this.privKey) throw new Error("Tkey is not reconstructed");
+    if (!this.secp256k1Key) throw new Error("Tkey is not reconstructed");
     if (!this.metadata.tssPolyCommits[this.tssTag]) throw new Error(`tss key has not been initialized for tssTag ${this.tssTag}`);
     const { factorKey, deleteFactorPub, selectedServers, authSignatures } = args;
     const existingFactorPubs = this.metadata.factorPubs[this.tssTag];
@@ -780,7 +780,7 @@ export class TKeyTSS extends TKey {
     const tss2PubKey = (this._tssCurve.g as EllipticPoint).mul(tss2);
 
     const L1_0 = getLagrangeCoeffs(ec, [1, _tssIndex], 1, 0);
-    // eslint-disable-next-line camelcase
+
     const LIndex_0 = getLagrangeCoeffs(ec, [1, _tssIndex], _tssIndex, 0);
 
     const a0Pub = tss1PubKey.mul(L1_0).add(tss2PubKey.mul(LIndex_0));

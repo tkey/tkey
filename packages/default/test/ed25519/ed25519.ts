@@ -30,8 +30,8 @@ export function ed25519Tests(params: { manualSync: boolean; torusSP: TorusServic
     it("should generate key for ed25519 and secp256k1", async function () {
       this.timeout(10000);
       await tb.initialize();
-      const secp = tb.getSecp256k1Key();
-      const ed = tb.getEd25519Key();
+      const secp = tb.secp256k1Key;
+      const ed = tb.ed25519Key;
       const share = await tb.generateNewShare();
 
       if (manualSync) {
@@ -43,8 +43,8 @@ export function ed25519Tests(params: { manualSync: boolean; torusSP: TorusServic
       newInstance.inputShareStore(share.newShareStores[share.newShareIndex.toString("hex")]);
       await newInstance.reconstructKey();
 
-      assert.strictEqual(secp.toString("hex"), newInstance.getSecp256k1Key().toString("hex"));
-      assert.strictEqual(ed.toString("hex"), newInstance.getEd25519Key().toString("hex"));
+      assert.strictEqual(secp.toString("hex"), newInstance.secp256k1Key.toString("hex"));
+      assert.strictEqual(ed.toString("hex"), newInstance.ed25519Key.toString("hex"));
 
       // should not able to reinitialize with import key
       const instance3 = new TKeyDefault({ serviceProvider: customSP, storageLayer: customSL, manualSync });
@@ -71,7 +71,7 @@ export function ed25519Tests(params: { manualSync: boolean; torusSP: TorusServic
       // Check exported seed = imported seed.
       {
         await tb2.reconstructKey();
-        const edExported = tb2.getEd25519Key();
+        const edExported = tb2.ed25519Key;
         assert.strictEqual(ed.toString("hex"), edExported.toString("hex"));
       }
 
@@ -79,14 +79,15 @@ export function ed25519Tests(params: { manualSync: boolean; torusSP: TorusServic
       await newInstance.initialize();
       const edPub = newInstance.getEd25519PublicKey();
       try {
-        newInstance.getEd25519Key();
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const a = newInstance.ed25519Key;
         assert.fail("should not be able to get ed25519 key");
       } catch (error) {}
 
       newInstance.inputShareStore(share.newShareStores[share.newShareIndex.toString("hex")]);
       await newInstance.reconstructKey();
 
-      assert.strictEqual(ed.toString("hex"), newInstance.getEd25519Key().toString("hex"));
+      assert.strictEqual(ed.toString("hex"), newInstance.ed25519Key.toString("hex"));
       assert.strictEqual(edPub, newInstance.getEd25519PublicKey());
       // should not able to reinitialize with import key
       const instance3 = new TKeyDefault({ serviceProvider: customSP, storageLayer: customSL, manualSync });
@@ -111,15 +112,16 @@ export function ed25519Tests(params: { manualSync: boolean; torusSP: TorusServic
       await newInstance.initialize();
       const edPub = newInstance.getEd25519PublicKey();
       try {
-        newInstance.getEd25519Key();
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const a = newInstance.ed25519Key;
         assert.fail("should not be able to get ed25519 key");
       } catch (error) {}
 
       newInstance.inputShareStore(share.newShareStores[share.newShareIndex.toString("hex")]);
       await newInstance.reconstructKey();
 
-      assert.strictEqual(secp.toString("hex"), newInstance.getSecp256k1Key().toString("hex"));
-      assert.strictEqual(ed.toString("hex"), newInstance.getEd25519Key().toString("hex"));
+      assert.strictEqual(secp.toString("hex"), newInstance.secp256k1Key.toString("hex"));
+      assert.strictEqual(ed.toString("hex"), newInstance.ed25519Key.toString("hex"));
       assert.strictEqual(edPub, newInstance.getEd25519PublicKey());
       // should not able to reinitialize with import key
       const instance3 = new TKeyDefault({ serviceProvider: customSP, storageLayer: customSL, manualSync });

@@ -59,7 +59,7 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
       await tb1.initialize({ factorPub, deviceTSSShare, deviceTSSIndex });
       const reconstructedKey = await tb1.reconstructKey();
       await tb1.syncLocalMetadataTransitions();
-      if (tb1.privKey.cmp(reconstructedKey.privKey) !== 0) {
+      if (tb1.secp256k1Key.cmp(reconstructedKey.secp256k1Key) !== 0) {
         fail("key should be able to be reconstructed");
       }
       const { tssShare: tss2 } = await tb1.getTSSShare(factorKey);
@@ -104,7 +104,7 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
       await tb1.initialize({ factorPub, deviceTSSShare, deviceTSSIndex });
       const reconstructedKey = await tb1.reconstructKey();
       await tb1.syncLocalMetadataTransitions();
-      if (tb1.privKey.cmp(reconstructedKey.privKey) !== 0) {
+      if (tb1.secp256k1Key.cmp(reconstructedKey.secp256k1Key) !== 0) {
         fail("key should be able to be reconstructed");
       }
 
@@ -238,7 +238,7 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
       const reconstructedKey = await tb.reconstructKey();
       await tb.syncLocalMetadataTransitions();
 
-      if (tb.privKey.cmp(reconstructedKey.privKey) !== 0) {
+      if (tb.secp256k1Key.cmp(reconstructedKey.secp256k1Key) !== 0) {
         fail("key should be able to be reconstructed");
       }
       const { tssShare: retrievedTSS, tssIndex: retrievedTSSIndex } = await tb.getTSSShare(factorKey);
@@ -300,7 +300,7 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
       const reconstructedKey2 = await tb2.reconstructKey();
       await tb2.syncLocalMetadataTransitions();
 
-      if (tb2.privKey.cmp(reconstructedKey2.privKey) !== 0) {
+      if (tb2.secp256k1Key.cmp(reconstructedKey2.secp256k1Key) !== 0) {
         fail("key should be able to be reconstructed");
       }
       const tssCommits2 = tb2.getTSSCommits();
@@ -360,7 +360,7 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
       const reconstructedKey = await tb.reconstructKey();
       await tb.syncLocalMetadataTransitions();
 
-      if (tb.privKey.cmp(reconstructedKey.privKey) !== 0) {
+      if (tb.secp256k1Key.cmp(reconstructedKey.secp256k1Key) !== 0) {
         fail("key should be able to be reconstructed");
       }
       const { tssShare: retrievedTSS, tssIndex: retrievedTSSIndex } = await tb.getTSSShare(factorKey);
@@ -505,7 +505,7 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
         const reconstructedKey = await tb.reconstructKey();
         await tb.syncLocalMetadataTransitions();
 
-        if (tb.privKey.cmp(reconstructedKey.privKey) !== 0) {
+        if (tb.secp256k1Key.cmp(reconstructedKey.secp256k1Key) !== 0) {
           fail("key should be able to be reconstructed");
         }
       });
