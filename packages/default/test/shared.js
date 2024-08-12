@@ -2,7 +2,7 @@
 /* eslint-disable mocha/no-exports */
 /* eslint-disable import/no-extraneous-dependencies */
 
-import { ecCurve, getPubKeyPoint, KEY_NOT_FOUND, SHARE_DELETED, ShareStore } from "@tkey/common-types";
+import { getPubKeyPoint, KEY_NOT_FOUND, secp256k1, SHARE_DELETED, ShareStore } from "@tkey/common-types";
 import { Metadata } from "@tkey/core";
 import { ED25519Format, PrivateKeyModule, SECP256K1Format } from "@tkey/private-keys";
 import { SecurityQuestionsModule } from "@tkey/security-questions";
@@ -19,6 +19,7 @@ import { JsonRpcProvider } from "ethers";
 import { createSandbox } from "sinon";
 
 import { TKeyDefault as ThresholdKey } from "../src/index";
+import { ed25519Tests } from "./ed25519/ed25519";
 import { getMetadataUrl, getServiceProvider, initStorageLayer, isMocked } from "./helpers";
 
 const rejects = async (fn, error, msg) => {
@@ -50,7 +51,7 @@ function compareBNArray(a, b, message) {
 }
 
 function compareReconstructedKeys(a, b, message) {
-  if (a.privKey.cmp(b.privKey) !== 0) throw new Error(message);
+  if (a.secp256k1Key.cmp(b.secp256k1Key) !== 0) throw new Error(message);
   if (a.seedPhraseModule && b.seedPhraseModule) {
     compareBNArray(a.seedPhraseModule, b.seedPhraseModule, message);
   }
@@ -65,6 +66,7 @@ function compareReconstructedKeys(a, b, message) {
 export const sharedTestCases = (mode, torusSP, storageLayer) => {
   const customSP = torusSP;
   const customSL = storageLayer;
+
   describe("tkey", function () {
     let tb;
 
@@ -80,7 +82,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       await tb2.initialize();
       const reconstructedKey = await tb2.reconstructKey();
       await tb2.syncLocalMetadataTransitions();
-      if (tb2.privKey.cmp(reconstructedKey.privKey) !== 0) {
+      if (tb2.secp256k1Key.cmp(reconstructedKey.secp256k1Key) !== 0) {
         fail("key should be able to be reconstructed");
       }
     });
@@ -93,14 +95,14 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       await tb2.initialize({ neverInitializeNewKey: true });
       await tb2.inputShareStoreSafe(resp1.deviceShare);
       const reconstructedKey = await tb2.reconstructKey();
-      if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
+      if (resp1.secp256k1Key.cmp(reconstructedKey.secp256k1Key) !== 0) {
         fail("key should be able to be reconstructed");
       }
     });
 
     it(`#should be able to reconstruct key when initializing with user input, manualSync=${mode}`, async function () {
       let determinedShare = new BN(keccak256(Buffer.from("user answer blublu")).slice(2), "hex");
-      determinedShare = determinedShare.umod(ecCurve.curve.n);
+      determinedShare = determinedShare.umod(secp256k1.curve.n);
       const resp1 = await tb._initializeNewKey({ determinedShare, initializeModules: true });
       await tb.syncLocalMetadataTransitions();
 
@@ -108,8 +110,8 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       await tb2.initialize();
       await tb2.inputShareStoreSafe(resp1.userShare);
       const reconstructedKey = await tb2.reconstructKey();
-      // compareBNArray(resp1.privKey, reconstructedKey, "key should be able to be reconstructed");
-      if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
+      // compareBNArray(resp1.secp256k1Key, reconstructedKey, "key should be able to be reconstructed");
+      if (resp1.secp256k1Key.cmp(reconstructedKey.secp256k1Key) !== 0) {
         fail("key should be able to be reconstructed");
       }
     });
@@ -123,14 +125,14 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       await tb2.initialize();
       await tb2.inputShareStoreSafe(resp1.deviceShare);
       const reconstructedKey = await tb2.reconstructKey();
-      if (importedKey.cmp(reconstructedKey.privKey) !== 0) {
+      if (importedKey.cmp(reconstructedKey.secp256k1Key) !== 0) {
         fail("key should be able to be reconstructed");
       }
     });
 
     it(`#should be able to reconstruct key when initializing a with a share, manualSync=${mode}`, async function () {
       let userInput = new BN(keccak256(Buffer.from("user answer blublu")).slice(2), "hex");
-      userInput = userInput.umod(ecCurve.curve.n);
+      userInput = userInput.umod(secp256k1.curve.n);
       const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
       await tb.syncLocalMetadataTransitions();
 
@@ -138,14 +140,14 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       await tb2.initialize({ withShare: resp1.userShare });
       await tb2.inputShareStoreSafe(resp1.deviceShare);
       const reconstructedKey = await tb2.reconstructKey();
-      if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
+      if (resp1.secp256k1Key.cmp(reconstructedKey.secp256k1Key) !== 0) {
         fail("key should be able to be reconstructed");
       }
     });
 
     it(`#should be able to reconstruct key after refresh and initializing with a share, manualSync=${mode}`, async function () {
       let userInput = new BN(keccak256(Buffer.from("user answer blublu")).slice(2), "hex");
-      userInput = userInput.umod(ecCurve.curve.n);
+      userInput = userInput.umod(secp256k1.curve.n);
       const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
       const newShares = await tb.generateNewShare();
       await tb.syncLocalMetadataTransitions();
@@ -154,15 +156,15 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       await tb2.initialize({ withShare: resp1.userShare });
       await tb2.inputShareStoreSafe(newShares.newShareStores[newShares.newShareIndex.toString("hex")]);
       const reconstructedKey = await tb2.reconstructKey();
-      // compareBNArray(resp1.privKey, reconstructedKey, "key should be able to be reconstructed");
-      if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
+      // compareBNArray(resp1.secp256k1Key, reconstructedKey, "key should be able to be reconstructed");
+      if (resp1.secp256k1Key.cmp(reconstructedKey.secp256k1Key) !== 0) {
         fail("key should be able to be reconstructed");
       }
     });
 
     it(`#should be able to reconstruct key after refresh and initializing with service provider, manualSync=${mode}`, async function () {
       let userInput = new BN(keccak256(Buffer.from("user answer blublu")).slice(2), "hex");
-      userInput = userInput.umod(ecCurve.curve.n);
+      userInput = userInput.umod(secp256k1.curve.n);
       const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
       const newShares = await tb.generateNewShare();
       await tb.syncLocalMetadataTransitions();
@@ -171,7 +173,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       await tb2.initialize();
       await tb2.inputShareStoreSafe(newShares.newShareStores[newShares.newShareIndex.toString("hex")]);
       const reconstructedKey = await tb2.reconstructKey();
-      if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
+      if (resp1.secp256k1Key.cmp(reconstructedKey.secp256k1Key) !== 0) {
         fail("key should be able to be reconstructed");
       }
     });
@@ -188,7 +190,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
 
       await tb2.inputShareStoreSafe(resp1.deviceShare, true);
       const reconstructedKey = await tb2.reconstructKey(); // reconstruct key with old metadata should work to poly
-      if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
+      if (resp1.secp256k1Key.cmp(reconstructedKey.secp256k1Key) !== 0) {
         fail("key should be able to be reconstructed");
       }
     });
@@ -213,7 +215,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const shareStore = tb2.outputShareStore(newShareIndex);
       strictEqual(newShareStores[newShareIndex.toString("hex")].share.share.toString("hex"), shareStore.share.share.toString("hex"));
 
-      if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
+      if (resp1.secp256k1Key.cmp(reconstructedKey.secp256k1Key) !== 0) {
         fail("key should be able to be reconstructed");
       }
     });
@@ -233,7 +235,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       }
       const reconstructedKey = await tb3.reconstructKey();
 
-      if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
+      if (resp1.secp256k1Key.cmp(reconstructedKey.secp256k1Key) !== 0) {
         fail("key should be able to be reconstructed");
       }
       const shareStore = tb3.outputShareStore(tbShareIndex);
@@ -250,7 +252,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       await tb3.initialize({ neverInitializeNewKey: true });
       await tb3.inputShareStoreSafe(resp2.deviceShare, true);
       const reconstructedKey = await tb3.reconstructKey();
-      if (resp2.privKey.cmp(reconstructedKey.privKey) !== 0) {
+      if (resp2.secp256k1Key.cmp(reconstructedKey.secp256k1Key) !== 0) {
         fail("key should be able to be reconstructed");
       }
     });
@@ -298,7 +300,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
 
       await tb2.inputShareStoreSafe(tb3ShareStore[tb3ShareIndex.toString("hex")], true);
       const reconstructedKey2 = await tb2.reconstructKey();
-      if (resp2.privKey.cmp(reconstructedKey2.privKey) !== 0) {
+      if (resp2.secp256k1Key.cmp(reconstructedKey2.secp256k1Key) !== 0) {
         fail("key should be able to be reconstructed");
       }
     });
@@ -429,7 +431,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       deepStrictEqual(tb2.metadata.nonce, 1);
 
       const reconstructedKey = await tb2.reconstructKey();
-      if (resp1.privKey.cmp(reconstructedKey.privKey) === 0) {
+      if (resp1.secp256k1Key.cmp(reconstructedKey.secp256k1Key) === 0) {
         fail("key should be different");
       }
     });
@@ -444,7 +446,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
 
     it(`#should serialize and deserialize correctly without tkeyArgs, manualSync=${mode}`, async function () {
       let userInput = new BN(keccak256(Buffer.from("user answer blublu")).slice(2), "hex");
-      userInput = userInput.umod(ecCurve.curve.n);
+      userInput = userInput.umod(secp256k1.curve.n);
       const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
       await tb.generateNewShare();
       await tb.syncLocalMetadataTransitions();
@@ -452,12 +454,12 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const stringified = JSON.stringify(tb);
       const tb3 = await ThresholdKey.fromJSON(JSON.parse(stringified));
       const finalKey = await tb3.reconstructKey();
-      strictEqual(finalKey.privKey.toString("hex"), resp1.privKey.toString("hex"), "Incorrect serialization");
+      strictEqual(finalKey.secp256k1Key.toString("hex"), resp1.secp256k1Key.toString("hex"), "Incorrect serialization");
     });
 
     it(`#should serialize and deserialize correctly with tkeyArgs, manualSync=${mode}`, async function () {
       let userInput = new BN(keccak256(Buffer.from("user answer blublu")).slice(2), "hex");
-      userInput = userInput.umod(ecCurve.curve.n);
+      userInput = userInput.umod(secp256k1.curve.n);
       const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
       await tb.generateNewShare();
       await tb.syncLocalMetadataTransitions();
@@ -465,12 +467,12 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const stringified = JSON.stringify(tb);
       const tb3 = await ThresholdKey.fromJSON(JSON.parse(stringified), { serviceProvider: customSP, storageLayer: customSL });
       const finalKey = await tb3.reconstructKey();
-      strictEqual(finalKey.privKey.toString("hex"), resp1.privKey.toString("hex"), "Incorrect serialization");
+      strictEqual(finalKey.secp256k1Key.toString("hex"), resp1.secp256k1Key.toString("hex"), "Incorrect serialization");
     });
 
     it(`#should serialize and deserialize correctly, keeping localTransitions consistent before syncing NewKeyAssign, manualSync=${mode}`, async function () {
       let userInput = new BN(keccak256(Buffer.from("user answer blublu")).slice(2), "hex");
-      userInput = userInput.umod(ecCurve.curve.n);
+      userInput = userInput.umod(secp256k1.curve.n);
       const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
 
       // generate and delete
@@ -488,17 +490,17 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const shareToVerify = tb2.outputShareStore(shareIndex);
       strictEqual(shareStores[shareIndex.toString("hex")].share.share.toString("hex"), shareToVerify.share.share.toString("hex"));
       await tb2.syncLocalMetadataTransitions();
-      strictEqual(finalKey.privKey.toString("hex"), resp1.privKey.toString("hex"), "Incorrect serialization");
+      strictEqual(finalKey.secp256k1Key.toString("hex"), resp1.secp256k1Key.toString("hex"), "Incorrect serialization");
 
       const reconstructedKey2 = await tb2.reconstructKey();
-      if (resp1.privKey.cmp(reconstructedKey2.privKey) !== 0) {
+      if (resp1.secp256k1Key.cmp(reconstructedKey2.secp256k1Key) !== 0) {
         fail("key should be able to be reconstructed");
       }
     });
 
     it(`#should serialize and deserialize correctly keeping localTransitions afterNewKeyAssign, manualSync=${mode}`, async function () {
       let userInput = new BN(keccak256(Buffer.from("user answer blublu")).slice(2), "hex");
-      userInput = userInput.umod(ecCurve.curve.n);
+      userInput = userInput.umod(secp256k1.curve.n);
       const resp1 = await tb._initializeNewKey({ userInput, initializeModules: true });
       await tb.syncLocalMetadataTransitions();
       const reconstructedKey = await tb.reconstructKey();
@@ -510,10 +512,10 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const shareToVerify = tb2.outputShareStore(shareIndex);
       strictEqual(shareStores[shareIndex.toString("hex")].share.share.toString("hex"), shareToVerify.share.share.toString("hex"));
       await tb2.syncLocalMetadataTransitions();
-      strictEqual(finalKey.privKey.toString("hex"), reconstructedKey.privKey.toString("hex"), "Incorrect serialization");
+      strictEqual(finalKey.secp256k1Key.toString("hex"), reconstructedKey.secp256k1Key.toString("hex"), "Incorrect serialization");
 
       const reconstructedKey2 = await tb2.reconstructKey();
-      if (resp1.privKey.cmp(reconstructedKey2.privKey) !== 0) {
+      if (resp1.secp256k1Key.cmp(reconstructedKey2.secp256k1Key) !== 0) {
         fail("key should be able to be reconstructed");
       }
     });
@@ -529,7 +531,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const stringified = JSON.stringify(tb3);
       const tb4 = await ThresholdKey.fromJSON(JSON.parse(stringified), { serviceProvider: customSP, storageLayer: customSL, manualSync: mode });
       const finalKeyPostSerialization = await tb4.reconstructKey();
-      strictEqual(finalKeyPostSerialization.privKey.toString("hex"), resp1.privKey.toString("hex"), "Incorrect serialization");
+      strictEqual(finalKeyPostSerialization.secp256k1Key.toString("hex"), resp1.secp256k1Key.toString("hex"), "Incorrect serialization");
     });
 
     it(`#should be able to serialize and deserialize without service provider share or the postbox key, manualSync=${mode}`, async function () {
@@ -550,7 +552,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
 
       const tb3 = await ThresholdKey.fromJSON(JSON.parse(stringified));
       const tb3Key = await tb3.reconstructKey();
-      strictEqual(tb3Key.privKey.toString("hex"), resp1.privKey.toString("hex"), "Incorrect serialization");
+      strictEqual(tb3Key.secp256k1Key.toString("hex"), resp1.secp256k1Key.toString("hex"), "Incorrect serialization");
     });
 
     it(`#should not be able to updateSDK with newKeyAssign transitions unsynced, manualSync=${mode}`, async function () {
@@ -645,8 +647,8 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
 
       await tb2.modules.securityQuestions.inputShareFromSecurityQuestions("blublu");
       const reconstructedKey = await tb2.reconstructKey();
-      // compareBNArray(resp1.privKey, reconstructedKey, "key should be able to be reconstructed");
-      if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
+      // compareBNArray(resp1.secp256k1Key, reconstructedKey, "key should be able to be reconstructed");
+      if (resp1.secp256k1Key.cmp(reconstructedKey.secp256k1Key) !== 0) {
         fail("key should be able to be reconstructed");
       }
     });
@@ -674,7 +676,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
 
       await tb2.modules.securityQuestions.inputShareFromSecurityQuestions("blubluss");
       const reconstructedKey = await tb2.reconstructKey();
-      if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
+      if (resp1.secp256k1Key.cmp(reconstructedKey.secp256k1Key) !== 0) {
         fail("key should be able to be reconstructed");
       }
     });
@@ -694,8 +696,8 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
 
       await tb2.modules.securityQuestions.inputShareFromSecurityQuestions("blublu");
       const reconstructedKey = await tb2.reconstructKey();
-      // compareBNArray(resp1.privKey, reconstructedKey, "key should be able to be reconstructed");
-      if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
+      // compareBNArray(resp1.secp256k1Key, reconstructedKey, "key should be able to be reconstructed");
+      if (resp1.secp256k1Key.cmp(reconstructedKey.secp256k1Key) !== 0) {
         fail("key should be able to be reconstructed");
       }
     });
@@ -721,8 +723,8 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
 
       await tb2.modules.securityQuestions.inputShareFromSecurityQuestions("dodo");
       const reconstructedKey = await tb2.reconstructKey();
-      // compareBNArray(resp1.privKey, reconstructedKey, "key should be able to be reconstructed");
-      if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
+      // compareBNArray(resp1.secp256k1Key, reconstructedKey, "key should be able to be reconstructed");
+      if (resp1.secp256k1Key.cmp(reconstructedKey.secp256k1Key) !== 0) {
         fail("key should be able to be reconstructed");
       }
     });
@@ -742,8 +744,8 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
 
       await tb2.modules.securityQuestions.inputShareFromSecurityQuestions("dodo");
       const reconstructedKey = await tb2.reconstructKey();
-      // compareBNArray(resp1.privKey, reconstructedKey, "key should be able to be reconstructed");
-      if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
+      // compareBNArray(resp1.secp256k1Key, reconstructedKey, "key should be able to be reconstructed");
+      if (resp1.secp256k1Key.cmp(reconstructedKey.secp256k1Key) !== 0) {
         fail("key should be able to be reconstructed");
       }
 
@@ -780,8 +782,8 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
 
       await tb2.modules.securityQuestions.inputShareFromSecurityQuestions("dodo");
       const reconstructedKey = await tb2.reconstructKey();
-      // compareBNArray(resp1.privKey, reconstructedKey, "key should be able to be reconstructed");
-      if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
+      // compareBNArray(resp1.secp256k1Key, reconstructedKey, "key should be able to be reconstructed");
+      if (resp1.secp256k1Key.cmp(reconstructedKey.secp256k1Key) !== 0) {
         fail("key should be able to be reconstructed");
       }
 
@@ -826,7 +828,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       await tb2.modules.shareTransfer.startRequestStatusCheck(pubkey);
 
       const reconstructedKey = await tb2.reconstructKey();
-      if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
+      if (resp1.secp256k1Key.cmp(reconstructedKey.secp256k1Key) !== 0) {
         fail("key should be able to be reconstructed");
       }
     });
@@ -873,7 +875,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       // });
 
       const reconstructedKey = await tb2.reconstructKey();
-      if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
+      if (resp1.secp256k1Key.cmp(reconstructedKey.secp256k1Key) !== 0) {
         fail("key should be able to be reconstructed");
       }
     });
@@ -943,7 +945,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       await tb2.inputShare(exportedSeedShare.toString("hex"), "mnemonic");
       const reconstructedKey = await tb2.reconstructKey();
 
-      if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
+      if (resp1.secp256k1Key.cmp(reconstructedKey.secp256k1Key) !== 0) {
         fail("key should be able to be reconstructed");
       }
     });
@@ -1026,13 +1028,13 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       await tb.modules.seedPhrase.getSeedPhrasesWithAccounts();
 
       compareReconstructedKeys(reconstuctedKey, {
-        privKey: resp1.privKey,
+        secp256k1Key: resp1.secp256k1Key,
         seedPhraseModule: [
           new BN("70dc3117300011918e26b02176945cc15c3d548cf49fd8418d97f93af699e46", "hex"),
           new BN("bfdb025a1d404212c3f9ace6c5fb4185087281dcb9c1e89087d1a3a423f80d22", "hex"),
         ],
         allKeys: [
-          resp1.privKey,
+          resp1.secp256k1Key,
           new BN("70dc3117300011918e26b02176945cc15c3d548cf49fd8418d97f93af699e46", "hex"),
           new BN("bfdb025a1d404212c3f9ace6c5fb4185087281dcb9c1e89087d1a3a423f80d22", "hex"),
         ],
@@ -1183,7 +1185,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const reconstructedKey = await tb2.reconstructKey();
 
       compareReconstructedKeys(reconstructedKey, {
-        privKey: resp1.privKey,
+        secp256k1Key: resp1.secp256k1Key,
         seedPhraseModule: [
           new BN("70dc3117300011918e26b02176945cc15c3d548cf49fd8418d97f93af699e46", "hex"),
           new BN("4d62a55af3496a7b290a12dd5fd5ef3e051d787dbc005fb74536136949602f9e", "hex"),
@@ -1193,7 +1195,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
           new BN("1ea6edde61c750ec02896e9ac7fe9ac0b48a3630594fdf52ad5305470a2635c0", "hex"),
         ],
         allKeys: [
-          resp1.privKey,
+          resp1.secp256k1Key,
           new BN("70dc3117300011918e26b02176945cc15c3d548cf49fd8418d97f93af699e46", "hex"),
           new BN("4d62a55af3496a7b290a12dd5fd5ef3e051d787dbc005fb74536136949602f9e", "hex"),
           new BN("4bd0041b7654a9b16a7268a5de7982f2422b15635c4fd170c140dc4897624390", "hex"),
@@ -1203,8 +1205,8 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
 
       const reconstructedKey2 = await tb2.reconstructKey(false);
       compareReconstructedKeys(reconstructedKey2, {
-        privKey: resp1.privKey,
-        allKeys: [resp1.privKey],
+        secp256k1Key: resp1.secp256k1Key,
+        allKeys: [resp1.secp256k1Key],
       });
     });
 
@@ -1238,7 +1240,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
 
       // 3/4 shares is required to reconstruct tkey
       const reconstructPostThreshold = await tb3.reconstructKey();
-      if (reconstructPreThreshold.privKey.cmp(reconstructPostThreshold.privKey) !== 0) {
+      if (reconstructPreThreshold.secp256k1Key.cmp(reconstructPostThreshold.secp256k1Key) !== 0) {
         fail("key should be able to be reconstructed");
       }
       // console.log("newThreshold", tb3.metadata.getLatestPublicPolynomial().getThreshold());
@@ -1332,7 +1334,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       await tb2.inputShareStoreSafe(newShare);
       await tb2.reconstructKey();
 
-      strictEqual(tb.privKey.toString("hex"), tb2.privKey.toString("hex"));
+      strictEqual(tb.secp256k1Key.toString("hex"), tb2.secp256k1Key.toString("hex"));
     });
   });
 
@@ -1346,7 +1348,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       await tb2.initialize();
       tb2.inputShareStore(resp1.deviceShare);
       const reconstructedKey = await tb2.reconstructKey();
-      if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
+      if (resp1.secp256k1Key.cmp(reconstructedKey.secp256k1Key) !== 0) {
         fail("key should be able to be reconstructed");
       }
       await tb2.generateNewShare();
@@ -1373,7 +1375,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       await tb2.initialize();
       await tb2.inputShareStoreSafe(resp1.deviceShare);
       const reconstructedKey = await tb2.reconstructKey();
-      if (resp1.privKey.cmp(reconstructedKey.privKey) !== 0) {
+      if (resp1.secp256k1Key.cmp(reconstructedKey.secp256k1Key) !== 0) {
         fail("key should be able to be reconstructed");
       }
       const alltbs = [];
@@ -1401,6 +1403,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       }
     });
   });
+
   describe("tkey error cases", function () {
     let tb;
     let resp1;
@@ -1565,6 +1568,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     it("should be able to init tkey with 1 out of 1", async function () {
       const postboxKeyBN = new BN(generatePrivate(), "hex");
       const pubKeyPoint = getPubKeyPoint(postboxKeyBN);
+      const metadataNonce = new BN(generatePrivate(), "hex");
 
       const serviceProvider = new TorusServiceProvider({
         postboxKey: postboxKeyBN.toString("hex"),
@@ -1574,22 +1578,26 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
           // This url has no effect as postbox key is passed, passing it just to satisfy direct auth checks.
           baseUrl: "http://localhost:3000",
           web3AuthClientId: "test",
-          network: "mainnet",
+          network: "sapphire_devnet",
         },
       });
       const storageLayer2 = new TorusStorageLayer({ hostUrl: getMetadataUrl() });
 
-      const { typeOfUser, nonce, pubNonce } = await getOrSetNonce(
+      const nonceRes = await getOrSetNonce(
         getMetadataUrl(),
         serviceProvider.customAuthInstance.torus.ec,
         0,
         pubKeyPoint.x.toString("hex"),
         pubKeyPoint.y.toString("hex"),
-        postboxKeyBN
+        postboxKeyBN,
+        false,
+        false,
+        metadataNonce
       );
-      equal(typeOfUser, "v2");
+      const { nonce, pubNonce, upgraded: isUpgraded } = nonceRes;
       notEqual(nonce, undefined);
       notEqual(pubNonce, undefined);
+      equal(isUpgraded, false);
 
       const nonceBN = new BN(nonce, "hex");
       const importKey = postboxKeyBN.add(nonceBN).umod(serviceProvider.customAuthInstance.torus.ec.curve.n).toString("hex");
@@ -1600,10 +1608,9 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         delete1OutOf1: true,
       });
       await tKey.syncLocalMetadataTransitions();
-      equal(tKey.privKey.toString("hex"), importKey);
+      equal(tKey.secp256k1Key.toString("hex"), importKey);
 
       const {
-        typeOfUser: newTypeOfUser,
         nonce: newNonce,
         pubNonce: newPubNonce,
         upgraded,
@@ -1613,10 +1620,12 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         0,
         pubKeyPoint.x.toString("hex"),
         pubKeyPoint.y.toString("hex"),
-        postboxKeyBN
+        postboxKeyBN,
+        true, // passing nonce again should not have any effect as getOnly param is true
+        false,
+        metadataNonce
       );
       equal(upgraded, true);
-      equal(newTypeOfUser, "v2");
       equal(newNonce, undefined);
       deepEqual(pubNonce, newPubNonce);
     });
@@ -1628,7 +1637,8 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
 
       // This test require development API, only work with local/beta env
       let metadataUrl = getMetadataUrl();
-      if (metadataUrl === "https://metadata.web3auth.io") metadataUrl = "https://metadata-testing.web3auth.io";
+      if (metadataUrl === "https://metadata.web3auth.io" || metadataURL.indexOf("node.web3auth.io") > -1)
+        metadataUrl = "https://metadata-testing.tor.us";
       await post(
         `${metadataUrl}/set_nonce`,
         {
@@ -1707,4 +1717,6 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     //   equal(getOrSetNonce.nonce, getMetadataNonce.toString("hex"));
     // });
   });
+
+  ed25519Tests({ manualSync: mode, torusSP: customSP, storageLayer: customSL });
 };

@@ -36,7 +36,7 @@ class SecurityQuestionStore implements ISerializable {
       nonce: this.nonce.toString("hex"),
       shareIndex: this.shareIndex.toString("hex"),
       sqPublicShare: this.sqPublicShare,
-      polynomialID: this.polynomialID.toString(),
+      polynomialID: this.polynomialID,
       questions: this.questions,
     };
   }

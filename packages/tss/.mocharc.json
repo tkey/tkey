@@ -1,0 +1,7 @@
+{
+  "require": ["tsx"],
+  "spec": ["./test/tss.ts"],
+  "extension": ["js", "ts"],
+  "timeout": 0,
+  "exit": true
+}

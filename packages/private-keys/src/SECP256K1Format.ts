@@ -1,4 +1,4 @@
-import { ecCurve, generateID, IPrivateKeyFormat, IPrivateKeyStore } from "@tkey/common-types";
+import { generateID, IPrivateKeyFormat, IPrivateKeyStore, secp256k1 } from "@tkey/common-types";
 import BN from "bn.js";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -23,7 +23,7 @@ export class SECP256K1Format implements IPrivateKeyFormat {
 
   constructor(privateKey: BN) {
     this.privateKey = privateKey;
-    this.ecParams = ecCurve.curve;
+    this.ecParams = secp256k1.curve;
     this.type = "secp256k1n";
   }
 
