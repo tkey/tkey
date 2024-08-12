@@ -1,6 +1,6 @@
 {
   "name": "@tkey/share-serialization",
-  "version": "15.1.0-alpha.0",
+  "version": "15.0.0",
   "description": "TKey share serialization module",
   "author": "Torus Labs",
   "homepage": "https://github.com/tkey/tkey#readme",
@@ -43,7 +43,7 @@
     "@babel/runtime": "7.x"
   },
   "dependencies": {
-    "@tkey/common-types": "^15.1.0-alpha.0",
+    "@tkey/common-types": "^15.0.0",
     "bn.js": "^5.2.1",
     "ethereum-cryptography": "^2.2.1"
   },
