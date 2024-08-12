@@ -114,19 +114,19 @@ class ThresholdKey implements ITKey {
     this.serverTimeOffset = serverTimeOffset;
   }
 
-  get secp256k1Key(): BN {
+  get secp256k1Key(): BN | null {
     if (typeof this.privKey !== "undefined") {
       return this.privKey;
     }
 
-    throw CoreError.privateKeyUnavailable();
+    return null;
   }
 
-  get ed25519Key(): Buffer {
+  get ed25519Key(): Buffer | null {
     if (typeof this._ed25519Seed !== "undefined") {
       return this._ed25519Seed;
     }
-    throw CoreError.privKeyUnavailable();
+    return null;
   }
 
   private set secp256k1Key(privKey: BN) {
