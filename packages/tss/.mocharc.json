@@ -1,5 +1,5 @@
 {
-  "require": ["ts-node/register"],
+  "require": ["tsx"],
   "spec": ["./test/tss.ts"],
   "extension": ["js", "ts"],
   "timeout": 0,

@@ -5,14 +5,13 @@
   "author": "Torus Labs",
   "homepage": "https://github.com/tkey/tkey#readme",
   "license": "MIT",
-  "main": "dist/serviceProviderSfa.cjs.js",
-  "module": "dist/serviceProviderSfa.esm.js",
+  "main": "dist/lib.cjs/index.js",
+  "module": "dist/lib.esm/index.js",
   "unpkg": "dist/serviceProviderSfa.umd.min.js",
   "jsdelivr": "dist/serviceProviderSfa.umd.min.js",
   "types": "dist/types/index.d.ts",
   "files": [
-    "dist",
-    "src"
+    "dist"
   ],
   "publishConfig": {
     "access": "public"

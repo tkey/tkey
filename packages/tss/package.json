@@ -37,6 +37,7 @@
     "@types/jsrsasign": "^10.5.13",
     "jsrsasign": "^11.1.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5.4.5"
+    "typescript": "^5.4.5",
+    "tsx":"^4.17.0"
   }
 }
