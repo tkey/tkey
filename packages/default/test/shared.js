@@ -1583,14 +1583,14 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
 
       const { nonce } = await getOrSetNonce(
         "https://metadata.tor.us",
-        ecCurve,
+        secp256k1,
         0,
         pubKeyPoint.x.toString("hex"),
         pubKeyPoint.y.toString("hex"),
         postboxKeyBN
       );
       const nonceBN = new BN(nonce, "hex");
-      const importKey = postboxKeyBN.add(nonceBN).umod(ecCurve.curve.n).toString("hex");
+      const importKey = postboxKeyBN.add(nonceBN).umod(secp256k1.curve.n).toString("hex");
 
       const tKey = new ThresholdKey({ serviceProvider, storageLayer, manualSync: mode, enableLogging: true });
       await tKey.initialize({
@@ -1603,14 +1603,14 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
       const storageLayer2 = new TorusStorageLayer({ hostUrl: "https://metadata.tor.us" });
       const { nonce: nonce2 } = await getOrSetNonce(
         "https://metadata.tor.us",
-        ecCurve,
+        secp256k1,
         0,
         pubKeyPoint.x.toString("hex"),
         pubKeyPoint.y.toString("hex"),
         postboxKeyBN
       );
       const nonceBN2 = new BN(nonce2, "hex");
-      const importKey2 = postboxKeyBN.add(nonceBN2).umod(ecCurve.curve.n).toString("hex");
+      const importKey2 = postboxKeyBN.add(nonceBN2).umod(secp256k1.curve.n).toString("hex");
 
       const tKey2 = new ThresholdKey({ serviceProvider, storageLayer: storageLayer2, manualSync: mode, enableLogging: true });
       await tKey2.initialize({

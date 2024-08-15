@@ -59,7 +59,7 @@ class SfaServiceProvider extends ServiceProviderBase {
     this.verifierDetails = { verifier, verifierId };
 
     // fetch node details.
-    const { torusNodeEndpoints, torusIndexes, torusNodePub } = await this.nodeDetailManagerInstance.getNodeDetails(verifierDetails);
+    const { torusNodeEndpoints, torusIndexes, torusNodePub } = await this.nodeDetailManagerInstance.getNodeDetails(this.verifierDetails);
 
     this.torusNodeEndpointOrigin = `${new URL(torusNodeEndpoints[0]).origin}/metadata`;
     if (params.serverTimeOffset) {
