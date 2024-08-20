@@ -4,6 +4,12 @@ import { type TORUS_NETWORK_TYPE } from "@toruslabs/constants";
 export interface Web3AuthOptions {
   clientId: string;
   network: TORUS_NETWORK_TYPE;
+  /**
+   * Set this flag to false to generate keys on client side
+   * by default keys are generated on using dkg protocol on a distributed network
+   * @defaultValue undefined
+   */
+  useDkg?: boolean;
 }
 export interface SfaServiceProviderArgs extends ServiceProviderArgs {
   web3AuthOptions: Web3AuthOptions;
