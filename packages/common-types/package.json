@@ -43,7 +43,7 @@
     "@babel/runtime": "7.x"
   },
   "dependencies": {
-    "@toruslabs/customauth": "^20.0.3",
+    "@toruslabs/customauth": "^20.1.0",
     "@toruslabs/eccrypto": "^5.0.4",
     "@toruslabs/torus.js": "^15.0.2",
     "bn.js": "^5.2.1",

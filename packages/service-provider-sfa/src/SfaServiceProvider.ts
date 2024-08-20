@@ -82,6 +82,7 @@ class SfaServiceProvider extends ServiceProviderBase {
       verifierParams: finalVerifierParams,
       idToken: finalIdToken,
       nodePubkeys: torusNodePub,
+      useDkg: this.web3AuthOptions.useDkg,
     });
     this.torusKey = torusKey;
 
