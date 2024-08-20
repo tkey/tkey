@@ -1,6 +1,6 @@
 {
   "name": "@tkey/web-storage",
-  "version": "15.0.1",
+  "version": "15.0.2",
   "description": "TKey Web Storage Module",
   "author": "Torus Labs",
   "homepage": "https://github.com/tkey/tkey#readme",
@@ -43,14 +43,14 @@
     "@babel/runtime": "7.x"
   },
   "dependencies": {
-    "@tkey/common-types": "^15.0.0",
+    "@tkey/common-types": "^15.0.2",
     "@types/bn.js": "^5.1.5",
     "bn.js": "^5.2.1"
   },
   "devDependencies": {
-    "@tkey/core": "^15.0.1",
-    "@tkey/service-provider-base": "^15.0.0",
-    "@tkey/storage-layer-torus": "^15.0.0",
+    "@tkey/core": "^15.0.2",
+    "@tkey/service-provider-base": "^15.0.2",
+    "@tkey/storage-layer-torus": "^15.0.2",
     "@types/filesystem": "^0.0.36"
   },
   "bugs": {
