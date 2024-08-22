@@ -1749,6 +1749,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         verifierId: TORUS_TEST_EMAIL,
       });
 
+      const importedKey = serviceProvider.migratableKey;
       const postboxKeyBN = serviceProvider.postboxKey;
       const pubKeyPoint = getPubKeyPoint(postboxKeyBN);
 
@@ -1791,6 +1792,11 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
         delete1OutOf1: true,
         enableLogging: true,
       });
+
+      const tkeySecp256k1 = tKey.secp256k1Key;
+
+      if (importedKey === null) assert.fail("should have migrateable key");
+      assert.deepEqual(importedKey, tkeySecp256k1);
 
       // check if nonce is still there after import
       const nonce2 = await getOrSetNonce(
