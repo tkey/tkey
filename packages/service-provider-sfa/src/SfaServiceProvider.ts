@@ -13,13 +13,13 @@ class SfaServiceProvider extends ServiceProviderBase {
 
   public torusKey: TorusKey;
 
-  root: boolean;
-
   public migratableKey: BN | null = null;
+
+  private root: boolean;
 
   private nodeDetailManagerInstance: NodeDetailManager;
 
-  private torusNodeEndpointOrigin?: string;
+  private metadataUrl?: string;
 
   private verifierDetails: {
     verifier: string;
@@ -61,7 +61,8 @@ class SfaServiceProvider extends ServiceProviderBase {
     // fetch node details.
     const { torusNodeEndpoints, torusIndexes, torusNodePub } = await this.nodeDetailManagerInstance.getNodeDetails(this.verifierDetails);
 
-    this.torusNodeEndpointOrigin = `${new URL(torusNodeEndpoints[0]).origin}/metadata`;
+    this.metadataUrl = await this.nodeDetailManagerInstance.getMetadataUrl();
+
     if (params.serverTimeOffset) {
       this.authInstance.serverTimeOffset = params.serverTimeOffset;
     }
@@ -107,21 +108,39 @@ class SfaServiceProvider extends ServiceProviderBase {
   }
 
   getHostURL(): string {
-    return this.torusNodeEndpointOrigin;
+    return this.metadataUrl || "";
   }
 
-  async _delete1of1Key(enableLogging?: boolean) {
-    if (!this.root) {
-      throw new Error("Cannot delete 1of1 key without root flag");
-    }
+  // enabling root access will allow developer to call critical function
+  enableRootAccess() {
+    this.root = true;
+  }
 
-    // setup TorusStorageLayer using the endpoint
-    const storageLayer = new TorusStorageLayer({
-      hostUrl: this.torusNodeEndpointOrigin,
-      enableLogging: enableLogging || false,
-    });
-    await storageLayer.setMetadata({ input: [{ message: ONE_KEY_DELETE_NONCE }], privKey: this.postboxKey });
-    this.root = false;
+  // Critical function
+  // This function will delete sfa key and replaced with postboxkey
+  // only callable after enable root access and will reset the root access at the end of function.
+  async delete1of1Key(enableLogging?: boolean) {
+    try {
+      if (!this.root) {
+        throw new Error("Cannot delete 1of1 key without root flag");
+      }
+      if (!this.metadataUrl) {
+        throw new Error("Please connect first");
+      }
+
+      // setup TorusStorageLayer using the endpoint
+      const storageLayer = new TorusStorageLayer({
+        hostUrl: this.metadataUrl,
+        enableLogging: enableLogging || false,
+      });
+      // await storageLayer.setMetadata({ input: { message: ONE_KEY_DELETE_NONCE }, privKey: this.postboxKey });
+      await storageLayer.setMetadataStream({ input: [{ message: ONE_KEY_DELETE_NONCE }], privKey: [this.postboxKey] });
+
+      // set migratableKey to null after successful delete nonce
+      this.migratableKey = null;
+    } finally {
+      this.root = false;
+    }
   }
 
   toJSON(): StringifiedType {
