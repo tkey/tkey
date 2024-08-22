@@ -1415,13 +1415,13 @@ class ThresholdKey implements ITKey {
     //   await this.addLocalMetadataTransitions({ input: [{ message: ONE_KEY_DELETE_NONCE }], privKey: [this.serviceProvider.postboxKey] });
     // }
     if (delete1OutOf1) {
-      const serviceProviderURL = this.serviceProvider.getHostURL();
-      if (serviceProviderURL === this.storageLayer.getHostURL()) {
+      const serviceProviderURL = this.serviceProvider.getMetadataUrl();
+      if (serviceProviderURL === this.storageLayer.getMetadataUrl()) {
         await this.addLocalMetadataTransitions({ input: [{ message: ONE_KEY_DELETE_NONCE }], privKey: [this.serviceProvider.postboxKey] });
       } else {
         // don't delete anything, make the user/dev to delete via the service provider
         // console.log(
-        //   `Unable to delete 1 out of 1 share. Service provider url ${serviceProviderURL} does not match storage layer url ${this.storageLayer.getHostURL()}
+        //   `Unable to delete 1 out of 1 share. Service provider url ${serviceProviderURL} does not match storage layer url ${this.storageLayer.getMetadataUrl()}
         //   please use serviceProvider.delete1of1Key() to delete`
         // );
       }

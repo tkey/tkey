@@ -100,8 +100,8 @@ class MockStorageLayer implements IStorageLayer {
     return { status: 1 };
   }
 
-  getHostURL(): string {
-    return "";
+  getMetadataUrl(): string {
+    throw new Error("Method not implemented.");
   }
 
   toJSON(): StringifiedType {

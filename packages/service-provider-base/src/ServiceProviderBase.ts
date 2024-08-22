@@ -37,7 +37,7 @@ class ServiceProviderBase implements IServiceProvider {
     return new ServiceProviderBase({ enableLogging, postboxKey });
   }
 
-  getHostURL(): string {
+  getMetadataUrl(): string {
     throw new Error("Method not implemented.");
   }
 

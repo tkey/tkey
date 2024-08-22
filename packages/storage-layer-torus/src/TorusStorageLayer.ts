@@ -94,7 +94,7 @@ class TorusStorageLayer implements IStorageLayer {
     return JSON.parse(decrypted.toString()) as T;
   }
 
-  getHostURL(): string {
+  getMetadataUrl(): string {
     return this.hostUrl;
   }
 

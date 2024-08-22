@@ -107,7 +107,7 @@ class SfaServiceProvider extends ServiceProviderBase {
     return this.postboxKey;
   }
 
-  getHostURL(): string {
+  getMetadataUrl(): string {
     return this.metadataUrl || "";
   }
 

@@ -57,7 +57,7 @@ export interface IServiceProvider extends ISerializable {
   retrievePubKey(type: PubKeyType): Buffer;
   retrievePubKeyPoint(): EllipticPoint;
   sign(msg: BNString): string;
-  getHostURL(): string;
+  getMetadataUrl(): string;
 }
 export type TorusStorageLayerAPIParams = {
   pub_key_X: string;
@@ -80,7 +80,7 @@ export interface IStorageLayer extends ISerializable {
 
   releaseWriteLock(params: { id: string; serviceProvider?: IServiceProvider; privKey?: BN }): Promise<{ status: number }>;
 
-  getHostURL(): string;
+  getMetadataUrl(): string;
 }
 
 export type TorusStorageLayerArgs = {

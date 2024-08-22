@@ -45,7 +45,7 @@ class TorusServiceProvider extends ServiceProviderBase {
     return this.customAuthInstance.init(params);
   }
 
-  getHostURL(): string {
+  getMetadataUrl(): string {
     return this.customAuthArgs.metadataUrl;
   }
 
