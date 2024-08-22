@@ -1563,7 +1563,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     });
   });
 
-  describe.only("OneKey", function () {
+  describe("OneKey", function () {
     if (!mode) return;
 
     it("should be able to init tkey with 1 out of 1", async function () {

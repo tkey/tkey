@@ -1411,9 +1411,6 @@ class ThresholdKey implements ITKey {
     // because this is the first time we're setting metadata there is no need to acquire a lock
     // acquireLock: false. Force push
     await this.addLocalMetadataTransitions({ input: [...authMetadatas, shareStore], privKey: [...sharesToPush, undefined] });
-    // if (delete1OutOf1) {
-    //   await this.addLocalMetadataTransitions({ input: [{ message: ONE_KEY_DELETE_NONCE }], privKey: [this.serviceProvider.postboxKey] });
-    // }
     if (delete1OutOf1) {
       const serviceProviderURL = this.serviceProvider.getMetadataUrl();
       if (serviceProviderURL === this.storageLayer.getMetadataUrl()) {
