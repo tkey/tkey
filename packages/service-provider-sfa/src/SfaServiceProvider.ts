@@ -28,12 +28,13 @@ class SfaServiceProvider extends ServiceProviderBase {
 
   constructor({ enableLogging = false, postboxKey, web3AuthOptions }: SfaServiceProviderArgs) {
     super({ enableLogging, postboxKey });
-    this.web3AuthOptions = web3AuthOptions;
+    const defaultKeyType = web3AuthOptions.keyType || KeyType.secp256k1;
+    this.web3AuthOptions = { ...web3AuthOptions, keyType: defaultKeyType };
     this.authInstance = new Torus({
       clientId: web3AuthOptions.clientId,
       enableOneKey: true,
       network: web3AuthOptions.network,
-      keyType: web3AuthOptions.keyType,
+      keyType: this.web3AuthOptions.keyType,
     });
     Torus.enableLogging(enableLogging);
     this.serviceProviderName = "SfaServiceProvider";

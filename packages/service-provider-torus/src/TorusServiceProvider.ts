@@ -31,8 +31,9 @@ class TorusServiceProvider extends ServiceProviderBase {
 
   constructor({ enableLogging = false, postboxKey, customAuthArgs }: TorusServiceProviderArgs) {
     super({ enableLogging, postboxKey });
-    this.customAuthArgs = customAuthArgs;
-    this.customAuthInstance = new CustomAuth(customAuthArgs);
+    const defaultKeyType = customAuthArgs.keyType || KeyType.secp256k1;
+    this.customAuthArgs = { ...customAuthArgs, keyType: defaultKeyType };
+    this.customAuthInstance = new CustomAuth(this.customAuthArgs);
     this.serviceProviderName = "TorusServiceProvider";
   }
 
