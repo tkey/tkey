@@ -1,4 +1,4 @@
-import { ONE_KEY_DELETE_NONCE, StringifiedType, TorusServiceProviderArgs } from "@tkey/common-types";
+import { KeyType, ONE_KEY_DELETE_NONCE, StringifiedType, TorusServiceProviderArgs } from "@tkey/common-types";
 import { ServiceProviderBase } from "@tkey/service-provider-base";
 import { TorusStorageLayer } from "@tkey/storage-layer-torus";
 import {
@@ -73,6 +73,8 @@ class TorusServiceProvider extends ServiceProviderBase {
       if (!obj.metadata.upgraded) {
         const { finalKeyData, oAuthKeyData } = obj;
         const privKey = finalKeyData.privKey || oAuthKeyData.privKey;
+
+        // TODO : handle for ed25519 key
         this.migratableKey = new BN(privKey, "hex");
       }
 
@@ -138,6 +140,10 @@ class TorusServiceProvider extends ServiceProviderBase {
     } finally {
       this.root = false;
     }
+  }
+
+  getKeyType(): KeyType {
+    return KeyType[this.customAuthArgs.keyType];
   }
 
   toJSON(): StringifiedType {

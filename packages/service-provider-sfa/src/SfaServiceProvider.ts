@@ -1,4 +1,4 @@
-import { ONE_KEY_DELETE_NONCE, type StringifiedType } from "@tkey/common-types";
+import { KeyType, ONE_KEY_DELETE_NONCE, type StringifiedType } from "@tkey/common-types";
 import { ServiceProviderBase } from "@tkey/service-provider-base";
 import { TorusStorageLayer } from "@tkey/storage-layer-torus";
 import { NodeDetailManager } from "@toruslabs/fetch-node-details";
@@ -33,6 +33,7 @@ class SfaServiceProvider extends ServiceProviderBase {
       clientId: web3AuthOptions.clientId,
       enableOneKey: true,
       network: web3AuthOptions.network,
+      keyType: web3AuthOptions.keyType,
     });
     Torus.enableLogging(enableLogging);
     this.serviceProviderName = "SfaServiceProvider";
@@ -100,6 +101,8 @@ class SfaServiceProvider extends ServiceProviderBase {
     if (!torusKey.metadata.upgraded) {
       const { finalKeyData, oAuthKeyData } = torusKey;
       const privKey = finalKeyData.privKey || oAuthKeyData.privKey;
+
+      // TODO : handle for ed25519 key
       this.migratableKey = new BN(privKey, "hex");
     }
     const postboxKey = Torus.getPostboxKey(torusKey);
@@ -141,6 +144,10 @@ class SfaServiceProvider extends ServiceProviderBase {
     } finally {
       this.root = false;
     }
+  }
+
+  getKeyType(): KeyType {
+    return KeyType[this.web3AuthOptions.keyType];
   }
 
   toJSON(): StringifiedType {

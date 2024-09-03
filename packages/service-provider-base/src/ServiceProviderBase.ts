@@ -5,6 +5,7 @@ import {
   EncryptedMessage,
   getPubKeyECC,
   IServiceProvider,
+  KeyType,
   PubKeyType,
   ServiceProviderArgs,
   StringifiedType,
@@ -24,10 +25,13 @@ class ServiceProviderBase implements IServiceProvider {
 
   migratableKey: BN | null = null;
 
-  constructor({ enableLogging = false, postboxKey }: ServiceProviderArgs) {
+  keyType: KeyType;
+
+  constructor({ enableLogging = false, postboxKey, keyType }: ServiceProviderArgs) {
     this.enableLogging = enableLogging;
     this.postboxKey = new BN(postboxKey, "hex");
     this.serviceProviderName = "ServiceProviderBase";
+    this.keyType = keyType || KeyType.secp256k1;
   }
 
   static fromJSON(value: StringifiedType): IServiceProvider {
@@ -65,6 +69,10 @@ class ServiceProviderBase implements IServiceProvider {
     const tmp = new BN(msg, "hex");
     const sig = toPrivKeyEC(this.postboxKey).sign(tmp.toString("hex"));
     return Buffer.from(sig.r.toString(16, 64) + sig.s.toString(16, 64) + new BN(0).toString(16, 2), "hex").toString("base64");
+  }
+
+  getKeyType(): KeyType {
+    throw new Error("Method not implemented.");
   }
 
   toJSON(): StringifiedType {

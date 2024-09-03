@@ -14,6 +14,11 @@ export type PolyIDAndShares = [PolynomialID, string[]];
 
 export type BNString = string | BN;
 
+export enum KeyType {
+  secp256k1 = "secp256k1",
+  ed25519 = "ed25519",
+}
+
 export interface EncryptedMessage {
   ciphertext: string;
   ephemPublicKey: string;
@@ -24,6 +29,7 @@ export interface EncryptedMessage {
 export interface ServiceProviderArgs {
   enableLogging?: boolean;
   postboxKey?: string;
+  keyType?: KeyType;
 }
 
 export interface TorusServiceProviderArgs extends ServiceProviderArgs {
@@ -58,6 +64,7 @@ export interface IServiceProvider extends ISerializable {
   retrievePubKeyPoint(): EllipticPoint;
   sign(msg: BNString): string;
   getMetadataUrl(): string;
+  getKeyType(): KeyType;
 }
 export type TorusStorageLayerAPIParams = {
   pub_key_X: string;
@@ -106,8 +113,3 @@ export type FromJSONConstructor = {
 };
 
 export type DeviceShareDescription = { module: string; userAgent: string; dateAdded: number; customDeviceInfo?: string };
-
-export enum KeyType {
-  secp256k1 = "secp256k1",
-  ed25519 = "ed25519",
-}

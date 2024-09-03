@@ -1,5 +1,6 @@
 import { type ServiceProviderArgs } from "@tkey/common-types";
 import { type TORUS_NETWORK_TYPE } from "@toruslabs/constants";
+import { KeyType } from "@toruslabs/torus.js";
 
 export interface Web3AuthOptions {
   clientId: string;
@@ -10,6 +11,7 @@ export interface Web3AuthOptions {
    * @defaultValue undefined
    */
   useDkg?: boolean;
+  keyType?: KeyType;
 }
 export interface SfaServiceProviderArgs extends ServiceProviderArgs {
   web3AuthOptions: Web3AuthOptions;

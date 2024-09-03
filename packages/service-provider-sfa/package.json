@@ -34,7 +34,8 @@
     "pre-commit": "lint-staged"
   },
   "peerDependencies": {
-    "@babel/runtime": "7.x"
+    "@babel/runtime": "7.x",
+    "@tkey/storage-layer-torus": "^15.0.2"
   },
   "dependencies": {
     "@tkey/common-types": "^15.1.0",
