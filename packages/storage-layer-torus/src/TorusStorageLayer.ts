@@ -44,10 +44,6 @@ class TorusStorageLayer implements IStorageLayer {
     this.serverTimeOffset = serverTimeOffset;
   }
 
-  getMetadataUrl(): string {
-    return this.hostUrl;
-  }
-
   static async serializeMetadataParamsInput(el: unknown, serviceProvider: IServiceProvider, privKey: BN): Promise<unknown> {
     if (typeof el === "object") {
       // Allow using of special message as command, in which case, do not encrypt
@@ -140,7 +136,7 @@ class TorusStorageLayer implements IStorageLayer {
         mode: "cors",
         method: "POST",
         headers: {
-          "Content-Type": "multipart/form-data",
+          "Content-Type": undefined,
         },
       };
 
@@ -233,6 +229,10 @@ class TorusStorageLayer implements IStorageLayer {
       id,
     };
     return post<{ status: number; id?: string }>(`${this.hostUrl}/releaseLock`, metadataParams);
+  }
+
+  getMetadataUrl(): string {
+    return this.hostUrl;
   }
 
   toJSON(): StringifiedType {
