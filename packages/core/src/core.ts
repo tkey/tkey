@@ -109,6 +109,8 @@ class ThresholdKey implements ITKey {
 
   serverTimeOffset?: number = 0;
 
+  private serverTssPubIndexMap: Record<string, { pubKey: Point; nodeIndexes: number[] }> = {};
+
   constructor(args?: TKeyArgs) {
     const { enableLogging = false, modules = {}, serviceProvider, storageLayer, manualSync = false, tssTag, serverTimeOffset } = args || {};
     this.enableLogging = enableLogging;
@@ -495,6 +497,14 @@ class ThresholdKey implements ITKey {
     return tssCommits[0];
   }
 
+  async getServerTssPubAndIndexes(tag: string, tssNonce: number) {
+    const pubKeyIndexes = this.serverTssPubIndexMap[`${tag}-${tssNonce}`];
+    if (pubKeyIndexes) return pubKeyIndexes;
+    const { pubKey, nodeIndexes } = await this.serviceProvider.getTSSPubKey(this.tssTag, tssNonce);
+    this.serverTssPubIndexMap[`${tag}-${tssNonce}`] = { pubKey, nodeIndexes };
+    return { pubKey, nodeIndexes };
+  }
+
   /**
    * catchupToLatestShare recursively loops fetches metadata of the provided share and checks if there is an encrypted share for it.
    * @param shareStore - share to start of with
@@ -879,7 +889,7 @@ class ThresholdKey implements ITKey {
       const label = `${verifierAndVerifierID}\u0015${this.tssTag}\u0016${newTssNonce}`;
       const tssPubKey = hexPoint(ecCurve.g.mul(importKey));
       const rssNodeDetails = await this._getRssNodeDetails();
-      const { pubKey: newTSSServerPub, nodeIndexes } = await this.serviceProvider.getTSSPubKey(this.tssTag, newTssNonce);
+      const { pubKey: newTSSServerPub, nodeIndexes } = await this.getServerTssPubAndIndexes(this.tssTag, newTssNonce);
       let finalSelectedServers = selectedServers;
 
       if (nodeIndexes?.length > 0) {
@@ -1111,7 +1121,7 @@ class ThresholdKey implements ITKey {
     const oldLabel = `${verifierNameVerifierId}\u0015${this.tssTag}\u0016${tssNonce}`;
     const newLabel = `${verifierNameVerifierId}\u0015${this.tssTag}\u0016${tssNonce + 1}`;
 
-    const { pubKey: newTSSServerPub, nodeIndexes } = await this.serviceProvider.getTSSPubKey(this.tssTag, tssNonce + 1);
+    const { pubKey: newTSSServerPub, nodeIndexes } = await this.getServerTssPubAndIndexes(this.tssTag, tssNonce + 1);
     let finalSelectedServers = selectedServers;
 
     if (nodeIndexes?.length > 0) {
@@ -1274,7 +1284,7 @@ class ThresholdKey implements ITKey {
     } else {
       tss2 = new BN(generatePrivate());
     }
-    const { pubKey: tss1Pub } = await this.serviceProvider.getTSSPubKey(tssTag, 0);
+    const { pubKey: tss1Pub } = await this.getServerTssPubAndIndexes(tssTag, 0);
     const tss1PubKey = ecCurve.keyFromPublic({ x: tss1Pub.x.toString(16, 64), y: tss1Pub.y.toString(16, 64) }).getPublic();
     const tss2Pub = getPubKeyPoint(tss2);
     const tss2PubKey = ecCurve.keyFromPublic({ x: tss2Pub.x.toString(16, 64), y: tss2Pub.y.toString(16, 64) }).getPublic();
