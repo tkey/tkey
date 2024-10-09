@@ -7,20 +7,21 @@ import { Metadata } from "@tkey/core";
 import { ED25519Format, PrivateKeyModule, SECP256K1Format } from "@tkey/private-keys";
 import { SecurityQuestionsModule } from "@tkey/security-questions";
 import { MetamaskSeedPhraseFormat, SeedPhraseModule } from "@tkey/seed-phrase";
+import SFAServiceProvider from "@tkey/service-provider-sfa";
 import { TorusServiceProvider } from "@tkey/service-provider-torus";
 import { ShareTransferModule } from "@tkey/share-transfer";
 import { TorusStorageLayer } from "@tkey/storage-layer-torus";
 import { generatePrivate } from "@toruslabs/eccrypto";
 import { post } from "@toruslabs/http-helpers";
 import { getOrSetNonce, keccak256 } from "@toruslabs/torus.js";
-import { deepEqual, deepStrictEqual, equal, fail, notEqual, notStrictEqual, strict, strictEqual, throws } from "assert";
+import assert, { deepEqual, deepStrictEqual, equal, fail, notEqual, notStrictEqual, strict, strictEqual, throws } from "assert";
 import BN from "bn.js";
 import { JsonRpcProvider } from "ethers";
 import { createSandbox } from "sinon";
 
 import { TKeyDefault as ThresholdKey } from "../src/index";
 import { ed25519Tests } from "./ed25519/ed25519";
-import { getMetadataUrl, getServiceProvider, initStorageLayer, isMocked } from "./helpers";
+import { generateIdToken, getMetadataUrl, getServiceProvider, initStorageLayer, isMocked } from "./helpers";
 
 const rejects = async (fn, error, msg) => {
   let f = () => {};
@@ -1563,9 +1564,10 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
   });
 
   describe("OneKey", function () {
-    if (!mode || isMocked) return;
+    if (!mode) return;
 
     it("should be able to init tkey with 1 out of 1", async function () {
+      if (isMocked) return;
       const postboxKeyBN = new BN(generatePrivate(), "hex");
       const pubKeyPoint = getPubKeyPoint(postboxKeyBN);
       const metadataNonce = new BN(generatePrivate(), "hex");
@@ -1631,6 +1633,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     });
 
     it("should not change v1 address without a custom nonce when getOrSetNonce is called", async function () {
+      if (isMocked) return;
       // Create an existing v1 account
       const postboxKeyBN = new BN(generatePrivate(), "hex");
       const pubKeyPoint = getPubKeyPoint(postboxKeyBN);
@@ -1716,6 +1719,132 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
     //   equal(getOrSetNonce.typeOfUser, "v1");
     //   equal(getOrSetNonce.nonce, getMetadataNonce.toString("hex"));
     // });
+
+    it(`init tkey with different metadata url with sapphire network, manualSync=${mode}`, async function () {
+      // Test flow
+      // setup sfa and connect
+      // setup nonce at metadata-testing server
+      // setup tkey with metadata-testing server as storage layer and sfa as service provider
+      // init tkey with delete1of1 ( importflow will be automatic when migratable key is available )
+      // overwrite sfa provider with metadata-testing as metadataUrl
+      // sfa.delete1of1
+
+      // only valid for manual sync
+      if (!mode) return;
+      const TORUS_TEST_EMAIL = "helloWithMigrateableKey@tor.us";
+      const token = generateIdToken(TORUS_TEST_EMAIL, "ES256");
+
+      // Setup sfa
+      const serviceProvider = new SFAServiceProvider({
+        web3AuthOptions: {
+          // This url has no effect as postbox key is passed, passing it just to satisfy direct auth checks.
+          network: "sapphire_devnet",
+          clientId: "YOUR_CLIENT_ID",
+        },
+      });
+
+      await serviceProvider.connect({
+        idToken: token,
+        verifier: "torus-test-verifierid-hash",
+        verifierId: TORUS_TEST_EMAIL,
+      });
+
+      const importedKey = serviceProvider.migratableKey;
+      const postboxKeyBN = serviceProvider.postboxKey;
+      const pubKeyPoint = getPubKeyPoint(postboxKeyBN);
+
+      serviceProvider.metadataUrl = "";
+
+      // setup metadata-testing with nonce
+      const metadataUrl = "https://metadata-testing.tor.us";
+      // const metadataUrl = "https://metadata.tor.us";
+      await post(
+        `${metadataUrl}/set_nonce`,
+        {
+          namespace: "noncev2",
+          pub_key_X: pubKeyPoint.x.toString("hex"),
+          pub_key_Y: pubKeyPoint.y.toString("hex"),
+        },
+        undefined,
+        { useAPIKey: true }
+      );
+
+      // try import flow
+      const nonce1 = await getOrSetNonce(
+        metadataUrl,
+        secp256k1,
+        0,
+        pubKeyPoint.x.toString("hex"),
+        pubKeyPoint.y.toString("hex"),
+        postboxKeyBN,
+        false,
+        true
+      );
+
+      // setup tkey with metadata-testing server as storage layer
+      const storageLayer = new TorusStorageLayer({ hostUrl: metadataUrl });
+      await storageLayer.setMetadata({ input: { message: "KEY_NOT_FOUND" }, privKey: serviceProvider.postboxKey });
+
+      const tKey = new ThresholdKey({ serviceProvider, storageLayer, manualSync: mode, enableLogging: true });
+
+      // it will auto import key when migrateable key is available
+      await tKey.initialize({
+        delete1OutOf1: true,
+        enableLogging: true,
+      });
+
+      const tkeySecp256k1 = tKey.secp256k1Key;
+
+      if (importedKey === null) assert.fail("should have migrateable key");
+      assert.deepEqual(importedKey, tkeySecp256k1);
+
+      // check if nonce is still there after import
+      const nonce2 = await getOrSetNonce(
+        metadataUrl,
+        secp256k1,
+        0,
+        pubKeyPoint.x.toString("hex"),
+        pubKeyPoint.y.toString("hex"),
+        postboxKeyBN,
+        false,
+        true
+      );
+      assert.deepEqual(nonce2, nonce1);
+
+      // overite service provider metadata url
+      serviceProvider.metadataUrl = metadataUrl;
+
+      // try delete1of1
+      try {
+        await serviceProvider.delete1of1Key();
+        assert.fail();
+      } catch (e) {
+        // should throw
+      }
+
+      // get root access
+      serviceProvider.enableRootAccess();
+      // delete1of1
+      await serviceProvider.delete1of1Key();
+
+      // check for nonce, check for migrateable key
+      try {
+        await getOrSetNonce(metadataUrl, secp256k1, 0, pubKeyPoint.x.toString("hex"), pubKeyPoint.y.toString("hex"), postboxKeyBN, false, true);
+        assert.fail("should not able to fetch nonce anymore");
+      } catch (err) {}
+
+      if (serviceProvider.migratableKey !== null) {
+        assert.fail("migratableKey should be reseted");
+      }
+
+      // try delete again without root
+      try {
+        await serviceProvider.delete1of1Key();
+        assert.fail("Root access should be reset after delete1of1");
+      } catch (e) {
+        // should throw
+      }
+    });
   });
 
   ed25519Tests({ manualSync: mode, torusSP: customSP, storageLayer: customSL });

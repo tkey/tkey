@@ -94,6 +94,10 @@ class TorusStorageLayer implements IStorageLayer {
     return JSON.parse(decrypted.toString()) as T;
   }
 
+  getMetadataUrl(): string {
+    return this.hostUrl;
+  }
+
   /**
    * Set Metadata for a key
    * @param input - data to post

@@ -1,11 +1,11 @@
-import { type StringifiedType } from "@tkey/common-types";
+import { KeyType, ONE_KEY_DELETE_NONCE, type StringifiedType } from "@tkey/common-types";
 import { ServiceProviderBase } from "@tkey/service-provider-base";
+import { TorusStorageLayer } from "@tkey/storage-layer-torus";
 import { NodeDetailManager } from "@toruslabs/fetch-node-details";
 import { keccak256, Torus, TorusKey } from "@toruslabs/torus.js";
 import BN from "bn.js";
 
 import { AggregateVerifierParams, LoginParams, SfaServiceProviderArgs, Web3AuthOptions } from "./interfaces";
-
 class SfaServiceProvider extends ServiceProviderBase {
   web3AuthOptions: Web3AuthOptions;
 
@@ -13,17 +13,28 @@ class SfaServiceProvider extends ServiceProviderBase {
 
   public torusKey: TorusKey;
 
-  public migratableKey: BN | null = null; // Migration of key from SFA to tKey
+  public migratableKey: BN | null = null;
+
+  private root: boolean;
 
   private nodeDetailManagerInstance: NodeDetailManager;
 
+  private metadataUrl?: string;
+
+  private verifierDetails: {
+    verifier: string;
+    verifierId: string;
+  };
+
   constructor({ enableLogging = false, postboxKey, web3AuthOptions }: SfaServiceProviderArgs) {
     super({ enableLogging, postboxKey });
-    this.web3AuthOptions = web3AuthOptions;
+    const defaultKeyType = web3AuthOptions.keyType || KeyType.secp256k1;
+    this.web3AuthOptions = { ...web3AuthOptions, keyType: defaultKeyType };
     this.authInstance = new Torus({
       clientId: web3AuthOptions.clientId,
       enableOneKey: true,
       network: web3AuthOptions.network,
+      keyType: this.web3AuthOptions.keyType,
     });
     Torus.enableLogging(enableLogging);
     this.serviceProviderName = "SfaServiceProvider";
@@ -47,10 +58,12 @@ class SfaServiceProvider extends ServiceProviderBase {
 
   async connect(params: LoginParams): Promise<BN> {
     const { verifier, verifierId, idToken, subVerifierInfoArray } = params;
-    const verifierDetails = { verifier, verifierId };
+    this.verifierDetails = { verifier, verifierId };
 
     // fetch node details.
-    const { torusNodeEndpoints, torusIndexes, torusNodePub } = await this.nodeDetailManagerInstance.getNodeDetails(verifierDetails);
+    const { torusNodeEndpoints, torusIndexes, torusNodePub } = await this.nodeDetailManagerInstance.getNodeDetails(this.verifierDetails);
+
+    this.metadataUrl = await this.nodeDetailManagerInstance.getMetadataUrl();
 
     if (params.serverTimeOffset) {
       this.authInstance.serverTimeOffset = params.serverTimeOffset;
@@ -89,11 +102,53 @@ class SfaServiceProvider extends ServiceProviderBase {
     if (!torusKey.metadata.upgraded) {
       const { finalKeyData, oAuthKeyData } = torusKey;
       const privKey = finalKeyData.privKey || oAuthKeyData.privKey;
+
+      // TODO : handle for ed25519 key
       this.migratableKey = new BN(privKey, "hex");
     }
     const postboxKey = Torus.getPostboxKey(torusKey);
     this.postboxKey = new BN(postboxKey, 16);
     return this.postboxKey;
+  }
+
+  getMetadataUrl(): string {
+    return this.metadataUrl || "";
+  }
+
+  // enabling root access will allow developer to call critical function
+  enableRootAccess() {
+    this.root = true;
+  }
+
+  // Critical function
+  // This function will delete sfa key and replaced with postboxkey
+  // only callable after enable root access and will reset the root access at the end of function.
+  async delete1of1Key(enableLogging?: boolean) {
+    try {
+      if (!this.root) {
+        throw new Error("Cannot delete 1of1 key without root flag");
+      }
+      if (!this.metadataUrl) {
+        throw new Error("Please connect first");
+      }
+
+      // setup TorusStorageLayer using the endpoint
+      const storageLayer = new TorusStorageLayer({
+        hostUrl: this.metadataUrl,
+        enableLogging: enableLogging || false,
+      });
+      // await storageLayer.setMetadata({ input: { message: ONE_KEY_DELETE_NONCE }, privKey: this.postboxKey });
+      await storageLayer.setMetadataStream({ input: [{ message: ONE_KEY_DELETE_NONCE }], privKey: [this.postboxKey] });
+
+      // set migratableKey to null after successful delete nonce
+      this.migratableKey = null;
+    } finally {
+      this.root = false;
+    }
+  }
+
+  getKeyType(): KeyType {
+    return KeyType[this.web3AuthOptions.keyType];
   }
 
   toJSON(): StringifiedType {

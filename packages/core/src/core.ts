@@ -19,6 +19,7 @@ import {
   ITKeyApi,
   KEY_NOT_FOUND,
   KeyDetails,
+  KeyType,
   LocalMetadataTransitions,
   LocalTransitionData,
   LocalTransitionShares,
@@ -292,7 +293,16 @@ class ThresholdKey implements ITKey {
           // importkey from server provider need to be atomic, hence manual sync is required.
           const tempStateManualSync = this.manualSync; // temp store manual sync flag
           this.manualSync = true; // Setting this as true since _initializeNewKey has a check where for importkey from server provider need to be atomic, hence manual sync is required.
-          await this._initializeNewKey({ initializeModules: true, importedKey: this.serviceProvider.migratableKey, delete1OutOf1: true });
+          const serviceProviderKeyType = this.serviceProvider.getKeyType();
+          if (serviceProviderKeyType === KeyType.secp256k1) {
+            await this._initializeNewKey({ initializeModules: true, importedKey: this.serviceProvider.migratableKey, delete1OutOf1: true });
+          } else {
+            await this._initializeNewKey({
+              initializeModules: true,
+              importEd25519Seed: this.serviceProvider.migratableKey.toBuffer(),
+              delete1OutOf1: true,
+            });
+          }
           if (!tempStateManualSync) await this.syncLocalMetadataTransitions(); // Only sync if we were not in manual sync mode, if manual sync is set by developer, they should handle it themselves
           // restore manual sync flag
           this.manualSync = tempStateManualSync;
@@ -1412,7 +1422,16 @@ class ThresholdKey implements ITKey {
     // acquireLock: false. Force push
     await this.addLocalMetadataTransitions({ input: [...authMetadatas, shareStore], privKey: [...sharesToPush, undefined] });
     if (delete1OutOf1) {
-      await this.addLocalMetadataTransitions({ input: [{ message: ONE_KEY_DELETE_NONCE }], privKey: [this.serviceProvider.postboxKey] });
+      const serviceProviderURL = this.serviceProvider.getMetadataUrl();
+      if (serviceProviderURL === this.storageLayer.getMetadataUrl()) {
+        await this.addLocalMetadataTransitions({ input: [{ message: ONE_KEY_DELETE_NONCE }], privKey: [this.serviceProvider.postboxKey] });
+      } else {
+        // don't delete anything, make the user/dev to delete via the service provider
+        // console.log(
+        //   `Unable to delete 1 out of 1 share. Service provider url ${serviceProviderURL} does not match storage layer url ${this.storageLayer.getMetadataUrl()}
+        //   please use serviceProvider.delete1of1Key() to delete`
+        // );
+      }
     }
 
     // store metadata on metadata respective to shares

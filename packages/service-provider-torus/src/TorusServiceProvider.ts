@@ -1,5 +1,6 @@
-import { StringifiedType, TorusServiceProviderArgs } from "@tkey/common-types";
+import { KeyType, ONE_KEY_DELETE_NONCE, StringifiedType, TorusServiceProviderArgs } from "@tkey/common-types";
 import { ServiceProviderBase } from "@tkey/service-provider-base";
+import { TorusStorageLayer } from "@tkey/storage-layer-torus";
 import {
   AggregateLoginParams,
   CustomAuth,
@@ -9,6 +10,7 @@ import {
   TorusAggregateLoginResponse,
   TorusLoginResponse,
 } from "@toruslabs/customauth";
+import { fetchLocalConfig } from "@toruslabs/fnd-base";
 import { Torus, TorusKey } from "@toruslabs/torus.js";
 import BN from "bn.js";
 
@@ -23,10 +25,15 @@ class TorusServiceProvider extends ServiceProviderBase {
 
   customAuthArgs: CustomAuthArgs;
 
+  private metadataUrl?: string;
+
+  private root = false;
+
   constructor({ enableLogging = false, postboxKey, customAuthArgs }: TorusServiceProviderArgs) {
     super({ enableLogging, postboxKey });
-    this.customAuthArgs = customAuthArgs;
-    this.customAuthInstance = new CustomAuth(customAuthArgs);
+    const defaultKeyType = customAuthArgs.keyType || KeyType.secp256k1;
+    this.customAuthArgs = { ...customAuthArgs, keyType: defaultKeyType };
+    this.customAuthInstance = new CustomAuth(this.customAuthArgs);
     this.serviceProviderName = "TorusServiceProvider";
   }
 
@@ -42,7 +49,15 @@ class TorusServiceProvider extends ServiceProviderBase {
   }
 
   async init(params: InitParams): Promise<void> {
+    this.metadataUrl = fetchLocalConfig(this.customAuthArgs.network, this.customAuthArgs.keyType)?.torusNodeEndpoints[0].replace(
+      "/sss/jrpc",
+      "/metadata"
+    );
     return this.customAuthInstance.init(params);
+  }
+
+  getMetadataUrl(): string {
+    return this.metadataUrl;
   }
 
   /**
@@ -59,6 +74,8 @@ class TorusServiceProvider extends ServiceProviderBase {
       if (!obj.metadata.upgraded) {
         const { finalKeyData, oAuthKeyData } = obj;
         const privKey = finalKeyData.privKey || oAuthKeyData.privKey;
+
+        // TODO : handle for ed25519 key
         this.migratableKey = new BN(privKey, "hex");
       }
 
@@ -87,6 +104,47 @@ class TorusServiceProvider extends ServiceProviderBase {
       this.postboxKey = new BN(localPrivKey, "hex");
     }
     return obj;
+  }
+
+  // enabling root access will allow developer to call critical function
+  enableRootAccess() {
+    this.root = true;
+  }
+
+  // Critical function
+  // This function will delete sfa key and replaced with postboxkey
+  // only callable after enable root access and will reset the root access at the end of function.
+  async delete1of1Key(enableLogging?: boolean) {
+    try {
+      if (!this.root) {
+        throw new Error("Cannot delete 1of1 key without root flag");
+      }
+      if (!this.metadataUrl) {
+        throw new Error("Please connect first");
+      }
+
+      if (!this.migratableKey) {
+        this.root = false;
+        return;
+      }
+
+      // setup TorusStorageLayer using the endpoint
+      const storageLayer = new TorusStorageLayer({
+        hostUrl: this.metadataUrl,
+        enableLogging: enableLogging || false,
+      });
+      // await storageLayer.setMetadata({ input: { message: ONE_KEY_DELETE_NONCE }, privKey: this.postboxKey });
+      await storageLayer.setMetadataStream({ input: [{ message: ONE_KEY_DELETE_NONCE }], privKey: [this.postboxKey] });
+
+      // set migratableKey to null after successful delete nonce
+      this.migratableKey = null;
+    } finally {
+      this.root = false;
+    }
+  }
+
+  getKeyType(): KeyType {
+    return KeyType[this.customAuthArgs.keyType];
   }
 
   toJSON(): StringifiedType {
