@@ -1,13 +1,6 @@
 import { Point } from "@tkey/common-types";
 import { TorusServiceProvider } from "@tkey/service-provider-torus";
-import {
-  AggregateLoginParams,
-  HybridAggregateLoginParams,
-  SubVerifierDetails,
-  TorusAggregateLoginResponse,
-  TorusHybridAggregateLoginResponse,
-  TorusLoginResponse,
-} from "@toruslabs/customauth";
+import { AggregateLoginParams, SubVerifierDetails, TorusAggregateLoginResponse, TorusLoginResponse } from "@toruslabs/customauth";
 import { PointHex } from "@toruslabs/rss-client";
 
 import { getExtendedVerifierId } from "./util";
@@ -81,18 +74,6 @@ export class TSSTorusServiceProvider extends TorusServiceProvider {
 
     if (obj) {
       const { verifier, verifierId } = obj.userInfo[0];
-      this.verifierName = verifier;
-      this.verifierId = verifierId;
-    }
-
-    return obj;
-  }
-
-  async triggerHybridAggregateLogin(params: HybridAggregateLoginParams): Promise<TorusHybridAggregateLoginResponse> {
-    const obj = await super.triggerHybridAggregateLogin(params);
-
-    if (obj) {
-      const { verifier, verifierId } = obj.singleLogin.userInfo;
       this.verifierName = verifier;
       this.verifierId = verifierId;
     }

@@ -4,11 +4,9 @@ import {
   AggregateLoginParams,
   CustomAuth,
   CustomAuthArgs,
-  HybridAggregateLoginParams,
   InitParams,
   SubVerifierDetails,
   TorusAggregateLoginResponse,
-  TorusHybridAggregateLoginResponse,
   TorusLoginResponse,
 } from "@toruslabs/customauth";
 import { Torus, TorusKey } from "@toruslabs/torus.js";
@@ -88,24 +86,6 @@ class TorusServiceProvider extends ServiceProviderBase {
 
       this.postboxKey = new BN(localPrivKey, "hex");
     }
-    return obj;
-  }
-
-  /**
-   * Trigger login flow. Returns `null` in redirect mode.
-   */
-  async triggerHybridAggregateLogin(params: HybridAggregateLoginParams): Promise<TorusHybridAggregateLoginResponse> {
-    const obj = await this.customAuthInstance.triggerHybridAggregateLogin(params);
-    this.torusKey = null; // Since there are multiple keys, we don't set the torusKey here.
-
-    // `obj` maybe `null` in redirect mode.
-    if (obj) {
-      const aggregateLoginKey = Torus.getPostboxKey(obj.aggregateLogins[0]);
-      const singleLoginKey = Torus.getPostboxKey(obj.singleLogin);
-      this.postboxKey = new BN(aggregateLoginKey, "hex");
-      this.singleLoginKey = new BN(singleLoginKey, "hex");
-    }
-
     return obj;
   }
 
