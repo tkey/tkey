@@ -563,5 +563,92 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
         await rejects(tb.getTSSShare(newFactorKeyNewIndex));
       });
     });
+
+    describe(`TSS serialization and deserialization tests, manualSync=${manualSync}`, function () {
+      let tb: TKeyTSS;
+      let factorKey: BN;
+      let signatures: string[];
+
+      const deviceTSSIndex = 2;
+      const newTSSIndex = 3;
+
+      const sp = torusSP;
+
+      before("setup", async function () {
+        sp.verifierName = "torus-test-health";
+        sp.verifierId = `test192${TSS_KEY_TYPE}@example.com`;
+        const { signatures: authSignatures, postboxkey } = await fetchPostboxKeyAndSigs({
+          serviceProvider: sp,
+          verifierName: sp.verifierName,
+          verifierId: sp.verifierId,
+        });
+        signatures = authSignatures;
+        // eslint-disable-next-line require-atomic-updates
+        sp.postboxKey = postboxkey;
+
+        await assignTssDkgKeys({
+          serviceProvider: sp,
+          verifierName: sp.verifierName,
+          verifierId: sp.verifierId,
+          maxTSSNonceToSimulate: 4,
+        });
+
+        tb = new ThresholdKey({ serviceProvider: sp, storageLayer: torusSL, manualSync, tssKeyType: TSS_KEY_TYPE });
+
+        // factor key needs to passed from outside of tKey
+        const factorKeyPair = ecFactor.genKeyPair();
+        factorKey = factorKeyPair.getPrivate();
+        const factorPub = Point.fromElliptic(factorKeyPair.getPublic());
+        const deviceTSSShare = ecTSS.genKeyPair().getPrivate();
+        await tb.initialize({ factorPub, deviceTSSShare, deviceTSSIndex });
+        const reconstructedKey = await tb.reconstructKey();
+        await tb.syncLocalMetadataTransitions();
+
+        if (tb.secp256k1Key.cmp(reconstructedKey.secp256k1Key) !== 0) {
+          fail("key should be able to be reconstructed");
+        }
+      });
+
+      it("should be able to serialize and deserialize", async function () {
+        const serialized = JSON.stringify(tb);
+
+        const tbJson = await ThresholdKey.fromJSON(JSON.parse(serialized), {
+          serviceProvider: sp,
+          storageLayer: torusSL,
+          manualSync,
+          tssKeyType: TSS_KEY_TYPE,
+        });
+        // reconstruct metdata key
+        await tbJson.reconstructKey();
+
+        // try refresh share
+        await tbJson.getTSSShare(factorKey);
+
+        const newFactorKeyPair = ecFactor.genKeyPair();
+        await tbJson.addFactorPub({
+          authSignatures: signatures,
+          existingFactorKey: factorKey,
+          newFactorPub: Point.fromElliptic(newFactorKeyPair.getPublic()),
+          newTSSIndex,
+          refreshShares: true,
+        });
+
+        await tbJson.getTSSShare(newFactorKeyPair.getPrivate());
+
+        const serialized2 = JSON.stringify(tbJson);
+
+        const tbJson2 = await ThresholdKey.fromJSON(JSON.parse(serialized2), {
+          serviceProvider: sp,
+          storageLayer: torusSL,
+          manualSync,
+          tssKeyType: TSS_KEY_TYPE,
+        });
+
+        await tbJson2.reconstructKey();
+
+        await tbJson2.getTSSShare(factorKey);
+        await tbJson2.getTSSShare(newFactorKeyPair.getPrivate());
+      });
+    });
   });
 });

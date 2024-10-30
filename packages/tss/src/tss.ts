@@ -125,8 +125,8 @@ export class TKeyTSS extends TKey {
     return tbTss;
   }
 
-  async toJSON(): Promise<StringifiedType> {
-    const tbJson = await super.toJSON();
+  toJSON(): StringifiedType {
+    const tbJson = super.toJSON();
     tbJson.tssTag = this.tssTag;
     tbJson.tssKeyType = this.tssKeyType;
     tbJson.accountSalt = this._accountSalt;
@@ -688,6 +688,7 @@ export class TKeyTSS extends TKey {
     selectedServers?: number[];
     authSignatures: string[];
     refreshShares?: boolean;
+    updateMetadata?: boolean;
   }) {
     if (!this.metadata) throw CoreError.metadataUndefined("metadata is undefined");
     if (!this.secp256k1Key) throw new Error("Tkey is not reconstructed");
@@ -738,20 +739,29 @@ export class TKeyTSS extends TKey {
       const existingTSSIndexes = existingFactorPubs.map((fb) => this.getFactorEncs(fb).tssIndex);
       const updatedTSSIndexes = existingTSSIndexes.concat([newTSSIndex]);
 
-      await this._refreshTSSShares(false, tssShare, tssIndex, updatedFactorPubs, updatedTSSIndexes, verifierId, {
+      // sync metadata by default
+      // create a localMetadataTransition if manual sync
+      const updateMetadata = args.updateMetadata !== undefined ? args.updateMetadata : true;
+
+      await this._refreshTSSShares(updateMetadata, tssShare, tssIndex, updatedFactorPubs, updatedTSSIndexes, verifierId, {
         ...rssNodeDetails,
         selectedServers: finalServer,
         authSignatures,
       });
     }
-    await this._syncShareMetadata();
   }
 
   /**
    * Removes a factor key from the set of authorized keys and refreshes the TSS
    * key shares.
    */
-  public async deleteFactorPub(args: { factorKey: BN; deleteFactorPub: Point; selectedServers?: number[]; authSignatures: string[] }): Promise<void> {
+  public async deleteFactorPub(args: {
+    factorKey: BN;
+    deleteFactorPub: Point;
+    selectedServers?: number[];
+    authSignatures: string[];
+    updateMetadata?: boolean;
+  }): Promise<void> {
     if (!this.metadata) throw CoreError.metadataUndefined("metadata is undefined");
     if (!this.secp256k1Key) throw new Error("Tkey is not reconstructed");
     if (!this.metadata.tssPolyCommits[this.tssTag]) throw new Error(`tss key has not been initialized for tssTag ${this.tssTag}`);
@@ -773,12 +783,21 @@ export class TKeyTSS extends TKey {
     const finalServer = selectedServers || randomSelectedServers;
     const updatedTSSIndexes = updatedFactorPubs.map((fb) => this.getFactorEncs(fb).tssIndex);
 
-    await this._refreshTSSShares(false, tssShare, tssIndex, updatedFactorPubs, updatedTSSIndexes, this.serviceProvider.getVerifierNameVerifierId(), {
-      ...rssNodeDetails,
-      selectedServers: finalServer,
-      authSignatures,
-    });
-    await this._syncShareMetadata();
+    const updateMetadata = args.updateMetadata !== undefined ? args.updateMetadata : true;
+
+    await this._refreshTSSShares(
+      updateMetadata,
+      tssShare,
+      tssIndex,
+      updatedFactorPubs,
+      updatedTSSIndexes,
+      this.serviceProvider.getVerifierNameVerifierId(),
+      {
+        ...rssNodeDetails,
+        selectedServers: finalServer,
+        authSignatures,
+      }
+    );
   }
 
   /**
