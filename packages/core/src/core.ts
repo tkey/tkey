@@ -236,6 +236,9 @@ class ThresholdKey implements ITKey {
           }
         }
       }
+
+      // initialize module as in initialize
+      tb.initializeModules();
     }
 
     // if metadata is undefined, it mean that the tkey instance is not initialized previously
