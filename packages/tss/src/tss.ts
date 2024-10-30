@@ -9,6 +9,7 @@ import {
   Point,
   ReconstructedKeyResult,
   secp256k1,
+  StringifiedType,
   TKeyArgs,
   TKeyInitArgs,
 } from "@tkey/common-types";
@@ -98,6 +99,38 @@ export class TKeyTSS extends TKey {
       throw CoreError.default(`tssKeyType mismatch: ${this.metadata.tssKeyTypes[this.tssTag]} !== ${this.tssKeyType}`);
     }
     this._tssTag = tag;
+  }
+
+  static async fromJSON(value: StringifiedType, args: TSSTKeyArgs): Promise<TKeyTSS> {
+    const tbTss = new TKeyTSS(args);
+    const tb = await super.fromJSON(value, args);
+
+    const { tssTag, tssKeyType, accountSalt } = value;
+
+    if (tssTag !== tbTss.tssTag) {
+      throw CoreError.default(`tssTag mismatch: ${tssTag} !== ${tbTss.tssTag}`);
+    }
+
+    if (tssKeyType !== tbTss.tssKeyType) {
+      throw CoreError.default(`tssKeyType mismatch: ${tssKeyType} !== ${tbTss.tssKeyType}`);
+    }
+
+    tbTss._accountSalt = accountSalt;
+
+    tbTss.shares = tb.shares;
+    tbTss.metadata = tb.metadata;
+    tbTss.lastFetchedCloudMetadata = tb.lastFetchedCloudMetadata;
+    tbTss._localMetadataTransitions = tb._localMetadataTransitions;
+
+    return tbTss;
+  }
+
+  async toJSON(): Promise<StringifiedType> {
+    const tbJson = await super.toJSON();
+    tbJson.tssTag = this.tssTag;
+    tbJson.tssKeyType = this.tssKeyType;
+    tbJson.accountSalt = this._accountSalt;
+    return tbJson;
   }
 
   /**

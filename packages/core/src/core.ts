@@ -194,6 +194,8 @@ class ThresholdKey implements ITKey {
       }
     });
 
+    if (!metadata) throw CoreError.metadataUndefined();
+
     if (metadata || lastFetchedCloudMetadata) {
       let tempMetadata: Metadata;
       let tempCloud: Metadata;
@@ -209,16 +211,41 @@ class ThresholdKey implements ITKey {
           shareToUseForSerialization = shares[latestPolyIDOnCloud][randomIndex];
         }
       }
+
       if (metadata) tempMetadata = Metadata.fromJSON(metadata);
       if (lastFetchedCloudMetadata) tempCloud = Metadata.fromJSON(lastFetchedCloudMetadata);
-      await tb.initialize({
-        neverInitializeNewKey: true,
-        transitionMetadata: tempMetadata,
-        previouslyFetchedCloudMetadata: tempCloud,
-        previousLocalMetadataTransitions: [localTransitionShares, localTransitionData],
-        withShare: shareToUseForSerialization,
-      });
+      // check if cloud metadata is updated before
+
+      tb.metadata = tempMetadata;
+      tb.lastFetchedCloudMetadata = tempCloud;
+      tb._localMetadataTransitions = [localTransitionShares, localTransitionData];
+
+      const socialShareStore = shareToUseForSerialization || tb.outputShareStore(new BN(1));
+
+      if (tempCloud) {
+        const result = await tb.catchupToLatestShare({ shareStore: socialShareStore }).catch((_err) => {
+          return undefined;
+        });
+        if (result) {
+          // expecting nonce to be same for latest share nonce and lastfetchedcloudMetadata nonce
+          if (result.shareMetadata.nonce > tb.lastFetchedCloudMetadata.nonce) {
+            throw CoreError.fromCode(1104);
+          } else if (result.shareMetadata.nonce < tb.lastFetchedCloudMetadata.nonce) {
+            throw CoreError.fromCode(1105);
+          }
+        }
+      }
+
+      // await tb.reconstructKey();
+      // await tb.initialize({
+      //   neverInitializeNewKey: true,
+      //   transitionMetadata: tempMetadata,
+      //   previouslyFetchedCloudMetadata: tempCloud,
+      //   previousLocalMetadataTransitions: [localTransitionShares, localTransitionData],
+      //   withShare: shareToUseForSerialization,
+      // });
     } else {
+      // should not initialize as metadata is undefined
       await tb.initialize({ neverInitializeNewKey: true });
     }
     return tb;
