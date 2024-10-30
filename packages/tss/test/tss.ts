@@ -611,9 +611,14 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
 
       it("should be able to serialize and deserialize", async function () {
         const serialized = JSON.stringify(tb);
+        const serializedSp = JSON.stringify(tb.serviceProvider);
+        const spJson = TSSTorusServiceProvider.fromJSON(JSON.parse(serializedSp));
+
+        // we are using mocked storage layer for local testing
+        // const slJson = TorusStorageLayer.fromJSON(JSON.parse(serializedTorusSL));
 
         const tbJson = await ThresholdKey.fromJSON(JSON.parse(serialized), {
-          serviceProvider: sp,
+          serviceProvider: spJson,
           storageLayer: torusSL,
           manualSync,
           tssKeyType: TSS_KEY_TYPE,
