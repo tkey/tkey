@@ -115,12 +115,17 @@ export class TKeyTSS extends TKey {
       throw CoreError.default(`tssKeyType mismatch: ${tssKeyType} !== ${tbTss.tssKeyType}`);
     }
 
-    tbTss._accountSalt = accountSalt;
-
+    // copy over tkey to tkeyTss
     tbTss.shares = tb.shares;
     tbTss.metadata = tb.metadata;
     tbTss.lastFetchedCloudMetadata = tb.lastFetchedCloudMetadata;
     tbTss._localMetadataTransitions = tb._localMetadataTransitions;
+
+    // this will be computed during reconstruct tkey
+    // should we restore here?
+    tbTss._accountSalt = accountSalt;
+    tbTss.secp256k1Key = tb.secp256k1Key;
+    tbTss.ed25519Key = tb.ed25519Key;
 
     return tbTss;
   }

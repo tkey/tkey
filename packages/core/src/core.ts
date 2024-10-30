@@ -129,16 +129,26 @@ class ThresholdKey implements ITKey {
     return null;
   }
 
-  private set secp256k1Key(privKey: BN) {
+  protected set secp256k1Key(privKey: BN) {
     this.privKey = privKey;
   }
 
-  private set ed25519Key(seed: Buffer) {
+  protected set ed25519Key(seed: Buffer) {
     this._ed25519Seed = seed;
   }
 
   static async fromJSON(value: StringifiedType, args: TKeyArgs): Promise<ThresholdKey> {
-    const { enableLogging, privKey, metadata, shares, _localMetadataTransitions, manualSync, lastFetchedCloudMetadata, serverTimeOffset } = value;
+    const {
+      enableLogging,
+      privKey,
+      ed25519Key,
+      metadata,
+      shares,
+      _localMetadataTransitions,
+      manualSync,
+      lastFetchedCloudMetadata,
+      serverTimeOffset,
+    } = value;
     const { storageLayer, serviceProvider, modules } = args;
 
     const tb = new ThresholdKey({
@@ -150,7 +160,10 @@ class ThresholdKey implements ITKey {
       serverTimeOffset,
     });
 
+    // this will computed during reconstructKey should we restore here?
     if (privKey) tb.privKey = new BN(privKey, "hex");
+    if (ed25519Key) tb.ed25519Key = Buffer.from(ed25519Key, "hex");
+
     tb.shares = shares;
 
     // switch to deserialize local metadata transition based on Object.keys() of authMetadata, ShareStore's and, IMessageMetadata
@@ -1158,6 +1171,7 @@ class ThresholdKey implements ITKey {
       shares: this.shares,
       enableLogging: this.enableLogging,
       privKey: this.privKey ? this.privKey.toString("hex") : undefined,
+      ed25519Key: this.ed25519Key ? this.ed25519Key.toString("hex") : undefined,
       metadata: this.metadata,
       lastFetchedCloudMetadata: this.lastFetchedCloudMetadata,
       _localMetadataTransitions: this._localMetadataTransitions,
