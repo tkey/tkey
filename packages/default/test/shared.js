@@ -544,7 +544,7 @@ export const sharedTestCases = (mode, torusSP, storageLayer) => {
 
       const customSP3 = getServiceProvider({ type: torusSP.serviceProviderName, isEmptyProvider: true });
       customSL2.serviceProvider = customSP3;
-      const tb2 = new ThresholdKey({ serviceProvider: customSP2, storageLayer: customSL2, manualSync: mode });
+      const tb2 = new ThresholdKey({ serviceProvider: customSP3, storageLayer: customSL2, manualSync: mode });
       await tb2.initialize({ withShare: resp1.deviceShare });
       await tb2.inputShareStoreSafe(newShareStores1[newShareIndex1.toString("hex")]);
       await tb2.reconstructKey();
