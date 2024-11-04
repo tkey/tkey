@@ -1,5 +1,7 @@
+import { bytesToHex } from "@noble/curves/abstract/utils";
+
 import { ISerializable, PolynomialID, StringifiedType } from "../baseTypes/commonTypes";
-import Point from "./Point";
+import Point, { curveType } from "./Point";
 
 class PublicPolynomial implements ISerializable {
   polynomialCommitments: Point[];
@@ -22,7 +24,7 @@ class PublicPolynomial implements ISerializable {
   getPolynomialID(): PolynomialID {
     let idSeed = "";
     for (let i = 0; i < this.polynomialCommitments.length; i += 1) {
-      let nextChunk = this.polynomialCommitments[i].encode("elliptic-compressed").toString();
+      let nextChunk = bytesToHex(this.polynomialCommitments[i].toSEC1(curveType.secp256k1, true));
       if (i !== 0) {
         nextChunk = `|${nextChunk}`;
       }
