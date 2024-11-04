@@ -1,4 +1,4 @@
-import { Point } from "@tkey/common-types";
+import { Point, StringifiedType } from "@tkey/common-types";
 import { TorusServiceProvider } from "@tkey/service-provider-torus";
 import { AggregateLoginParams, SubVerifierDetails, TorusAggregateLoginResponse, TorusLoginResponse } from "@toruslabs/customauth";
 import { PointHex } from "@toruslabs/rss-client";
@@ -9,6 +9,30 @@ export class TSSTorusServiceProvider extends TorusServiceProvider {
   verifierName?: string;
 
   verifierId?: string;
+
+  static fromJSON(value: StringifiedType): TSSTorusServiceProvider {
+    const { enableLogging, postboxKey, customAuthArgs, verifierName, verifierId } = value;
+    const serviceProvider = new TSSTorusServiceProvider({
+      enableLogging,
+      postboxKey,
+      customAuthArgs,
+    });
+
+    serviceProvider.verifierId = verifierId;
+    serviceProvider.verifierName = verifierName;
+
+    return serviceProvider;
+  }
+
+  toJSON(): StringifiedType {
+    return {
+      enableLogging: this.enableLogging,
+      postboxKey: this.postboxKey,
+      customAuthArgs: this.customAuthArgs,
+      verifierName: this.verifierName,
+      verifierId: this.verifierId,
+    };
+  }
 
   async getRSSNodeDetails(): Promise<{ serverEndpoints: string[]; serverPubKeys: PointHex[]; serverThreshold: number }> {
     if (!this.verifierId) throw new Error("no verifierId, not logged in");

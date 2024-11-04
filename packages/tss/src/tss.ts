@@ -9,6 +9,7 @@ import {
   Point,
   ReconstructedKeyResult,
   secp256k1,
+  StringifiedType,
   TKeyArgs,
   TKeyInitArgs,
 } from "@tkey/common-types";
@@ -98,6 +99,43 @@ export class TKeyTSS extends TKey {
       throw CoreError.default(`tssKeyType mismatch: ${this.metadata.tssKeyTypes[this.tssTag]} !== ${this.tssKeyType}`);
     }
     this._tssTag = tag;
+  }
+
+  static async fromJSON(value: StringifiedType, args: TSSTKeyArgs): Promise<TKeyTSS> {
+    const tbTss = new TKeyTSS(args);
+    const tb = await super.fromJSON(value, args);
+
+    const { tssTag, tssKeyType, accountSalt } = value;
+
+    if (tssTag !== tbTss.tssTag) {
+      throw CoreError.default(`tssTag mismatch: ${tssTag} !== ${tbTss.tssTag}`);
+    }
+
+    if (tssKeyType !== tbTss.tssKeyType) {
+      throw CoreError.default(`tssKeyType mismatch: ${tssKeyType} !== ${tbTss.tssKeyType}`);
+    }
+
+    // copy over tkey to tkeyTss
+    tbTss.shares = tb.shares;
+    tbTss.metadata = tb.metadata;
+    tbTss.lastFetchedCloudMetadata = tb.lastFetchedCloudMetadata;
+    tbTss._localMetadataTransitions = tb._localMetadataTransitions;
+
+    // this will be computed during reconstruct tkey
+    // should we restore here?
+    tbTss._accountSalt = accountSalt;
+    tbTss.secp256k1Key = tb.secp256k1Key;
+    tbTss.ed25519Key = tb.ed25519Key;
+
+    return tbTss;
+  }
+
+  toJSON(): StringifiedType {
+    const tbJson = super.toJSON();
+    tbJson.tssTag = this.tssTag;
+    tbJson.tssKeyType = this.tssKeyType;
+    tbJson.accountSalt = this._accountSalt;
+    return tbJson;
   }
 
   /**
@@ -655,6 +693,7 @@ export class TKeyTSS extends TKey {
     selectedServers?: number[];
     authSignatures: string[];
     refreshShares?: boolean;
+    updateMetadata?: boolean;
   }) {
     if (!this.metadata) throw CoreError.metadataUndefined("metadata is undefined");
     if (!this.secp256k1Key) throw new Error("Tkey is not reconstructed");
@@ -705,20 +744,29 @@ export class TKeyTSS extends TKey {
       const existingTSSIndexes = existingFactorPubs.map((fb) => this.getFactorEncs(fb).tssIndex);
       const updatedTSSIndexes = existingTSSIndexes.concat([newTSSIndex]);
 
-      await this._refreshTSSShares(false, tssShare, tssIndex, updatedFactorPubs, updatedTSSIndexes, verifierId, {
+      // sync metadata by default
+      // create a localMetadataTransition if manual sync
+      const updateMetadata = args.updateMetadata !== undefined ? args.updateMetadata : true;
+
+      await this._refreshTSSShares(updateMetadata, tssShare, tssIndex, updatedFactorPubs, updatedTSSIndexes, verifierId, {
         ...rssNodeDetails,
         selectedServers: finalServer,
         authSignatures,
       });
     }
-    await this._syncShareMetadata();
   }
 
   /**
    * Removes a factor key from the set of authorized keys and refreshes the TSS
    * key shares.
    */
-  public async deleteFactorPub(args: { factorKey: BN; deleteFactorPub: Point; selectedServers?: number[]; authSignatures: string[] }): Promise<void> {
+  public async deleteFactorPub(args: {
+    factorKey: BN;
+    deleteFactorPub: Point;
+    selectedServers?: number[];
+    authSignatures: string[];
+    updateMetadata?: boolean;
+  }): Promise<void> {
     if (!this.metadata) throw CoreError.metadataUndefined("metadata is undefined");
     if (!this.secp256k1Key) throw new Error("Tkey is not reconstructed");
     if (!this.metadata.tssPolyCommits[this.tssTag]) throw new Error(`tss key has not been initialized for tssTag ${this.tssTag}`);
@@ -740,12 +788,21 @@ export class TKeyTSS extends TKey {
     const finalServer = selectedServers || randomSelectedServers;
     const updatedTSSIndexes = updatedFactorPubs.map((fb) => this.getFactorEncs(fb).tssIndex);
 
-    await this._refreshTSSShares(false, tssShare, tssIndex, updatedFactorPubs, updatedTSSIndexes, this.serviceProvider.getVerifierNameVerifierId(), {
-      ...rssNodeDetails,
-      selectedServers: finalServer,
-      authSignatures,
-    });
-    await this._syncShareMetadata();
+    const updateMetadata = args.updateMetadata !== undefined ? args.updateMetadata : true;
+
+    await this._refreshTSSShares(
+      updateMetadata,
+      tssShare,
+      tssIndex,
+      updatedFactorPubs,
+      updatedTSSIndexes,
+      this.serviceProvider.getVerifierNameVerifierId(),
+      {
+        ...rssNodeDetails,
+        selectedServers: finalServer,
+        authSignatures,
+      }
+    );
   }
 
   /**
