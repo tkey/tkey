@@ -576,7 +576,7 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
 
       before("setup", async function () {
         sp.verifierName = "torus-test-health";
-        sp.verifierId = `test192${TSS_KEY_TYPE}@example.com`;
+        sp.verifierId = `test193${TSS_KEY_TYPE}@example.com`;
         const { signatures: authSignatures, postboxkey } = await fetchPostboxKeyAndSigs({
           serviceProvider: sp,
           verifierName: sp.verifierName,
