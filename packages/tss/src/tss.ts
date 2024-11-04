@@ -13,6 +13,7 @@ import {
   TKeyInitArgs,
 } from "@tkey/common-types";
 import { CoreError, TKey } from "@tkey/core";
+import { post } from "@toruslabs/http-helpers";
 import { dotProduct, ecPoint, hexPoint, PointHex, randomSelection, RSSClient } from "@toruslabs/rss-client";
 import { getEd25519ExtendedPublicKey as getEd25519KeyPairFromSeed, getSecpKeyFromEd25519 } from "@toruslabs/torus.js";
 import BN from "bn.js";
@@ -20,7 +21,7 @@ import { ec as EC } from "elliptic";
 import { keccak256 } from "ethereum-cryptography/keccak";
 
 import { TSSTorusServiceProvider } from ".";
-import { FactorEnc, IAccountSaltStore, InitializeNewTSSKeyResult } from "./common";
+import { FactorEnc, IAccountSaltStore, InitializeNewTSSKeyResult, IRemoteClientState, RefreshRemoteTssReturnType } from "./common";
 import {
   generateSalt,
   getEd25519SeedStoreDomainKey,
@@ -497,6 +498,147 @@ export class TKeyTSS extends TKey {
 
     const seed = await decrypt(decKey.toArrayLike(Buffer, "be", 32), result.message);
     return seed;
+  }
+
+  // remote signer function
+
+  /**
+   * Refreshes TSS shares. Allows to change number of shares. New user shares are
+   * only produced for the target indices.
+   * @param factorPubs - Factor pub keys after refresh.
+   * @param tssIndices - Target tss indices to generate new shares for.
+   * @param remoteFactorPub - Factor Pub for remote share.
+   * @param signatures - Signatures for authentication against RSS servers.
+   */
+  async remoteRefreshTssShares(params: { factorPubs: Point[]; tssIndices: number[]; remoteClient: IRemoteClientState }) {
+    const { factorPubs, tssIndices, remoteClient } = params;
+    const rssNodeDetails = await this._getRssNodeDetails();
+    const { serverEndpoints, serverPubKeys, serverThreshold } = rssNodeDetails;
+    let finalSelectedServers = randomSelection(
+      new Array(rssNodeDetails.serverEndpoints.length).fill(null).map((_, i) => i + 1),
+      Math.ceil(rssNodeDetails.serverEndpoints.length / 2)
+    );
+
+    const verifierNameVerifierId = this.serviceProvider.getVerifierNameVerifierId();
+
+    const tssCommits = this.metadata.tssPolyCommits[this.tssTag];
+    const tssNonce: number = this.metadata.tssNonces[this.tssTag] || 0;
+    const { pubKey: newTSSServerPub, nodeIndexes } = await this.serviceProvider.getTSSPubKey(this.tssTag, tssNonce + 1);
+    // move to pre-refresh
+    if (nodeIndexes?.length > 0) {
+      finalSelectedServers = nodeIndexes.slice(0, Math.min(serverEndpoints.length, nodeIndexes.length));
+    }
+
+    const factorEnc = this.getFactorEncs(Point.fromSEC1(secp256k1, remoteClient.remoteFactorPub));
+
+    const dataRequired = {
+      factorEnc,
+      factorPubs: factorPubs.map((pub) => pub.toJSON()),
+      targetIndexes: tssIndices,
+      verifierNameVerifierId,
+      tssTag: this.tssTag,
+      tssCommits: tssCommits.map((commit) => commit.toJSON()),
+      tssNonce,
+      newTSSServerPub: newTSSServerPub.toJSON(),
+      serverOpts: {
+        selectedServers: finalSelectedServers,
+        serverEndpoints,
+        serverPubKeys,
+        serverThreshold,
+        authSignatures: remoteClient.signatures,
+      },
+    };
+
+    const result = (
+      await post<{ data: RefreshRemoteTssReturnType }>(
+        `${remoteClient.remoteClientUrl}/api/v3/mpc/refresh_tss`,
+        { dataRequired },
+        {
+          headers: {
+            Authorization: `Bearer ${remoteClient.remoteClientToken}`,
+          },
+        }
+      )
+    ).data;
+
+    this.metadata.updateTSSData({
+      tssTag: result.tssTag,
+      tssNonce: result.tssNonce,
+      tssPolyCommits: result.tssPolyCommits.map((commit) => Point.fromJSON(commit)),
+      factorPubs: result.factorPubs.map((pub) => Point.fromJSON(pub)),
+      factorEncs: result.factorEncs,
+    });
+  }
+
+  async remoteAddFactorPub(params: { newFactorPub: Point; newFactorTSSIndex: number; remoteClient: IRemoteClientState }) {
+    const { newFactorPub, newFactorTSSIndex, remoteClient } = params;
+    const existingFactorPubs = this.metadata.factorPubs[this.tssTag];
+    const updatedFactorPubs = existingFactorPubs.concat([newFactorPub]);
+    const existingTSSIndexes = existingFactorPubs.map((fb) => this.getFactorEncs(fb).tssIndex);
+    const updatedTSSIndexes = existingTSSIndexes.concat([newFactorTSSIndex]);
+
+    await this.remoteRefreshTssShares({
+      factorPubs: updatedFactorPubs,
+      tssIndices: updatedTSSIndexes,
+      remoteClient,
+    });
+  }
+
+  async remoteDeleteFactorPub(params: { factorPubToDelete: Point; remoteClient: IRemoteClientState }) {
+    const { factorPubToDelete, remoteClient } = params;
+    const existingFactorPubs = this.metadata.factorPubs[this.tssTag];
+    const factorIndex = existingFactorPubs.findIndex((p) => p.x.eq(factorPubToDelete.x));
+    if (factorIndex === -1) {
+      throw new Error(`factorPub ${factorPubToDelete} does not exist`);
+    }
+    const updatedFactorPubs = existingFactorPubs.slice();
+    updatedFactorPubs.splice(factorIndex, 1);
+    const updatedTSSIndexes = updatedFactorPubs.map((fb) => this.getFactorEncs(fb).tssIndex);
+
+    await this.remoteRefreshTssShares({
+      factorPubs: updatedFactorPubs,
+      tssIndices: updatedTSSIndexes,
+      remoteClient,
+    });
+  }
+
+  async remoteCopyFactorPub(params: { newFactorPub: Point; tssIndex: number; remoteClient: IRemoteClientState }) {
+    const { newFactorPub, tssIndex, remoteClient } = params;
+    const remoteFactorPub = Point.fromSEC1(secp256k1, remoteClient.remoteFactorPub);
+    const factorEnc = this.getFactorEncs(remoteFactorPub);
+    const tssCommits = this.getTSSCommits();
+    const dataRequired = {
+      factorEnc,
+      tssCommits,
+      factorPub: newFactorPub,
+    };
+
+    const result = (
+      await post<{ data?: EncryptedMessage }>(
+        `${remoteClient.remoteClientUrl}/api/v3/mpc/copy_tss_share`,
+        { dataRequired },
+        {
+          headers: {
+            Authorization: `Bearer ${remoteClient.remoteClientToken}`,
+          },
+        }
+      )
+    ).data;
+
+    const updatedFactorPubs = this.metadata.factorPubs[this.tssTag].concat([newFactorPub]);
+    const factorEncs: { [key: string]: FactorEnc } = JSON.parse(JSON.stringify(this.metadata.factorEncs[this.tssTag]));
+    const factorPubID = newFactorPub.x.toString(16, 64);
+    factorEncs[factorPubID] = {
+      tssIndex,
+      type: "direct",
+      userEnc: result,
+      serverEncs: [],
+    };
+    this.metadata.updateTSSData({
+      tssTag: this.tssTag,
+      factorPubs: updatedFactorPubs,
+      factorEncs,
+    });
   }
 
   /**
