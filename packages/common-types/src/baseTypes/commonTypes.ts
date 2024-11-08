@@ -1,9 +1,10 @@
 import type { CustomAuthArgs } from "@toruslabs/customauth";
-import BN from "bn.js";
-import { curve, ec as EC } from "elliptic";
 
-export type EllipticPoint = curve.base.BasePoint;
-export type EllipticCurve = EC;
+import Point from "../base/Point";
+import { HexString } from "../utils";
+
+// export type EllipticPoint = curve.base.BasePoint;
+// export type EllipticCurve = EC;
 
 export type PubKeyType = "ecc";
 
@@ -11,8 +12,6 @@ export type PubKeyType = "ecc";
 export type PolynomialID = string;
 
 export type PolyIDAndShares = [PolynomialID, string[]];
-
-export type BNString = string | BN;
 
 export interface EncryptedMessage {
   ciphertext: string;
@@ -38,25 +37,24 @@ export interface ISerializable {
 }
 
 export interface IPoint extends ISerializable {
-  x: BN | null;
-  y: BN | null;
-  encode(enc: string, params?: unknown): Buffer;
+  x: bigint | null;
+  y: bigint | null;
 }
 
 export interface IServiceProvider extends ISerializable {
   enableLogging: boolean;
 
-  postboxKey: BN;
+  postboxKey: bigint;
 
   serviceProviderName: string;
 
-  migratableKey?: BN | null;
+  migratableKey?: bigint | null;
 
   encrypt(msg: Buffer): Promise<EncryptedMessage>;
   decrypt(msg: EncryptedMessage): Promise<Buffer>;
   retrievePubKey(type: PubKeyType): Buffer;
-  retrievePubKeyPoint(): EllipticPoint;
-  sign(msg: BNString): string;
+  retrievePubKeyPoint(): Point;
+  sign(msg: HexString): string;
 }
 export type TorusStorageLayerAPIParams = {
   pub_key_X: string;
@@ -69,15 +67,15 @@ export type TorusStorageLayerAPIParams = {
 export interface IStorageLayer extends ISerializable {
   storageLayerName: string;
 
-  getMetadata<T>(params: { serviceProvider?: IServiceProvider; privKey?: BN }): Promise<T>;
+  getMetadata<T>(params: { serviceProvider?: IServiceProvider; privKey?: bigint }): Promise<T>;
 
-  setMetadata<T>(params: { input: T; serviceProvider?: IServiceProvider; privKey?: BN }): Promise<{ message: string }>;
+  setMetadata<T>(params: { input: T; serviceProvider?: IServiceProvider; privKey?: bigint }): Promise<{ message: string }>;
 
-  setMetadataStream<T>(params: { input: T[]; serviceProvider?: IServiceProvider; privKey?: BN[] }): Promise<{ message: string }>;
+  setMetadataStream<T>(params: { input: T[]; serviceProvider?: IServiceProvider; privKey?: bigint[] }): Promise<{ message: string }>;
 
-  acquireWriteLock(params: { serviceProvider?: IServiceProvider; privKey?: BN }): Promise<{ status: number; id?: string }>;
+  acquireWriteLock(params: { serviceProvider?: IServiceProvider; privKey?: bigint }): Promise<{ status: number; id?: string }>;
 
-  releaseWriteLock(params: { id: string; serviceProvider?: IServiceProvider; privKey?: BN }): Promise<{ status: number }>;
+  releaseWriteLock(params: { id: string; serviceProvider?: IServiceProvider; privKey?: bigint }): Promise<{ status: number }>;
 }
 
 export type TorusStorageLayerArgs = {

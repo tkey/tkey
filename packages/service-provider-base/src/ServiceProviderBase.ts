@@ -1,15 +1,12 @@
+import { hexToNumber } from "@noble/curves/abstract/utils";
 import {
-  BNString,
   decrypt as decryptUtils,
   encrypt as encryptUtils,
   EncryptedMessage,
-  getPubKeyECC,
   IServiceProvider,
   PubKeyType,
   ServiceProviderArgs,
   StringifiedType,
-  toPrivKeyEC,
-  toPrivKeyECC,
 } from "@tkey/common-types";
 import BN from "bn.js";
 import { curve } from "elliptic";
@@ -18,15 +15,15 @@ class ServiceProviderBase implements IServiceProvider {
   enableLogging: boolean;
 
   // For easy serialization
-  postboxKey: BN;
+  postboxKey: bigint;
 
   serviceProviderName: string;
 
-  migratableKey: BN | null = null;
+  migratableKey: bigint | null = null;
 
   constructor({ enableLogging = false, postboxKey }: ServiceProviderArgs) {
     this.enableLogging = enableLogging;
-    this.postboxKey = new BN(postboxKey, "hex");
+    this.postboxKey = hexToNumber(postboxKey);
     this.serviceProviderName = "ServiceProviderBase";
   }
 
@@ -35,6 +32,14 @@ class ServiceProviderBase implements IServiceProvider {
     if (serviceProviderName !== "ServiceProviderBase") return undefined;
 
     return new ServiceProviderBase({ enableLogging, postboxKey });
+  }
+
+  toJSON(): StringifiedType {
+    return {
+      enableLogging: this.enableLogging,
+      postboxKey: this.postboxKey.toString("hex"),
+      serviceProviderName: this.serviceProviderName,
+    };
   }
 
   async encrypt(msg: Buffer): Promise<EncryptedMessage> {
@@ -61,14 +66,6 @@ class ServiceProviderBase implements IServiceProvider {
     const tmp = new BN(msg, "hex");
     const sig = toPrivKeyEC(this.postboxKey).sign(tmp.toString("hex"));
     return Buffer.from(sig.r.toString(16, 64) + sig.s.toString(16, 64) + new BN(0).toString(16, 2), "hex").toString("base64");
-  }
-
-  toJSON(): StringifiedType {
-    return {
-      enableLogging: this.enableLogging,
-      postboxKey: this.postboxKey.toString("hex"),
-      serviceProviderName: this.serviceProviderName,
-    };
   }
 }
 

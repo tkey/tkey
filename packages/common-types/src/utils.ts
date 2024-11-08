@@ -1,12 +1,35 @@
+import { bytesToHex, hexToBytes } from "@noble/curves/abstract/utils";
+import { secp256k1 } from "@noble/curves/secp256k1";
 import { serializeError } from "@toruslabs/customauth";
-import { decrypt as ecDecrypt, encrypt as ecEncrypt, generatePrivate } from "@toruslabs/eccrypto";
+import { decrypt as ecDecrypt, encrypt as ecEncrypt } from "@toruslabs/eccrypto";
 import { keccak256, toChecksumAddress } from "@toruslabs/torus.js";
-import BN from "bn.js";
-import { ec as EC } from "elliptic";
 
 import { EncryptedMessage } from "./baseTypes/commonTypes";
 
-export const secp256k1 = new EC("secp256k1");
+export type HexString = `0x${string}`;
+
+export const prefix0x = (value: string): HexString => {
+  if (value.startsWith("0x")) {
+    return value as HexString;
+  }
+  return `0x${value}`;
+};
+
+export const strip0x = (value: string): string => {
+  if (value.startsWith("0x")) {
+    return value.substring(2);
+  }
+  return value;
+};
+
+export const bigIntToHex = (value: bigint): HexString => {
+  return `0x${value.toString(16)}`;
+};
+
+export function bigIntUmod(a: bigint, m: bigint): bigint {
+  // return a % m;
+  return ((a % m) + m) % m;
+}
 
 // Wrappers around ECC encrypt/decrypt to use the hex serialization
 // TODO: refactor to take BN
@@ -14,19 +37,19 @@ export async function encrypt(publicKey: Buffer, msg: Buffer): Promise<Encrypted
   const encryptedDetails = await ecEncrypt(publicKey, msg);
 
   return {
-    ciphertext: encryptedDetails.ciphertext.toString("hex"),
-    ephemPublicKey: encryptedDetails.ephemPublicKey.toString("hex"),
-    iv: encryptedDetails.iv.toString("hex"),
-    mac: encryptedDetails.mac.toString("hex"),
+    ciphertext: bytesToHex(encryptedDetails.ciphertext),
+    ephemPublicKey: bytesToHex(encryptedDetails.ephemPublicKey),
+    iv: bytesToHex(encryptedDetails.iv),
+    mac: bytesToHex(encryptedDetails.mac),
   };
 }
 
-export async function decrypt(privKey: Buffer, msg: EncryptedMessage): Promise<Buffer> {
+export async function decrypt(privKey: Buffer, msg: EncryptedMessage): Promise<Uint8Array> {
   const bufferEncDetails = {
-    ciphertext: Buffer.from(msg.ciphertext, "hex"),
-    ephemPublicKey: Buffer.from(msg.ephemPublicKey, "hex"),
-    iv: Buffer.from(msg.iv, "hex"),
-    mac: Buffer.from(msg.mac, "hex"),
+    ciphertext: hexToBytes(msg.ciphertext),
+    ephemPublicKey: hexToBytes(msg.ephemPublicKey),
+    iv: hexToBytes(msg.iv),
+    mac: hexToBytes(msg.mac),
   };
 
   return ecDecrypt(privKey, bufferEncDetails);
@@ -70,9 +93,9 @@ export function normalize(input: number | string): string {
   return `0x${hexString}`;
 }
 
-export function generatePrivateExcludingIndexes(shareIndexes: Array<BN>): BN {
-  const key = new BN(generatePrivate());
-  if (shareIndexes.find((el) => el.eq(key))) {
+export function generatePrivateExcludingIndexes(shareIndexes: Array<bigint>): bigint {
+  const key = BigInt(prefix0x(bytesToHex(secp256k1.utils.randomPrivateKey())));
+  if (shareIndexes.find((el) => el === key)) {
     return generatePrivateExcludingIndexes(shareIndexes);
   }
   return key;

@@ -1,4 +1,3 @@
-export * from "./BNUtils";
 export * from "./Error";
 export * from "./OneKey";
 export { default as Point } from "./Point";

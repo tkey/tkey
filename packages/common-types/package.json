@@ -22,7 +22,7 @@
     "url": "git+https://github.com/tkey/tkey.git"
   },
   "scripts": {
-    "test": "cross-env MOCKED=true mocha --config ../../.mocharc.json ",
+    "test": "cross-env MOCKED=true node --test -r esbuild-register test/*.ts",
     "coverage": "nyc npm test",
     "coverage-production": "nyc npm run test-production",
     "test-development": "cross-env MOCKED=false METADATA=http://localhost:5051 mocha --config ../../.mocharc.json ",
@@ -43,16 +43,16 @@
     "@babel/runtime": "7.x"
   },
   "dependencies": {
+    "@noble/curves": "^1.6.0",
     "@toruslabs/customauth": "^20.3.0",
-    "@toruslabs/eccrypto": "^5.0.4",
+    "@toruslabs/eccrypto": "^6.0.0-0",
     "@toruslabs/torus.js": "^15.1.0",
-    "bn.js": "^5.2.1",
-    "elliptic": "^6.5.5",
     "ts-custom-error": "^3.3.1"
   },
   "devDependencies": {
     "@types/bn.js": "^5.1.5",
-    "@types/elliptic": "^6.4.18"
+    "@types/elliptic": "^6.4.18",
+    "esbuild-register": "^3.6.0"
   },
   "bugs": {
     "url": "https://github.com/tkey/tkey/issues"
