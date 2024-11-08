@@ -105,6 +105,13 @@ class Point implements IPoint {
     };
   }
 
+  toPointHex() {
+    return {
+      x: this.x.toString("hex").padStart(64, "0"),
+      y: this.y.toString("hex").padStart(64, "0"),
+    };
+  }
+
   isIdentity(): boolean {
     return this.x === null && this.y === null;
   }

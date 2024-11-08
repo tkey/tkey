@@ -22,7 +22,15 @@ import { ec as EC } from "elliptic";
 import { keccak256 } from "ethereum-cryptography/keccak";
 
 import { TSSTorusServiceProvider } from ".";
-import { FactorEnc, IAccountSaltStore, InitializeNewTSSKeyResult, IRemoteClientState, RefreshRemoteTssReturnType } from "./common";
+import {
+  CopyRemoteTssParams,
+  FactorEnc,
+  IAccountSaltStore,
+  InitializeNewTSSKeyResult,
+  IRemoteClientState,
+  RefreshRemoteTssParams,
+  RefreshRemoteTssReturnType,
+} from "./common";
 import {
   generateSalt,
   getEd25519SeedStoreDomainKey,
@@ -569,15 +577,15 @@ export class TKeyTSS extends TKey {
 
     const factorEnc = this.getFactorEncs(Point.fromSEC1(secp256k1, remoteClient.remoteFactorPub));
 
-    const dataRequired = {
+    const dataRequired: RefreshRemoteTssParams = {
       factorEnc,
-      factorPubs: factorPubs.map((pub) => pub.toJSON()),
+      factorPubs: factorPubs.map((pub) => pub.toPointHex()),
       targetIndexes: tssIndices,
       verifierNameVerifierId,
       tssTag: this.tssTag,
-      tssCommits: tssCommits.map((commit) => commit.toJSON()),
+      tssCommits: tssCommits.map((commit) => commit.toPointHex()),
       tssNonce,
-      newTSSServerPub: newTSSServerPub.toJSON(),
+      newTSSServerPub: newTSSServerPub.toPointHex(),
       serverOpts: {
         selectedServers: finalSelectedServers,
         serverEndpoints,
@@ -585,6 +593,7 @@ export class TKeyTSS extends TKey {
         serverThreshold,
         authSignatures: remoteClient.signatures,
       },
+      curve: this.tssKeyType,
     };
 
     const result = (
@@ -644,11 +653,12 @@ export class TKeyTSS extends TKey {
     const { newFactorPub, tssIndex, remoteClient } = params;
     const remoteFactorPub = Point.fromSEC1(secp256k1, remoteClient.remoteFactorPub);
     const factorEnc = this.getFactorEncs(remoteFactorPub);
-    const tssCommits = this.getTSSCommits();
-    const dataRequired = {
+    const tssCommits = this.getTSSCommits().map((commit) => commit.toPointHex());
+    const dataRequired: CopyRemoteTssParams = {
       factorEnc,
       tssCommits,
-      factorPub: newFactorPub,
+      factorPub: newFactorPub.toPointHex(),
+      curve: this.tssKeyType,
     };
 
     const result = (

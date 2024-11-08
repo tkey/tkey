@@ -1,5 +1,6 @@
 import { Point, TkeyStoreItemType } from "@tkey/common-types";
 import { EncryptedMessage, PointHex } from "@toruslabs/rss-client";
+import { KeyType } from "@toruslabs/torus.js";
 import BN from "bn.js";
 
 export type FactorEncType = "direct" | "hierarchical";
@@ -34,18 +35,18 @@ export interface IRemoteClientState {
   signatures: string[];
 }
 
-export interface refreshRemoteTssType {
+export interface RefreshRemoteTssParams {
   // from client
   factorEnc: FactorEnc;
 
-  factorPubs: Point[];
+  factorPubs: PointHex[];
   targetIndexes: number[];
   verifierNameVerifierId: string;
 
   tssTag: string;
-  tssCommits: Point[];
+  tssCommits: PointHex[];
   tssNonce: number;
-  newTSSServerPub: Point;
+  newTSSServerPub: PointHex;
   // nodeIndexes : number[],
 
   serverOpts: {
@@ -55,14 +56,23 @@ export interface refreshRemoteTssType {
     selectedServers: number[];
     authSignatures: string[];
   };
+
+  curve: KeyType;
 }
 
 export interface RefreshRemoteTssReturnType {
   tssTag: string;
   tssNonce: number;
-  tssPolyCommits: Point[];
-  factorPubs: Point[];
+  tssPolyCommits: PointHex[];
+  factorPubs: PointHex[];
   factorEncs: {
     [factorPubID: string]: FactorEnc;
   };
+}
+
+export interface CopyRemoteTssParams {
+  tssCommits: PointHex[];
+  factorPub: PointHex;
+  factorEnc: FactorEnc;
+  curve: KeyType;
 }
