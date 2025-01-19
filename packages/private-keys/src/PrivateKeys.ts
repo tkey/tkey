@@ -22,7 +22,6 @@ class PrivateKeyModule implements IModule {
     this.tbSDK._addReconstructKeyMiddleware(this.moduleName, this.getAccounts.bind(this));
   }
 
-  // eslint-disable-next-line
   async initialize(): Promise<void> {}
 
   async setPrivateKey(privateKeyType: string, privateKey?: BN): Promise<void> {
@@ -49,7 +48,7 @@ class PrivateKeyModule implements IModule {
         acc.push(BN.isBN(x.privateKey) ? x.privateKey : new BN(x.privateKey, "hex"));
         return acc;
       }, []);
-    } catch (err) {
+    } catch {
       return [];
     }
   }

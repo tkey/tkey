@@ -37,7 +37,8 @@ class WebStorageModule implements IModule {
           self.canUseFileStorage = true;
         }
       };
-    } catch (error) {}
+      // eslint-disable-next-line no-empty
+    } catch {}
   }
 
   setModuleReferences(tbSDK: ITKeyApi): void {
@@ -45,7 +46,6 @@ class WebStorageModule implements IModule {
     this.tbSDK._setDeviceStorage(this.storeDeviceShare.bind(this));
   }
 
-  // eslint-disable-next-line
   async initialize(): Promise<void> {}
 
   async storeDeviceShare(deviceShareStore: ShareStore, customDeviceInfo?: StringifiedType): Promise<void> {
