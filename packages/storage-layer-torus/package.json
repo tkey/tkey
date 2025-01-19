@@ -39,15 +39,15 @@
   },
   "dependencies": {
     "@tkey/common-types": "^15.2.1-alpha.0",
-    "@toruslabs/http-helpers": "^7.0.0",
+    "@toruslabs/http-helpers": "^8.0.0",
     "base64url": "3.0.1",
     "bn.js": "^5.2.1",
-    "ethereum-cryptography": "^2.2.1",
-    "json-stable-stringify": "^1.1.1"
+    "ethereum-cryptography": "^3.0.0",
+    "json-stable-stringify": "^1.2.1"
   },
   "devDependencies": {
-    "@types/bn.js": "^5.1.5",
-    "@types/json-stable-stringify": "^1.0.36"
+    "@types/bn.js": "^5.1.6",
+    "@types/json-stable-stringify": "^1.1.0"
   },
   "bugs": {
     "url": "https://github.com/tkey/tkey/issues"

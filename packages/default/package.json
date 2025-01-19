@@ -47,8 +47,8 @@
   "devDependencies": {
     "@tkey/private-keys": "^15.2.1-alpha.0",
     "@tkey/seed-phrase": "^15.2.1-alpha.0",
-    "@toruslabs/eccrypto": "^5.0.4",
-    "@toruslabs/http-helpers": "^7.0.0"
+    "@toruslabs/eccrypto": "^6.0.0",
+    "@toruslabs/http-helpers": "^8.0.0"
   },
   "peerDependencies": {
     "@babel/runtime": "7.x"

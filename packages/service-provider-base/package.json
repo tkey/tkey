@@ -45,10 +45,10 @@
   "dependencies": {
     "@tkey/common-types": "^15.2.1-alpha.0",
     "bn.js": "^5.2.1",
-    "elliptic": "^6.5.5"
+    "elliptic": "^6.6.1"
   },
   "devDependencies": {
-    "@types/bn.js": "^5.1.5",
+    "@types/bn.js": "^5.1.6",
     "@types/elliptic": "^6.4.18"
   },
   "bugs": {
