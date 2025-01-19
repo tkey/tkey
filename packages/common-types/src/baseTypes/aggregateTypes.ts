@@ -27,7 +27,7 @@ import {
 
 export interface IModule {
   moduleName: string;
-  // eslint-disable-next-line no-use-before-define
+
   setModuleReferences(api: ITKeyApi): void;
   // called to initialize a module on the main TBSDK.
   // currenty called immediately after the base metadata has been set on the SDK

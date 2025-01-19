@@ -64,7 +64,6 @@ class SecurityQuestionsModule implements IModule {
     this.tbSDK._addRefreshMiddleware(this.moduleName, SecurityQuestionsModule.refreshSecurityQuestionsMiddleware);
   }
 
-  // eslint-disable-next-line
   async initialize(): Promise<void> {}
 
   async generateNewShareWithSecurityQuestions(answerString: string, questions: string): Promise<GenerateNewShareResult> {
