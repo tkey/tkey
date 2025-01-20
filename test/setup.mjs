@@ -1,7 +1,7 @@
 import Register from "@babel/register";
 import JSDOM from "jsdom-global";
 
-import currentPkg from "../package.json" assert { type: "json" };
+import currentPkg from "../package.json" with { type: "json" };
 
 const runtimeVersion = currentPkg.peerDependencies["@babel/runtime"];
 
