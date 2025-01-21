@@ -27,7 +27,7 @@
     "@toruslabs/customauth": "^20.3.0",
     "@toruslabs/http-helpers": "^7.0.0",
     "@toruslabs/rss-client": "^2.0.1",
-    "@toruslabs/torus.js": "^15.1.0",
+    "@toruslabs/torus.js": "file:../../../torus.js/toruslabs-torus.js-15.1.1.tgz",
     "@types/bn.js": "^5.1.5",
     "bn.js": "^5.2.1",
     "elliptic": "^6.5.5",

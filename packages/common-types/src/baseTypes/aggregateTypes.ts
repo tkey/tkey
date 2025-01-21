@@ -20,6 +20,7 @@ import {
   ISerializable,
   IServiceProvider,
   IStorageLayer,
+  KeyType,
   PolyIDAndShares,
   PolynomialID,
   ShareDescriptionMap,
@@ -62,6 +63,30 @@ export type FactorEnc = {
   serverEncs: EncryptedMessage[];
 };
 
+export interface ITssMetadata {
+  tssKeyTypes: {
+    [tssTag: string]: KeyType;
+  };
+
+  tssNonces: {
+    [tssTag: string]: number;
+  };
+
+  tssPolyCommits: {
+    [tssTag: string]: Point[];
+  };
+
+  factorPubs: {
+    [tssTag: string]: Point[];
+  };
+
+  factorEncs: {
+    [tssTag: string]: {
+      [factorPubID: string]: FactorEnc;
+    };
+  };
+}
+
 export interface IMetadata extends ISerializable {
   pubKey: Point;
 
@@ -84,6 +109,8 @@ export interface IMetadata extends ISerializable {
   };
 
   nonce: number;
+
+  version: number;
 
   getShareIndexesForPolynomial(polyID: PolynomialID): string[];
   getLatestPublicPolynomial(): PublicPolynomial;
@@ -112,6 +139,7 @@ export interface IMetadata extends ISerializable {
       [factorPubID: string]: FactorEnc;
     };
   }): void;
+  getTssData(keyType: KeyType): ITssMetadata;
 }
 
 export type InitializeNewKeyResult = {
