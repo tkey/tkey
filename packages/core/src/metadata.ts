@@ -29,61 +29,52 @@ import stringify from "json-stable-stringify";
 import CoreError from "./errors";
 import { polyCommitmentEval } from "./lagrangeInterpolatePolynomial";
 
+export type SupportedCurve = "ed25519" | "sec";
 const METADATA_VERSION = 1;
 
 export class TssMetadata implements ITssMetadata, ISerializable {
-  tssKeyTypes: {
-    [tssTag: string]: KeyType;
-  };
+  tssTag: string;
 
-  tssNonces: {
-    [tssTag: string]: number;
-  };
+  tssKeyType: KeyType;
 
-  tssPolyCommits: {
-    [tssTag: string]: Point[];
-  };
+  tssNonce: number;
 
-  factorPubs: {
-    [tssTag: string]: Point[];
-  };
+  tssPolyCommits: Point[];
+
+  factorPubs: Point[];
 
   factorEncs: {
-    [tssTag: string]: {
-      [factorPubID: string]: FactorEnc;
-    };
+    [factorPubID: string]: FactorEnc;
   };
 
-  constructor() {
-    this.tssKeyTypes = {};
-    this.tssNonces = {};
-    this.tssPolyCommits = {};
-    this.factorPubs = {};
-    this.factorEncs = {};
+  constructor(params: ITssMetadata) {
+    this.tssTag = params.tssTag;
+    this.tssKeyType = params.tssKeyType;
+    this.tssNonce = params.tssNonce;
+    this.tssPolyCommits = params.tssPolyCommits;
+    this.factorPubs = params.factorPubs;
+    this.factorEncs = params.factorEncs;
   }
 
   static fromJSON(value: StringifiedType): TssMetadata {
-    const { tssKeyTypes, tssPolyCommits, tssNonces, factorPubs, factorEncs } = value;
-    const tssMetadata = new TssMetadata();
+    const { tssTag, tssKeyType, tssPolyCommits, tssNonce, factorPubs, factorEncs } = value;
+    const tssMetadata = new TssMetadata({
+      tssTag,
+      tssKeyType,
+      tssNonce,
+      tssPolyCommits,
+      factorEncs,
+      factorPubs,
+    });
 
-    if (tssKeyTypes) {
-      for (const key in tssKeyTypes) {
-        tssMetadata.tssKeyTypes[key] = tssKeyTypes[key];
-      }
-    }
     if (tssPolyCommits) {
       for (const key in tssPolyCommits) {
-        tssMetadata.tssPolyCommits[key] = (tssPolyCommits as Record<string, Point[]>)[key].map((obj) => new Point(obj.x, obj.y));
-      }
-    }
-    if (tssNonces) {
-      for (const key in tssNonces) {
-        tssMetadata.tssNonces[key] = tssNonces[key];
+        tssMetadata.tssPolyCommits = (tssPolyCommits as Record<string, Point[]>)[key].map((obj) => new Point(obj.x, obj.y));
       }
     }
     if (factorPubs) {
       for (const key in factorPubs) {
-        tssMetadata.factorPubs[key] = (factorPubs as Record<string, Point[]>)[key].map((obj) => new Point(obj.x, obj.y));
+        tssMetadata.factorPubs = (factorPubs as Record<string, Point[]>)[key].map((obj) => new Point(obj.x, obj.y));
       }
     }
     if (factorEncs) tssMetadata.factorEncs = factorEncs;
@@ -93,8 +84,8 @@ export class TssMetadata implements ITssMetadata, ISerializable {
 
   toJSON(): StringifiedType {
     return {
-      tssKeyTypes: this.tssKeyTypes,
-      tssNonces: this.tssNonces,
+      tssKeyTypes: this.tssKeyType,
+      tssNonces: this.tssNonce,
       tssPolyCommits: this.tssPolyCommits,
       factorPubs: this.factorPubs,
       factorEncs: this.factorEncs,
@@ -112,11 +103,12 @@ export class TssMetadata implements ITssMetadata, ISerializable {
     };
   }) {
     const { tssKeyType, tssTag, tssNonce, tssPolyCommits, factorPubs, factorEncs } = tssData;
-    if (tssKeyType) this.tssKeyTypes[tssTag] = tssKeyType;
-    if (tssNonce !== undefined) this.tssNonces[tssTag] = tssNonce;
-    if (tssPolyCommits) this.tssPolyCommits[tssTag] = tssPolyCommits;
-    if (factorPubs) this.factorPubs[tssTag] = factorPubs;
-    if (factorEncs) this.factorEncs[tssTag] = factorEncs;
+    if (tssTag) this.tssTag = tssTag;
+    if (tssKeyType) this.tssKeyType = tssKeyType;
+    if (tssNonce !== undefined) this.tssNonce = tssNonce;
+    if (tssPolyCommits) this.tssPolyCommits = tssPolyCommits;
+    if (factorPubs) this.factorPubs = factorPubs;
+    if (factorEncs) this.factorEncs = factorEncs;
   }
 }
 
@@ -167,8 +159,12 @@ class Metadata implements IMetadata {
   };
 
   tss?: {
-    secp256k1: TssMetadata;
-    ed25519: TssMetadata;
+    [tssTag: string]: {
+      [curveType: string]: TssMetadata;
+    };
+    // [tssTag: string]: Record<"secp256k1"  "ed25519", TssMetadata>;
+    // secp256k1: TssMetadata;
+    // ed25519: TssMetadata;
   };
 
   version = METADATA_VERSION;
@@ -197,13 +193,14 @@ class Metadata implements IMetadata {
       tkeyStore,
       scopedStore,
       nonce,
+      tss,
+      version,
+      // v0 metadata
       tssKeyTypes,
       tssPolyCommits,
       tssNonces,
       factorPubs,
       factorEncs,
-      tss,
-      version,
     } = value;
     const point = Point.fromSEC1(secp256k1, pubKey);
     const metadata = new Metadata(point);
@@ -219,16 +216,19 @@ class Metadata implements IMetadata {
     if (version === 1) {
       metadata.tss = tss;
     } else if (tssKeyTypes) {
-      const tssData = TssMetadata.fromJSON({
-        tssKeyTypes,
-        tssPolyCommits,
-        tssNonces,
-        factorPubs,
-        factorEncs,
+      metadata.tss = {};
+      Object.keys(tssKeyTypes).forEach((tssTag) => {
+        metadata.tss[tssTag] = {
+          [tssKeyTypes[tssTag]]: TssMetadata.fromJSON({
+            tssTag,
+            tssKeyType: tssKeyTypes[tssTag],
+            tssNonce: tssNonces[tssTag],
+            tssPolyCommits: tssPolyCommits[tssTag],
+            factorPubs: factorPubs[tssTag],
+            factorEncs: factorEncs[tssTag],
+          }),
+        };
       });
-      if (tssData.tssKeyTypes.default) {
-        metadata.tss[tssData.tssKeyTypes.default] = tssData;
-      }
     }
 
     for (let i = 0; i < polyIDList.length; i += 1) {
@@ -450,15 +450,27 @@ class Metadata implements IMetadata {
       [factorPubID: string]: FactorEnc;
     };
   }): void {
-    if (tssData.tssKeyType === KeyType.ed25519) this.tss.ed25519.update(tssData);
-    else if (tssData.tssKeyType === KeyType.secp256k1) this.tss.secp256k1.update(tssData);
+    const { tssKeyType, tssTag, tssNonce, tssPolyCommits, factorPubs, factorEncs } = tssData;
+    if (!this.tss) this.tss = {};
+    if (!this.tss[tssData.tssTag]) {
+      if (!tssKeyType) throw Error("Missing tssKeyType");
+      this.tss[tssData.tssTag] = {
+        [tssKeyType]: new TssMetadata({ tssTag, tssKeyType, tssNonce, tssPolyCommits, factorPubs, factorEncs }),
+      };
+    }
+    if (tssData.tssKeyType === KeyType.ed25519) this.tss[tssTag].ed25519.update(tssData);
+    else if (tssData.tssKeyType === KeyType.secp256k1) this.tss[tssTag].secp256k1.update(tssData);
   }
 
-  getTssData(tssKeyType: KeyType): ITssMetadata {
+  getTssData(tssKeyType: KeyType, tssTag: string = "default"): ITssMetadata {
+    // const tssDataList = this.tss?[tssTag];
+    if (!this.tss) throw Error("Missing TssData");
+    if (!this.tss[tssTag]) throw Error("Invalid Tss Tag");
+
     if (tssKeyType === KeyType.secp256k1) {
-      return this.tss?.secp256k1;
+      return this.tss[tssTag].secp256k1;
     } else if (tssKeyType === KeyType.ed25519) {
-      return this.tss?.ed25519;
+      return this.tss[tssTag].ed25519;
     }
   }
 }

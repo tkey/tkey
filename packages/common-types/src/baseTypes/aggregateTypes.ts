@@ -64,26 +64,18 @@ export type FactorEnc = {
 };
 
 export interface ITssMetadata {
-  tssKeyTypes: {
-    [tssTag: string]: KeyType;
-  };
+  tssTag: string;
 
-  tssNonces: {
-    [tssTag: string]: number;
-  };
+  tssKeyType: KeyType;
 
-  tssPolyCommits: {
-    [tssTag: string]: Point[];
-  };
+  tssNonce: number;
 
-  factorPubs: {
-    [tssTag: string]: Point[];
-  };
+  tssPolyCommits: Point[];
+
+  factorPubs: Point[];
 
   factorEncs: {
-    [tssTag: string]: {
-      [factorPubID: string]: FactorEnc;
-    };
+    [factorPubID: string]: FactorEnc;
   };
 }
 
