@@ -36,7 +36,7 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
 
       sp.verifierName = "torus-test-health";
       sp.verifierId = "test@example.com";
-      const { postboxkey } = await fetchPostboxKeyAndSigs({
+      const { postboxkey, signatures } = await fetchPostboxKeyAndSigs({
         serviceProvider: sp,
         verifierName: sp.verifierName,
         verifierId: sp.verifierId,
@@ -56,15 +56,38 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
       const factorKey = factorKeyPair.getPrivate();
       const factorPub = Point.fromElliptic(factorKeyPair.getPublic());
 
-      await tb1.initialize({ factorPub, deviceTSSShare, deviceTSSIndex });
+      await tb1.initialize();
+      if (TSS_KEY_TYPE === KeyType.secp256k1) {
+        tb1.initializeTssSecp256k1({
+          factorPub,
+          deviceTSSShare,
+          deviceTSSIndex,
+          serverOpts: {
+            // selectedServers: [],
+            authSignatures: signatures,
+          },
+        });
+      } else {
+        tb1.initializeTssEd25519({
+          factorPub,
+          deviceTSSShare,
+          deviceTSSIndex,
+          serverOpts: {
+            // selectedServers: [],
+            authSignatures: signatures,
+          },
+          importKey: undefined,
+        });
+      }
+
       const reconstructedKey = await tb1.reconstructKey();
       await tb1.syncLocalMetadataTransitions();
       if (tb1.secp256k1Key.cmp(reconstructedKey.secp256k1Key) !== 0) {
         fail("key should be able to be reconstructed");
       }
-      const { tssShare: tss2 } = await tb1.getTSSShare(factorKey);
+      const { tssShare: tss2 } = await tb1.getTSSShare(factorKey, { keyType: TSS_KEY_TYPE });
 
-      const tssCommits = tb1.getTSSCommits();
+      const tssCommits = tb1.getTSSCommits(TSS_KEY_TYPE);
       const tss2Pub = ecTSS.g.mul(tss2);
       const tssCommitA0 = tssCommits[0].toEllipticPoint(ecTSS);
       const tssCommitA1 = tssCommits[1].toEllipticPoint(ecTSS);
@@ -87,7 +110,7 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
       const tss1 = new BN(serverDKGPrivKeys[0], "hex");
       const deviceTSSShare = ecTSS.genKeyPair().getPrivate();
       const deviceTSSIndex = 2;
-      const { postboxkey } = await fetchPostboxKeyAndSigs({
+      const { postboxkey, signatures } = await fetchPostboxKeyAndSigs({
         serviceProvider: sp,
         verifierName: sp.verifierName,
         verifierId: sp.verifierId,
@@ -101,15 +124,23 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
       const factorKey = factorKeyPair.getPrivate();
       const factorPub = Point.fromElliptic(factorKeyPair.getPublic());
 
-      await tb1.initialize({ factorPub, deviceTSSShare, deviceTSSIndex });
+      await tb1.initialize();
+      await tb1.initializeTssSecp256k1({
+        factorPub,
+        deviceTSSShare,
+        deviceTSSIndex,
+        serverOpts: {
+          authSignatures: signatures,
+        },
+      });
       const reconstructedKey = await tb1.reconstructKey();
       await tb1.syncLocalMetadataTransitions();
       if (tb1.secp256k1Key.cmp(reconstructedKey.secp256k1Key) !== 0) {
         fail("key should be able to be reconstructed");
       }
 
-      const { tssShare: tss2 } = await tb1.getTSSShare(factorKey);
-      const tssCommits = tb1.getTSSCommits();
+      const { tssShare: tss2 } = await tb1.getTSSShare(factorKey, { keyType: TSS_KEY_TYPE });
+      const tssCommits = tb1.getTSSCommits(TSS_KEY_TYPE);
 
       const tssPrivKey = getLagrangeCoeffs(ecTSS, [1, deviceTSSIndex], 1)
         .mul(tss1)
@@ -118,7 +149,7 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
 
       const tssPubKey = (ecTSS.g as EllipticPoint).mul(tssPrivKey);
       const tssCommits0 = tssCommits[0].toEllipticPoint(ecTSS);
-      const tssPub = tb1.getTSSPub().toEllipticPoint(ecTSS);
+      const tssPub = tb1.getTSSPub(TSS_KEY_TYPE).toEllipticPoint(ecTSS);
       equal(tssPubKey.eq(tssCommits0), true);
       equal(tssPub.eq(tssPubKey), true);
 
@@ -130,14 +161,14 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
           const nonce = tb1.computeAccountNonce(accountIndex);
           return share.add(nonce).umod(ecTSS.n);
         })();
-        const { tssShare: tss2Account } = await tb1.getTSSShare(factorKey, { accountIndex });
+        const { tssShare: tss2Account } = await tb1.getTSSShare(factorKey, { accountIndex, keyType: TSS_KEY_TYPE });
 
         const coefficient1 = getLagrangeCoeffs(ecTSS, [1, deviceTSSIndex], 1);
         const coefficient2 = getLagrangeCoeffs(ecTSS, [1, deviceTSSIndex], deviceTSSIndex);
         const tssKey = coefficient1.mul(tss1Account).add(coefficient2.mul(tss2Account)).umod(ecTSS.n);
 
         const tssKeyPub = (ecTSS.g as EllipticPoint).mul(tssKey);
-        const tssPubAccount = tb1.getTSSPub(accountIndex).toEllipticPoint(ecTSS);
+        const tssPubAccount = tb1.getTSSPub(TSS_KEY_TYPE, accountIndex).toEllipticPoint(ecTSS);
         equal(tssPubAccount.eq(tssKeyPub), true, "should equal account pub key");
       }
     });
@@ -162,7 +193,7 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
       const importTssKey = generateKey(TSS_KEY_TYPE);
       const newTSSIndex = 2;
 
-      await tb.initialize({ skipTssInit: true });
+      await tb.initialize();
       await tb.reconstructKey();
       await tb.importTssKey(
         { tag: "imported", importKey: importTssKey.raw, factorPub, newTSSIndex },
@@ -175,7 +206,7 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
 
       // Check pub key.
       const importTssKeyPub = Point.fromScalar(importTssKey.scalar, tb.tssCurve);
-      const tssPub = await tb.getTSSPub();
+      const tssPub = await tb.getTSSPub(TSS_KEY_TYPE);
       assert(tssPub.equals(importTssKeyPub));
 
       // Check exported key.
@@ -198,7 +229,7 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
           accountIndex: 2,
         });
         const exportedPubKeyIndex2 = Point.fromScalar(exportedKeyIndex2, tb.tssCurve);
-        const pubKeyIndex2 = tb.getTSSPub(2);
+        const pubKeyIndex2 = tb.getTSSPub(TSS_KEY_TYPE, 2);
         assert(exportedPubKeyIndex2.equals(pubKeyIndex2));
       }
     });
@@ -232,7 +263,8 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
       const factorKey = factorKeyPair.getPrivate();
       const factorPub = Point.fromElliptic(factorKeyPair.getPublic());
       // 2/2
-      await tb.initialize({ factorPub, deviceTSSShare, deviceTSSIndex });
+      await tb.initialize();
+      await tb.initializeTssSecp256k1({ factorPub, deviceTSSShare, deviceTSSIndex });
       const newShare = await tb.generateNewShare();
 
       const reconstructedKey = await tb.reconstructKey();
@@ -241,8 +273,8 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
       if (tb.secp256k1Key.cmp(reconstructedKey.secp256k1Key) !== 0) {
         fail("key should be able to be reconstructed");
       }
-      const { tssShare: retrievedTSS, tssIndex: retrievedTSSIndex } = await tb.getTSSShare(factorKey);
-      const tssCommits = tb.getTSSCommits();
+      const { tssShare: retrievedTSS, tssIndex: retrievedTSSIndex } = await tb.getTSSShare(factorKey, { keyType: TSS_KEY_TYPE });
+      const tssCommits = tb.getTSSCommits(TSS_KEY_TYPE);
       const tssPrivKey = getLagrangeCoeffs(ecTSS, [1, retrievedTSSIndex], 1)
         .mul(serverDKGPrivKeys[0])
         .add(getLagrangeCoeffs(ecTSS, [1, retrievedTSSIndex], retrievedTSSIndex).mul(retrievedTSS))
@@ -271,9 +303,9 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
       // tag is switched to imported
       await tb.syncLocalMetadataTransitions();
       // for imported key
-      const { tssShare: retrievedTSS1, tssIndex: retrievedTSSIndex1 } = await tb.getTSSShare(factorKey);
+      const { tssShare: retrievedTSS1, tssIndex: retrievedTSSIndex1 } = await tb.getTSSShare(factorKey, { keyType: TSS_KEY_TYPE });
 
-      const tssCommits1 = tb.getTSSCommits();
+      const tssCommits1 = tb.getTSSCommits(TSS_KEY_TYPE);
       const tssPrivKey1 = getLagrangeCoeffs(ecTSS, [1, retrievedTSSIndex1], 1)
         .mul(serverDKGPrivKeys1[0])
         .add(getLagrangeCoeffs(ecTSS, [1, retrievedTSSIndex1], retrievedTSSIndex1).mul(retrievedTSS1))
@@ -303,15 +335,15 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
       if (tb2.secp256k1Key.cmp(reconstructedKey2.secp256k1Key) !== 0) {
         fail("key should be able to be reconstructed");
       }
-      const tssCommits2 = tb2.getTSSCommits();
+      const tssCommits2 = tb2.getTSSCommits(TSS_KEY_TYPE);
       const tssCommits20 = tssCommits2[0].toEllipticPoint(ecTSS);
       equal(tssPubKey.eq(tssCommits20), true);
 
       // switch to imported account
       tb2.tssTag = "imported";
-      const { tssShare: retrievedTSSImported, tssIndex: retrievedTSSIndexImported } = await tb2.getTSSShare(factorKey);
+      const { tssShare: retrievedTSSImported, tssIndex: retrievedTSSIndexImported } = await tb2.getTSSShare(factorKey, { keyType: TSS_KEY_TYPE });
 
-      const tssCommitsImported = tb2.getTSSCommits();
+      const tssCommitsImported = tb2.getTSSCommits(TSS_KEY_TYPE);
 
       const tssPrivKeyImported = getLagrangeCoeffs(ecTSS, [1, retrievedTSSIndexImported], 1)
         .mul(serverDKGPrivKeys1[0])
@@ -363,8 +395,8 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
       if (tb.secp256k1Key.cmp(reconstructedKey.secp256k1Key) !== 0) {
         fail("key should be able to be reconstructed");
       }
-      const { tssShare: retrievedTSS, tssIndex: retrievedTSSIndex } = await tb.getTSSShare(factorKey);
-      const tssCommits = tb.getTSSCommits();
+      const { tssShare: retrievedTSS, tssIndex: retrievedTSSIndex } = await tb.getTSSShare(factorKey, { keyType: TSS_KEY_TYPE });
+      const tssCommits = tb.getTSSCommits(TSS_KEY_TYPE);
       const tssPrivKey = getLagrangeCoeffs(ecTSS, [1, retrievedTSSIndex], 1)
         .mul(serverDKGPrivKeys[0])
         .add(getLagrangeCoeffs(ecTSS, [1, retrievedTSSIndex], retrievedTSSIndex).mul(retrievedTSS))
@@ -394,7 +426,7 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
       await tb.syncLocalMetadataTransitions();
       // for imported key
       {
-        const finalPubKey = tb.getTSSCommits()[0].toEllipticPoint(ecTSS);
+        const finalPubKey = tb.getTSSCommits(TSS_KEY_TYPE)[0].toEllipticPoint(ecTSS);
 
         const finalTssKey = await tb._UNSAFE_exportTssKey({
           factorKey,
@@ -418,7 +450,7 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
       {
         tb.tssTag = "default";
 
-        const finalPubKey = tb.getTSSCommits()[0].toEllipticPoint(ecTSS);
+        const finalPubKey = tb.getTSSCommits(TSS_KEY_TYPE)[0].toEllipticPoint(ecTSS);
 
         const finalTssKey = await tb._UNSAFE_exportTssKey({
           factorKey,
@@ -438,7 +470,7 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
       await tb2.syncLocalMetadataTransitions();
       {
         tb2.tssTag = "imported";
-        const finalPubKey = tb2.getTSSCommits()[0].toEllipticPoint(ecTSS);
+        const finalPubKey = tb2.getTSSCommits(TSS_KEY_TYPE)[0].toEllipticPoint(ecTSS);
 
         const finalTssKey = await tb2._UNSAFE_exportTssKey({
           factorKey,
@@ -453,7 +485,7 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
       {
         tb2.tssTag = "default";
 
-        const finalPubKey = tb2.getTSSCommits()[0].toEllipticPoint(ecTSS);
+        const finalPubKey = tb2.getTSSCommits(TSS_KEY_TYPE)[0].toEllipticPoint(ecTSS);
 
         const finalTssKey = await tb2._UNSAFE_exportTssKey({
           factorKey,
@@ -546,7 +578,7 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
       });
 
       it("should no longer be able to access key share with removed factor (same index)", async function () {
-        await rejects(tb.getTSSShare(newFactorKeySameIndex));
+        await rejects(tb.getTSSShare(newFactorKeySameIndex, { keyType: TSS_KEY_TYPE }));
       });
 
       it("should be able to remove factor for different index", async function () {
@@ -560,7 +592,7 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
       });
 
       it("should no longer be able to access key share with removed factor (different index)", async function () {
-        await rejects(tb.getTSSShare(newFactorKeyNewIndex));
+        await rejects(tb.getTSSShare(newFactorKeyNewIndex, { keyType: TSS_KEY_TYPE }));
       });
     });
 
@@ -627,7 +659,7 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
         await tbJson.reconstructKey();
 
         // try refresh share
-        await tbJson.getTSSShare(factorKey);
+        await tbJson.getTSSShare(factorKey, { keyType: TSS_KEY_TYPE });
 
         const newFactorKeyPair = ecFactor.genKeyPair();
         await tbJson.addFactorPub({
@@ -638,7 +670,7 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
           refreshShares: true,
         });
 
-        await tbJson.getTSSShare(newFactorKeyPair.getPrivate());
+        await tbJson.getTSSShare(newFactorKeyPair.getPrivate(), { keyType: TSS_KEY_TYPE });
 
         const serialized2 = JSON.stringify(tbJson);
 
@@ -651,8 +683,8 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
 
         await tbJson2.reconstructKey();
 
-        await tbJson2.getTSSShare(factorKey);
-        await tbJson2.getTSSShare(newFactorKeyPair.getPrivate());
+        await tbJson2.getTSSShare(factorKey, { keyType: TSS_KEY_TYPE });
+        await tbJson2.getTSSShare(newFactorKeyPair.getPrivate(), { keyType: TSS_KEY_TYPE });
       });
     });
   });

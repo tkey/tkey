@@ -4,7 +4,6 @@ import {
   FactorEnc,
   getPubKeyPoint,
   IMetadata,
-  ISerializable,
   ITssMetadata,
   KeyType,
   Point,
@@ -28,89 +27,10 @@ import stringify from "json-stable-stringify";
 
 import CoreError from "./errors";
 import { polyCommitmentEval } from "./lagrangeInterpolatePolynomial";
+import { TssMetadata } from "./tssMetadata";
 
 export type SupportedCurve = "ed25519" | "sec";
 const METADATA_VERSION = 1;
-
-export class TssMetadata implements ITssMetadata, ISerializable {
-  tssTag: string;
-
-  tssKeyType: KeyType;
-
-  tssNonce: number;
-
-  tssPolyCommits: Point[];
-
-  factorPubs: Point[];
-
-  factorEncs: {
-    [factorPubID: string]: FactorEnc;
-  };
-
-  constructor(params: ITssMetadata) {
-    this.tssTag = params.tssTag;
-    this.tssKeyType = params.tssKeyType;
-    this.tssNonce = params.tssNonce;
-    this.tssPolyCommits = params.tssPolyCommits;
-    this.factorPubs = params.factorPubs;
-    this.factorEncs = params.factorEncs;
-  }
-
-  static fromJSON(value: StringifiedType): TssMetadata {
-    const { tssTag, tssKeyType, tssPolyCommits, tssNonce, factorPubs, factorEncs } = value;
-    const tssMetadata = new TssMetadata({
-      tssTag,
-      tssKeyType,
-      tssNonce,
-      tssPolyCommits,
-      factorEncs,
-      factorPubs,
-    });
-
-    if (tssPolyCommits) {
-      for (const key in tssPolyCommits) {
-        tssMetadata.tssPolyCommits = (tssPolyCommits as Record<string, Point[]>)[key].map((obj) => new Point(obj.x, obj.y));
-      }
-    }
-    if (factorPubs) {
-      for (const key in factorPubs) {
-        tssMetadata.factorPubs = (factorPubs as Record<string, Point[]>)[key].map((obj) => new Point(obj.x, obj.y));
-      }
-    }
-    if (factorEncs) tssMetadata.factorEncs = factorEncs;
-
-    return tssMetadata;
-  }
-
-  toJSON(): StringifiedType {
-    return {
-      tssKeyTypes: this.tssKeyType,
-      tssNonces: this.tssNonce,
-      tssPolyCommits: this.tssPolyCommits,
-      factorPubs: this.factorPubs,
-      factorEncs: this.factorEncs,
-    };
-  }
-
-  update(tssData: {
-    tssTag: string;
-    tssKeyType?: KeyType;
-    tssNonce?: number;
-    tssPolyCommits?: Point[];
-    factorPubs?: Point[];
-    factorEncs?: {
-      [factorPubID: string]: FactorEnc;
-    };
-  }) {
-    const { tssKeyType, tssTag, tssNonce, tssPolyCommits, factorPubs, factorEncs } = tssData;
-    if (tssTag) this.tssTag = tssTag;
-    if (tssKeyType) this.tssKeyType = tssKeyType;
-    if (tssNonce !== undefined) this.tssNonce = tssNonce;
-    if (tssPolyCommits) this.tssPolyCommits = tssPolyCommits;
-    if (factorPubs) this.factorPubs = factorPubs;
-    if (factorEncs) this.factorEncs = factorEncs;
-  }
-}
 
 class Metadata implements IMetadata {
   pubKey: Point;
@@ -136,28 +56,6 @@ class Metadata implements IMetadata {
 
   nonce: number;
 
-  tssKeyTypes?: {
-    [tssTag: string]: KeyType;
-  };
-
-  tssNonces?: {
-    [tssTag: string]: number;
-  };
-
-  tssPolyCommits?: {
-    [tssTag: string]: Point[];
-  };
-
-  factorPubs?: {
-    [tssTag: string]: Point[];
-  };
-
-  factorEncs?: {
-    [tssTag: string]: {
-      [factorPubID: string]: FactorEnc;
-    };
-  };
-
   tss?: {
     [tssTag: string]: {
       [curveType: string]: TssMetadata;
@@ -178,11 +76,6 @@ class Metadata implements IMetadata {
     this.pubKey = input;
     this.polyIDList = [];
     this.nonce = 0;
-    this.tssKeyTypes = {};
-    this.tssPolyCommits = {};
-    this.tssNonces = {};
-    this.factorPubs = {};
-    this.factorEncs = {};
   }
 
   static fromJSON(value: StringifiedType): Metadata {
@@ -472,6 +365,73 @@ class Metadata implements IMetadata {
     } else if (tssKeyType === KeyType.ed25519) {
       return this.tss[tssTag].ed25519;
     }
+  }
+}
+
+export class LegacyMetadata extends Metadata {
+  toJSON(): StringifiedType {
+    // squash data to serialized polyID according to spec
+    const serializedPolyIDList = [];
+    for (let i = 0; i < this.polyIDList.length; i += 1) {
+      const polyID = this.polyIDList[i][0];
+      const shareIndexes = this.polyIDList[i][1];
+      const sortedShareIndexes = shareIndexes.sort((a: string, b: string) => new BN(a, "hex").cmp(new BN(b, "hex")));
+      const serializedPolyID = polyID
+        .split(`|`)
+        .concat("0x0")
+        .concat(...sortedShareIndexes)
+        .join("|");
+      serializedPolyIDList.push(serializedPolyID);
+    }
+
+    const tsstags = Object.keys(this.tss);
+
+    // return if tss data is not available
+    if (tsstags.length > 0) {
+      return {
+        pubKey: this.pubKey.toSEC1(secp256k1, true).toString("hex"),
+        polyIDList: serializedPolyIDList,
+        scopedStore: this.scopedStore,
+        generalStore: this.generalStore,
+        tkeyStore: this.tkeyStore,
+        nonce: this.nonce,
+      };
+    }
+
+    // if there is tssdata, try serialize to legacy format
+
+    const tssKeyTypes: Record<string, KeyType> = {};
+    const tssNonces: Record<string, number> = {};
+    const tssPolyCommits: Record<string, StringifiedType> = {};
+    const factorPubs: Record<string, StringifiedType> = {};
+    const factorEncs: Record<string, Record<string, FactorEnc>> = {};
+
+    tsstags.forEach((tag) => {
+      const allTssData = this.tss[tag];
+      const allKeyTypes = Object.keys(allTssData);
+      if (allKeyTypes.length > 1) throw Error("Metadata Error: Do not support multicurve serialization");
+
+      const tssData = this.getTssData(allKeyTypes[0] as KeyType, tag);
+      tssKeyTypes[tag] = tssData.tssKeyType;
+      tssNonces[tag] = tssData.tssNonce;
+      tssPolyCommits[tag] = tssData.tssPolyCommits.map((pt) => pt.toJSON());
+      factorPubs[tag] = tssData.factorPubs.map((pt) => pt.toJSON());
+      factorEncs[tag] = tssData.factorEncs;
+    });
+
+    return {
+      pubKey: this.pubKey.toSEC1(secp256k1, true).toString("hex"),
+      polyIDList: serializedPolyIDList,
+      scopedStore: this.scopedStore,
+      generalStore: this.generalStore,
+      tkeyStore: this.tkeyStore,
+      nonce: this.nonce,
+      tssKeyTypes,
+      tssNonces,
+      tssPolyCommits,
+      factorPubs,
+      factorEncs,
+    };
   }
 }
 
