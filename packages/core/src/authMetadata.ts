@@ -4,7 +4,7 @@ import BN from "bn.js";
 import stringify from "json-stable-stringify";
 
 import CoreError from "./errors";
-import Metadata from "./metadata";
+import Metadata, { createMetadataFromJson } from "./metadata";
 
 class AuthMetadata implements IAuthMetadata {
   metadata: Metadata;
@@ -17,10 +17,11 @@ class AuthMetadata implements IAuthMetadata {
   }
 
   static fromJSON(value: StringifiedType): AuthMetadata {
-    const { data, sig } = value;
+    // need to inject legacyMetadata flag
+    const { data, sig, legacyMetadataFlag } = value;
     if (!data) throw CoreError.metadataUndefined();
 
-    const m = Metadata.fromJSON(data);
+    const m = createMetadataFromJson(legacyMetadataFlag, data);
     if (!m.pubKey) throw CoreError.metadataPubKeyUnavailable();
 
     const keyPair = secp256k1.keyFromPublic(m.pubKey.toSEC1(secp256k1));

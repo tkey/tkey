@@ -53,7 +53,7 @@ import stringify from "json-stable-stringify";
 import AuthMetadata from "./authMetadata";
 import CoreError from "./errors";
 import { generatePrivateBN, generateRandomPolynomial, lagrangeInterpolatePolynomial, lagrangeInterpolation } from "./lagrangeInterpolatePolynomial";
-import Metadata from "./metadata";
+import Metadata, { createMetadataFromJson, createMetadataInstance } from "./metadata";
 
 const ed25519SeedConst = "ed25519Seed";
 
@@ -90,6 +90,8 @@ class ThresholdKey implements ITKey {
 
   serverTimeOffset?: number = 0;
 
+  legacyMetadataFlag: boolean = false;
+
   // secp256k1 key
   private privKey: BN;
 
@@ -112,6 +114,7 @@ class ThresholdKey implements ITKey {
     this.setModuleReferences(); // Providing ITKeyApi access to modules
     this.haveWriteMetadataLock = "";
     this.serverTimeOffset = serverTimeOffset;
+    this.legacyMetadataFlag = false;
   }
 
   get secp256k1Key(): BN | null {
@@ -148,6 +151,9 @@ class ThresholdKey implements ITKey {
       manualSync,
       lastFetchedCloudMetadata,
       serverTimeOffset,
+
+      // legacyMetadata flag
+      legacyMetadataFlag,
     } = value;
     const { storageLayer, serviceProvider, modules } = args;
 
@@ -167,7 +173,9 @@ class ThresholdKey implements ITKey {
     tb.shares = shares;
 
     // switch to deserialize local metadata transition based on Object.keys() of authMetadata, ShareStore's and, IMessageMetadata
-    const AuthMetadataKeys = Object.keys(JSON.parse(stringify(new AuthMetadata(new Metadata(new Point("0", "0")), new BN("0", "hex")))));
+    const AuthMetadataKeys = Object.keys(
+      JSON.parse(stringify(new AuthMetadata(createMetadataInstance(legacyMetadataFlag, new Point("0", "0")), new BN("0", "hex"))))
+    );
     const ShareStoreKeys = Object.keys(JSON.parse(stringify(new ShareStore(new Share("0", "0"), ""))));
     const sampleMessageMetadata: IMessageMetadata = { message: "Sample message", dateAdded: Date.now() };
     const MessageMetadataKeys = Object.keys(sampleMessageMetadata);
@@ -184,7 +192,7 @@ class ThresholdKey implements ITKey {
 
       const keys = Object.keys(_localMetadataTransitions[1][index]);
       if (keys.length === AuthMetadataKeys.length && keys.every((val) => AuthMetadataKeys.includes(val))) {
-        const tempAuth = AuthMetadata.fromJSON(_localMetadataTransitions[1][index]);
+        const tempAuth = AuthMetadata.fromJSON({ ..._localMetadataTransitions[1][index], legacyMetadataFlag });
         tempAuth.privKey = privKey;
         localTransitionData.push(tempAuth);
       } else if (keys.length === ShareStoreKeys.length && keys.every((val) => ShareStoreKeys.includes(val))) {
@@ -200,8 +208,9 @@ class ThresholdKey implements ITKey {
       let tempMetadata: Metadata;
       let tempCloud: Metadata;
 
-      if (metadata) tempMetadata = Metadata.fromJSON(metadata);
-      if (lastFetchedCloudMetadata) tempCloud = Metadata.fromJSON(lastFetchedCloudMetadata);
+      // check configuration before decide the metadata
+      if (metadata) tempMetadata = createMetadataFromJson(legacyMetadataFlag, metadata);
+      if (lastFetchedCloudMetadata) tempCloud = createMetadataFromJson(legacyMetadataFlag, lastFetchedCloudMetadata);
       // check if cloud metadata is updated before
 
       tb.metadata = tempMetadata;
@@ -911,7 +920,10 @@ class ThresholdKey implements ITKey {
     if ((raw as IMessageMetadata).message === SHARE_DELETED) {
       throw CoreError.fromCode(1308);
     }
-    return params.fromJSONConstructor.fromJSON(raw);
+
+    // inject legacyMetadata flag for AuthMetadata deserialization
+    // it wont affect other fromJSONConstruct as it is just extra parameter
+    return params.fromJSONConstructor.fromJSON({ ...raw, legacyMetadataFlag: this.legacyMetadataFlag });
   }
 
   // Lock functions
@@ -1409,7 +1421,7 @@ class ThresholdKey implements ITKey {
     const shares = poly.generateShares(shareIndexes);
 
     // create metadata to be stored
-    const metadata = new Metadata(getPubKeyPoint(this.privKey));
+    const metadata = createMetadataInstance(this.legacyMetadataFlag, getPubKeyPoint(this.privKey));
     metadata.addFromPolynomialAndShares(poly, shares);
     const serviceProviderShare = shares[shareIndexes[0].toString("hex")];
     const shareStore = new ShareStore(serviceProviderShare, poly.getPolynomialID());

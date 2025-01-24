@@ -30,7 +30,9 @@ import { polyCommitmentEval } from "./lagrangeInterpolatePolynomial";
 import { TssMetadata } from "./tssMetadata";
 
 export type SupportedCurve = "ed25519" | "sec";
-const METADATA_VERSION = 1;
+
+const LEGACY_METADATA_VERSION = "0.0.1";
+const METADATA_VERSION = "1.0.0";
 
 class Metadata implements IMetadata {
   pubKey: Point;
@@ -97,7 +99,7 @@ class Metadata implements IMetadata {
     } = value;
     const point = Point.fromSEC1(secp256k1, pubKey);
     const metadata = new Metadata(point);
-    metadata.version = version || METADATA_VERSION;
+    const localVersion = version || LEGACY_METADATA_VERSION;
 
     const unserializedPolyIDList: PolyIDAndShares[] = [];
 
@@ -106,11 +108,15 @@ class Metadata implements IMetadata {
     if (scopedStore) metadata.scopedStore = scopedStore;
     if (nonce) metadata.nonce = nonce;
 
-    if (version === 1) {
+    if (localVersion === METADATA_VERSION) {
       metadata.tss = tss;
+      // else would be legacy version, migrate for secp version
     } else if (tssKeyTypes) {
       metadata.tss = {};
       Object.keys(tssKeyTypes).forEach((tssTag) => {
+        if (tssKeyTypes[tssTag] === KeyType.ed25519) {
+          throw new Error(`ed25519 is not supported for migration for metadata from v${localVersion} to ${METADATA_VERSION}`);
+        }
         metadata.tss[tssTag] = {
           [tssKeyTypes[tssTag]]: TssMetadata.fromJSON({
             tssTag,
@@ -123,6 +129,7 @@ class Metadata implements IMetadata {
         };
       });
     }
+    metadata.version = localVersion;
 
     for (let i = 0; i < polyIDList.length; i += 1) {
       const serializedPolyID: string = polyIDList[i];
@@ -326,7 +333,8 @@ class Metadata implements IMetadata {
       tkeyStore: this.tkeyStore,
       nonce: this.nonce,
       tss: this.tss,
-      version: this.version,
+      // will be updated to current version
+      version: METADATA_VERSION,
     };
   }
 
@@ -369,6 +377,76 @@ class Metadata implements IMetadata {
 }
 
 export class LegacyMetadata extends Metadata {
+  version = LEGACY_METADATA_VERSION;
+
+  static fromJSON(value: StringifiedType): LegacyMetadata {
+    const {
+      pubKey,
+      polyIDList,
+      generalStore,
+      tkeyStore,
+      scopedStore,
+      nonce,
+      version,
+      // v0 metadata
+      tssKeyTypes,
+      tssPolyCommits,
+      tssNonces,
+      factorPubs,
+      factorEncs,
+    } = value;
+    const point = Point.fromSEC1(secp256k1, pubKey);
+    const metadata = new LegacyMetadata(point);
+    metadata.version = version || LEGACY_METADATA_VERSION;
+
+    if (metadata.version !== LEGACY_METADATA_VERSION) {
+      throw new Error(`Incompatible version, version ${metadata.version} is not supported in current configuration`);
+    }
+
+    const unserializedPolyIDList: PolyIDAndShares[] = [];
+
+    if (generalStore) metadata.generalStore = generalStore;
+    if (tkeyStore) metadata.tkeyStore = tkeyStore;
+    if (scopedStore) metadata.scopedStore = scopedStore;
+    if (nonce) metadata.nonce = nonce;
+
+    metadata.tss = {};
+    Object.keys(tssKeyTypes).forEach((tssTag) => {
+      metadata.tss[tssTag] = {
+        [tssKeyTypes[tssTag]]: TssMetadata.fromJSON({
+          tssTag,
+          tssKeyType: tssKeyTypes[tssTag],
+          tssNonce: tssNonces[tssTag],
+          tssPolyCommits: tssPolyCommits[tssTag],
+          factorPubs: factorPubs[tssTag],
+          factorEncs: factorEncs[tssTag],
+        }),
+      };
+    });
+
+    for (let i = 0; i < polyIDList.length; i += 1) {
+      const serializedPolyID: string = polyIDList[i];
+      const arrPolyID = serializedPolyID.split("|");
+      const zeroIndex = arrPolyID.findIndex((v) => v === "0x0");
+      const firstHalf = arrPolyID.slice(0, zeroIndex);
+      const secondHalf = arrPolyID.slice(zeroIndex + 1, arrPolyID.length);
+      // for publicPolynomials
+      const pubPolyID = firstHalf.join("|");
+      const pointCommitments: Point[] = [];
+      firstHalf.forEach((compressedCommitment) => {
+        pointCommitments.push(Point.fromCompressedPub(compressedCommitment));
+      });
+      const publicPolynomial = new PublicPolynomial(pointCommitments);
+      metadata.publicPolynomials[pubPolyID] = publicPolynomial;
+
+      // for polyIDList
+      unserializedPolyIDList.push([pubPolyID, secondHalf]);
+    }
+
+    metadata.polyIDList = unserializedPolyIDList;
+    return metadata;
+  }
+
   toJSON(): StringifiedType {
     // squash data to serialized polyID according to spec
     const serializedPolyIDList = [];
@@ -431,8 +509,20 @@ export class LegacyMetadata extends Metadata {
       tssPolyCommits,
       factorPubs,
       factorEncs,
+      // Legacy Metadata version
+      version: this.version,
     };
   }
+
+  clone(): LegacyMetadata {
+    return LegacyMetadata.fromJSON(JSON.parse(stringify(this)));
+  }
 }
+
+export const createMetadataInstance = (legacyMetadataFlag: boolean, input: Point) =>
+  legacyMetadataFlag ? new LegacyMetadata(input) : new Metadata(input);
+
+export const createMetadataFromJson = (legacyMetadataFlag: boolean, args: StringifiedType) =>
+  legacyMetadataFlag ? LegacyMetadata.fromJSON(args) : Metadata.fromJSON(args);
 
 export default Metadata;
