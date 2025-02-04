@@ -31,10 +31,10 @@ import { TssMetadata } from "./tssMetadata";
 
 export type SupportedCurve = "ed25519" | "sec";
 
-const LEGACY_METADATA_VERSION = "0.0.1";
-const METADATA_VERSION = "1.0.0";
+export const LEGACY_METADATA_VERSION = "0.0.1";
+export const METADATA_VERSION = "1.0.0";
 
-class Metadata implements IMetadata {
+export class Metadata implements IMetadata {
   pubKey: Point;
 
   publicPolynomials: PublicPolynomialMap;
@@ -99,7 +99,6 @@ class Metadata implements IMetadata {
     } = value;
     const point = Point.fromSEC1(secp256k1, pubKey);
     const metadata = new Metadata(point);
-    const localVersion = version || LEGACY_METADATA_VERSION;
 
     const unserializedPolyIDList: PolyIDAndShares[] = [];
 
@@ -108,7 +107,7 @@ class Metadata implements IMetadata {
     if (scopedStore) metadata.scopedStore = scopedStore;
     if (nonce) metadata.nonce = nonce;
 
-    if (localVersion === METADATA_VERSION) {
+    if (version === METADATA_VERSION) {
       metadata.tss = {};
 
       if (tss) {
@@ -128,7 +127,7 @@ class Metadata implements IMetadata {
       metadata.tss = {};
       Object.keys(tssKeyTypes).forEach((tssTag) => {
         if (tssKeyTypes[tssTag] === KeyType.ed25519) {
-          throw new Error(`ed25519 is not supported for migration for metadata from v${localVersion} to ${METADATA_VERSION}`);
+          throw new Error(`ed25519 is not supported for migration for metadata from v${version ?? LEGACY_METADATA_VERSION} to ${METADATA_VERSION}`);
         }
         metadata.tss[tssTag] = {
           [tssKeyTypes[tssTag]]: TssMetadata.fromJSON({
@@ -142,7 +141,8 @@ class Metadata implements IMetadata {
         };
       });
     }
-    metadata.version = localVersion;
+    // updated to latest version since using latest Metadata deserialization
+    metadata.version = METADATA_VERSION;
 
     for (let i = 0; i < polyIDList.length; i += 1) {
       const serializedPolyID: string = polyIDList[i];
@@ -478,7 +478,7 @@ export class LegacyMetadata extends Metadata {
     const tsstags = Object.keys(this.tss);
 
     // return if tss data is not available
-    if (tsstags.length > 0) {
+    if (tsstags.length <= 0) {
       return {
         pubKey: this.pubKey.toSEC1(secp256k1, true).toString("hex"),
         polyIDList: serializedPolyIDList,
@@ -523,7 +523,7 @@ export class LegacyMetadata extends Metadata {
       factorPubs,
       factorEncs,
       // Legacy Metadata version
-      version: this.version,
+      // version: this.version,
     };
   }
 
