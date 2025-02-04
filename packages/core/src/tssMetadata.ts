@@ -26,6 +26,7 @@ export class TssMetadata implements ITssMetadata, ISerializable {
 
   static fromJSON(value: StringifiedType): TssMetadata {
     const { tssTag, tssKeyType, tssPolyCommits, tssNonce, factorPubs, factorEncs } = value;
+
     const tssMetadata = new TssMetadata({
       tssTag,
       tssKeyType,
@@ -36,15 +37,12 @@ export class TssMetadata implements ITssMetadata, ISerializable {
     });
 
     if (tssPolyCommits) {
-      for (const key in tssPolyCommits) {
-        tssMetadata.tssPolyCommits = (tssPolyCommits as Record<string, Point[]>)[key].map((obj) => new Point(obj.x, obj.y));
-      }
+      tssMetadata.tssPolyCommits = (tssPolyCommits as Point[]).map((obj) => new Point(obj.x, obj.y));
     }
     if (factorPubs) {
-      for (const key in factorPubs) {
-        tssMetadata.factorPubs = (factorPubs as Record<string, Point[]>)[key].map((obj) => new Point(obj.x, obj.y));
-      }
+      tssMetadata.factorPubs = (factorPubs as Point[]).map((obj) => new Point(obj.x, obj.y));
     }
+
     if (factorEncs) tssMetadata.factorEncs = factorEncs;
 
     return tssMetadata;
@@ -52,8 +50,9 @@ export class TssMetadata implements ITssMetadata, ISerializable {
 
   toJSON(): StringifiedType {
     return {
-      tssKeyTypes: this.tssKeyType,
-      tssNonces: this.tssNonce,
+      tssTag: this.tssTag,
+      tssKeyType: this.tssKeyType,
+      tssNonce: this.tssNonce,
       tssPolyCommits: this.tssPolyCommits,
       factorPubs: this.factorPubs,
       factorEncs: this.factorEncs,

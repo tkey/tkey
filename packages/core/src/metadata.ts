@@ -109,7 +109,20 @@ class Metadata implements IMetadata {
     if (nonce) metadata.nonce = nonce;
 
     if (localVersion === METADATA_VERSION) {
-      metadata.tss = tss;
+      metadata.tss = {};
+
+      if (tss) {
+        Object.keys(tss).forEach((tsstag) => {
+          if (tss[tsstag]) {
+            Object.keys(tss[tsstag]).forEach((tssKeyType) => {
+              metadata.tss[tsstag] = {
+                [tssKeyType]: TssMetadata.fromJSON(tss[tsstag][tssKeyType]),
+              };
+            });
+          }
+        });
+      }
+
       // else would be legacy version, migrate for secp version
     } else if (tssKeyTypes) {
       metadata.tss = {};
@@ -325,17 +338,18 @@ class Metadata implements IMetadata {
       serializedPolyIDList.push(serializedPolyID);
     }
 
-    return {
+    const jsonObject = {
       pubKey: this.pubKey.toSEC1(secp256k1, true).toString("hex"),
       polyIDList: serializedPolyIDList,
       scopedStore: this.scopedStore,
       generalStore: this.generalStore,
       tkeyStore: this.tkeyStore,
       nonce: this.nonce,
-      tss: this.tss,
       // will be updated to current version
       version: METADATA_VERSION,
     };
+
+    return Object.keys(this.tss ?? {}).length > 0 ? { ...jsonObject, tss: this.tss } : jsonObject;
   }
 
   /**
@@ -353,26 +367,25 @@ class Metadata implements IMetadata {
   }): void {
     const { tssKeyType, tssTag, tssNonce, tssPolyCommits, factorPubs, factorEncs } = tssData;
     if (!this.tss) this.tss = {};
-    if (!this.tss[tssData.tssTag]) {
-      if (!tssKeyType) throw Error("Missing tssKeyType");
-      this.tss[tssData.tssTag] = {
-        [tssKeyType]: new TssMetadata({ tssTag, tssKeyType, tssNonce, tssPolyCommits, factorPubs, factorEncs }),
-      };
+    if (!this.tss[tssData.tssTag]) this.tss[tssData.tssTag] = {};
+    if (!this.tss[tssData.tssTag][tssKeyType]) {
+      this.tss[tssData.tssTag][tssKeyType] = new TssMetadata({ tssTag, tssKeyType, tssNonce, tssPolyCommits, factorPubs, factorEncs });
     }
     if (tssData.tssKeyType === KeyType.ed25519) this.tss[tssTag].ed25519.update(tssData);
     else if (tssData.tssKeyType === KeyType.secp256k1) this.tss[tssTag].secp256k1.update(tssData);
   }
 
-  getTssData(tssKeyType: KeyType, tssTag: string = "default"): ITssMetadata {
+  getTssData(tssKeyType: KeyType, tssTag: string): ITssMetadata {
     // const tssDataList = this.tss?[tssTag];
-    if (!this.tss) throw Error("Missing TssData");
-    if (!this.tss[tssTag]) throw Error("Invalid Tss Tag");
+    if (!this.tss) return undefined;
+    if (!this.tss[tssTag]) return undefined;
 
     if (tssKeyType === KeyType.secp256k1) {
       return this.tss[tssTag].secp256k1;
     } else if (tssKeyType === KeyType.ed25519) {
       return this.tss[tssTag].ed25519;
     }
+    return undefined;
   }
 }
 

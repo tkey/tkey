@@ -102,7 +102,7 @@ export interface IMetadata extends ISerializable {
 
   nonce: number;
 
-  version: number;
+  version: string;
 
   getShareIndexesForPolynomial(polyID: PolynomialID): string[];
   getLatestPublicPolynomial(): PublicPolynomial;
@@ -131,7 +131,7 @@ export interface IMetadata extends ISerializable {
       [factorPubID: string]: FactorEnc;
     };
   }): void;
-  getTssData(keyType: KeyType): ITssMetadata;
+  getTssData(keyType: KeyType, tssTag: string): ITssMetadata;
 }
 
 export type InitializeNewKeyResult = {
