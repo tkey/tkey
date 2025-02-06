@@ -113,10 +113,9 @@ export class Metadata implements IMetadata {
       if (tss) {
         Object.keys(tss).forEach((tsstag) => {
           if (tss[tsstag]) {
+            metadata.tss[tsstag] = {};
             Object.keys(tss[tsstag]).forEach((tssKeyType) => {
-              metadata.tss[tsstag] = {
-                [tssKeyType]: TssMetadata.fromJSON(tss[tsstag][tssKeyType]),
-              };
+              metadata.tss[tsstag][tssKeyType] = TssMetadata.fromJSON(tss[tsstag][tssKeyType]);
             });
           }
         });
@@ -423,20 +422,6 @@ export class LegacyMetadata extends Metadata {
     if (scopedStore) metadata.scopedStore = scopedStore;
     if (nonce) metadata.nonce = nonce;
 
-    metadata.tss = {};
-    Object.keys(tssKeyTypes).forEach((tssTag) => {
-      metadata.tss[tssTag] = {
-        [tssKeyTypes[tssTag]]: TssMetadata.fromJSON({
-          tssTag,
-          tssKeyType: tssKeyTypes[tssTag],
-          tssNonce: tssNonces[tssTag],
-          tssPolyCommits: tssPolyCommits[tssTag],
-          factorPubs: factorPubs[tssTag],
-          factorEncs: factorEncs[tssTag],
-        }),
-      };
-    });
-
     for (let i = 0; i < polyIDList.length; i += 1) {
       const serializedPolyID: string = polyIDList[i];
       const arrPolyID = serializedPolyID.split("|");
@@ -457,6 +442,24 @@ export class LegacyMetadata extends Metadata {
     }
 
     metadata.polyIDList = unserializedPolyIDList;
+
+    // tss related data
+    if (!tssKeyTypes) return metadata;
+    if (Object.keys(tssKeyTypes).length === 0) return metadata;
+
+    metadata.tss = {};
+    Object.keys(tssKeyTypes).forEach((tssTag) => {
+      metadata.tss[tssTag] = {
+        [tssKeyTypes[tssTag]]: TssMetadata.fromJSON({
+          tssTag,
+          tssKeyType: tssKeyTypes[tssTag],
+          tssNonce: tssNonces[tssTag],
+          tssPolyCommits: tssPolyCommits[tssTag],
+          factorPubs: factorPubs[tssTag],
+          factorEncs: factorEncs[tssTag],
+        }),
+      };
+    });
     return metadata;
   }
 
@@ -475,7 +478,7 @@ export class LegacyMetadata extends Metadata {
       serializedPolyIDList.push(serializedPolyID);
     }
 
-    const tsstags = Object.keys(this.tss);
+    const tsstags = Object.keys(this.tss ?? {});
 
     // return if tss data is not available
     if (tsstags.length <= 0) {

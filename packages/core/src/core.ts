@@ -53,7 +53,7 @@ import stringify from "json-stable-stringify";
 import AuthMetadata from "./authMetadata";
 import CoreError from "./errors";
 import { generatePrivateBN, generateRandomPolynomial, lagrangeInterpolatePolynomial, lagrangeInterpolation } from "./lagrangeInterpolatePolynomial";
-import Metadata, { createMetadataFromJson, createMetadataInstance } from "./metadata";
+import { createMetadataFromJson, createMetadataInstance, Metadata } from "./metadata";
 
 const ed25519SeedConst = "ed25519Seed";
 
@@ -165,6 +165,8 @@ class ThresholdKey implements ITKey {
       manualSync,
       serverTimeOffset,
     });
+    // overwrite legacyMetadataFlag
+    tb.legacyMetadataFlag = legacyMetadataFlag ?? false;
 
     // this will computed during reconstructKey should we restore here?
     if (privKey) tb.privKey = new BN(privKey, "hex");
