@@ -91,7 +91,7 @@ export class Metadata implements IMetadata {
       tss,
       version,
       // v0 metadata
-      tssKeyTypes,
+      tssKeyTypes: tssKeyTypesJson,
       tssPolyCommits,
       tssNonces,
       factorPubs,
@@ -122,16 +122,22 @@ export class Metadata implements IMetadata {
       }
 
       // else would be legacy version, migrate for secp version
-    } else if (tssKeyTypes) {
+    } else if (factorEncs) {
       metadata.tss = {};
-      Object.keys(tssKeyTypes).forEach((tssTag) => {
-        if (tssKeyTypes[tssTag] === KeyType.ed25519) {
+      // some tests case on backward compatbility tests having serialized metadata with empty tssKeyTypes
+      const tssKeyTypes: Record<string, string> = tssKeyTypesJson ?? {};
+
+      Object.keys(factorEncs).forEach((tssTag) => {
+        // incase fo tssKeyType is empty, then fill it with secp256k1
+        const tssKeyType = tssKeyTypes[tssTag] ?? KeyType.secp256k1;
+
+        if (tssKeyType === KeyType.ed25519) {
           throw new Error(`ed25519 is not supported for migration for metadata from v${version ?? LEGACY_METADATA_VERSION} to ${METADATA_VERSION}`);
         }
         metadata.tss[tssTag] = {
-          [tssKeyTypes[tssTag]]: TssMetadata.fromJSON({
+          [tssKeyType]: TssMetadata.fromJSON({
             tssTag,
-            tssKeyType: tssKeyTypes[tssTag],
+            tssKeyType,
             tssNonce: tssNonces[tssTag],
             tssPolyCommits: tssPolyCommits[tssTag],
             factorPubs: factorPubs[tssTag],
@@ -401,7 +407,8 @@ export class LegacyMetadata extends Metadata {
       nonce,
       version,
       // v0 metadata
-      tssKeyTypes,
+
+      tssKeyTypes: tssKeyTypesJson,
       tssPolyCommits,
       tssNonces,
       factorPubs,
@@ -409,6 +416,7 @@ export class LegacyMetadata extends Metadata {
     } = value;
     const point = Point.fromSEC1(secp256k1, pubKey);
     const metadata = new LegacyMetadata(point);
+
     metadata.version = version || LEGACY_METADATA_VERSION;
 
     if (metadata.version !== LEGACY_METADATA_VERSION) {
@@ -444,15 +452,21 @@ export class LegacyMetadata extends Metadata {
     metadata.polyIDList = unserializedPolyIDList;
 
     // tss related data
-    if (!tssKeyTypes) return metadata;
-    if (Object.keys(tssKeyTypes).length === 0) return metadata;
+    if (!factorEncs) return metadata;
+    if (Object.keys(factorEncs).length === 0) return metadata;
 
     metadata.tss = {};
-    Object.keys(tssKeyTypes).forEach((tssTag) => {
+    // some tests case on backward compatbility tests having serialized metadata with empty tssKeyType
+    const tssKeyTypes: Record<string, string> = tssKeyTypesJson ?? {};
+
+    Object.keys(factorEncs).forEach((tssTag) => {
+      // incase fo tssKeyType is empty, then fill it with secp256k1
+      const tssKeyType = tssKeyTypes[tssTag] ?? KeyType.secp256k1;
+
       metadata.tss[tssTag] = {
-        [tssKeyTypes[tssTag]]: TssMetadata.fromJSON({
+        [tssKeyType]: TssMetadata.fromJSON({
           tssTag,
-          tssKeyType: tssKeyTypes[tssTag],
+          tssKeyType,
           tssNonce: tssNonces[tssTag],
           tssPolyCommits: tssPolyCommits[tssTag],
           factorPubs: factorPubs[tssTag],
