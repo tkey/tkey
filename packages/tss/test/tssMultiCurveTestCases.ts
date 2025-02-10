@@ -1,4 +1,5 @@
 import { EllipticPoint, KeyType, Point } from "@tkey/common-types";
+import { randomId } from "@toruslabs/customauth";
 import { getEcCurve } from "@toruslabs/torus.js";
 import assert, { equal, fail, rejects } from "assert";
 import BN from "bn.js";
@@ -9,8 +10,8 @@ import { factorKeyCurve, TKeyTSSInitArgs, TSS_TAG_DEFAULT } from "../src/tss";
 import { getLagrangeCoeffs } from "../src/util";
 import { assignTssDkgKeys, fetchPostboxKeyAndSigs, generateKey, initStorageLayer } from "./helpers";
 
-const multiCurveTestCases = (params: { TSS_KEY_TYPE: KeyType; legacyFlag: boolean; spSecp256k1: boolean }) => {
-  const { TSS_KEY_TYPE, legacyFlag, spSecp256k1 } = params;
+const multiCurveTestCases = (params: { TSS_KEY_TYPE: KeyType; legacyFlag: boolean; spSecp256k1: boolean; verifierId: string }) => {
+  const { TSS_KEY_TYPE, legacyFlag, spSecp256k1, verifierId } = params;
   const ecFactor = factorKeyCurve;
   const ecTSS = new EC(TSS_KEY_TYPE);
 
@@ -94,7 +95,7 @@ const multiCurveTestCases = (params: { TSS_KEY_TYPE: KeyType; legacyFlag: boolea
       const deviceTSSIndex = 3;
 
       sp.verifierName = "torus-test-health";
-      sp.verifierId = "testTss@example.com";
+      sp.verifierId = verifierId;
       const { postboxkey, signatures } = await fetchPostboxKeyAndSigs({
         serviceProvider: sp,
         verifierName: sp.verifierName,
@@ -899,5 +900,6 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
     TSS_KEY_TYPE,
     legacyFlag: false,
     spSecp256k1: true,
+    verifierId: randomId(),
   });
 });

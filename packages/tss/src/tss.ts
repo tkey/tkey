@@ -56,6 +56,7 @@ export interface TSSTKeyArgs extends TKeyArgs {
 }
 
 export interface TKeyTSSInitArgs {
+  tssKeyType: KeyType;
   deviceTSSShare?: BN;
   deviceTSSIndex?: number;
   factorPub?: Point;
@@ -161,7 +162,7 @@ export class TKeyTSS extends TKey {
    * under the given factor key. `skipTssInit` skips TSS account creation and
    * can be used with `importTssKey` to just import an existing account instead.
    */
-  async initializeTssSecp256k1(params: TKeyTSSInitArgs): Promise<void> {
+  async initializeTssSecp256k1(params: Omit<TKeyTSSInitArgs, "tssKeyType">): Promise<void> {
     // only support service provider with secp256k1 key type
     if (this.serviceProvider.customAuthArgs.keyType === KeyType.ed25519) {
       throw CoreError.default("Multiple Curve do not support for ed25519 network's postboxkey ");
@@ -265,7 +266,7 @@ export class TKeyTSS extends TKey {
    * under the given factor key. `skipTssInit` skips TSS account creation and
    * can be used with `importTssKey` to just import an existing account instead.
    */
-  async initializeTssEd25519(params: TKeyTSSInitArgs & { importKey: Buffer }): Promise<void> {
+  async initializeTssEd25519(params: Omit<TKeyTSSInitArgs, "tssKeyType"> & { importKey: Buffer }): Promise<void> {
     // only support service provider with secp256k1 key type
     if (this.serviceProvider.customAuthArgs.keyType === KeyType.ed25519) {
       if (this.metadata.getTssData(KeyType.ed25519, TSS_TAG_DEFAULT)) {
@@ -324,7 +325,7 @@ export class TKeyTSS extends TKey {
   /**
    * Initializes a new TSS account under the given factor key.
    */
-  async initializeTss(params: TKeyTSSInitArgs & { tssKeyType: KeyType }): Promise<void> {
+  async initializeTss(params: TKeyTSSInitArgs): Promise<void> {
     const { tssKeyType } = params;
     if (tssKeyType === KeyType.secp256k1) {
       await this.initializeTssSecp256k1(params);
