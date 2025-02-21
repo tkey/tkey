@@ -99,10 +99,6 @@ export class TKeyTSS extends TKey {
     this.legacyMetadataFlag = legacyMetadataFlag;
   }
 
-  public get tssTag(): string {
-    return this._tssTag;
-  }
-
   // public get tssKeyType(): KeyType {
   //   return this._tssKeyType;
   // }
@@ -119,7 +115,7 @@ export class TKeyTSS extends TKey {
     const { tssTag, accountSalt } = value;
 
     if (tssTag !== tbTss._tssTag) {
-      throw CoreError.default(`tssTag mismatch: ${tssTag} !== ${tbTss.tssTag}`);
+      throw CoreError.default(`tssTag mismatch: ${tssTag} !== ${tbTss._tssTag}`);
     }
 
     // if (tssKeyType !== tbTss.tssKeyType) {
@@ -528,7 +524,6 @@ export class TKeyTSS extends TKey {
 
     const { importKey, factorPubs, newTSSIndexes, tssTag, tssKeyType } = params;
 
-    const oldTag = this._tssTag;
     const localTssTag = tssTag ?? TSS_TAG_DEFAULT;
 
     const tssData = this.metadata.getTssData(params.tssKeyType, localTssTag);
@@ -538,124 +533,119 @@ export class TKeyTSS extends TKey {
 
     const ec = getKeyCurve(tssKeyType);
 
-    try {
-      const { selectedServers = [], authSignatures = [] } = serverOpts || {};
+    const { selectedServers = [], authSignatures = [] } = serverOpts || {};
 
-      if (!localTssTag) throw CoreError.default(`invalid param, tag is required`);
-      if (!factorPubs || factorPubs.length === 0) throw CoreError.default(`invalid param, newFactorPub is required`);
-      if (!newTSSIndexes || newTSSIndexes.length === 0) throw CoreError.default(`invalid param, newTSSIndex is required`);
-      if (authSignatures.length === 0) throw CoreError.default(`invalid param, authSignatures is required`);
+    if (!localTssTag) throw CoreError.default(`invalid param, tag is required`);
+    if (!factorPubs || factorPubs.length === 0) throw CoreError.default(`invalid param, newFactorPub is required`);
+    if (!newTSSIndexes || newTSSIndexes.length === 0) throw CoreError.default(`invalid param, newTSSIndex is required`);
+    if (authSignatures.length === 0) throw CoreError.default(`invalid param, authSignatures is required`);
 
-      // const existingFactorPubs = tssData.factorPubs;
-      // if (existingFactorPubs?.length > 0) {
-      //   throw CoreError.default(`Duplicate account tag, please use a unique tag for importing key`);
-      // }
+    // const existingFactorPubs = tssData.factorPubs;
+    // if (existingFactorPubs?.length > 0) {
+    //   throw CoreError.default(`Duplicate account tag, please use a unique tag for importing key`);
+    // }
 
-      const importScalar = await (async () => {
-        if (tssKeyType === KeyType.secp256k1) {
-          return new BN(importKey);
-        } else if (tssKeyType === KeyType.ed25519) {
-          // Store seed in metadata.
-          const domainKey = getEd25519SeedStoreDomainKey(localTssTag);
-          const result = this.metadata.getGeneralStoreDomain(domainKey) as Record<string, unknown>;
-          if (result) {
-            throw new Error("Seed already exists");
-          }
-
-          const { scalar } = getEd25519KeyPairFromSeed(importKey);
-          const encKey = Buffer.from(getSecpKeyFromEd25519(scalar).point.encodeCompressed("hex"), "hex");
-          const msg = await encrypt(encKey, importKey);
-          this.metadata.setGeneralStoreDomain(domainKey, { message: msg });
-
-          return scalar;
+    const importScalar = await (async () => {
+      if (tssKeyType === KeyType.secp256k1) {
+        return new BN(importKey);
+      } else if (tssKeyType === KeyType.ed25519) {
+        // Store seed in metadata.
+        const domainKey = getEd25519SeedStoreDomainKey(localTssTag);
+        const result = this.metadata.getGeneralStoreDomain(domainKey) as Record<string, unknown>;
+        if (result) {
+          throw new Error("Seed already exists");
         }
-        throw new Error("Invalid key type");
-      })();
 
-      if (!importScalar || importScalar.toString("hex") === "0") {
-        throw new Error("Invalid importedKey");
+        const { scalar } = getEd25519KeyPairFromSeed(importKey);
+        const encKey = Buffer.from(getSecpKeyFromEd25519(scalar).point.encodeCompressed("hex"), "hex");
+        const msg = await encrypt(encKey, importKey);
+        this.metadata.setGeneralStoreDomain(domainKey, { message: msg });
+
+        return scalar;
       }
+      throw new Error("Invalid key type");
+    })();
 
-      const tssIndexes = newTSSIndexes;
-      const existingNonce = tssData?.tssNonce ?? 0;
-      const newTssNonce: number = existingNonce && existingNonce > 0 ? existingNonce + 1 : 0;
-      const verifierAndVerifierID = this.serviceProvider.getVerifierNameVerifierId();
-      const label = `${verifierAndVerifierID}\u0015${localTssTag}\u0016${newTssNonce}`;
-      const tssPubKey = hexPoint(ec.g.mul(importScalar));
-      const rssNodeDetails = await this._getRssNodeDetails();
-      const { pubKey: newTSSServerPub, nodeIndexes } = await this.serviceProvider.getTSSPubKey(localTssTag, newTssNonce, tssKeyType);
-      let finalSelectedServers = selectedServers;
-
-      if (nodeIndexes?.length > 0) {
-        if (selectedServers.length) {
-          finalSelectedServers = nodeIndexes.slice(0, Math.min(selectedServers.length, nodeIndexes.length));
-        } else {
-          finalSelectedServers = nodeIndexes.slice(0, 3);
-        }
-      } else if (selectedServers?.length === 0) {
-        finalSelectedServers = randomSelection(
-          new Array(rssNodeDetails.serverEndpoints.length).fill(null).map((_, i) => i + 1),
-          Math.ceil(rssNodeDetails.serverEndpoints.length / 2)
-        );
-      }
-
-      const { serverEndpoints, serverPubKeys, serverThreshold } = rssNodeDetails;
-
-      const rssClient = new RSSClient({
-        serverEndpoints,
-        serverPubKeys,
-        serverThreshold,
-        tssPubKey,
-        keyType: tssKeyType,
-      });
-
-      const refreshResponses = await rssClient.import({
-        importKey: importScalar,
-        dkgNewPub: pointToHex(newTSSServerPub),
-        selectedServers: finalSelectedServers,
-        factorPubs: factorPubs.map((f) => pointToHex(f)),
-        targetIndexes: tssIndexes,
-        newLabel: label,
-        sigs: authSignatures,
-      });
-      const secondCommit = newTSSServerPub.toEllipticPoint(ec).add(ecPoint(ec, tssPubKey).neg());
-      const newTSSCommits = [
-        Point.fromJSON(tssPubKey),
-        Point.fromJSON({ x: secondCommit.getX().toString(16, 64), y: secondCommit.getY().toString(16, 64) }),
-      ];
-      const factorEncs: {
-        [factorPubID: string]: FactorEnc;
-      } = {};
-      for (let i = 0; i < refreshResponses.length; i++) {
-        const refreshResponse = refreshResponses[i];
-        factorEncs[refreshResponse.factorPub.x.padStart(64, "0")] = {
-          type: "hierarchical",
-          tssIndex: refreshResponse.targetIndex,
-          userEnc: refreshResponse.userFactorEnc,
-          serverEncs: refreshResponse.serverFactorEncs,
-        };
-      }
-      this.metadata.updateTSSData({
-        tssKeyType,
-        tssTag: localTssTag,
-        tssNonce: newTssNonce,
-        tssPolyCommits: newTSSCommits,
-        factorPubs,
-        factorEncs,
-      });
-      if (!this._accountSalt) {
-        const accountSalt = generateSalt(getEcCurve(tssKeyType));
-        await this._setTKeyStoreItem(TSS_MODULE, {
-          id: "accountSalt",
-          value: accountSalt,
-        } as IAccountSaltStore);
-        this._accountSalt = accountSalt;
-      }
-      await this._syncShareMetadata();
-    } catch (error) {
-      this._tssTag = oldTag;
-      throw error;
+    if (!importScalar || importScalar.toString("hex") === "0") {
+      throw new Error("Invalid importedKey");
     }
+
+    const tssIndexes = newTSSIndexes;
+    const existingNonce = tssData?.tssNonce ?? 0;
+    const newTssNonce: number = existingNonce && existingNonce > 0 ? existingNonce + 1 : 0;
+    const verifierAndVerifierID = this.serviceProvider.getVerifierNameVerifierId();
+    const label = `${verifierAndVerifierID}\u0015${localTssTag}\u0016${newTssNonce}`;
+    const tssPubKey = hexPoint(ec.g.mul(importScalar));
+    const rssNodeDetails = await this._getRssNodeDetails();
+    const { pubKey: newTSSServerPub, nodeIndexes } = await this.serviceProvider.getTSSPubKey(localTssTag, newTssNonce, tssKeyType);
+    let finalSelectedServers = selectedServers;
+
+    if (nodeIndexes?.length > 0) {
+      if (selectedServers.length) {
+        finalSelectedServers = nodeIndexes.slice(0, Math.min(selectedServers.length, nodeIndexes.length));
+      } else {
+        finalSelectedServers = nodeIndexes.slice(0, 3);
+      }
+    } else if (selectedServers?.length === 0) {
+      finalSelectedServers = randomSelection(
+        new Array(rssNodeDetails.serverEndpoints.length).fill(null).map((_, i) => i + 1),
+        Math.ceil(rssNodeDetails.serverEndpoints.length / 2)
+      );
+    }
+
+    const { serverEndpoints, serverPubKeys, serverThreshold } = rssNodeDetails;
+
+    const rssClient = new RSSClient({
+      serverEndpoints,
+      serverPubKeys,
+      serverThreshold,
+      tssPubKey,
+      keyType: tssKeyType,
+    });
+
+    const refreshResponses = await rssClient.import({
+      importKey: importScalar,
+      dkgNewPub: pointToHex(newTSSServerPub),
+      selectedServers: finalSelectedServers,
+      factorPubs: factorPubs.map((f) => pointToHex(f)),
+      targetIndexes: tssIndexes,
+      newLabel: label,
+      sigs: authSignatures,
+    });
+    const secondCommit = newTSSServerPub.toEllipticPoint(ec).add(ecPoint(ec, tssPubKey).neg());
+    const newTSSCommits = [
+      Point.fromJSON(tssPubKey),
+      Point.fromJSON({ x: secondCommit.getX().toString(16, 64), y: secondCommit.getY().toString(16, 64) }),
+    ];
+    const factorEncs: {
+      [factorPubID: string]: FactorEnc;
+    } = {};
+    for (let i = 0; i < refreshResponses.length; i++) {
+      const refreshResponse = refreshResponses[i];
+      factorEncs[refreshResponse.factorPub.x.padStart(64, "0")] = {
+        type: "hierarchical",
+        tssIndex: refreshResponse.targetIndex,
+        userEnc: refreshResponse.userFactorEnc,
+        serverEncs: refreshResponse.serverFactorEncs,
+      };
+    }
+    this.metadata.updateTSSData({
+      tssKeyType,
+      tssTag: localTssTag,
+      tssNonce: newTssNonce,
+      tssPolyCommits: newTSSCommits,
+      factorPubs,
+      factorEncs,
+    });
+    if (!this._accountSalt) {
+      const accountSalt = generateSalt(getEcCurve(tssKeyType));
+      await this._setTKeyStoreItem(TSS_MODULE, {
+        id: "accountSalt",
+        value: accountSalt,
+      } as IAccountSaltStore);
+      this._accountSalt = accountSalt;
+    }
+    await this._syncShareMetadata();
   }
 
   /**
@@ -677,7 +667,7 @@ export class TKeyTSS extends TKey {
     if (!this.secp256k1Key) throw new Error("Tkey is not reconstructed");
 
     const tssData = this.metadata.getTssData(keyType, tssTag);
-    if (!tssData?.tssPolyCommits?.length) throw new Error(`tss key has not been initialized for tssTag ${this.tssTag}`);
+    if (!tssData?.tssPolyCommits?.length) throw new Error(`tss key has not been initialized for tssTag ${tssTag}`);
 
     const { tssIndex } = await this.getTSSShare(factorKey, { keyType, tssTag });
     // Assumption that there are only index 2 and 3 for tss shares
@@ -752,8 +742,14 @@ export class TKeyTSS extends TKey {
    * @param remoteFactorPub - Factor Pub for remote share.
    * @param signatures - Signatures for authentication against RSS servers.
    */
-  async remoteRefreshTssShares(params: { factorPubs: Point[]; tssIndices: number[]; remoteClient: IRemoteClientState; keyType: KeyType }) {
-    const { factorPubs, tssIndices, remoteClient, keyType } = params;
+  async remoteRefreshTssShares(params: {
+    factorPubs: Point[];
+    tssIndices: number[];
+    remoteClient: IRemoteClientState;
+    keyType: KeyType;
+    tssTag: string;
+  }) {
+    const { factorPubs, tssIndices, remoteClient, keyType, tssTag } = params;
     const rssNodeDetails = await this._getRssNodeDetails();
     const { serverEndpoints, serverPubKeys, serverThreshold } = rssNodeDetails;
     let finalSelectedServers = randomSelection(
@@ -767,7 +763,7 @@ export class TKeyTSS extends TKey {
 
     const tssCommits = tssData.tssPolyCommits;
     const tssNonce: number = tssData.tssNonce || 0;
-    const { pubKey: newTSSServerPub, nodeIndexes } = await this.serviceProvider.getTSSPubKey(this.tssTag, tssNonce + 1, keyType);
+    const { pubKey: newTSSServerPub, nodeIndexes } = await this.serviceProvider.getTSSPubKey(tssTag, tssNonce + 1, keyType);
     // move to pre-refresh
     if (nodeIndexes?.length > 0) {
       finalSelectedServers = nodeIndexes.slice(0, Math.min(serverEndpoints.length, nodeIndexes.length));
@@ -815,8 +811,14 @@ export class TKeyTSS extends TKey {
     });
   }
 
-  async remoteAddFactorPub(params: { newFactorPub: Point; newFactorTSSIndex: number; remoteClient: IRemoteClientState; keyType: KeyType }) {
-    const { newFactorPub, newFactorTSSIndex, remoteClient, keyType } = params;
+  async remoteAddFactorPub(params: {
+    newFactorPub: Point;
+    newFactorTSSIndex: number;
+    remoteClient: IRemoteClientState;
+    keyType: KeyType;
+    tssTag: string;
+  }) {
+    const { newFactorPub, newFactorTSSIndex, remoteClient, keyType, tssTag } = params;
     // const ed25519TssMetadata = this.metadata.getTssData(KeyType.ed25519);
     const localTssTag = TSS_TAG_DEFAULT;
     const secp256k1TssMetadata = this.metadata.getTssData(KeyType.secp256k1, localTssTag);
@@ -830,13 +832,13 @@ export class TKeyTSS extends TKey {
       tssIndices: updatedTSSIndexes,
       remoteClient,
       keyType,
+      tssTag,
     });
   }
 
-  async remoteDeleteFactorPub(params: { factorPubToDelete: Point; remoteClient: IRemoteClientState; keyType: KeyType }) {
-    const { factorPubToDelete, remoteClient, keyType } = params;
-    const localTssTag = TSS_TAG_DEFAULT;
-    const tssData = this.metadata.getTssData(keyType, localTssTag);
+  async remoteDeleteFactorPub(params: { factorPubToDelete: Point; remoteClient: IRemoteClientState; keyType: KeyType; tssTag: string }) {
+    const { factorPubToDelete, remoteClient, keyType, tssTag } = params;
+    const tssData = this.metadata.getTssData(keyType, tssTag);
     const existingFactorPubs = tssData.factorPubs;
     const factorIndex = existingFactorPubs.findIndex((p) => p.x.eq(factorPubToDelete.x));
     if (factorIndex === -1) {
@@ -844,13 +846,14 @@ export class TKeyTSS extends TKey {
     }
     const updatedFactorPubs = existingFactorPubs.slice();
     updatedFactorPubs.splice(factorIndex, 1);
-    const updatedTSSIndexes = updatedFactorPubs.map((fb) => this.getFactorEncs(fb, keyType, localTssTag).tssIndex);
+    const updatedTSSIndexes = updatedFactorPubs.map((fb) => this.getFactorEncs(fb, keyType, tssTag).tssIndex);
 
     await this.remoteRefreshTssShares({
       factorPubs: updatedFactorPubs,
       tssIndices: updatedTSSIndexes,
       remoteClient,
       keyType,
+      tssTag,
     });
   }
 
@@ -1242,7 +1245,7 @@ export class TKeyTSS extends TKey {
     if (found.length > 1) throw CoreError.default("found two or more factorPubs that match, error in metadata");
     const updatedFactorPubs = existingFactorPubs.filter((f) => !f.x.eq(deleteFactorPub.x) || !f.y.eq(deleteFactorPub.y));
 
-    this.metadata.updateTSSData({ tssKeyType: keyType, tssTag: this.tssTag, factorPubs: updatedFactorPubs });
+    this.metadata.updateTSSData({ tssKeyType: keyType, tssTag, factorPubs: updatedFactorPubs });
     const rssNodeDetails = await this._getRssNodeDetails();
     const randomSelectedServers = randomSelection(
       new Array(rssNodeDetails.serverEndpoints.length).fill(null).map((_, i) => i + 1),
