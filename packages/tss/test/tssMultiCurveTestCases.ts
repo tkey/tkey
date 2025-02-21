@@ -149,13 +149,13 @@ const multiCurveTestCases = (params: { TSS_KEY_TYPE: KeyType; legacyFlag: boolea
       if (tb1.secp256k1Key.cmp(reconstructedKey.secp256k1Key) !== 0) {
         fail("key should be able to be reconstructed");
       }
-      const { tssShare: tss2 } = await tb1.getTSSShare(factorKey, { keyType: TSS_KEY_TYPE, tssTag: TSS_TAG_DEFAULT });
+      const { tssShare: tss2 } = await tb1.getTSSShare(factorKey, { keyType: TSS_KEY_TYPE });
 
       // compute public key of the tss share
       const tss2Pub = ecTSS.g.mul(tss2);
 
       // get tss pub key from tss commits
-      const tssCommits = tb1.getTSSCommits(TSS_KEY_TYPE, TSS_TAG_DEFAULT);
+      const tssCommits = tb1.getTSSCommits(TSS_KEY_TYPE);
       const tssCommitA0 = tssCommits[0].toEllipticPoint(ecTSS);
       const tssCommitA1 = tssCommits[1].toEllipticPoint(ecTSS);
 
@@ -228,8 +228,8 @@ const multiCurveTestCases = (params: { TSS_KEY_TYPE: KeyType; legacyFlag: boolea
         fail("key should be able to be reconstructed");
       }
 
-      const { tssShare: tss2 } = await tb1.getTSSShare(factorKey, { keyType: TSS_KEY_TYPE, tssTag: TSS_TAG_DEFAULT });
-      const tssCommits = tb1.getTSSCommits(TSS_KEY_TYPE, TSS_TAG_DEFAULT);
+      const { tssShare: tss2 } = await tb1.getTSSShare(factorKey, { keyType: TSS_KEY_TYPE });
+      const tssCommits = tb1.getTSSCommits(TSS_KEY_TYPE);
 
       const tssPrivKey = getLagrangeCoeffs(ecTSS, [1, deviceTSSIndex], 1)
         .mul(tss1)
@@ -238,7 +238,7 @@ const multiCurveTestCases = (params: { TSS_KEY_TYPE: KeyType; legacyFlag: boolea
 
       const tssPubKey = (ecTSS.g as EllipticPoint).mul(tssPrivKey);
       const tssCommits0 = tssCommits[0].toEllipticPoint(ecTSS);
-      const tssPub = tb1.getTSSPub(TSS_KEY_TYPE, TSS_TAG_DEFAULT).toEllipticPoint(ecTSS);
+      const tssPub = tb1.getTSSPub(TSS_KEY_TYPE).toEllipticPoint(ecTSS);
       equal(tssPubKey.eq(tssCommits0), true);
       equal(tssPub.eq(tssPubKey), true);
 
@@ -250,14 +250,14 @@ const multiCurveTestCases = (params: { TSS_KEY_TYPE: KeyType; legacyFlag: boolea
           const nonce = tb1.computeAccountNonce(accountIndex);
           return share.add(nonce).umod(ecTSS.n);
         })();
-        const { tssShare: tss2Account } = await tb1.getTSSShare(factorKey, { accountIndex, keyType: TSS_KEY_TYPE, tssTag: TSS_TAG_DEFAULT });
+        const { tssShare: tss2Account } = await tb1.getTSSShare(factorKey, { accountIndex, keyType: TSS_KEY_TYPE });
 
         const coefficient1 = getLagrangeCoeffs(ecTSS, [1, deviceTSSIndex], 1);
         const coefficient2 = getLagrangeCoeffs(ecTSS, [1, deviceTSSIndex], deviceTSSIndex);
         const tssKey = coefficient1.mul(tss1Account).add(coefficient2.mul(tss2Account)).umod(ecTSS.n);
 
         const tssKeyPub = (ecTSS.g as EllipticPoint).mul(tssKey);
-        const tssPubAccount = tb1.getTSSPub(TSS_KEY_TYPE, TSS_TAG_DEFAULT, accountIndex).toEllipticPoint(ecTSS);
+        const tssPubAccount = tb1.getTSSPub(TSS_KEY_TYPE, accountIndex).toEllipticPoint(ecTSS);
         equal(tssPubAccount.eq(tssKeyPub), true, "should equal account pub key");
       }
     });
@@ -307,7 +307,8 @@ const multiCurveTestCases = (params: { TSS_KEY_TYPE: KeyType; legacyFlag: boolea
       // Check pub key.
       const ec = getEcCurve(TSS_KEY_TYPE);
       const importTssKeyPub = Point.fromScalar(importTssKey.scalar, ec);
-      const tssPub = await tb.getTSSPub(TSS_KEY_TYPE, "imported");
+      // tb.tssTag = "imported";
+      const tssPub = await tb.getTSSPub(TSS_KEY_TYPE);
       assert(tssPub.equals(importTssKeyPub));
 
       // Check exported key.
@@ -315,14 +316,13 @@ const multiCurveTestCases = (params: { TSS_KEY_TYPE: KeyType; legacyFlag: boolea
         factorKey,
         authSignatures: signatures,
         keyType: TSS_KEY_TYPE,
-        tssTag: TSS_TAG_DEFAULT,
       });
       assert(exportedKey.eq(importTssKey.scalar));
       if (TSS_KEY_TYPE === KeyType.ed25519) {
+        tb.setTssTag(TSS_TAG_DEFAULT);
         const seed = await tb._UNSAFE_exportTssEd25519Seed({
           factorKey,
           authSignatures: signatures,
-          tssTag: TSS_TAG_DEFAULT,
         });
         assert(seed.equals(importTssKey.raw));
       } else {
@@ -332,10 +332,9 @@ const multiCurveTestCases = (params: { TSS_KEY_TYPE: KeyType; legacyFlag: boolea
           authSignatures: signatures,
           accountIndex: 2,
           keyType: TSS_KEY_TYPE,
-          tssTag: TSS_TAG_DEFAULT,
         });
         const exportedPubKeyIndex2 = Point.fromScalar(exportedKeyIndex2, ec);
-        const pubKeyIndex2 = tb.getTSSPub(TSS_KEY_TYPE, TSS_TAG_DEFAULT, 2);
+        const pubKeyIndex2 = tb.getTSSPub(TSS_KEY_TYPE, 2);
         assert(exportedPubKeyIndex2.equals(pubKeyIndex2));
       }
     });
@@ -412,9 +411,8 @@ const multiCurveTestCases = (params: { TSS_KEY_TYPE: KeyType; legacyFlag: boolea
       }
       const { tssShare: retrievedTSS, tssIndex: retrievedTSSIndex } = await tb.getTSSShare(factorKey, {
         keyType: TSS_KEY_TYPE,
-        tssTag: TSS_TAG_DEFAULT,
       });
-      const tssCommits = tb.getTSSCommits(TSS_KEY_TYPE, TSS_TAG_DEFAULT);
+      const tssCommits = tb.getTSSCommits(TSS_KEY_TYPE);
       const tssPrivKey = getLagrangeCoeffs(ecTSS, [1, retrievedTSSIndex], 1)
         .mul(serverDKGPrivKeys[0])
         .add(getLagrangeCoeffs(ecTSS, [1, retrievedTSSIndex], retrievedTSSIndex).mul(retrievedTSS))
@@ -447,10 +445,9 @@ const multiCurveTestCases = (params: { TSS_KEY_TYPE: KeyType; legacyFlag: boolea
       // for imported key
       const { tssShare: retrievedTSS1, tssIndex: retrievedTSSIndex1 } = await tb.getTSSShare(factorKey, {
         keyType: TSS_KEY_TYPE,
-        tssTag: "imported",
       });
 
-      const tssCommits1 = tb.getTSSCommits(TSS_KEY_TYPE, "imported");
+      const tssCommits1 = tb.getTSSCommits(TSS_KEY_TYPE);
       const tssPrivKey1 = getLagrangeCoeffs(ecTSS, [1, retrievedTSSIndex1], 1)
         .mul(serverDKGPrivKeys1[0])
         .add(getLagrangeCoeffs(ecTSS, [1, retrievedTSSIndex1], retrievedTSSIndex1).mul(retrievedTSS1))
@@ -466,7 +463,6 @@ const multiCurveTestCases = (params: { TSS_KEY_TYPE: KeyType; legacyFlag: boolea
           factorKey,
           selectedServers: [1, 2, 3],
           authSignatures: signatures,
-          tssTag: "imported",
         });
         equal(seed.equals(importedKey), true);
       }
@@ -482,18 +478,17 @@ const multiCurveTestCases = (params: { TSS_KEY_TYPE: KeyType; legacyFlag: boolea
       if (tb2.secp256k1Key.cmp(reconstructedKey2.secp256k1Key) !== 0) {
         fail("key should be able to be reconstructed");
       }
-      const tssCommits2 = tb2.getTSSCommits(TSS_KEY_TYPE, TSS_TAG_DEFAULT);
+      const tssCommits2 = tb2.getTSSCommits(TSS_KEY_TYPE);
       const tssCommits20 = tssCommits2[0].toEllipticPoint(ecTSS);
       equal(tssPubKey.eq(tssCommits20), true);
 
       // switch to imported account
-      // tb2.tssTag = "imported";
+      tb2.setTssTag("imported");
       const { tssShare: retrievedTSSImported, tssIndex: retrievedTSSIndexImported } = await tb2.getTSSShare(factorKey, {
         keyType: TSS_KEY_TYPE,
-        tssTag: "imported",
       });
 
-      const tssCommitsImported = tb2.getTSSCommits(TSS_KEY_TYPE, "imported");
+      const tssCommitsImported = tb2.getTSSCommits(TSS_KEY_TYPE);
 
       const tssPrivKeyImported = getLagrangeCoeffs(ecTSS, [1, retrievedTSSIndexImported], 1)
         .mul(serverDKGPrivKeys1[0])
@@ -566,9 +561,8 @@ const multiCurveTestCases = (params: { TSS_KEY_TYPE: KeyType; legacyFlag: boolea
       }
       const { tssShare: retrievedTSS, tssIndex: retrievedTSSIndex } = await tb.getTSSShare(factorKey, {
         keyType: TSS_KEY_TYPE,
-        tssTag: TSS_TAG_DEFAULT,
       });
-      const tssCommits = tb.getTSSCommits(TSS_KEY_TYPE, TSS_TAG_DEFAULT);
+      const tssCommits = tb.getTSSCommits(TSS_KEY_TYPE);
       const tssPrivKey = getLagrangeCoeffs(ecTSS, [1, retrievedTSSIndex], 1)
         .mul(serverDKGPrivKeys[0])
         .add(getLagrangeCoeffs(ecTSS, [1, retrievedTSSIndex], retrievedTSSIndex).mul(retrievedTSS))
@@ -601,14 +595,14 @@ const multiCurveTestCases = (params: { TSS_KEY_TYPE: KeyType; legacyFlag: boolea
 
       // for imported key
       {
-        const finalPubKey = tb.getTSSCommits(TSS_KEY_TYPE, "imported")[0].toEllipticPoint(ecTSS);
+        tb.setTssTag("imported");
+        const finalPubKey = tb.getTSSCommits(TSS_KEY_TYPE)[0].toEllipticPoint(ecTSS);
 
         const finalTssKey = await tb._UNSAFE_exportTssKey({
           factorKey,
           selectedServers: [1, 2, 3],
           authSignatures: signatures,
           keyType: TSS_KEY_TYPE,
-          tssTag: "imported",
         });
         const tssPubKeyImported = (ecTSS.g as EllipticPoint).mul(importedScalar);
 
@@ -620,22 +614,20 @@ const multiCurveTestCases = (params: { TSS_KEY_TYPE: KeyType; legacyFlag: boolea
             factorKey,
             selectedServers: [3, 4, 5],
             authSignatures: signatures,
-            tssTag: "imported",
           });
           equal(seed.equals(importedKey), true);
         }
       }
       {
-        // tb.tssTag = "default";
+        tb.setTssTag(TSS_TAG_DEFAULT);
 
-        const finalPubKey = tb.getTSSCommits(TSS_KEY_TYPE, TSS_TAG_DEFAULT)[0].toEllipticPoint(ecTSS);
+        const finalPubKey = tb.getTSSCommits(TSS_KEY_TYPE)[0].toEllipticPoint(ecTSS);
 
         const finalTssKey = await tb._UNSAFE_exportTssKey({
           factorKey,
           selectedServers: [1, 2, 3],
           authSignatures: signatures,
           keyType: TSS_KEY_TYPE,
-          tssTag: TSS_TAG_DEFAULT,
         });
 
         const tssPubKeyImported = (ecTSS.g as EllipticPoint).mul(finalTssKey);
@@ -650,15 +642,14 @@ const multiCurveTestCases = (params: { TSS_KEY_TYPE: KeyType; legacyFlag: boolea
       await tb2.reconstructKey();
 
       {
-        // tb2.tssTag = "imported";
-        const finalPubKey = tb2.getTSSCommits(TSS_KEY_TYPE, "imported")[0].toEllipticPoint(ecTSS);
+        tb2.setTssTag("imported");
+        const finalPubKey = tb2.getTSSCommits(TSS_KEY_TYPE)[0].toEllipticPoint(ecTSS);
 
         const finalTssKey = await tb2._UNSAFE_exportTssKey({
           factorKey,
           selectedServers: [1, 2, 3],
           authSignatures: signatures,
           keyType: TSS_KEY_TYPE,
-          tssTag: "imported",
         });
         const tssPubKeyImported = (ecTSS.g as EllipticPoint).mul(finalTssKey);
 
@@ -668,14 +659,13 @@ const multiCurveTestCases = (params: { TSS_KEY_TYPE: KeyType; legacyFlag: boolea
       {
         // tb2.tssTag = "default";
 
-        const finalPubKey = tb2.getTSSCommits(TSS_KEY_TYPE, TSS_TAG_DEFAULT)[0].toEllipticPoint(ecTSS);
+        const finalPubKey = tb2.getTSSCommits(TSS_KEY_TYPE)[0].toEllipticPoint(ecTSS);
 
         const finalTssKey = await tb2._UNSAFE_exportTssKey({
           factorKey,
           selectedServers: [1, 2, 3],
           authSignatures: signatures,
           keyType: TSS_KEY_TYPE,
-          tssTag: TSS_TAG_DEFAULT,
         });
         const tssPubKeyImported = (ecTSS.g as EllipticPoint).mul(finalTssKey);
 
@@ -742,7 +732,6 @@ const multiCurveTestCases = (params: { TSS_KEY_TYPE: KeyType; legacyFlag: boolea
           existingFactorKey: factorKey,
           newFactorPub: Point.fromElliptic(newFactorPub),
           newTSSIndex: deviceTSSIndex,
-          tssTag: TSS_TAG_DEFAULT,
         });
         await tb.syncLocalMetadataTransitions();
       });
@@ -756,7 +745,6 @@ const multiCurveTestCases = (params: { TSS_KEY_TYPE: KeyType; legacyFlag: boolea
           newFactorPub: Point.fromElliptic(newFactorPub),
           newTSSIndex,
           refreshShares: true,
-          tssTag: TSS_TAG_DEFAULT,
         });
         await tb.syncLocalMetadataTransitions();
       });
@@ -767,13 +755,12 @@ const multiCurveTestCases = (params: { TSS_KEY_TYPE: KeyType; legacyFlag: boolea
           factorKey,
           deleteFactorPub: Point.fromElliptic(newFactorPub),
           authSignatures: signatures,
-          tssTag: TSS_TAG_DEFAULT,
         });
         await tb.syncLocalMetadataTransitions();
       });
 
       it("should no longer be able to access key share with removed factor (same index)", async function () {
-        await rejects(tb.getTSSShare(newFactorKeySameIndex, { keyType: TSS_KEY_TYPE, tssTag: TSS_TAG_DEFAULT }));
+        await rejects(tb.getTSSShare(newFactorKeySameIndex, { keyType: TSS_KEY_TYPE }));
       });
 
       it("should be able to remove factor for different index", async function () {
@@ -782,13 +769,12 @@ const multiCurveTestCases = (params: { TSS_KEY_TYPE: KeyType; legacyFlag: boolea
           factorKey,
           deleteFactorPub: Point.fromElliptic(newFactorPub),
           authSignatures: signatures,
-          tssTag: TSS_TAG_DEFAULT,
         });
         await tb.syncLocalMetadataTransitions();
       });
 
       it("should no longer be able to access key share with removed factor (different index)", async function () {
-        await rejects(tb.getTSSShare(newFactorKeyNewIndex, { keyType: TSS_KEY_TYPE, tssTag: TSS_TAG_DEFAULT }));
+        await rejects(tb.getTSSShare(newFactorKeyNewIndex, { keyType: TSS_KEY_TYPE }));
       });
     });
 
@@ -861,7 +847,7 @@ const multiCurveTestCases = (params: { TSS_KEY_TYPE: KeyType; legacyFlag: boolea
         await tbJson.reconstructKey();
 
         // try refresh share
-        await tbJson.getTSSShare(factorKey, { keyType: TSS_KEY_TYPE, tssTag: TSS_TAG_DEFAULT });
+        await tbJson.getTSSShare(factorKey, { keyType: TSS_KEY_TYPE });
 
         const newFactorKeyPair = ecFactor.genKeyPair();
         await tbJson.addFactorPub({
@@ -870,10 +856,9 @@ const multiCurveTestCases = (params: { TSS_KEY_TYPE: KeyType; legacyFlag: boolea
           newFactorPub: Point.fromElliptic(newFactorKeyPair.getPublic()),
           newTSSIndex,
           refreshShares: true,
-          tssTag: TSS_TAG_DEFAULT,
         });
 
-        await tbJson.getTSSShare(newFactorKeyPair.getPrivate(), { keyType: TSS_KEY_TYPE, tssTag: TSS_TAG_DEFAULT });
+        await tbJson.getTSSShare(newFactorKeyPair.getPrivate(), { keyType: TSS_KEY_TYPE });
 
         const serialized2 = JSON.stringify(tbJson);
 
@@ -885,8 +870,8 @@ const multiCurveTestCases = (params: { TSS_KEY_TYPE: KeyType; legacyFlag: boolea
 
         await tbJson2.reconstructKey();
 
-        await tbJson2.getTSSShare(factorKey, { keyType: TSS_KEY_TYPE, tssTag: TSS_TAG_DEFAULT });
-        await tbJson2.getTSSShare(newFactorKeyPair.getPrivate(), { keyType: TSS_KEY_TYPE, tssTag: TSS_TAG_DEFAULT });
+        await tbJson2.getTSSShare(factorKey, { keyType: TSS_KEY_TYPE });
+        await tbJson2.getTSSShare(newFactorKeyPair.getPrivate(), { keyType: TSS_KEY_TYPE });
       });
     });
   });
