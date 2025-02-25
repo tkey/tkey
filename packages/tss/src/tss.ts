@@ -15,7 +15,7 @@ import {
 import { CoreError, TKey } from "@tkey/core";
 import { post } from "@toruslabs/http-helpers";
 import { dotProduct, ecPoint, hexPoint, PointHex, randomSelection, RSSClient } from "@toruslabs/rss-client";
-import { getEcCurve, getEd25519ExtendedPublicKey as getEd25519KeyPairFromSeed, getKeyCurve, getSecpKeyFromEd25519 } from "@toruslabs/torus.js";
+import { getEd25519ExtendedPublicKey as getEd25519KeyPairFromSeed, getKeyCurve, getSecpKeyFromEd25519 } from "@toruslabs/torus.js";
 import BN from "bn.js";
 import { ec as EC } from "elliptic";
 import { keccak256 } from "ethereum-cryptography/keccak";
@@ -203,7 +203,7 @@ export class TKeyTSS extends TKey {
 
         this.metadata.updateTSSData({ tssKeyType: KeyType.secp256k1, tssTag: localTssTag, tssNonce: 0, tssPolyCommits, factorPubs, factorEncs });
 
-        const ecCurve = getEcCurve(KeyType.secp256k1);
+        const ecCurve = getKeyCurve(KeyType.secp256k1);
         const accountSalt = generateSalt(ecCurve);
         await this._setTKeyStoreItem(TSS_MODULE, {
           id: "accountSalt",
@@ -634,7 +634,7 @@ export class TKeyTSS extends TKey {
       factorEncs,
     });
     if (!this._accountSalt) {
-      const accountSalt = generateSalt(getEcCurve(tssKeyType));
+      const accountSalt = generateSalt(getKeyCurve(tssKeyType));
       await this._setTKeyStoreItem(TSS_MODULE, {
         id: "accountSalt",
         value: accountSalt,
@@ -686,7 +686,7 @@ export class TKeyTSS extends TKey {
     const { tssShare: tempShare, tssIndex: tempIndex } = await this.getTSSShare(tempFactorKey, { keyType, tssTag });
 
     // reconstruct final key using sss
-    const ec = getEcCurve(keyType);
+    const ec = getKeyCurve(keyType);
     const tssKey = lagrangeInterpolation(ec, [tempShare, factorShare], [new BN(tempIndex), new BN(factorIndex)]);
 
     // delete created tss share
