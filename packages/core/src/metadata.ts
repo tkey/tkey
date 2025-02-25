@@ -29,8 +29,6 @@ import CoreError from "./errors";
 import { polyCommitmentEval } from "./lagrangeInterpolatePolynomial";
 import { TssMetadata } from "./tssMetadata";
 
-export type SupportedCurve = "ed25519" | "sec";
-
 export const LEGACY_METADATA_VERSION = "0.0.1";
 export const METADATA_VERSION = "1.0.0";
 
@@ -62,9 +60,6 @@ export class Metadata implements IMetadata {
     [tssTag: string]: {
       [curveType: string]: TssMetadata;
     };
-    // [tssTag: string]: Record<"secp256k1"  "ed25519", TssMetadata>;
-    // secp256k1: TssMetadata;
-    // ed25519: TssMetadata;
   };
 
   version = METADATA_VERSION;

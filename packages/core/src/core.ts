@@ -151,8 +151,6 @@ class ThresholdKey implements ITKey {
       manualSync,
       lastFetchedCloudMetadata,
       serverTimeOffset,
-
-      // legacyMetadata flag
       legacyMetadataFlag,
     } = value;
     const { storageLayer, serviceProvider, modules } = args;

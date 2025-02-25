@@ -146,6 +146,9 @@ export class TKeyTSS extends TKey {
     return tbJson;
   }
 
+  /**
+   * Initializes tkey instance and added checking of invalid config.
+   */
   async initialize(params?: TKeyInitArgs): Promise<KeyDetails> {
     if (this.serviceProvider.customAuthArgs.keyType === KeyType.ed25519 && !this.legacyMetadataFlag) {
       throw CoreError.default("legacyMetadataFlag need to be set for ed25519 network's postboxkey ");
@@ -154,9 +157,8 @@ export class TKeyTSS extends TKey {
   }
 
   /**
-   * Initializes this instance. If a TSS account does not exist, creates one
-   * under the given factor key. `skipTssInit` skips TSS account creation and
-   * can be used with `importTssKey` to just import an existing account instead.
+   * Initializes Tss Curve with Secp256k1 keyType
+   * will use same factorPubs from Ed24459 curves if existing Ed25519 curve present
    */
   async initializeTssSecp256k1(params: Omit<TKeyTSSInitArgs, "tssKeyType">): Promise<void> {
     // only support service provider with secp256k1 key type
@@ -258,9 +260,8 @@ export class TKeyTSS extends TKey {
   }
 
   /**
-   * Initializes this instance. If a TSS account does not exist, creates one
-   * under the given factor key. `skipTssInit` skips TSS account creation and
-   * can be used with `importTssKey` to just import an existing account instead.
+   * Initializes Tss Curve with Ed25519 keyType
+   * will use same factorPubs from Secp256k1 if existing Secp256k1 curve present
    */
   async initializeTssEd25519(params: Omit<TKeyTSSInitArgs, "tssKeyType"> & { importKey: Buffer }): Promise<void> {
     // only support service provider with secp256k1 key type
@@ -528,7 +529,7 @@ export class TKeyTSS extends TKey {
 
     const tssData = this.metadata.getTssData(params.tssKeyType, localTssTag);
     if (tssData) {
-      throw CoreError.default("TSS account already exists");
+      throw CoreError.default("Duplicate account tag, please use a unique tag for importing key");
     }
 
     const ec = getKeyCurve(tssKeyType);
@@ -539,11 +540,6 @@ export class TKeyTSS extends TKey {
     if (!factorPubs || factorPubs.length === 0) throw CoreError.default(`invalid param, newFactorPub is required`);
     if (!newTSSIndexes || newTSSIndexes.length === 0) throw CoreError.default(`invalid param, newTSSIndex is required`);
     if (authSignatures.length === 0) throw CoreError.default(`invalid param, authSignatures is required`);
-
-    // const existingFactorPubs = tssData.factorPubs;
-    // if (existingFactorPubs?.length > 0) {
-    //   throw CoreError.default(`Duplicate account tag, please use a unique tag for importing key`);
-    // }
 
     const importScalar = await (async () => {
       if (tssKeyType === KeyType.secp256k1) {

@@ -72,9 +72,6 @@ export async function assignTssDkgKeys(opts: {
 }) {
   const { serviceProvider, verifierName: verifier, verifierId } = opts;
 
-  serviceProvider.verifierName = verifier;
-  serviceProvider.verifierId = verifierId;
-
   let { tssTag, maxTSSNonceToSimulate } = opts;
   tssTag = tssTag || "default";
   maxTSSNonceToSimulate = maxTSSNonceToSimulate || 1;
