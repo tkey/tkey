@@ -50,7 +50,6 @@ export const LEGACY_KEY_TYPE = "secp256k1";
 
 export interface TSSTKeyArgs extends TKeyArgs {
   serviceProvider: TSSTorusServiceProvider;
-  // tssKeyType: KeyType;
   tssTag?: string;
   legacyMetadataFlag?: boolean;
 }
@@ -69,10 +68,6 @@ export interface TKeyTSSInitArgs {
 
 export class TKeyTSS extends TKey {
   serviceProvider: TSSTorusServiceProvider = null;
-
-  // private _tssKeyType: KeyType;
-
-  // private _tssCurve: EC;
 
   private _tssTag: string;
 
@@ -94,8 +89,6 @@ export class TKeyTSS extends TKey {
     this.serviceProvider = serviceProvider;
     this.storageLayer = storageLayer;
     this._tssTag = tssTag;
-    // this._tssKeyType = tssKeyType;
-    // this._tssCurve = new EC(tssKeyType);
     this.legacyMetadataFlag = legacyMetadataFlag;
   }
 
@@ -113,10 +106,6 @@ export class TKeyTSS extends TKey {
     if (tssTag !== tbTss._tssTag) {
       throw CoreError.default(`tssTag mismatch: ${tssTag} !== ${tbTss._tssTag}`);
     }
-
-    // if (tssKeyType !== tbTss.tssKeyType) {
-    //   throw CoreError.default(`tssKeyType mismatch: ${tssKeyType} !== ${tbTss.tssKeyType}`);
-    // }
 
     // copy over tkey to tkeyTss
     tbTss.shares = tb.shares;
@@ -526,7 +515,7 @@ export class TKeyTSS extends TKey {
     const oldTag = this._tssTag;
 
     // update current tssTag
-    this._tssTag = tssTag;
+    this.setTssTag(tssTag);
     const localTssTag = this._tssTag;
 
     try {
@@ -646,7 +635,7 @@ export class TKeyTSS extends TKey {
       }
       await this._syncShareMetadata();
     } catch (error) {
-      this._tssTag = oldTag;
+      this.setTssTag(oldTag);
       throw error;
     }
   }

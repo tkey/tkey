@@ -31,7 +31,6 @@ import { TssMetadata } from "./tssMetadata";
 
 export const LEGACY_METADATA_VERSION = "0.0.1";
 export const METADATA_VERSION = "1.0.0";
-
 export class Metadata implements IMetadata {
   pubKey: Point;
 
@@ -58,7 +57,7 @@ export class Metadata implements IMetadata {
 
   tss?: {
     [tssTag: string]: {
-      [curveType: string]: TssMetadata;
+      [curveType in KeyType]?: TssMetadata;
     };
   };
 
@@ -105,19 +104,23 @@ export class Metadata implements IMetadata {
     if (version === METADATA_VERSION) {
       metadata.tss = {};
 
-      if (tss) {
+      if (tss instanceof Object) {
         Object.keys(tss).forEach((tsstag) => {
-          if (tss[tsstag]) {
+          if (tss[tsstag] instanceof Object) {
             metadata.tss[tsstag] = {};
             Object.keys(tss[tsstag]).forEach((tssKeyType) => {
-              metadata.tss[tsstag][tssKeyType] = TssMetadata.fromJSON(tss[tsstag][tssKeyType]);
+              if (tssKeyType in KeyType) {
+                metadata.tss[tsstag][tssKeyType as KeyType] = TssMetadata.fromJSON(tss[tsstag][tssKeyType]);
+              } else {
+                throw new Error(`tssKeyType not supported ${tssKeyType}`);
+              }
             });
           }
         });
       }
 
       // else would be legacy version, migrate for secp version
-    } else if (factorEncs) {
+    } else if (factorEncs instanceof Object) {
       metadata.tss = {};
       // some tests case on backward compatbility tests having serialized metadata with empty tssKeyTypes
       const tssKeyTypes: Record<string, string> = tssKeyTypesJson ?? {};
@@ -534,8 +537,6 @@ export class LegacyMetadata extends Metadata {
       tssPolyCommits,
       factorPubs,
       factorEncs,
-      // Legacy Metadata version
-      // version: this.version,
     };
   }
 
