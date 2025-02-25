@@ -56,7 +56,7 @@ const multiCurveTestCases = (params: { TSS_KEY_TYPE: KeyType; legacyFlag: boolea
         serverOpts,
         tssKeyType,
       });
-      fail("should not able to initialize tss");
+      fail("should not able to initialize tss using factorPub, deviceTssShare and deviceTssIndes with existing tss ");
     } catch (e) {}
     try {
       await tb.initializeTss({
@@ -65,7 +65,7 @@ const multiCurveTestCases = (params: { TSS_KEY_TYPE: KeyType; legacyFlag: boolea
         serverOpts,
         tssKeyType,
       });
-      fail("should not able to initialize tss");
+      fail("should not able to initialize tss using deviceTssShare with existing tss ");
     } catch (e) {}
     try {
       await tb.initializeTss({
@@ -74,7 +74,7 @@ const multiCurveTestCases = (params: { TSS_KEY_TYPE: KeyType; legacyFlag: boolea
         serverOpts,
         tssKeyType,
       });
-      fail("should not able to initialize tss");
+      fail("should not able to initialize tss using deviceTssIndes with existing tss ");
     } catch (e) {}
     try {
       await tb.initializeTss({
@@ -83,7 +83,7 @@ const multiCurveTestCases = (params: { TSS_KEY_TYPE: KeyType; legacyFlag: boolea
         serverOpts,
         tssKeyType,
       });
-      fail("should not able to initialize tss");
+      fail("should not able to initialize tss using factorPub with existing tss ");
     } catch (e) {}
   };
 
@@ -657,8 +657,6 @@ const multiCurveTestCases = (params: { TSS_KEY_TYPE: KeyType; legacyFlag: boolea
         equal(tssPubKeyImported.eq(finalPubKey), true);
       }
       {
-        // tb2.tssTag = "default";
-
         const finalPubKey = tb2.getTSSCommits(TSS_KEY_TYPE)[0].toEllipticPoint(ecTSS);
 
         const finalTssKey = await tb2._UNSAFE_exportTssKey({

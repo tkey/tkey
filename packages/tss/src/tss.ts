@@ -643,7 +643,7 @@ export class TKeyTSS extends TKey {
   /**
    * UNSAFE: USE WITH CAUTION
    *
-   * Reconstructs and exports the TSS private key. Secp256k1 only.
+   * Reconstructs and exports the TSS private key.
    */
   async _UNSAFE_exportTssKey(tssOptions: {
     factorKey: BN;
