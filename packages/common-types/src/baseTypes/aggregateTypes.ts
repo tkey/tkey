@@ -72,8 +72,16 @@ export interface ITssMetadata {
 
   tssPolyCommits: Point[];
 
+  /**
+   * Public Key Points of all factor keys
+   */
   factorPubs: Point[];
 
+  /**
+   * Encrypted threshold signature scheme (TSS) share managed by FactorKey.
+   * This share is securely encrypted to ensure confidentiality and is used in multi-party
+   * cryptographic signing processes without exposing the full private key.
+   */
   factorEncs: {
     [factorPubID: string]: FactorEnc;
   };
@@ -184,6 +192,7 @@ export type TKeyArgs = {
   customAuthArgs?: CustomAuthArgs;
   manualSync?: boolean;
   serverTimeOffset?: number;
+  legacyMetadataFlag?: boolean;
 };
 
 export interface SecurityQuestionStoreArgs {

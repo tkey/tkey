@@ -90,7 +90,7 @@ class ThresholdKey implements ITKey {
 
   serverTimeOffset?: number = 0;
 
-  legacyMetadataFlag: boolean = false;
+  protected legacyMetadataFlag: boolean = false;
 
   // secp256k1 key
   private privKey: BN;
@@ -98,7 +98,15 @@ class ThresholdKey implements ITKey {
   private _ed25519Seed?: Buffer;
 
   constructor(args?: TKeyArgs) {
-    const { enableLogging = false, modules = {}, serviceProvider, storageLayer, manualSync = false, serverTimeOffset } = args || {};
+    const {
+      enableLogging = false,
+      modules = {},
+      serviceProvider,
+      storageLayer,
+      manualSync = false,
+      serverTimeOffset,
+      legacyMetadataFlag,
+    } = args || {};
     this.enableLogging = enableLogging;
     this.serviceProvider = serviceProvider;
     this.storageLayer = storageLayer;
@@ -114,7 +122,7 @@ class ThresholdKey implements ITKey {
     this.setModuleReferences(); // Providing ITKeyApi access to modules
     this.haveWriteMetadataLock = "";
     this.serverTimeOffset = serverTimeOffset;
-    this.legacyMetadataFlag = false;
+    this.legacyMetadataFlag = legacyMetadataFlag;
   }
 
   get secp256k1Key(): BN | null {

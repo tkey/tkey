@@ -51,7 +51,6 @@ export const LEGACY_KEY_TYPE = "secp256k1";
 export interface TSSTKeyArgs extends TKeyArgs {
   serviceProvider: TSSTorusServiceProvider;
   tssTag?: string;
-  legacyMetadataFlag?: boolean;
 }
 
 export interface TKeyTSSInitArgs {
@@ -89,7 +88,6 @@ export class TKeyTSS extends TKey {
     this.serviceProvider = serviceProvider;
     this.storageLayer = storageLayer;
     this._tssTag = tssTag;
-    this.legacyMetadataFlag = legacyMetadataFlag;
   }
 
   public get tssTag(): string {
@@ -127,7 +125,6 @@ export class TKeyTSS extends TKey {
     tbJson.tssTag = this._tssTag;
     // tbJson.tssKeyType = this.tssKeyType;
     tbJson.accountSalt = this._accountSalt;
-    tbJson.legacyMetadataFlag = this.legacyMetadataFlag;
     return tbJson;
   }
 
