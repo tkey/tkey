@@ -248,15 +248,9 @@ export class TKeyTSS extends TKey {
   /**
    * Initializes Tss Curve with Ed25519 keyType
    * will use same factorPubs from Secp256k1 if existing Secp256k1 curve present
+   * require import seed for ed25519
    */
   async initializeTssEd25519(params: Omit<TKeyTSSInitArgs, "tssKeyType"> & { importKey: Buffer }): Promise<void> {
-    // only support service provider with secp256k1 key type
-    if (this.serviceProvider.customAuthArgs.keyType === KeyType.ed25519) {
-      if (this.metadata.getTssData(KeyType.ed25519, TSS_TAG_DEFAULT)) {
-        throw CoreError.default("Multiple Curve do not support for postboxKey Ed");
-      }
-    }
-
     const { importKey } = params;
     if (!importKey) {
       throw CoreError.default("importKey is required");
@@ -272,7 +266,7 @@ export class TKeyTSS extends TKey {
 
       const { factorPub, deviceTSSIndex, deviceTSSShare } = params;
       if (ed25519Exist) {
-        throw CoreError.default("TSS account already exists for secp256k1 key type");
+        throw CoreError.default("TSS account already exists for ed25519 key type");
       }
 
       let factorPubs = [factorPub];

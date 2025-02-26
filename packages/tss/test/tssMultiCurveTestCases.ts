@@ -56,7 +56,7 @@ const multiCurveTestCases = (params: { TSS_KEY_TYPE: KeyType; legacyFlag: boolea
         serverOpts,
         tssKeyType,
       });
-      fail("should not able to initialize tss using factorPub, deviceTssShare and deviceTssIndes with existing tss ");
+      fail("should not able to initialize new tss curve using factorPub, deviceTssShare and deviceTssIndes with existing tss ");
     } catch (e) {}
     try {
       await tb.initializeTss({
@@ -65,7 +65,7 @@ const multiCurveTestCases = (params: { TSS_KEY_TYPE: KeyType; legacyFlag: boolea
         serverOpts,
         tssKeyType,
       });
-      fail("should not able to initialize tss using deviceTssShare with existing tss ");
+      fail("should not able to initialize new tss curve using deviceTssShare with existing tss ");
     } catch (e) {}
     try {
       await tb.initializeTss({
@@ -74,7 +74,7 @@ const multiCurveTestCases = (params: { TSS_KEY_TYPE: KeyType; legacyFlag: boolea
         serverOpts,
         tssKeyType,
       });
-      fail("should not able to initialize tss using deviceTssIndes with existing tss ");
+      fail("should not able to initialize new tss curve using deviceTssIndes with existing tss ");
     } catch (e) {}
     try {
       await tb.initializeTss({
@@ -83,7 +83,7 @@ const multiCurveTestCases = (params: { TSS_KEY_TYPE: KeyType; legacyFlag: boolea
         serverOpts,
         tssKeyType,
       });
-      fail("should not able to initialize tss using factorPub with existing tss ");
+      fail("should not able to initialize new tss curve using factorPub with existing tss ");
     } catch (e) {}
   };
 
