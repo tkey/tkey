@@ -90,7 +90,7 @@ class ThresholdKey implements ITKey {
 
   serverTimeOffset?: number = 0;
 
-  protected legacyMetadataFlag: boolean = false;
+  private _legacyMetadataFlag: boolean = false;
 
   // secp256k1 key
   private privKey: BN;
@@ -122,7 +122,7 @@ class ThresholdKey implements ITKey {
     this.setModuleReferences(); // Providing ITKeyApi access to modules
     this.haveWriteMetadataLock = "";
     this.serverTimeOffset = serverTimeOffset;
-    this.legacyMetadataFlag = legacyMetadataFlag;
+    this._legacyMetadataFlag = legacyMetadataFlag;
   }
 
   get secp256k1Key(): BN | null {
@@ -138,6 +138,10 @@ class ThresholdKey implements ITKey {
       return this._ed25519Seed;
     }
     return null;
+  }
+
+  get legacyMetadataFlag() {
+    return this._legacyMetadataFlag;
   }
 
   protected set secp256k1Key(privKey: BN) {
@@ -172,7 +176,7 @@ class ThresholdKey implements ITKey {
       serverTimeOffset,
     });
     // overwrite legacyMetadataFlag
-    tb.legacyMetadataFlag = legacyMetadataFlag ?? false;
+    tb._legacyMetadataFlag = legacyMetadataFlag ?? false;
 
     // this will computed during reconstructKey should we restore here?
     if (privKey) tb.privKey = new BN(privKey, "hex");
@@ -931,7 +935,7 @@ class ThresholdKey implements ITKey {
 
     // inject legacyMetadata flag for AuthMetadata deserialization
     // it wont affect other fromJSONConstruct as it is just extra parameter
-    return params.fromJSONConstructor.fromJSON({ ...raw, legacyMetadataFlag: this.legacyMetadataFlag });
+    return params.fromJSONConstructor.fromJSON({ ...raw, legacyMetadataFlag: this._legacyMetadataFlag });
   }
 
   // Lock functions
@@ -1201,7 +1205,7 @@ class ThresholdKey implements ITKey {
       manualSync: this.manualSync,
       serviceProvider: this.serviceProvider,
       storageLayer: this.storageLayer,
-      legacyMetadataFlag: this.legacyMetadataFlag,
+      legacyMetadataFlag: this._legacyMetadataFlag,
     };
   }
 
@@ -1430,7 +1434,7 @@ class ThresholdKey implements ITKey {
     const shares = poly.generateShares(shareIndexes);
 
     // create metadata to be stored
-    const metadata = createMetadataInstance(this.legacyMetadataFlag, getPubKeyPoint(this.privKey));
+    const metadata = createMetadataInstance(this._legacyMetadataFlag, getPubKeyPoint(this.privKey));
     metadata.addFromPolynomialAndShares(poly, shares);
     const serviceProviderShare = shares[shareIndexes[0].toString("hex")];
     const shareStore = new ShareStore(serviceProviderShare, poly.getPolynomialID());
