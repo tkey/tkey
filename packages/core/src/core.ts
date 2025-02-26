@@ -1201,6 +1201,7 @@ class ThresholdKey implements ITKey {
       manualSync: this.manualSync,
       serviceProvider: this.serviceProvider,
       storageLayer: this.storageLayer,
+      legacyMetadataFlag: this.legacyMetadataFlag,
     };
   }
 
