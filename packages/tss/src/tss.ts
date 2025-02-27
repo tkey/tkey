@@ -123,7 +123,6 @@ export class TKeyTSS extends TKey {
   toJSON(): StringifiedType {
     const tbJson = super.toJSON();
     tbJson.tssTag = this._tssTag;
-    // tbJson.tssKeyType = this.tssKeyType;
     tbJson.accountSalt = this._accountSalt;
     return tbJson;
   }

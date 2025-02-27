@@ -122,7 +122,9 @@ export class Metadata implements IMetadata {
       // else would be legacy version, migrate for secp version
     } else if (factorEncs instanceof Object) {
       metadata.tss = {};
-      // some tests case on backward compatbility tests having serialized metadata with empty tssKeyTypes
+
+      // tssKeyTypeJson might be undefined, tssKeyTypes need to fallback to `{}`
+      // - some tests case on backward compatbility tests having tssKeyTypeJson undefined
       const tssKeyTypes: Record<string, string> = tssKeyTypesJson ?? {};
 
       Object.keys(factorEncs).forEach((tssTag) => {
@@ -454,7 +456,9 @@ export class LegacyMetadata extends Metadata {
     if (Object.keys(factorEncs).length === 0) return metadata;
 
     metadata.tss = {};
-    // some tests case on backward compatbility tests having serialized metadata with empty tssKeyType
+
+    // tssKeyTypeJson might be undefined, tssKeyTypes need to fallback to `{}`
+    // - some tests case on backward compatbility tests having tssKeyTypeJson undefined
     const tssKeyTypes: Record<string, string> = tssKeyTypesJson ?? {};
 
     Object.keys(factorEncs).forEach((tssTag) => {
