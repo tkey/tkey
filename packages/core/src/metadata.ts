@@ -354,7 +354,7 @@ export class Metadata implements IMetadata {
       version: METADATA_VERSION,
     };
 
-    return Object.keys(this.tss ?? {}).length > 0 ? { ...jsonObject, tss: this.tss } : jsonObject;
+    return Object.keys(this.tss ?? {}).length > 0 ? { ...jsonObject, tss: JSON.parse(JSON.stringify(this.tss)) } : jsonObject;
   }
 
   /**

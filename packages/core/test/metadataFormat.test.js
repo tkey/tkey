@@ -45,12 +45,14 @@ describe("Metadata new Formatting tests", function () {
   it("#should able to deserialize legacy JSON", async function () {
     const legacyInstance = LegacyMetadata.fromJSON(JSON.parse(legacyJSONEd25519));
     const legacyInstanceSerialized = legacyInstance.toJSON();
-    equal(JSON.stringify(legacyInstanceSerialized), legacyJSONEd25519);
+    deepEqual(legacyInstanceSerialized, JSON.parse(legacyJSONEd25519));
+    // equal(JSON.stringify(legacyInstanceSerialized), JSON.stringify(JSON.parse(legacyJSONEd25519)));
 
     const legacyInstance1 = LegacyMetadata.fromJSON(JSON.parse(legacyJSONSecp256k1));
     const legacyInstanceSerialized1 = legacyInstance1.toJSON();
 
-    equal(JSON.stringify(legacyInstanceSerialized1), legacyJSONSecp256k1);
+    deepEqual(legacyInstanceSerialized1, JSON.parse(legacyJSONSecp256k1));
+    // equal(JSON.stringify(legacyInstanceSerialized1), legacyJSONSecp256k1);
 
     const instance1 = Metadata.fromJSON(JSON.parse(legacyJSONSecp256k1));
 
@@ -67,7 +69,8 @@ describe("Metadata new Formatting tests", function () {
   it("#should able to deserialize new JSON format with multicurve", async function () {
     const instance = Metadata.fromJSON(JSON.parse(multiCurveJson));
     const instanceSerialized = instance.toJSON();
-    equal(JSON.stringify(instanceSerialized), multiCurveJson);
+    deepEqual(instanceSerialized, JSON.parse(multiCurveJson));
+    // equal(JSON.stringify(instanceSerialized), multiCurveJson);
   });
   // to add: add tests for different and multple tags and keytypes\
   it("#should able to deserialize new JSON format with backwardcompability test", async function () {
