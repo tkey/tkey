@@ -6,7 +6,7 @@
   "module": "dist/lib.esm/index.js",
   "unpkg": "dist/tss.umd.min.js",
   "jsdelivr": "dist/tss.umd.min.js",
-  "types": "dist/types/index.d.ts",
+  "types": "dist/lib.cjs/types/index.d.ts",
   "sideEffects": false,
   "files": [
     "dist"
@@ -25,20 +25,20 @@
     "@tkey/core": "^15.2.1-alpha.0",
     "@tkey/service-provider-torus": "^15.2.1-alpha.0",
     "@toruslabs/customauth": "^20.4.0",
-    "@toruslabs/http-helpers": "^8.0.0",
+    "@toruslabs/http-helpers": "^8.1.1",
     "@toruslabs/rss-client": "^2.0.2",
-    "@toruslabs/torus.js": "^15.1.1",
+    "@toruslabs/torus.js": "^16.0.0",
     "@types/bn.js": "^5.1.6",
     "bn.js": "^5.2.1",
     "elliptic": "^6.6.1",
-    "ethereum-cryptography": "^3.0.0"
+    "ethereum-cryptography": "^3.1.0"
   },
   "devDependencies": {
     "@tkey/storage-layer-torus": "^15.2.1-alpha.0",
     "@types/jsrsasign": "^10.5.15",
     "jsrsasign": "^11.1.0",
     "ts-node": "^10.9.2",
-    "tsx": "^4.19.2",
-    "typescript": "^5.7.3"
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
   }
 }

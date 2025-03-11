@@ -583,7 +583,7 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
           verifierId: sp.verifierId,
         });
         signatures = authSignatures;
-        // eslint-disable-next-line require-atomic-updates
+
         sp.postboxKey = postboxkey;
 
         await assignTssDkgKeys({
