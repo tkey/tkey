@@ -1,4 +1,4 @@
-import { Point, StringifiedType } from "@tkey/common-types";
+import { KeyType, Point, StringifiedType } from "@tkey/common-types";
 import { TorusServiceProvider } from "@tkey/service-provider-torus";
 import { AggregateLoginParams, SubVerifierDetails, TorusAggregateLoginResponse, TorusLoginResponse } from "@toruslabs/customauth";
 import { PointHex } from "@toruslabs/rss-client";
@@ -57,7 +57,8 @@ export class TSSTorusServiceProvider extends TorusServiceProvider {
 
   async getTSSPubKey(
     tssTag: string,
-    tssNonce: number
+    tssNonce: number,
+    keyType: KeyType
   ): Promise<{
     pubKey: Point;
     nodeIndexes?: number[];
@@ -69,6 +70,7 @@ export class TSSTorusServiceProvider extends TorusServiceProvider {
       verifier: this.verifierName,
       verifierId: this.verifierId,
       extendedVerifierId: getExtendedVerifierId(this.verifierId, tssTag, tssNonce),
+      keyType,
     });
 
     return {

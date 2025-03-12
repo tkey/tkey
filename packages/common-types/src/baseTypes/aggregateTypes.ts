@@ -20,6 +20,7 @@ import {
   ISerializable,
   IServiceProvider,
   IStorageLayer,
+  KeyType,
   PolyIDAndShares,
   PolynomialID,
   ShareDescriptionMap,
@@ -62,6 +63,30 @@ export type FactorEnc = {
   serverEncs: EncryptedMessage[];
 };
 
+export interface ITssMetadata {
+  tssTag: string;
+
+  tssKeyType: KeyType;
+
+  tssNonce: number;
+
+  tssPolyCommits: Point[];
+
+  /**
+   * Public Key Points of all factor keys
+   */
+  factorPubs: Point[];
+
+  /**
+   * Encrypted threshold signature scheme (TSS) share managed by FactorKey.
+   * This share is securely encrypted to ensure confidentiality and is used in multi-party
+   * cryptographic signing processes without exposing the full private key.
+   */
+  factorEncs: {
+    [factorPubID: string]: FactorEnc;
+  };
+}
+
 export interface IMetadata extends ISerializable {
   pubKey: Point;
 
@@ -84,6 +109,8 @@ export interface IMetadata extends ISerializable {
   };
 
   nonce: number;
+
+  version: string;
 
   getShareIndexesForPolynomial(polyID: PolynomialID): string[];
   getLatestPublicPolynomial(): PublicPolynomial;
@@ -112,6 +139,7 @@ export interface IMetadata extends ISerializable {
       [factorPubID: string]: FactorEnc;
     };
   }): void;
+  getTssData(keyType: KeyType, tssTag: string): ITssMetadata;
 }
 
 export type InitializeNewKeyResult = {
@@ -164,6 +192,7 @@ export type TKeyArgs = {
   customAuthArgs?: CustomAuthArgs;
   manualSync?: boolean;
   serverTimeOffset?: number;
+  legacyMetadataFlag?: boolean;
 };
 
 export interface SecurityQuestionStoreArgs {

@@ -4,6 +4,7 @@ import {
   FactorEnc,
   getPubKeyPoint,
   IMetadata,
+  ITssMetadata,
   KeyType,
   Point,
   PolyIDAndShares,
@@ -26,8 +27,11 @@ import stringify from "json-stable-stringify";
 
 import CoreError from "./errors";
 import { polyCommitmentEval } from "./lagrangeInterpolatePolynomial";
+import { TssMetadata } from "./tssMetadata";
 
-class Metadata implements IMetadata {
+export const LEGACY_METADATA_VERSION = "0.0.1";
+export const METADATA_VERSION = "1.0.0";
+export class Metadata implements IMetadata {
   pubKey: Point;
 
   publicPolynomials: PublicPolynomialMap;
@@ -51,27 +55,13 @@ class Metadata implements IMetadata {
 
   nonce: number;
 
-  tssKeyTypes?: {
-    [tssTag: string]: KeyType;
-  };
-
-  tssNonces?: {
-    [tssTag: string]: number;
-  };
-
-  tssPolyCommits?: {
-    [tssTag: string]: Point[];
-  };
-
-  factorPubs?: {
-    [tssTag: string]: Point[];
-  };
-
-  factorEncs?: {
+  tss?: {
     [tssTag: string]: {
-      [factorPubID: string]: FactorEnc;
+      [curveType in KeyType]?: TssMetadata;
     };
   };
+
+  version = METADATA_VERSION;
 
   constructor(input: Point) {
     this.publicPolynomials = {};
@@ -82,17 +72,28 @@ class Metadata implements IMetadata {
     this.pubKey = input;
     this.polyIDList = [];
     this.nonce = 0;
-    this.tssKeyTypes = {};
-    this.tssPolyCommits = {};
-    this.tssNonces = {};
-    this.factorPubs = {};
-    this.factorEncs = {};
   }
 
   static fromJSON(value: StringifiedType): Metadata {
-    const { pubKey, polyIDList, generalStore, tkeyStore, scopedStore, nonce, tssKeyTypes, tssPolyCommits, tssNonces, factorPubs, factorEncs } = value;
+    const {
+      pubKey,
+      polyIDList,
+      generalStore,
+      tkeyStore,
+      scopedStore,
+      nonce,
+      tss,
+      version,
+      // v0 metadata
+      tssKeyTypes: tssKeyTypesJson,
+      tssPolyCommits,
+      tssNonces,
+      factorPubs,
+      factorEncs,
+    } = value;
     const point = Point.fromSEC1(secp256k1, pubKey);
     const metadata = new Metadata(point);
+
     const unserializedPolyIDList: PolyIDAndShares[] = [];
 
     if (generalStore) metadata.generalStore = generalStore;
@@ -100,31 +101,53 @@ class Metadata implements IMetadata {
     if (scopedStore) metadata.scopedStore = scopedStore;
     if (nonce) metadata.nonce = nonce;
 
-    if (tssKeyTypes) {
-      metadata.tssKeyTypes = {};
-      for (const key in tssKeyTypes) {
-        metadata.tssKeyTypes[key] = tssKeyTypes[key];
+    if (version === METADATA_VERSION) {
+      metadata.tss = {};
+
+      if (tss instanceof Object) {
+        Object.keys(tss).forEach((tsstag) => {
+          if (tss[tsstag] instanceof Object) {
+            metadata.tss[tsstag] = {};
+            Object.keys(tss[tsstag]).forEach((tssKeyType) => {
+              if (tssKeyType in KeyType) {
+                metadata.tss[tsstag][tssKeyType as KeyType] = TssMetadata.fromJSON(tss[tsstag][tssKeyType]);
+              } else {
+                throw new Error(`tssKeyType not supported ${tssKeyType}`);
+              }
+            });
+          }
+        });
       }
+
+      // else would be legacy version, migrate for secp version
+    } else if (factorEncs instanceof Object) {
+      metadata.tss = {};
+
+      // tssKeyTypeJson might be undefined, tssKeyTypes need to fallback to `{}`
+      // - some tests case on backward compatbility tests having tssKeyTypeJson undefined
+      const tssKeyTypes: Record<string, string> = tssKeyTypesJson ?? {};
+
+      Object.keys(factorEncs).forEach((tssTag) => {
+        // incase fo tssKeyType is empty, then fill it with secp256k1
+        const tssKeyType = tssKeyTypes[tssTag] ?? KeyType.secp256k1;
+
+        if (tssKeyType === KeyType.ed25519) {
+          throw new Error(`ed25519 is not supported for migration for metadata from v${version ?? LEGACY_METADATA_VERSION} to ${METADATA_VERSION}`);
+        }
+        metadata.tss[tssTag] = {
+          [tssKeyType]: TssMetadata.fromJSON({
+            tssTag,
+            tssKeyType,
+            tssNonce: tssNonces[tssTag],
+            tssPolyCommits: tssPolyCommits[tssTag],
+            factorPubs: factorPubs[tssTag],
+            factorEncs: factorEncs[tssTag],
+          }),
+        };
+      });
     }
-    if (tssPolyCommits) {
-      metadata.tssPolyCommits = {};
-      for (const key in tssPolyCommits) {
-        metadata.tssPolyCommits[key] = (tssPolyCommits as Record<string, Point[]>)[key].map((obj) => new Point(obj.x, obj.y));
-      }
-    }
-    if (tssNonces) {
-      metadata.tssNonces = {};
-      for (const key in tssNonces) {
-        metadata.tssNonces[key] = tssNonces[key];
-      }
-    }
-    if (factorPubs) {
-      metadata.factorPubs = {};
-      for (const key in factorPubs) {
-        metadata.factorPubs[key] = (factorPubs as Record<string, Point[]>)[key].map((obj) => new Point(obj.x, obj.y));
-      }
-    }
-    if (factorEncs) metadata.factorEncs = factorEncs;
+    // updated to latest version since using latest Metadata deserialization
+    metadata.version = METADATA_VERSION;
 
     for (let i = 0; i < polyIDList.length; i += 1) {
       const serializedPolyID: string = polyIDList[i];
@@ -320,19 +343,18 @@ class Metadata implements IMetadata {
       serializedPolyIDList.push(serializedPolyID);
     }
 
-    return {
+    const jsonObject = {
       pubKey: this.pubKey.toSEC1(secp256k1, true).toString("hex"),
       polyIDList: serializedPolyIDList,
       scopedStore: this.scopedStore,
       generalStore: this.generalStore,
       tkeyStore: this.tkeyStore,
       nonce: this.nonce,
-      ...(this.tssKeyTypes && { tssKeyTypes: this.tssKeyTypes }),
-      ...(this.tssNonces && { tssNonces: this.tssNonces }),
-      ...(this.tssPolyCommits && { tssPolyCommits: this.tssPolyCommits }),
-      ...(this.factorPubs && { factorPubs: this.factorPubs }),
-      ...(this.factorEncs && { factorEncs: this.factorEncs }),
+      // will be updated to current version
+      version: METADATA_VERSION,
     };
+
+    return Object.keys(this.tss ?? {}).length > 0 ? { ...jsonObject, tss: JSON.parse(JSON.stringify(this.tss)) } : jsonObject;
   }
 
   /**
@@ -349,12 +371,188 @@ class Metadata implements IMetadata {
     };
   }): void {
     const { tssKeyType, tssTag, tssNonce, tssPolyCommits, factorPubs, factorEncs } = tssData;
-    if (tssKeyType) this.tssKeyTypes[tssTag] = tssKeyType;
-    if (tssNonce !== undefined) this.tssNonces[tssTag] = tssNonce;
-    if (tssPolyCommits) this.tssPolyCommits[tssTag] = tssPolyCommits;
-    if (factorPubs) this.factorPubs[tssTag] = factorPubs;
-    if (factorEncs) this.factorEncs[tssTag] = factorEncs;
+    if (!this.tss) this.tss = {};
+    if (!this.tss[tssData.tssTag]) this.tss[tssData.tssTag] = {};
+    if (!this.tss[tssData.tssTag][tssKeyType]) {
+      this.tss[tssData.tssTag][tssKeyType] = new TssMetadata({ tssTag, tssKeyType, tssNonce, tssPolyCommits, factorPubs, factorEncs });
+    }
+    if (tssData.tssKeyType === KeyType.ed25519) this.tss[tssTag].ed25519.update(tssData);
+    else if (tssData.tssKeyType === KeyType.secp256k1) this.tss[tssTag].secp256k1.update(tssData);
+  }
+
+  getTssData(tssKeyType: KeyType, tssTag: string): ITssMetadata {
+    // const tssDataList = this.tss?[tssTag];
+    if (!this.tss) return undefined;
+    if (!this.tss[tssTag]) return undefined;
+
+    if (tssKeyType === KeyType.secp256k1) {
+      return this.tss[tssTag].secp256k1;
+    } else if (tssKeyType === KeyType.ed25519) {
+      return this.tss[tssTag].ed25519;
+    }
+    return undefined;
   }
 }
+
+export class LegacyMetadata extends Metadata {
+  version = LEGACY_METADATA_VERSION;
+
+  static fromJSON(value: StringifiedType): LegacyMetadata {
+    const {
+      pubKey,
+      polyIDList,
+      generalStore,
+      tkeyStore,
+      scopedStore,
+      nonce,
+      version,
+      // v0 metadata
+
+      tssKeyTypes: tssKeyTypesJson,
+      tssPolyCommits,
+      tssNonces,
+      factorPubs,
+      factorEncs,
+    } = value;
+    const point = Point.fromSEC1(secp256k1, pubKey);
+    const metadata = new LegacyMetadata(point);
+
+    metadata.version = version || LEGACY_METADATA_VERSION;
+
+    if (metadata.version !== LEGACY_METADATA_VERSION) {
+      throw new Error(`Incompatible version, version ${metadata.version} is not supported in current configuration`);
+    }
+
+    const unserializedPolyIDList: PolyIDAndShares[] = [];
+
+    if (generalStore) metadata.generalStore = generalStore;
+    if (tkeyStore) metadata.tkeyStore = tkeyStore;
+    if (scopedStore) metadata.scopedStore = scopedStore;
+    if (nonce) metadata.nonce = nonce;
+
+    for (let i = 0; i < polyIDList.length; i += 1) {
+      const serializedPolyID: string = polyIDList[i];
+      const arrPolyID = serializedPolyID.split("|");
+      const zeroIndex = arrPolyID.findIndex((v) => v === "0x0");
+      const firstHalf = arrPolyID.slice(0, zeroIndex);
+      const secondHalf = arrPolyID.slice(zeroIndex + 1, arrPolyID.length);
+      // for publicPolynomials
+      const pubPolyID = firstHalf.join("|");
+      const pointCommitments: Point[] = [];
+      firstHalf.forEach((compressedCommitment) => {
+        pointCommitments.push(Point.fromCompressedPub(compressedCommitment));
+      });
+      const publicPolynomial = new PublicPolynomial(pointCommitments);
+      metadata.publicPolynomials[pubPolyID] = publicPolynomial;
+
+      // for polyIDList
+      unserializedPolyIDList.push([pubPolyID, secondHalf]);
+    }
+
+    metadata.polyIDList = unserializedPolyIDList;
+
+    // tss related data
+    if (!factorEncs) return metadata;
+    if (Object.keys(factorEncs).length === 0) return metadata;
+
+    metadata.tss = {};
+
+    // tssKeyTypeJson might be undefined, tssKeyTypes need to fallback to `{}`
+    // - some tests case on backward compatbility tests having tssKeyTypeJson undefined
+    const tssKeyTypes: Record<string, string> = tssKeyTypesJson ?? {};
+
+    Object.keys(factorEncs).forEach((tssTag) => {
+      // incase fo tssKeyType is empty, then fill it with secp256k1
+      const tssKeyType = tssKeyTypes[tssTag] ?? KeyType.secp256k1;
+
+      metadata.tss[tssTag] = {
+        [tssKeyType]: TssMetadata.fromJSON({
+          tssTag,
+          tssKeyType,
+          tssNonce: tssNonces[tssTag],
+          tssPolyCommits: tssPolyCommits[tssTag],
+          factorPubs: factorPubs[tssTag],
+          factorEncs: factorEncs[tssTag],
+        }),
+      };
+    });
+    return metadata;
+  }
+
+  toJSON(): StringifiedType {
+    // squash data to serialized polyID according to spec
+    const serializedPolyIDList = [];
+    for (let i = 0; i < this.polyIDList.length; i += 1) {
+      const polyID = this.polyIDList[i][0];
+      const shareIndexes = this.polyIDList[i][1];
+      const sortedShareIndexes = shareIndexes.sort((a: string, b: string) => new BN(a, "hex").cmp(new BN(b, "hex")));
+      const serializedPolyID = polyID
+        .split(`|`)
+        .concat("0x0")
+        .concat(...sortedShareIndexes)
+        .join("|");
+      serializedPolyIDList.push(serializedPolyID);
+    }
+
+    const tsstags = Object.keys(this.tss ?? {});
+
+    // return if tss data is not available
+    if (tsstags.length <= 0) {
+      return {
+        pubKey: this.pubKey.toSEC1(secp256k1, true).toString("hex"),
+        polyIDList: serializedPolyIDList,
+        scopedStore: this.scopedStore,
+        generalStore: this.generalStore,
+        tkeyStore: this.tkeyStore,
+        nonce: this.nonce,
+      };
+    }
+
+    // if there is tssdata, try serialize to legacy format
+
+    const tssKeyTypes: Record<string, KeyType> = {};
+    const tssNonces: Record<string, number> = {};
+    const tssPolyCommits: Record<string, StringifiedType> = {};
+    const factorPubs: Record<string, StringifiedType> = {};
+    const factorEncs: Record<string, Record<string, FactorEnc>> = {};
+
+    tsstags.forEach((tag) => {
+      const allTssData = this.tss[tag];
+      const allKeyTypes = Object.keys(allTssData);
+      if (allKeyTypes.length > 1) throw Error("Metadata Error: Do not support multicurve serialization");
+
+      const tssData = this.getTssData(allKeyTypes[0] as KeyType, tag);
+      tssKeyTypes[tag] = tssData.tssKeyType;
+      tssNonces[tag] = tssData.tssNonce;
+      tssPolyCommits[tag] = tssData.tssPolyCommits.map((pt) => pt.toJSON());
+      factorPubs[tag] = tssData.factorPubs.map((pt) => pt.toJSON());
+      factorEncs[tag] = tssData.factorEncs;
+    });
+
+    return {
+      pubKey: this.pubKey.toSEC1(secp256k1, true).toString("hex"),
+      polyIDList: serializedPolyIDList,
+      scopedStore: this.scopedStore,
+      generalStore: this.generalStore,
+      tkeyStore: this.tkeyStore,
+      nonce: this.nonce,
+      tssKeyTypes,
+      tssNonces,
+      tssPolyCommits,
+      factorPubs,
+      factorEncs,
+    };
+  }
+
+  clone(): LegacyMetadata {
+    return LegacyMetadata.fromJSON(JSON.parse(stringify(this)));
+  }
+}
+
+export const createMetadataInstance = (legacyMetadataFlag: boolean, input: Point) =>
+  legacyMetadataFlag ? new LegacyMetadata(input) : new Metadata(input);
+
+export const createMetadataFromJson = (legacyMetadataFlag: boolean, args: StringifiedType) =>
+  legacyMetadataFlag ? LegacyMetadata.fromJSON(args) : Metadata.fromJSON(args);
 
 export default Metadata;

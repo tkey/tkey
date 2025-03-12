@@ -1,6 +1,5 @@
 import {
   decrypt,
-  EllipticCurve,
   EllipticPoint,
   encrypt,
   EncryptedMessage,
@@ -16,7 +15,7 @@ import {
 import { CoreError, TKey } from "@tkey/core";
 import { post } from "@toruslabs/http-helpers";
 import { dotProduct, ecPoint, hexPoint, PointHex, randomSelection, RSSClient } from "@toruslabs/rss-client";
-import { getEd25519ExtendedPublicKey as getEd25519KeyPairFromSeed, getSecpKeyFromEd25519 } from "@toruslabs/torus.js";
+import { getEd25519ExtendedPublicKey as getEd25519KeyPairFromSeed, getKeyCurve, getSecpKeyFromEd25519 } from "@toruslabs/torus.js";
 import BN from "bn.js";
 import { ec as EC } from "elliptic";
 import { keccak256 } from "ethereum-cryptography/keccak";
@@ -51,23 +50,23 @@ export const LEGACY_KEY_TYPE = "secp256k1";
 
 export interface TSSTKeyArgs extends TKeyArgs {
   serviceProvider: TSSTorusServiceProvider;
-  tssKeyType: KeyType;
   tssTag?: string;
 }
 
-export interface TKeyTSSInitArgs extends TKeyInitArgs {
+export interface TKeyTSSInitArgs {
+  tssKeyType: KeyType;
   deviceTSSShare?: BN;
   deviceTSSIndex?: number;
   factorPub?: Point;
-  skipTssInit?: boolean;
+  importKey?: Buffer;
+  serverOpts: {
+    selectedServers?: number[];
+    authSignatures: string[];
+  };
 }
 
 export class TKeyTSS extends TKey {
   serviceProvider: TSSTorusServiceProvider = null;
-
-  private _tssKeyType: KeyType;
-
-  private _tssCurve: EC;
 
   private _tssTag: string;
 
@@ -78,50 +77,32 @@ export class TKeyTSS extends TKey {
    */
   constructor(args: TSSTKeyArgs) {
     super(args);
-    const { serviceProvider, storageLayer, tssTag = "default", tssKeyType } = args;
+    const { serviceProvider, storageLayer, tssTag = "default", legacyMetadataFlag } = args;
 
-    if (serviceProvider.customAuthArgs.keyType !== tssKeyType) {
-      throw CoreError.default(`service provider keyType mismatch: ${serviceProvider.customAuthArgs.keyType} !== ${tssKeyType}`);
+    if (serviceProvider.customAuthArgs.keyType === KeyType.ed25519 && !legacyMetadataFlag) {
+      throw CoreError.default(
+        `service provider keyType mismatch: ${serviceProvider.customAuthArgs.keyType} require legacyMetadataFlag to be set to true ");`
+      );
     }
 
     this.serviceProvider = serviceProvider;
     this.storageLayer = storageLayer;
     this._tssTag = tssTag;
-    this._tssKeyType = tssKeyType;
-    this._tssCurve = new EC(tssKeyType);
   }
 
   public get tssTag(): string {
     return this._tssTag;
   }
 
-  public get tssKeyType(): KeyType {
-    return this._tssKeyType;
-  }
-
-  public get tssCurve(): EllipticCurve {
-    return this._tssCurve;
-  }
-
-  public set tssTag(tag: string) {
-    if ((this.metadata.tssKeyTypes[this.tssTag] || LEGACY_KEY_TYPE) !== this.tssKeyType) {
-      throw CoreError.default(`tssKeyType mismatch: ${this.metadata.tssKeyTypes[this.tssTag]} !== ${this.tssKeyType}`);
-    }
-    this._tssTag = tag;
-  }
-
   static async fromJSON(value: StringifiedType, args: TSSTKeyArgs): Promise<TKeyTSS> {
-    const tbTss = new TKeyTSS(args);
+    // legacyMetadataFlag need to be provided during constructor as tkey's fromJson is depending on the flag
+    const tbTss = new TKeyTSS({ ...args, legacyMetadataFlag: value.legacyMetadataFlag ?? false });
     const tb = await super.fromJSON(value, args);
 
-    const { tssTag, tssKeyType, accountSalt } = value;
+    const { tssTag, accountSalt } = value;
 
-    if (tssTag !== tbTss.tssTag) {
-      throw CoreError.default(`tssTag mismatch: ${tssTag} !== ${tbTss.tssTag}`);
-    }
-
-    if (tssKeyType !== tbTss.tssKeyType) {
-      throw CoreError.default(`tssKeyType mismatch: ${tssKeyType} !== ${tbTss.tssKeyType}`);
+    if (tssTag !== tbTss._tssTag) {
+      throw CoreError.default(`tssTag mismatch: ${tssTag} !== ${tbTss._tssTag}`);
     }
 
     // copy over tkey to tkeyTss
@@ -141,59 +122,224 @@ export class TKeyTSS extends TKey {
 
   toJSON(): StringifiedType {
     const tbJson = super.toJSON();
-    tbJson.tssTag = this.tssTag;
-    tbJson.tssKeyType = this.tssKeyType;
+    tbJson.tssTag = this._tssTag;
     tbJson.accountSalt = this._accountSalt;
     return tbJson;
   }
 
   /**
-   * Initializes this instance. If a TSS account does not exist, creates one
-   * under the given factor key. `skipTssInit` skips TSS account creation and
-   * can be used with `importTssKey` to just import an existing account instead.
-   * @returns The key details of TKey core.
+   * Initializes tkey instance and added checking of invalid config.
    */
-  async initialize(params?: TKeyTSSInitArgs): Promise<KeyDetails> {
-    const keyDetails = await super.initialize(params);
+  async initialize(params?: TKeyInitArgs): Promise<KeyDetails> {
+    if (this.serviceProvider.customAuthArgs.keyType === KeyType.ed25519 && !this.legacyMetadataFlag) {
+      throw CoreError.default("legacyMetadataFlag need to be set for ed25519 network's postboxkey ");
+    }
+    return super.initialize(params);
+  }
 
-    if (!this.metadata.tssPolyCommits[this.tssTag] && !(params?.skipTssInit || params?.neverInitializeNewKey)) {
-      // if tss shares have not been created for this tssTag, create new tss sharing
-      const { factorEncs, factorPubs, tssPolyCommits } = await this._initializeNewTSSKey(
-        this.tssTag,
-        params.deviceTSSShare,
-        params.factorPub,
-        params.deviceTSSIndex
+  public setTssTag(tssTag: string) {
+    this._tssTag = tssTag;
+  }
+
+  /**
+   * Initializes Tss Curve with Secp256k1 keyType
+   * will use same factorPubs from Ed24459 curves if existing Ed25519 curve present
+   */
+  async initializeTssSecp256k1(params: Omit<TKeyTSSInitArgs, "tssKeyType">): Promise<void> {
+    // only support service provider with secp256k1 key type
+    if (this.serviceProvider.customAuthArgs.keyType === KeyType.ed25519) {
+      throw CoreError.default("Multiple Curve do not support for ed25519 network's postboxkey ");
+    }
+
+    const secp256k1TssData = this.metadata.getTssData(KeyType.secp256k1, TSS_TAG_DEFAULT);
+    const ed25519TssData = this.metadata.getTssData(KeyType.ed25519, TSS_TAG_DEFAULT);
+
+    const secp256k1Exist = !!secp256k1TssData && Object.keys(secp256k1TssData).length > 0;
+    const ed25519Exist = !!ed25519TssData && Object.keys(ed25519TssData).length > 0;
+
+    const { deviceTSSShare, deviceTSSIndex, importKey, serverOpts } = params;
+    let { factorPub } = params;
+    if (secp256k1Exist) {
+      throw CoreError.default("TSS account already exists for secp256k1 key type");
+    }
+    if (!serverOpts) {
+      throw CoreError.default("serverOpts is required for import key flow");
+    }
+    if (ed25519Exist) {
+      if (factorPub !== undefined || deviceTSSShare !== undefined || deviceTSSIndex !== undefined)
+        throw CoreError.default("factorPub and deviceTSSIndex are not allowed when existing tss account exists");
+      factorPub = ed25519TssData.factorPubs[0];
+    } else if (!factorPub) {
+      throw CoreError.default("factorPub is required");
+    }
+
+    const backupMetadata = this.metadata.clone();
+    const localTssTag = this.tssTag;
+    try {
+      if (!importKey) {
+        // if tss shares have not been created for this tssTag, create new tss sharing
+        const { factorEncs, factorPubs, tssPolyCommits, tss2 } = await this._initializeNewTSSKey(
+          KeyType.secp256k1,
+          localTssTag,
+          deviceTSSShare,
+          factorPub,
+          deviceTSSIndex
+        );
+
+        this.metadata.updateTSSData({ tssKeyType: KeyType.secp256k1, tssTag: localTssTag, tssNonce: 0, tssPolyCommits, factorPubs, factorEncs });
+
+        const ecCurve = getKeyCurve(KeyType.secp256k1);
+        const accountSalt = generateSalt(ecCurve);
+        await this._setTKeyStoreItem(TSS_MODULE, {
+          id: "accountSalt",
+          value: accountSalt,
+        } as IAccountSaltStore);
+        this._accountSalt = accountSalt;
+
+        if (ed25519Exist) {
+          const tssIndexes = ed25519TssData.factorPubs.map((point) => {
+            return ed25519TssData.factorEncs[point.x.toString("hex", 64)].tssIndex;
+          });
+          // refresh with factorPubs
+          this._refreshTSSSharesWithFactorPubs(
+            {
+              updateMetadata: false,
+              tssShare: tss2,
+              tssIndex: deviceTSSIndex ?? 2,
+              factorPubs: ed25519TssData.factorPubs,
+              tssIndexes,
+              tssTag: localTssTag,
+              keyType: KeyType.secp256k1,
+            },
+            serverOpts
+          );
+        }
+      } else {
+        let factorPubs = [factorPub];
+        let newTSSIndexes = [params.deviceTSSIndex ?? 2];
+        if (ed25519Exist) {
+          // refresh with factorPubs
+          factorPubs = ed25519TssData.factorPubs;
+          newTSSIndexes = ed25519TssData.factorPubs.map((point) => {
+            return ed25519TssData.factorEncs[point.x.toString("hex", 64)].tssIndex;
+          });
+        }
+
+        await this.importTssKey(
+          {
+            tssTag: TSS_TAG_DEFAULT,
+            importKey,
+            factorPubs,
+            newTSSIndexes,
+            tssKeyType: KeyType.secp256k1,
+          },
+          params.serverOpts
+        );
+      }
+      await this._syncShareMetadata();
+    } catch (err) {
+      // Error happend, restore metadata
+      this.metadata = backupMetadata;
+      throw err;
+    }
+  }
+
+  /**
+   * Initializes Tss Curve with Ed25519 keyType
+   * will use same factorPubs from Secp256k1 if existing Secp256k1 curve present
+   * require import seed for ed25519
+   */
+  async initializeTssEd25519(params: Omit<TKeyTSSInitArgs, "tssKeyType"> & { importKey: Buffer }): Promise<void> {
+    const { importKey } = params;
+    if (!importKey) {
+      throw CoreError.default("importKey is required");
+    }
+
+    const backupMetadata = this.metadata.clone();
+    try {
+      const secp256k1TssData = this.metadata.getTssData(KeyType.secp256k1, TSS_TAG_DEFAULT);
+      const ed25519TssData = this.metadata.getTssData(KeyType.ed25519, TSS_TAG_DEFAULT);
+
+      const secp256k1Exist = !!secp256k1TssData && Object.keys(secp256k1TssData).length > 0;
+      const ed25519Exist = !!ed25519TssData && Object.keys(ed25519TssData).length > 0;
+
+      const { factorPub, deviceTSSIndex, deviceTSSShare } = params;
+      if (ed25519Exist) {
+        throw CoreError.default("TSS account already exists for ed25519 key type");
+      }
+
+      let factorPubs = [factorPub];
+      let newTSSIndexes = [deviceTSSIndex ?? 2];
+
+      // secp256k1Exist,
+      if (secp256k1Exist) {
+        // refresh with factorPubs
+        if (factorPub !== undefined || deviceTSSIndex !== undefined || deviceTSSShare !== undefined)
+          throw CoreError.default("factorPub and deviceTSSIndex are not allowed when existing tss account exists");
+        factorPubs = secp256k1TssData.factorPubs;
+        newTSSIndexes = secp256k1TssData.factorPubs.map((point) => {
+          return secp256k1TssData.factorEncs[point.x.toString("hex", 64)].tssIndex;
+        });
+      }
+      await this.importTssKey(
+        {
+          tssTag: TSS_TAG_DEFAULT,
+          importKey,
+          factorPubs,
+          newTSSIndexes,
+          tssKeyType: KeyType.ed25519,
+        },
+        params.serverOpts
       );
-      this.metadata.updateTSSData({ tssKeyType: this._tssKeyType, tssTag: this.tssTag, tssNonce: 0, tssPolyCommits, factorPubs, factorEncs });
-      const accountSalt = generateSalt(this._tssCurve);
-      await this._setTKeyStoreItem(TSS_MODULE, {
-        id: "accountSalt",
-        value: accountSalt,
-      } as IAccountSaltStore);
-      this._accountSalt = accountSalt;
+    } catch (err) {
+      // Error happend, restore metadata
+      this.metadata = backupMetadata;
+      throw err;
     }
+  }
 
-    if (this.metadata.tssPolyCommits[this.tssTag] && (this.metadata.tssKeyTypes[this.tssTag] || LEGACY_KEY_TYPE) !== this.tssKeyType) {
-      throw CoreError.default(`tssKeyType mismatch: ${this.metadata.tssKeyTypes[this.tssTag]} !== ${this.tssKeyType}`);
+  /**
+   * Initializes a new TSS account under the given factor key.
+   */
+  async initializeTss(params: TKeyTSSInitArgs): Promise<void> {
+    const { tssKeyType } = params;
+    if (tssKeyType === KeyType.secp256k1) {
+      await this.initializeTssSecp256k1(params);
+    } else if (tssKeyType === KeyType.ed25519) {
+      let { importKey } = params;
+      if (!importKey) {
+        // should we use randomValue for seed?
+        const buf = new Uint32Array(32);
+        crypto.getRandomValues(buf);
+        importKey = Buffer.from(buf);
+      }
+      if (importKey) {
+        await this.initializeTssEd25519({ ...params, importKey });
+      } else {
+        throw CoreError.default("importKey is required for ed25519 key type");
+      }
+    } else {
+      throw CoreError.default("unsupported tssKeyType");
     }
-
-    return keyDetails;
   }
 
   /**
    * Returns the encrypted data associated with the given factor public key.
    */
-  getFactorEncs(factorPub: Point): FactorEnc {
+  getFactorEncs(factorPub: Point, keyType: KeyType): FactorEnc {
+    const { tssTag } = this;
     if (!this.metadata) throw CoreError.metadataUndefined();
-    if (!this.metadata.factorEncs) throw CoreError.default("no factor encs mapping");
-    if (!this.metadata.factorPubs) throw CoreError.default("no factor pubs mapping");
-    const factorPubs = this.metadata.factorPubs[this.tssTag];
-    if (!factorPubs) throw CoreError.default(`no factor pubs for this tssTag ${this.tssTag}`);
+    const tssData = this.metadata.getTssData(keyType, tssTag);
+
+    if (!tssData) throw CoreError.default("no factor encs mapping");
+
+    const { factorPubs } = tssData;
+    if (!factorPubs) throw CoreError.default(`no factor pubs for this tssTag ${tssTag}`);
     if (factorPubs.filter((f) => f.x.cmp(factorPub.x) === 0 && f.y.cmp(factorPub.y) === 0).length === 0)
-      throw CoreError.default(`factor pub ${factorPub} not found for tssTag ${this.tssTag}`);
-    if (!this.metadata.factorEncs[this.tssTag]) throw CoreError.default(`no factor encs for tssTag ${this.tssTag}`);
+      throw CoreError.default(`factor pub ${factorPub} not found for tssTag ${tssTag}`);
+    if (!tssData.factorEncs) throw CoreError.default(`no factor encs for tssTag ${tssTag}`);
     const factorPubID = factorPub.x.toString(16, 64);
-    return this.metadata.factorEncs[this.tssTag][factorPubID];
+    return tssData.factorEncs[factorPubID];
   }
 
   /**
@@ -201,7 +347,8 @@ export class TKeyTSS extends TKey {
    */
   async getTSSShare(
     factorKey: BN,
-    opts?: {
+    opts: {
+      keyType: KeyType;
       threshold?: number;
       accountIndex?: number;
       coefficient?: BN;
@@ -211,7 +358,8 @@ export class TKeyTSS extends TKey {
     tssShare: BN;
   }> {
     const factorPub = getPubKeyPoint(factorKey, factorKeyCurve);
-    const factorEncs = this.getFactorEncs(factorPub);
+
+    const factorEncs = this.getFactorEncs(factorPub, opts.keyType);
     const { userEnc, serverEncs, tssIndex, type } = factorEncs;
     const userDecryption = await decrypt(Buffer.from(factorKey.toString(16, 64), "hex"), userEnc);
     const serverDecryptions = await Promise.all(
@@ -227,22 +375,22 @@ export class TKeyTSS extends TKey {
       return new BN(buf);
     });
 
-    const ec = this._tssCurve;
-    const tssCommits = this.getTSSCommits().map((p) => {
+    const ec = getKeyCurve(opts.keyType);
+    const tssCommits = this.getTSSCommits(opts.keyType).map((p) => {
       return ec.keyFromPublic({ x: p.x.toString(16, 64), y: p.y.toString(16, 64) }).getPublic();
     });
 
     const userDec = tssShareBNs[0];
 
-    const accountIndex = opts?.accountIndex || 0;
-    const coefficient = opts?.coefficient || new BN(1);
+    const accountIndex = opts.accountIndex || 0;
+    const coefficient = opts.coefficient || new BN(1);
     if (type === "direct") {
       const tssSharePub = ec.g.mul(userDec);
       const tssCommitA0 = tssCommits[0];
       const tssCommitA1 = tssCommits[1];
       const _tssSharePub = tssCommitA0.add(tssCommitA1.mul(new BN(tssIndex)));
       if (tssSharePub.eq(_tssSharePub)) {
-        const adjustedShare = this.adjustTssShare(userDec, accountIndex, coefficient);
+        const adjustedShare = this.adjustTssShare({ share: userDec, accountIndex, coefficient, keyType: opts.keyType });
         return { tssIndex, tssShare: adjustedShare };
       }
       throw new Error("user decryption does not match tss commitments...");
@@ -272,7 +420,7 @@ export class TKeyTSS extends TKey {
         _tssSharePub = _tssSharePub.add(tssCommitA1);
       }
       if (tssSharePub.eq(_tssSharePub)) {
-        const adjustedShare = this.adjustTssShare(tssShare, accountIndex, coefficient);
+        const adjustedShare = this.adjustTssShare({ share: tssShare, accountIndex, coefficient, keyType: opts.keyType });
         return { tssIndex, tssShare: adjustedShare };
       }
     }
@@ -283,10 +431,14 @@ export class TKeyTSS extends TKey {
    * Returns the TSS public key and the curve points corresponding to secret key
    * shares, as stored in Metadata.
    */
-  getTSSCommits(): Point[] {
+  getTSSCommits(tssKeyType: KeyType): Point[] {
     if (!this.metadata) throw CoreError.metadataUndefined();
-    const tssPolyCommits = this.metadata.tssPolyCommits[this.tssTag];
-    if (!tssPolyCommits) throw CoreError.default(`tss poly commits not found for tssTag ${this.tssTag}`);
+
+    const { tssTag } = this;
+    const tssData = this.metadata.getTssData(tssKeyType, tssTag);
+    if (!tssData) throw CoreError.default("no tss data");
+    const { tssPolyCommits } = tssData;
+    if (!tssPolyCommits) throw CoreError.default(`tss poly commits not found for tssTag ${tssTag}`);
     if (tssPolyCommits.length === 0) throw CoreError.default("tss poly commits is empty");
     return tssPolyCommits;
   }
@@ -294,9 +446,9 @@ export class TKeyTSS extends TKey {
   /**
    * Returns the TSS public key.
    */
-  getTSSPub(accountIndex?: number): Point {
-    const ec = this._tssCurve;
-    const tssCommits = this.getTSSCommits();
+  getTSSPub(tssKeyType: KeyType, accountIndex?: number): Point {
+    const ec = getKeyCurve(tssKeyType);
+    const tssCommits = this.getTSSCommits(tssKeyType);
     if (accountIndex && accountIndex > 0) {
       // Add account nonce to pub key.
       const nonce = this.computeAccountNonce(accountIndex);
@@ -332,46 +484,51 @@ export class TKeyTSS extends TKey {
    */
   async importTssKey(
     params: {
-      tag: string;
+      tssTag: string;
       importKey: Buffer;
-      factorPub: Point;
-      newTSSIndex: number;
+      factorPubs: Point[];
+      newTSSIndexes: number[];
+      tssKeyType: KeyType;
     },
     serverOpts: {
       selectedServers?: number[];
       authSignatures: string[];
     }
   ): Promise<void> {
-    const ec = this._tssCurve;
     if (!this.secp256k1Key) throw CoreError.privateKeyUnavailable();
     if (!this.metadata) {
       throw CoreError.metadataUndefined();
     }
-    const { importKey, factorPub, newTSSIndex, tag } = params;
 
-    const oldTag = this.tssTag;
-    this._tssTag = tag;
+    const { importKey, factorPubs, newTSSIndexes, tssTag, tssKeyType } = params;
+
+    const oldTag = this._tssTag;
+
+    // update current tssTag
+    this.setTssTag(tssTag);
+    const localTssTag = this._tssTag;
 
     try {
+      const tssData = this.metadata.getTssData(params.tssKeyType, localTssTag);
+      if (tssData) {
+        throw CoreError.default("Duplicate account tag, please use a unique tag for importing key");
+      }
+
+      const ec = getKeyCurve(tssKeyType);
+
       const { selectedServers = [], authSignatures = [] } = serverOpts || {};
 
-      if (!tag) throw CoreError.default(`invalid param, tag is required`);
-      if (!factorPub) throw CoreError.default(`invalid param, newFactorPub is required`);
-      if (!newTSSIndex) throw CoreError.default(`invalid param, newTSSIndex is required`);
+      if (!localTssTag) throw CoreError.default(`invalid param, tag is required`);
+      if (!factorPubs || factorPubs.length === 0) throw CoreError.default(`invalid param, newFactorPub is required`);
+      if (!newTSSIndexes || newTSSIndexes.length === 0) throw CoreError.default(`invalid param, newTSSIndex is required`);
       if (authSignatures.length === 0) throw CoreError.default(`invalid param, authSignatures is required`);
 
-      const existingFactorPubs = this.metadata.factorPubs[tag];
-      if (existingFactorPubs?.length > 0) {
-        throw CoreError.default(`Duplicate account tag, please use a unique tag for importing key`);
-      }
-      const factorPubs = [factorPub];
-
       const importScalar = await (async () => {
-        if (this._tssKeyType === KeyType.secp256k1) {
+        if (tssKeyType === KeyType.secp256k1) {
           return new BN(importKey);
-        } else if (this._tssKeyType === KeyType.ed25519) {
+        } else if (tssKeyType === KeyType.ed25519) {
           // Store seed in metadata.
-          const domainKey = getEd25519SeedStoreDomainKey(this.tssTag || TSS_TAG_DEFAULT);
+          const domainKey = getEd25519SeedStoreDomainKey(localTssTag);
           const result = this.metadata.getGeneralStoreDomain(domainKey) as Record<string, unknown>;
           if (result) {
             throw new Error("Seed already exists");
@@ -387,18 +544,18 @@ export class TKeyTSS extends TKey {
         throw new Error("Invalid key type");
       })();
 
-      if (!importScalar || importScalar.eq(new BN("0"))) {
+      if (!importScalar || importScalar.toString("hex") === "0") {
         throw new Error("Invalid importedKey");
       }
 
-      const tssIndexes = [newTSSIndex];
-      const existingNonce = this.metadata.tssNonces[this.tssTag];
+      const tssIndexes = newTSSIndexes;
+      const existingNonce = tssData?.tssNonce ?? 0;
       const newTssNonce: number = existingNonce && existingNonce > 0 ? existingNonce + 1 : 0;
       const verifierAndVerifierID = this.serviceProvider.getVerifierNameVerifierId();
-      const label = `${verifierAndVerifierID}\u0015${this.tssTag}\u0016${newTssNonce}`;
+      const label = `${verifierAndVerifierID}\u0015${localTssTag}\u0016${newTssNonce}`;
       const tssPubKey = hexPoint(ec.g.mul(importScalar));
       const rssNodeDetails = await this._getRssNodeDetails();
-      const { pubKey: newTSSServerPub, nodeIndexes } = await this.serviceProvider.getTSSPubKey(this.tssTag, newTssNonce);
+      const { pubKey: newTSSServerPub, nodeIndexes } = await this.serviceProvider.getTSSPubKey(localTssTag, newTssNonce, tssKeyType);
       let finalSelectedServers = selectedServers;
 
       if (nodeIndexes?.length > 0) {
@@ -421,7 +578,7 @@ export class TKeyTSS extends TKey {
         serverPubKeys,
         serverThreshold,
         tssPubKey,
-        keyType: this._tssKeyType,
+        keyType: tssKeyType,
       });
 
       const refreshResponses = await rssClient.import({
@@ -451,15 +608,15 @@ export class TKeyTSS extends TKey {
         };
       }
       this.metadata.updateTSSData({
-        tssKeyType: this._tssKeyType,
-        tssTag: this.tssTag,
+        tssKeyType,
+        tssTag: localTssTag,
         tssNonce: newTssNonce,
         tssPolyCommits: newTSSCommits,
         factorPubs,
         factorEncs,
       });
       if (!this._accountSalt) {
-        const accountSalt = generateSalt(this._tssCurve);
+        const accountSalt = generateSalt(getKeyCurve(tssKeyType));
         await this._setTKeyStoreItem(TSS_MODULE, {
           id: "accountSalt",
           value: accountSalt,
@@ -468,7 +625,7 @@ export class TKeyTSS extends TKey {
       }
       await this._syncShareMetadata();
     } catch (error) {
-      this._tssTag = oldTag;
+      this.setTssTag(oldTag);
       throw error;
     }
   }
@@ -483,14 +640,19 @@ export class TKeyTSS extends TKey {
     selectedServers?: number[];
     authSignatures: string[];
     accountIndex?: number;
+    keyType: KeyType;
   }): Promise<BN> {
+    const { factorKey, selectedServers, authSignatures, accountIndex, keyType } = tssOptions;
+
+    const { tssTag } = this;
+
     if (!this.metadata) throw CoreError.metadataUndefined("metadata is undefined");
     if (!this.secp256k1Key) throw new Error("Tkey is not reconstructed");
-    if (!this.metadata.tssPolyCommits[this.tssTag]) throw new Error(`tss key has not been initialized for tssTag ${this.tssTag}`);
 
-    const { factorKey, selectedServers, authSignatures, accountIndex } = tssOptions;
+    const tssData = this.metadata.getTssData(keyType, tssTag);
+    if (!tssData?.tssPolyCommits?.length) throw new Error(`tss key has not been initialized for tssTag ${tssTag}`);
 
-    const { tssIndex } = await this.getTSSShare(factorKey);
+    const { tssIndex } = await this.getTSSShare(factorKey, { keyType });
     // Assumption that there are only index 2 and 3 for tss shares
     // create complement index share
     const tempShareIndex = tssIndex === 2 ? 3 : 2;
@@ -506,11 +668,11 @@ export class TKeyTSS extends TKey {
       refreshShares: true,
     });
 
-    const { tssShare: factorShare, tssIndex: factorIndex } = await this.getTSSShare(factorKey);
-    const { tssShare: tempShare, tssIndex: tempIndex } = await this.getTSSShare(tempFactorKey);
+    const { tssShare: factorShare, tssIndex: factorIndex } = await this.getTSSShare(factorKey, { keyType });
+    const { tssShare: tempShare, tssIndex: tempIndex } = await this.getTSSShare(tempFactorKey, { keyType });
 
     // reconstruct final key using sss
-    const ec = this._tssCurve;
+    const ec = getKeyCurve(keyType);
     const tssKey = lagrangeInterpolation(ec, [tempShare, factorShare], [new BN(tempIndex), new BN(factorIndex)]);
 
     // delete created tss share
@@ -523,7 +685,7 @@ export class TKeyTSS extends TKey {
 
     // Derive key for account index.
     const nonce = this.computeAccountNonce(accountIndex);
-    const derivedKey = tssKey.add(nonce).umod(this._tssCurve.n);
+    const derivedKey = tssKey.add(nonce).umod(ec.n);
 
     return derivedKey;
   }
@@ -534,10 +696,11 @@ export class TKeyTSS extends TKey {
    * Reconstructs the TSS private key and exports the ed25519 private key seed.
    */
   async _UNSAFE_exportTssEd25519Seed(tssOptions: { factorKey: BN; selectedServers?: number[]; authSignatures: string[] }): Promise<Buffer> {
-    const edScalar = await this._UNSAFE_exportTssKey(tssOptions);
+    const edScalar = await this._UNSAFE_exportTssKey({ ...tssOptions, keyType: KeyType.ed25519 });
 
+    const { tssTag } = this;
     // Try to export ed25519 seed. This is only available if import key was being used.
-    const domainKey = getEd25519SeedStoreDomainKey(this.tssTag || TSS_TAG_DEFAULT);
+    const domainKey = getEd25519SeedStoreDomainKey(tssTag);
     const result = this.metadata.getGeneralStoreDomain(domainKey) as Record<string, EncryptedMessage>;
 
     const decKey = getSecpKeyFromEd25519(edScalar).scalar;
@@ -556,33 +719,41 @@ export class TKeyTSS extends TKey {
    * @param remoteFactorPub - Factor Pub for remote share.
    * @param signatures - Signatures for authentication against RSS servers.
    */
-  async remoteRefreshTssShares(params: { factorPubs: Point[]; tssIndices: number[]; remoteClient: IRemoteClientState }) {
-    const { factorPubs, tssIndices, remoteClient } = params;
+  async remoteRefreshTssShares(params: {
+    factorPubs: Point[];
+    tssIndices: number[];
+    remoteClient: IRemoteClientState;
+    keyType: KeyType;
+    tssTag: string;
+  }) {
+    const { factorPubs, tssIndices, remoteClient, keyType, tssTag } = params;
     const rssNodeDetails = await this._getRssNodeDetails();
     const { serverEndpoints, serverPubKeys, serverThreshold } = rssNodeDetails;
     let finalSelectedServers = randomSelection(
       new Array(rssNodeDetails.serverEndpoints.length).fill(null).map((_, i) => i + 1),
       Math.ceil(rssNodeDetails.serverEndpoints.length / 2)
     );
-
+    const localTssTag = this.tssTag;
     const verifierNameVerifierId = this.serviceProvider.getVerifierNameVerifierId();
+    const tssData = this.metadata.getTssData(keyType, localTssTag);
+    if (!tssData) throw CoreError.default("no tss data");
 
-    const tssCommits = this.metadata.tssPolyCommits[this.tssTag];
-    const tssNonce: number = this.metadata.tssNonces[this.tssTag] || 0;
-    const { pubKey: newTSSServerPub, nodeIndexes } = await this.serviceProvider.getTSSPubKey(this.tssTag, tssNonce + 1);
+    const tssCommits = tssData.tssPolyCommits;
+    const tssNonce: number = tssData.tssNonce || 0;
+    const { pubKey: newTSSServerPub, nodeIndexes } = await this.serviceProvider.getTSSPubKey(tssTag, tssNonce + 1, keyType);
     // move to pre-refresh
     if (nodeIndexes?.length > 0) {
       finalSelectedServers = nodeIndexes.slice(0, Math.min(serverEndpoints.length, nodeIndexes.length));
     }
 
-    const factorEnc = this.getFactorEncs(Point.fromSEC1(secp256k1, remoteClient.remoteFactorPub));
+    const factorEnc = this.getFactorEncs(Point.fromSEC1(secp256k1, remoteClient.remoteFactorPub), keyType);
 
     const dataRequired: RefreshRemoteTssParams = {
       factorEnc,
       factorPubs: factorPubs.map((pub) => pub.toPointHex()),
       targetIndexes: tssIndices,
       verifierNameVerifierId,
-      tssTag: this.tssTag,
+      tssTag: TSS_TAG_DEFAULT,
       tssCommits: tssCommits.map((commit) => commit.toPointHex()),
       tssNonce,
       newTSSServerPub: newTSSServerPub.toPointHex(),
@@ -593,7 +764,7 @@ export class TKeyTSS extends TKey {
         serverThreshold,
         authSignatures: remoteClient.signatures,
       },
-      curve: this.tssKeyType,
+      curve: keyType,
     };
 
     const result = (
@@ -617,48 +788,64 @@ export class TKeyTSS extends TKey {
     });
   }
 
-  async remoteAddFactorPub(params: { newFactorPub: Point; newFactorTSSIndex: number; remoteClient: IRemoteClientState }) {
-    const { newFactorPub, newFactorTSSIndex, remoteClient } = params;
-    const existingFactorPubs = this.metadata.factorPubs[this.tssTag];
+  async remoteAddFactorPub(params: {
+    newFactorPub: Point;
+    newFactorTSSIndex: number;
+    remoteClient: IRemoteClientState;
+    keyType: KeyType;
+    tssTag: string;
+  }) {
+    const { newFactorPub, newFactorTSSIndex, remoteClient, keyType, tssTag } = params;
+    // const ed25519TssMetadata = this.metadata.getTssData(KeyType.ed25519);
+    const localTssTag = this.tssTag;
+    const secp256k1TssMetadata = this.metadata.getTssData(KeyType.secp256k1, localTssTag);
+    const existingFactorPubs = secp256k1TssMetadata.factorPubs;
     const updatedFactorPubs = existingFactorPubs.concat([newFactorPub]);
-    const existingTSSIndexes = existingFactorPubs.map((fb) => this.getFactorEncs(fb).tssIndex);
+    const existingTSSIndexes = existingFactorPubs.map((fb) => this.getFactorEncs(fb, keyType).tssIndex);
     const updatedTSSIndexes = existingTSSIndexes.concat([newFactorTSSIndex]);
 
     await this.remoteRefreshTssShares({
       factorPubs: updatedFactorPubs,
       tssIndices: updatedTSSIndexes,
       remoteClient,
+      keyType,
+      tssTag,
     });
   }
 
-  async remoteDeleteFactorPub(params: { factorPubToDelete: Point; remoteClient: IRemoteClientState }) {
-    const { factorPubToDelete, remoteClient } = params;
-    const existingFactorPubs = this.metadata.factorPubs[this.tssTag];
+  async remoteDeleteFactorPub(params: { factorPubToDelete: Point; remoteClient: IRemoteClientState; keyType: KeyType }) {
+    const { factorPubToDelete, remoteClient, keyType } = params;
+    const localTssTag = this.tssTag;
+    const tssData = this.metadata.getTssData(keyType, localTssTag);
+    const existingFactorPubs = tssData.factorPubs;
     const factorIndex = existingFactorPubs.findIndex((p) => p.x.eq(factorPubToDelete.x));
     if (factorIndex === -1) {
       throw new Error(`factorPub ${factorPubToDelete} does not exist`);
     }
     const updatedFactorPubs = existingFactorPubs.slice();
     updatedFactorPubs.splice(factorIndex, 1);
-    const updatedTSSIndexes = updatedFactorPubs.map((fb) => this.getFactorEncs(fb).tssIndex);
+    const updatedTSSIndexes = updatedFactorPubs.map((fb) => this.getFactorEncs(fb, keyType).tssIndex);
 
     await this.remoteRefreshTssShares({
       factorPubs: updatedFactorPubs,
       tssIndices: updatedTSSIndexes,
       remoteClient,
+      keyType,
+      tssTag: this.tssTag,
     });
   }
 
-  async remoteCopyFactorPub(params: { newFactorPub: Point; tssIndex: number; remoteClient: IRemoteClientState }) {
-    const { newFactorPub, tssIndex, remoteClient } = params;
+  async remoteCopyFactorPub(params: { newFactorPub: Point; tssIndex: number; remoteClient: IRemoteClientState; keyType: KeyType }) {
+    const { newFactorPub, tssIndex, remoteClient, keyType } = params;
     const remoteFactorPub = Point.fromSEC1(secp256k1, remoteClient.remoteFactorPub);
-    const factorEnc = this.getFactorEncs(remoteFactorPub);
-    const tssCommits = this.getTSSCommits().map((commit) => commit.toPointHex());
+    const localTssTag = this.tssTag;
+    const factorEnc = this.getFactorEncs(remoteFactorPub, keyType);
+    const tssCommits = this.getTSSCommits(keyType).map((commit) => commit.toPointHex());
     const dataRequired: CopyRemoteTssParams = {
       factorEnc,
       tssCommits,
       factorPub: newFactorPub.toPointHex(),
-      curve: this.tssKeyType,
+      curve: keyType,
     };
 
     const result = (
@@ -673,8 +860,10 @@ export class TKeyTSS extends TKey {
       )
     ).data;
 
-    const updatedFactorPubs = this.metadata.factorPubs[this.tssTag].concat([newFactorPub]);
-    const factorEncs: { [key: string]: FactorEnc } = JSON.parse(JSON.stringify(this.metadata.factorEncs[this.tssTag]));
+    const tssData = this.metadata.getTssData(keyType, localTssTag);
+
+    const updatedFactorPubs = tssData.factorPubs.concat([newFactorPub]);
+    const factorEncs: { [key: string]: FactorEnc } = JSON.parse(JSON.stringify(tssData.factorEncs));
     const factorPubID = newFactorPub.x.toString(16, 64);
     factorEncs[factorPubID] = {
       tssIndex,
@@ -683,7 +872,7 @@ export class TKeyTSS extends TKey {
       serverEncs: [],
     };
     this.metadata.updateTSSData({
-      tssTag: this.tssTag,
+      tssTag: localTssTag,
       factorPubs: updatedFactorPubs,
       factorEncs,
     });
@@ -709,12 +898,17 @@ export class TKeyTSS extends TKey {
       serverThreshold: number;
       selectedServers: number[];
       authSignatures: string[];
-    }
+      keyType: KeyType;
+    },
+    tssTag: string
   ): Promise<void> {
     if (!this.metadata) throw CoreError.metadataUndefined();
-    if (!this.metadata.tssPolyCommits) throw CoreError.default(`tss poly commits obj not found`);
-    const tssCommits = this.metadata.tssPolyCommits[this.tssTag];
-    if (!tssCommits) throw CoreError.default(`tss commits not found for tssTag ${this.tssTag}`);
+    const { keyType } = serverOpts;
+    const localTssTag = tssTag;
+    const tssData = this.metadata.getTssData(keyType, localTssTag);
+
+    const tssCommits = tssData?.tssPolyCommits;
+    if (!tssCommits) throw CoreError.default(`tss commits not found for tssTag ${localTssTag}`);
     if (tssCommits.length === 0) throw CoreError.default(`tssCommits is empty`);
     const tssPubKeyPoint = tssCommits[0];
     const tssPubKey = pointToHex(tssPubKeyPoint);
@@ -725,20 +919,20 @@ export class TKeyTSS extends TKey {
       serverPubKeys,
       serverThreshold,
       tssPubKey,
-      keyType: this._tssKeyType,
+      keyType,
     });
 
-    if (!this.metadata.factorPubs) throw CoreError.default(`factorPubs obj not found`);
-    if (!factorPubs) throw CoreError.default(`factorPubs not found for tssTag ${this.tssTag}`);
+    if (!tssData.factorPubs) throw CoreError.default(`factorPubs obj not found`);
+    if (!factorPubs) throw CoreError.default(`factorPubs not found for tssTag ${localTssTag}`);
     if (factorPubs.length === 0) throw CoreError.default(`factorPubs is empty`);
 
-    if (!this.metadata.tssNonces) throw CoreError.default(`tssNonces obj not found`);
-    const tssNonce: number = this.metadata.tssNonces[this.tssTag] || 0;
+    if (tssData.tssNonce === undefined) throw CoreError.default(`tssNonces obj not found`);
+    const tssNonce: number = tssData.tssNonce || 0;
 
-    const oldLabel = `${verifierNameVerifierId}\u0015${this.tssTag}\u0016${tssNonce}`;
-    const newLabel = `${verifierNameVerifierId}\u0015${this.tssTag}\u0016${tssNonce + 1}`;
+    const oldLabel = `${verifierNameVerifierId}\u0015${localTssTag}\u0016${tssNonce}`;
+    const newLabel = `${verifierNameVerifierId}\u0015${localTssTag}\u0016${tssNonce + 1}`;
 
-    const { pubKey: newTSSServerPub, nodeIndexes } = await this.serviceProvider.getTSSPubKey(this.tssTag, tssNonce + 1);
+    const { pubKey: newTSSServerPub, nodeIndexes } = await this.serviceProvider.getTSSPubKey(localTssTag, tssNonce + 1, keyType);
     let finalSelectedServers = selectedServers;
 
     if (nodeIndexes?.length > 0) {
@@ -756,7 +950,8 @@ export class TKeyTSS extends TKey {
       selectedServers: finalSelectedServers,
     });
 
-    const secondCommit = newTSSServerPub.toEllipticPoint(this._tssCurve).add(ecPoint(this._tssCurve, tssPubKey).neg());
+    const ecCurve = getKeyCurve(keyType);
+    const secondCommit = newTSSServerPub.toEllipticPoint(ecCurve).add(ecPoint(ecCurve, tssPubKey).neg());
     const newTSSCommits = [
       Point.fromJSON(tssPubKey),
       Point.fromJSON({ x: secondCommit.getX().toString(16, 64), y: secondCommit.getY().toString(16, 64) }),
@@ -775,14 +970,54 @@ export class TKeyTSS extends TKey {
     }
 
     this.metadata.updateTSSData({
-      tssKeyType: this._tssKeyType,
-      tssTag: this.tssTag,
+      tssKeyType: keyType,
+      tssTag: localTssTag,
       tssNonce: tssNonce + 1,
       tssPolyCommits: newTSSCommits,
       factorPubs,
       factorEncs,
     });
     if (updateMetadata) await this._syncShareMetadata();
+  }
+
+  async _refreshTSSSharesWithFactorPubs(
+    params: { updateMetadata: boolean; tssShare: BN; tssIndex: number; factorPubs: Point[]; tssIndexes: number[]; tssTag: string; keyType: KeyType },
+    serverOpts: {
+      selectedServers?: number[];
+      authSignatures: string[];
+    }
+  ) {
+    const { factorPubs, tssIndexes, tssShare, tssIndex, tssTag, keyType } = params;
+    const { selectedServers, authSignatures } = serverOpts;
+
+    const verifierId = this.serviceProvider.getVerifierNameVerifierId();
+    const rssNodeDetails = await this._getRssNodeDetails();
+    const randomSelectedServers = randomSelection(
+      new Array(rssNodeDetails.serverEndpoints.length).fill(null).map((_, i) => i + 1),
+      Math.ceil(rssNodeDetails.serverEndpoints.length / 2)
+    );
+
+    const finalServer = selectedServers || randomSelectedServers;
+
+    // sync metadata by default
+    // create a localMetadataTransition if manual sync
+    const updateMetadata = params.updateMetadata === undefined ? true : params.updateMetadata;
+
+    await this._refreshTSSShares(
+      updateMetadata,
+      tssShare,
+      tssIndex,
+      factorPubs,
+      tssIndexes,
+      verifierId,
+      {
+        ...rssNodeDetails,
+        selectedServers: finalServer,
+        authSignatures,
+        keyType,
+      },
+      tssTag ?? TSS_TAG_DEFAULT
+    );
   }
 
   /**
@@ -793,9 +1028,7 @@ export class TKeyTSS extends TKey {
       return new BN(0);
     }
 
-    if (this._tssKeyType === KeyType.ed25519) {
-      throw new Error("account index not supported with ed25519");
-    }
+    const ec = getKeyCurve(KeyType.secp256k1);
 
     // generation should occur during tkey.init, fails if accountSalt is absent
     if (!this._accountSalt) {
@@ -803,7 +1036,7 @@ export class TKeyTSS extends TKey {
     }
     let accountHash = keccak256(Buffer.from(`${index}${this._accountSalt}`));
     if (accountHash.length === 66) accountHash = accountHash.slice(2);
-    return new BN(accountHash, "hex").umod(this._tssCurve.n);
+    return new BN(accountHash, "hex").umod(ec.n);
   }
 
   /**
@@ -816,7 +1049,7 @@ export class TKeyTSS extends TKey {
     if (accountSalt && accountSalt.value) {
       this._accountSalt = accountSalt.value;
     } else {
-      const newSalt = generateSalt(this._tssCurve);
+      const newSalt = generateSalt(getKeyCurve(KeyType.secp256k1));
       await this._setTKeyStoreItem(TSS_MODULE, {
         id: "accountSalt",
         value: newSalt,
@@ -832,12 +1065,6 @@ export class TKeyTSS extends TKey {
     return k;
   }
 
-  /**
-   * Adds a factor key to the set of authorized keys.
-   *
-   * `refreshShares` - If this is true, then refresh the shares. If this is
-   * false, `newTSSIndex` must be the same as current factor key index.
-   */
   public async addFactorPub(args: {
     existingFactorKey: BN;
     newFactorPub: Point;
@@ -847,16 +1074,50 @@ export class TKeyTSS extends TKey {
     refreshShares?: boolean;
     updateMetadata?: boolean;
   }) {
+    const tssTag = this._tssTag;
+    const secp256k1Data = this.metadata.getTssData(KeyType.secp256k1, tssTag);
+    const ed25519Data = this.metadata.getTssData(KeyType.ed25519, tssTag);
+
+    const allPromise = [];
+
+    if (secp256k1Data) {
+      allPromise.push(this._addFactorPub({ ...args, keyType: KeyType.secp256k1 }));
+    }
+    if (ed25519Data) {
+      allPromise.push(this._addFactorPub({ ...args, keyType: KeyType.ed25519 }));
+    }
+
+    await Promise.all(allPromise);
+  }
+
+  /**
+   * Adds a factor key to the set of authorized keys.
+   *
+   * `refreshShares` - If this is true, then refresh the shares. If this is
+   * false, `newTSSIndex` must be the same as current factor key index.
+   */
+  public async _addFactorPub(args: {
+    existingFactorKey: BN;
+    newFactorPub: Point;
+    newTSSIndex: number;
+    selectedServers?: number[];
+    authSignatures: string[];
+    refreshShares?: boolean;
+    updateMetadata?: boolean;
+    keyType: KeyType;
+  }) {
     if (!this.metadata) throw CoreError.metadataUndefined("metadata is undefined");
     if (!this.secp256k1Key) throw new Error("Tkey is not reconstructed");
-    if (!this.metadata.tssPolyCommits[this.tssTag]) throw new Error(`tss key has not been initialized for tssTag ${this.tssTag}`);
-    const { existingFactorKey, newFactorPub, newTSSIndex, selectedServers, authSignatures, refreshShares } = args;
+    const { existingFactorKey, newFactorPub, newTSSIndex, selectedServers, authSignatures, refreshShares, keyType } = args;
+    const tssTag = this._tssTag;
+    const tssData = this.metadata.getTssData(keyType, tssTag);
 
-    const { tssShare, tssIndex } = await this.getTSSShare(existingFactorKey);
+    const { tssShare, tssIndex } = await this.getTSSShare(existingFactorKey, { keyType });
 
     if (tssIndex !== newTSSIndex && !refreshShares) {
       throw CoreError.default("newTSSIndex does not match existing tssIndex, set refreshShares to true to refresh shares");
     }
+    const localTssTag = tssTag;
 
     if (!refreshShares) {
       // Just copy data stored under factor key.
@@ -864,8 +1125,8 @@ export class TKeyTSS extends TKey {
         throw CoreError.default("newTSSIndex does not match existing tssIndex, set refreshShares to true to refresh shares");
       }
 
-      const updatedFactorPubs = this.metadata.factorPubs[this.tssTag].concat([newFactorPub]);
-      const factorEncs = JSON.parse(JSON.stringify(this.metadata.factorEncs[this.tssTag]));
+      const updatedFactorPubs = tssData.factorPubs.concat([newFactorPub]);
+      const factorEncs = JSON.parse(JSON.stringify(tssData.factorEncs));
       const factorPubID = newFactorPub.x.toString(16, 64);
       factorEncs[factorPubID] = {
         tssIndex,
@@ -873,15 +1134,16 @@ export class TKeyTSS extends TKey {
         userEnc: await encrypt(newFactorPub.toSEC1(secp256k1, false), tssShare.toArrayLike(Buffer, "be", 32)),
         serverEncs: [],
       };
+
       this.metadata.updateTSSData({
-        tssKeyType: this.tssKeyType,
-        tssTag: this.tssTag,
+        tssKeyType: args.keyType,
+        tssTag: localTssTag,
         factorPubs: updatedFactorPubs,
         factorEncs,
       });
     } else {
       // Use RSS to create new TSS share and store it under new factor key.
-      const existingFactorPubs = this.metadata.factorPubs[this.tssTag];
+      const existingFactorPubs = tssData.factorPubs;
       const updatedFactorPubs = existingFactorPubs.concat([newFactorPub]);
 
       const verifierId = this.serviceProvider.getVerifierNameVerifierId();
@@ -893,25 +1155,31 @@ export class TKeyTSS extends TKey {
 
       const finalServer = selectedServers || randomSelectedServers;
 
-      const existingTSSIndexes = existingFactorPubs.map((fb) => this.getFactorEncs(fb).tssIndex);
+      const existingTSSIndexes = existingFactorPubs.map((fb) => this.getFactorEncs(fb, keyType).tssIndex);
       const updatedTSSIndexes = existingTSSIndexes.concat([newTSSIndex]);
 
       // sync metadata by default
       // create a localMetadataTransition if manual sync
       const updateMetadata = args.updateMetadata !== undefined ? args.updateMetadata : true;
 
-      await this._refreshTSSShares(updateMetadata, tssShare, tssIndex, updatedFactorPubs, updatedTSSIndexes, verifierId, {
-        ...rssNodeDetails,
-        selectedServers: finalServer,
-        authSignatures,
-      });
+      await this._refreshTSSShares(
+        updateMetadata,
+        tssShare,
+        tssIndex,
+        updatedFactorPubs,
+        updatedTSSIndexes,
+        verifierId,
+        {
+          ...rssNodeDetails,
+          selectedServers: finalServer,
+          authSignatures,
+          keyType,
+        },
+        localTssTag
+      );
     }
   }
 
-  /**
-   * Removes a factor key from the set of authorized keys and refreshes the TSS
-   * key shares.
-   */
   public async deleteFactorPub(args: {
     factorKey: BN;
     deleteFactorPub: Point;
@@ -919,26 +1187,49 @@ export class TKeyTSS extends TKey {
     authSignatures: string[];
     updateMetadata?: boolean;
   }): Promise<void> {
+    const { updateMetadata, ...otherArgs } = args;
+    const { tssTag } = this;
+    const allPromise = [];
+    if (this.metadata.getTssData(KeyType.secp256k1, tssTag)) allPromise.push(this._deleteFactorPub({ ...otherArgs, keyType: KeyType.secp256k1 }));
+    if (this.metadata.getTssData(KeyType.ed25519, tssTag)) allPromise.push(this._deleteFactorPub({ ...otherArgs, keyType: KeyType.ed25519 }));
+    await Promise.all(allPromise);
+    if (updateMetadata) await this._syncShareMetadata();
+  }
+
+  /**
+   * Removes a factor key from the set of authorized keys and refreshes the TSS
+   * key shares.
+   */
+  public async _deleteFactorPub(args: {
+    factorKey: BN;
+    deleteFactorPub: Point;
+    selectedServers?: number[];
+    authSignatures: string[];
+    updateMetadata?: boolean;
+    keyType: KeyType;
+  }): Promise<void> {
     if (!this.metadata) throw CoreError.metadataUndefined("metadata is undefined");
     if (!this.secp256k1Key) throw new Error("Tkey is not reconstructed");
-    if (!this.metadata.tssPolyCommits[this.tssTag]) throw new Error(`tss key has not been initialized for tssTag ${this.tssTag}`);
-    const { factorKey, deleteFactorPub, selectedServers, authSignatures } = args;
-    const existingFactorPubs = this.metadata.factorPubs[this.tssTag];
-    const { tssShare, tssIndex } = await this.getTSSShare(factorKey);
+    const { factorKey, deleteFactorPub, selectedServers, authSignatures, keyType } = args;
+
+    const tssTag = this._tssTag;
+    const tssData = this.metadata.getTssData(keyType, tssTag);
+    const existingFactorPubs = tssData.factorPubs;
+    const { tssShare, tssIndex } = await this.getTSSShare(factorKey, { keyType });
 
     const found = existingFactorPubs.filter((f) => f.x.eq(deleteFactorPub.x) && f.y.eq(deleteFactorPub.y));
     if (found.length === 0) throw CoreError.default("could not find factorPub to delete");
     if (found.length > 1) throw CoreError.default("found two or more factorPubs that match, error in metadata");
     const updatedFactorPubs = existingFactorPubs.filter((f) => !f.x.eq(deleteFactorPub.x) || !f.y.eq(deleteFactorPub.y));
-    this.metadata.updateTSSData({ tssKeyType: this._tssKeyType, tssTag: this.tssTag, factorPubs: updatedFactorPubs });
+
+    this.metadata.updateTSSData({ tssKeyType: keyType, tssTag, factorPubs: updatedFactorPubs });
     const rssNodeDetails = await this._getRssNodeDetails();
     const randomSelectedServers = randomSelection(
       new Array(rssNodeDetails.serverEndpoints.length).fill(null).map((_, i) => i + 1),
       Math.ceil(rssNodeDetails.serverEndpoints.length / 2)
     );
-
     const finalServer = selectedServers || randomSelectedServers;
-    const updatedTSSIndexes = updatedFactorPubs.map((fb) => this.getFactorEncs(fb).tssIndex);
+    const updatedTSSIndexes = updatedFactorPubs.map((fb) => this.getFactorEncs(fb, keyType).tssIndex);
 
     const updateMetadata = args.updateMetadata !== undefined ? args.updateMetadata : true;
 
@@ -953,16 +1244,19 @@ export class TKeyTSS extends TKey {
         ...rssNodeDetails,
         selectedServers: finalServer,
         authSignatures,
-      }
+        keyType,
+      },
+      tssTag
     );
   }
 
   /**
    * Adjusts a TSS key share based on account index and share coefficient.
    */
-  protected adjustTssShare(share: BN, accountIndex: number, coefficient: BN): BN {
+  protected adjustTssShare(args: { share: BN; accountIndex: number; coefficient: BN; keyType: KeyType }): BN {
+    const { share, accountIndex, coefficient, keyType } = args;
     const nonce = this.computeAccountNonce(accountIndex);
-    return share.mul(coefficient).add(nonce).umod(this._tssCurve.n);
+    return share.mul(coefficient).add(nonce).umod(getKeyCurve(keyType).n);
   }
 
   /**
@@ -970,30 +1264,33 @@ export class TKeyTSS extends TKey {
    * provided user share.
    */
   protected async _initializeNewTSSKey(
+    keyType: KeyType,
     tssTag: string,
     deviceTSSShare: BN,
     factorPub: Point,
     deviceTSSIndex?: number
   ): Promise<InitializeNewTSSKeyResult> {
-    const ec = this._tssCurve;
+    const localEc = getKeyCurve(keyType);
     let tss2: BN;
     const _tssIndex = deviceTSSIndex || 2; // TODO: fix
     if (deviceTSSShare) {
       tss2 = deviceTSSShare;
     } else {
-      tss2 = this._tssCurve.genKeyPair().getPrivate();
+      tss2 = localEc.genKeyPair().getPrivate();
     }
-    const { pubKey: tss1Pub } = await this.serviceProvider.getTSSPubKey(tssTag, 0);
-    const tss1PubKey = tss1Pub.toEllipticPoint(ec);
-    const tss2PubKey = (this._tssCurve.g as EllipticPoint).mul(tss2);
+    const { pubKey: tss1Pub } = await this.serviceProvider.getTSSPubKey(tssTag, 0, keyType);
+    const tss1PubKey = tss1Pub.toEllipticPoint(localEc);
+    const tss2PubKey = (localEc.g as EllipticPoint).mul(tss2);
 
-    const L1_0 = getLagrangeCoeffs(ec, [1, _tssIndex], 1, 0);
+    const L1_0 = getLagrangeCoeffs(localEc, [1, _tssIndex], 1, 0);
 
-    const LIndex_0 = getLagrangeCoeffs(ec, [1, _tssIndex], _tssIndex, 0);
+    const LIndex_0 = getLagrangeCoeffs(localEc, [1, _tssIndex], _tssIndex, 0);
 
     const a0Pub = tss1PubKey.mul(L1_0).add(tss2PubKey.mul(LIndex_0));
     const a1Pub = tss1PubKey.add(a0Pub.neg());
 
+    // y = mx +c
+    // a0Pub = c, a1Pub = y0 -y1 = m
     const tssPolyCommits = [Point.fromElliptic(a0Pub), Point.fromElliptic(a1Pub)];
     const factorPubs = [factorPub];
     const factorEncs: { [factorPubID: string]: FactorEnc } = {};
