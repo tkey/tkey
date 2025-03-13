@@ -1,14 +1,6 @@
 import { StringifiedType, TorusServiceProviderArgs } from "@tkey/common-types";
 import { ServiceProviderBase } from "@tkey/service-provider-base";
-import {
-  AggregateLoginParams,
-  CustomAuth,
-  CustomAuthArgs,
-  InitParams,
-  SubVerifierDetails,
-  TorusAggregateLoginResponse,
-  TorusLoginResponse,
-} from "@toruslabs/customauth";
+import { CustomAuth, CustomAuthArgs, CustomAuthLoginParams, InitParams, TorusLoginResponse } from "@toruslabs/customauth";
 import { Torus, TorusKey } from "@toruslabs/torus.js";
 import BN from "bn.js";
 
@@ -48,7 +40,7 @@ class TorusServiceProvider extends ServiceProviderBase {
   /**
    * Trigger login flow. Returns `null` in redirect mode.
    */
-  async triggerLogin(params: SubVerifierDetails): Promise<TorusLoginResponse | null> {
+  async triggerLogin(params: CustomAuthLoginParams): Promise<TorusLoginResponse | null> {
     const obj = await this.customAuthInstance.triggerLogin(params);
 
     // `obj` maybe `null` in redirect mode.
@@ -65,27 +57,6 @@ class TorusServiceProvider extends ServiceProviderBase {
       this.postboxKey = new BN(localPrivKey, "hex");
     }
 
-    return obj;
-  }
-
-  /**
-   * Trigger login flow. Returns `null` in redirect mode.
-   */
-  async triggerAggregateLogin(params: AggregateLoginParams): Promise<TorusAggregateLoginResponse> {
-    const obj = await this.customAuthInstance.triggerAggregateLogin(params);
-
-    if (obj) {
-      const localPrivKey = Torus.getPostboxKey(obj);
-      this.torusKey = obj;
-
-      if (!obj.metadata.upgraded) {
-        const { finalKeyData, oAuthKeyData } = obj;
-        const privKey = finalKeyData.privKey || oAuthKeyData.privKey;
-        this.migratableKey = new BN(privKey, "hex");
-      }
-
-      this.postboxKey = new BN(localPrivKey, "hex");
-    }
     return obj;
   }
 

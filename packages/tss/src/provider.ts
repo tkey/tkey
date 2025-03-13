@@ -1,6 +1,6 @@
 import { Point, StringifiedType } from "@tkey/common-types";
 import { TorusServiceProvider } from "@tkey/service-provider-torus";
-import { AggregateLoginParams, SubVerifierDetails, TorusAggregateLoginResponse, TorusLoginResponse } from "@toruslabs/customauth";
+import { CustomAuthLoginParams, TorusLoginResponse } from "@toruslabs/customauth";
 import { PointHex } from "@toruslabs/rss-client";
 
 import { getExtendedVerifierId } from "./util";
@@ -81,25 +81,13 @@ export class TSSTorusServiceProvider extends TorusServiceProvider {
     return `${this.verifierName}\u001c${this.verifierId}`;
   }
 
-  async triggerLogin(params: SubVerifierDetails): Promise<TorusLoginResponse> {
+  async triggerLogin(params: CustomAuthLoginParams): Promise<TorusLoginResponse> {
     const obj = await super.triggerLogin(params);
 
     if (obj) {
-      const { verifier, verifierId } = obj.userInfo;
-      this.verifierName = verifier;
-      this.verifierId = verifierId;
-    }
-
-    return obj;
-  }
-
-  async triggerAggregateLogin(params: AggregateLoginParams): Promise<TorusAggregateLoginResponse> {
-    const obj = await super.triggerAggregateLogin(params);
-
-    if (obj) {
-      const { verifier, verifierId } = obj.userInfo[0];
-      this.verifierName = verifier;
-      this.verifierId = verifierId;
+      const { authConnectionId, userId } = obj.userInfo;
+      this.verifierName = authConnectionId;
+      this.verifierId = userId;
     }
 
     return obj;
