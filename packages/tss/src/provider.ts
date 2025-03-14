@@ -6,20 +6,20 @@ import { PointHex } from "@toruslabs/rss-client";
 import { getExtendedVerifierId } from "./util";
 
 export class TSSTorusServiceProvider extends TorusServiceProvider {
-  verifierName?: string;
+  authConnectionId?: string;
 
-  verifierId?: string;
+  userId?: string;
 
   static fromJSON(value: StringifiedType): TSSTorusServiceProvider {
-    const { enableLogging, postboxKey, customAuthArgs, verifierName, verifierId } = value;
+    const { enableLogging, postboxKey, customAuthArgs, authConnectionId, userId } = value;
     const serviceProvider = new TSSTorusServiceProvider({
       enableLogging,
       postboxKey,
       customAuthArgs,
     });
 
-    serviceProvider.verifierId = verifierId;
-    serviceProvider.verifierName = verifierName;
+    serviceProvider.userId = userId;
+    serviceProvider.authConnectionId = authConnectionId;
 
     return serviceProvider;
   }
@@ -29,18 +29,18 @@ export class TSSTorusServiceProvider extends TorusServiceProvider {
       enableLogging: this.enableLogging,
       postboxKey: this.postboxKey,
       customAuthArgs: this.customAuthArgs,
-      verifierName: this.verifierName,
-      verifierId: this.verifierId,
+      authConnectionId: this.authConnectionId,
+      userId: this.userId,
     };
   }
 
   async getRSSNodeDetails(): Promise<{ serverEndpoints: string[]; serverPubKeys: PointHex[]; serverThreshold: number }> {
-    if (!this.verifierId) throw new Error("no verifierId, not logged in");
-    if (!this.verifierName) throw new Error("no verifierName, not logged in");
+    if (!this.userId) throw new Error("no userId, not logged in");
+    if (!this.authConnectionId) throw new Error("no authConnectionId, not logged in");
 
     const { torusNodeRSSEndpoints: tssNodeEndpoints, torusNodePub: torusPubKeys } = await this.customAuthInstance.nodeDetailManager.getNodeDetails({
-      verifier: this.verifierName,
-      verifierId: this.verifierId,
+      verifier: this.authConnectionId,
+      verifierId: this.userId,
     });
 
     return {
@@ -62,13 +62,13 @@ export class TSSTorusServiceProvider extends TorusServiceProvider {
     pubKey: Point;
     nodeIndexes?: number[];
   }> {
-    if (!this.verifierName || !this.verifierId) throw new Error("verifier userinfo not found, not logged in yet");
+    if (!this.authConnectionId || !this.userId) throw new Error("verifier userinfo not found, not logged in yet");
 
-    const nodeDetails = await this.customAuthInstance.nodeDetailManager.getNodeDetails({ verifier: this.verifierName, verifierId: this.verifierId });
+    const nodeDetails = await this.customAuthInstance.nodeDetailManager.getNodeDetails({ verifier: this.authConnectionId, verifierId: this.userId });
     const tssServerPub = await this.customAuthInstance.torus.getPublicAddress(nodeDetails.torusNodeSSSEndpoints, nodeDetails.torusNodePub, {
-      verifier: this.verifierName,
-      verifierId: this.verifierId,
-      extendedVerifierId: getExtendedVerifierId(this.verifierId, tssTag, tssNonce),
+      verifier: this.authConnectionId,
+      verifierId: this.userId,
+      extendedVerifierId: getExtendedVerifierId(this.userId, tssTag, tssNonce),
     });
 
     return {
@@ -78,7 +78,7 @@ export class TSSTorusServiceProvider extends TorusServiceProvider {
   }
 
   getVerifierNameVerifierId(): string {
-    return `${this.verifierName}\u001c${this.verifierId}`;
+    return `${this.authConnectionId}\u001c${this.userId}`;
   }
 
   async triggerLogin(params: CustomAuthLoginParams): Promise<TorusLoginResponse> {
@@ -86,8 +86,8 @@ export class TSSTorusServiceProvider extends TorusServiceProvider {
 
     if (obj) {
       const { authConnectionId, userId } = obj.userInfo;
-      this.verifierName = authConnectionId;
-      this.verifierId = userId;
+      this.authConnectionId = authConnectionId;
+      this.userId = userId;
     }
 
     return obj;

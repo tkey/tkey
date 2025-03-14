@@ -38,8 +38,8 @@ function generateIdToken(email: string): string {
   return token;
 }
 
-export async function fetchPostboxKeyAndSigs(opts: { serviceProvider: TSSTorusServiceProvider; verifierName: string; verifierId: string }) {
-  const { serviceProvider, verifierName: verifier, verifierId } = opts;
+export async function fetchPostboxKeyAndSigs(opts: { serviceProvider: TSSTorusServiceProvider; authConnectionId: string; userId: string }) {
+  const { serviceProvider, authConnectionId: verifier, userId: verifierId } = opts;
 
   const nodeDetails = await serviceProvider.customAuthInstance.nodeDetailManager.getNodeDetails({ verifier, verifierId });
   const token = generateIdToken(verifierId);
@@ -65,12 +65,12 @@ export async function fetchPostboxKeyAndSigs(opts: { serviceProvider: TSSTorusSe
 // This function is only for testing and will return tss shares only for test verifiers.
 export async function assignTssDkgKeys(opts: {
   serviceProvider: TSSTorusServiceProvider;
-  verifierName: string;
-  verifierId: string;
+  authConnectionId: string;
+  userId: string;
   maxTSSNonceToSimulate: number;
   tssTag?: string;
 }) {
-  const { serviceProvider, verifierName: verifier, verifierId } = opts;
+  const { serviceProvider, authConnectionId: verifier, userId: verifierId } = opts;
 
   let { tssTag, maxTSSNonceToSimulate } = opts;
   tssTag = tssTag || "default";
