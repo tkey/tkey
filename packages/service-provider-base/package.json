@@ -1,6 +1,6 @@
 {
   "name": "@tkey/service-provider-base",
-  "version": "15.2.1-alpha.0",
+  "version": "16.0.0",
   "description": "TKey Base Service Provider Module",
   "author": "Torus Labs",
   "homepage": "https://github.com/tkey/tkey#readme",
@@ -43,7 +43,7 @@
     "@babel/runtime": "7.x"
   },
   "dependencies": {
-    "@tkey/common-types": "^15.2.1-alpha.0",
+    "@tkey/common-types": "^16.0.0",
     "bn.js": "^5.2.1",
     "elliptic": "^6.6.1"
   },

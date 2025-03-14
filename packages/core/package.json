@@ -1,6 +1,6 @@
 {
   "name": "@tkey/core",
-  "version": "15.2.1-alpha.0",
+  "version": "16.0.0",
   "description": "TKey Core library",
   "main": "dist/lib.cjs/index.js",
   "module": "dist/lib.esm/index.js",
@@ -34,7 +34,7 @@
     "dist"
   ],
   "dependencies": {
-    "@tkey/common-types": "^15.2.1-alpha.0",
+    "@tkey/common-types": "^16.0.0",
     "@toruslabs/eccrypto": "^6.0.2",
     "@toruslabs/http-helpers": "^8.1.1",
     "@toruslabs/torus.js": "^16.0.0",
