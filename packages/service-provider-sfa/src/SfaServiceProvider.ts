@@ -4,7 +4,7 @@ import { NodeDetailManager } from "@toruslabs/fetch-node-details";
 import { keccak256, Torus, TorusKey } from "@toruslabs/torus.js";
 import BN from "bn.js";
 
-import { AggregateVerifierParams, LoginParams, SfaServiceProviderArgs, Web3AuthOptions } from "./interfaces";
+import { LoginParams, SfaServiceProviderArgs, VerifierParams, Web3AuthOptions } from "./interfaces";
 
 class SfaServiceProvider extends ServiceProviderBase {
   web3AuthOptions: Web3AuthOptions;
@@ -46,41 +46,31 @@ class SfaServiceProvider extends ServiceProviderBase {
   }
 
   async connect(params: LoginParams): Promise<BN> {
-    const { verifier, verifierId, idToken, subVerifierInfoArray } = params;
-    const verifierDetails = { verifier, verifierId };
+    const { authConnectionId, userId, idToken, groupedAuthConnectionId } = params;
+    const verifier = groupedAuthConnectionId || authConnectionId;
+    const verifierId = userId;
+    const verifierParams: VerifierParams = { verifier_id: userId };
+    let aggregateIdToken = "";
+    const finalIdToken = idToken;
 
+    if (groupedAuthConnectionId) {
+      verifierParams["verify_params"] = [{ verifier_id: userId, idtoken: finalIdToken }];
+      verifierParams["sub_verifier_ids"] = [authConnectionId];
+      aggregateIdToken = keccak256(Buffer.from(finalIdToken, "utf8")).slice(2);
+    }
     // fetch node details.
-    const { torusNodeEndpoints, torusIndexes, torusNodePub } = await this.nodeDetailManagerInstance.getNodeDetails(verifierDetails);
+    const { torusNodeEndpoints, torusIndexes, torusNodePub } = await this.nodeDetailManagerInstance.getNodeDetails({ verifier, verifierId });
 
     if (params.serverTimeOffset) {
       this.authInstance.serverTimeOffset = params.serverTimeOffset;
     }
 
-    let finalIdToken = idToken;
-    let finalVerifierParams = { verifier_id: verifierId };
-    if (subVerifierInfoArray && subVerifierInfoArray?.length > 0) {
-      const aggregateVerifierParams: AggregateVerifierParams = { verify_params: [], sub_verifier_ids: [], verifier_id: "" };
-      const aggregateIdTokenSeeds = [];
-      for (let index = 0; index < subVerifierInfoArray.length; index += 1) {
-        const userInfo = subVerifierInfoArray[index];
-        aggregateVerifierParams.verify_params.push({ verifier_id: verifierId, idtoken: userInfo.idToken });
-        aggregateVerifierParams.sub_verifier_ids.push(userInfo.verifier);
-        aggregateIdTokenSeeds.push(userInfo.idToken);
-      }
-      aggregateIdTokenSeeds.sort();
-
-      finalIdToken = keccak256(Buffer.from(aggregateIdTokenSeeds.join(String.fromCharCode(29)), "utf8")).slice(2);
-
-      aggregateVerifierParams.verifier_id = verifierId;
-      finalVerifierParams = aggregateVerifierParams;
-    }
-
     const torusKey = await this.authInstance.retrieveShares({
       endpoints: torusNodeEndpoints,
       indexes: torusIndexes,
-      verifier,
-      verifierParams: finalVerifierParams,
-      idToken: finalIdToken,
+      verifier: verifier,
+      verifierParams: verifierParams,
+      idToken: aggregateIdToken || finalIdToken,
       nodePubkeys: torusNodePub,
       useDkg: this.web3AuthOptions.useDkg,
     });

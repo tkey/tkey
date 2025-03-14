@@ -20,17 +20,20 @@ export interface TorusSubVerifierInfo {
   idToken: string;
 }
 
-export type AggregateVerifierParams = {
-  verify_params: { verifier_id: string; idtoken: string }[];
-  sub_verifier_ids: string[];
+export type VerifierParams = {
+  verify_params?: {
+    verifier_id: string;
+    idtoken: string;
+  }[];
+  sub_verifier_ids?: string[];
   verifier_id: string;
 };
 
 export type LoginParams = {
-  verifier: string;
-  verifierId: string;
+  authConnectionId: string;
+  userId: string;
   idToken: string;
-  subVerifierInfoArray?: TorusSubVerifierInfo[];
+  groupedAuthConnectionId?: string;
   // offset in seconds
   serverTimeOffset?: number;
 };
