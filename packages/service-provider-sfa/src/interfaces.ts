@@ -15,11 +15,6 @@ export interface SfaServiceProviderArgs extends ServiceProviderArgs {
   web3AuthOptions: Web3AuthOptions;
 }
 
-export interface TorusSubVerifierInfo {
-  verifier: string;
-  idToken: string;
-}
-
 export type VerifierParams = {
   verify_params?: {
     verifier_id: string;
