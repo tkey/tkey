@@ -332,7 +332,7 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
       const deviceTSSIndex = 3;
 
       sp.authConnectionId = "torus-test-health";
-      sp.userId = `exportUser${TSS_KEY_TYPE}@example.com`;
+      sp.userId = `exportUser${TSS_KEY_TYPE}@example.com-1`;
       const { signatures, postboxkey } = await fetchPostboxKeyAndSigs({
         serviceProvider: sp,
         authConnectionId: sp.authConnectionId,
@@ -479,7 +479,7 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
       before("setup", async function () {
         const sp = torusSP;
         sp.authConnectionId = "torus-test-health";
-        sp.userId = `test192${TSS_KEY_TYPE}@example.com`;
+        sp.userId = `test192${TSS_KEY_TYPE}@example.com-1`;
         const { signatures: authSignatures, postboxkey } = await fetchPostboxKeyAndSigs({
           serviceProvider: sp,
           authConnectionId: sp.authConnectionId,
@@ -576,7 +576,7 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
 
       before("setup", async function () {
         sp.authConnectionId = "torus-test-health";
-        sp.userId = `test193${TSS_KEY_TYPE}@example.com`;
+        sp.userId = `test193${TSS_KEY_TYPE}@example.com-1`;
         const { signatures: authSignatures, postboxkey } = await fetchPostboxKeyAndSigs({
           serviceProvider: sp,
           authConnectionId: sp.authConnectionId,
