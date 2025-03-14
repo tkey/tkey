@@ -17,7 +17,6 @@ export default class ChromeExtensionStorageModule implements IModule {
     this.tbSDK._setDeviceStorage(this.storeDeviceShare.bind(this));
   }
 
-  // eslint-disable-next-line
   async initialize(): Promise<void> {}
 
   async storeDeviceShare(deviceShareStore: ShareStore, customDeviceInfo?: StringifiedType): Promise<void> {
@@ -43,7 +42,7 @@ export default class ChromeExtensionStorageModule implements IModule {
     const metadata = this.tbSDK.getMetadata();
     const key = metadata.pubKey.x.toString("hex"); // tbkey public
     const result = await storage.sync.get(key);
-    const verifierIdObj: ShareStore = JSON.parse(result[key]);
+    const verifierIdObj: ShareStore = JSON.parse(result[key] as string);
     await this.tbSDK.inputShareStoreSafe(verifierIdObj);
     return verifierIdObj;
   }

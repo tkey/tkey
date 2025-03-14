@@ -22,7 +22,6 @@ class SeedPhraseModule implements IModule {
     this.tbSDK._addReconstructKeyMiddleware(this.moduleName, this.getAccounts.bind(this));
   }
 
-  // eslint-disable-next-line
   async initialize(): Promise<void> {}
 
   async setSeedPhrase(seedPhraseType: string, seedPhrase?: string): Promise<void> {
@@ -67,7 +66,7 @@ class SeedPhraseModule implements IModule {
           return { ...x, keys };
         })
       );
-    } catch (err) {
+    } catch {
       return [];
     }
   }
@@ -83,7 +82,7 @@ class SeedPhraseModule implements IModule {
         })
       );
       return responses.flatMap((x) => x);
-    } catch (err) {
+    } catch {
       return [];
     }
   }

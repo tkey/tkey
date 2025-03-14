@@ -29,7 +29,6 @@ class ShareSerializationModule implements IModule {
     this.tbSDK._addShareSerializationMiddleware(this.serialize.bind(this), this.deserialize.bind(this));
   }
 
-  // eslint-disable-next-line
   async initialize(): Promise<void> {}
 
   async serialize(share: BN, type: string): Promise<unknown> {

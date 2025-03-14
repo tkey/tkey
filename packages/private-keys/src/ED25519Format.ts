@@ -24,7 +24,7 @@ export class ED25519Format implements IPrivateKeyFormat {
       if (nacl.sign.detached.verify(signData, signature, keypair.publicKey)) {
         return true;
       }
-    } catch (error) {
+    } catch {
       return false;
     }
     return false;

@@ -9,7 +9,7 @@
   "module": "dist/lib.esm/index.js",
   "unpkg": "dist/serviceProviderTorus.umd.min.js",
   "jsdelivr": "dist/serviceProviderTorus.umd.min.js",
-  "types": "dist/types/index.d.ts",
+  "types": "dist/lib.cjs/types/index.d.ts",
   "sideEffects": false,
   "files": [
     "dist"
@@ -40,13 +40,13 @@
   "dependencies": {
     "@tkey/common-types": "^15.2.1-alpha.0",
     "@tkey/service-provider-base": "^15.2.1-alpha.0",
-    "@toruslabs/customauth": "^20.3.0",
-    "@toruslabs/torus.js": "^15.1.0",
+    "@toruslabs/customauth": "^21.0.0",
+    "@toruslabs/torus.js": "^16.0.0",
     "bn.js": "^5.2.1",
-    "elliptic": "^6.5.5"
+    "elliptic": "^6.6.1"
   },
   "devDependencies": {
-    "@types/bn.js": "^5.1.5",
+    "@types/bn.js": "^5.1.6",
     "@types/elliptic": "^6.4.18"
   },
   "bugs": {
@@ -59,7 +59,7 @@
     ]
   },
   "engines": {
-    "node": ">=18.x",
+    "node": ">=20.x",
     "npm": ">=9.x"
   },
   "gitHead": "4ff88f7fe92b8c85bd0bfde069cde2e56005faca"

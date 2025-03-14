@@ -34,12 +34,12 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
       const deviceTSSShare = ecTSS.genKeyPair().getPrivate();
       const deviceTSSIndex = 3;
 
-      sp.verifierName = "torus-test-health";
-      sp.verifierId = "test@example.com";
+      sp.authConnectionId = "torus-test-health";
+      sp.userId = "test@example.com";
       const { postboxkey } = await fetchPostboxKeyAndSigs({
         serviceProvider: sp,
-        verifierName: sp.verifierName,
-        verifierId: sp.verifierId,
+        authConnectionId: sp.authConnectionId,
+        userId: sp.userId,
       });
       sp.postboxKey = postboxkey;
 
@@ -75,12 +75,12 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
     it("#should be able to reconstruct tss key from factor key", async function () {
       const sp = torusSP;
 
-      sp.verifierName = "torus-test-health";
-      sp.verifierId = "test18@example.com";
+      sp.authConnectionId = "torus-test-health";
+      sp.userId = "test18@example.com";
       const { serverDKGPrivKeys } = await assignTssDkgKeys({
         serviceProvider: sp,
-        verifierName: sp.verifierName,
-        verifierId: sp.verifierId,
+        authConnectionId: sp.authConnectionId,
+        userId: sp.userId,
         maxTSSNonceToSimulate: 2,
       });
 
@@ -89,8 +89,8 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
       const deviceTSSIndex = 2;
       const { postboxkey } = await fetchPostboxKeyAndSigs({
         serviceProvider: sp,
-        verifierName: sp.verifierName,
-        verifierId: sp.verifierId,
+        authConnectionId: sp.authConnectionId,
+        userId: sp.userId,
       });
       sp.postboxKey = postboxkey;
       const storageLayer = initStorageLayer();
@@ -144,12 +144,12 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
 
     it(`#should be able to import a tss key for new account, manualSync=${manualSync}`, async function () {
       const sp = torusSP;
-      sp.verifierName = "torus-test-health";
-      sp.verifierId = `importeduserfresh${TSS_KEY_TYPE}@example.com`;
+      sp.authConnectionId = "torus-test-health";
+      sp.userId = `importeduserfresh${TSS_KEY_TYPE}@example.com`;
       const { signatures, postboxkey } = await fetchPostboxKeyAndSigs({
         serviceProvider: sp,
-        verifierName: sp.verifierName,
-        verifierId: sp.verifierId,
+        authConnectionId: sp.authConnectionId,
+        userId: sp.userId,
       });
       sp.postboxKey = postboxkey;
 
@@ -210,18 +210,18 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
       const deviceTSSIndex = 2;
       const newTSSIndex = 3;
 
-      sp.verifierName = "torus-test-health";
-      sp.verifierId = `importeduser${TSS_KEY_TYPE}@example.com`;
+      sp.authConnectionId = "torus-test-health";
+      sp.userId = `importeduser${TSS_KEY_TYPE}@example.com`;
       const { signatures, postboxkey } = await fetchPostboxKeyAndSigs({
         serviceProvider: sp,
-        verifierName: sp.verifierName,
-        verifierId: sp.verifierId,
+        authConnectionId: sp.authConnectionId,
+        userId: sp.userId,
       });
       sp.postboxKey = postboxkey;
       const { serverDKGPrivKeys } = await assignTssDkgKeys({
         serviceProvider: sp,
-        verifierName: sp.verifierName,
-        verifierId: sp.verifierId,
+        authConnectionId: sp.authConnectionId,
+        userId: sp.userId,
         maxTSSNonceToSimulate: 1,
       });
 
@@ -255,8 +255,8 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
       const { serverDKGPrivKeys: serverDKGPrivKeys1 } = await assignTssDkgKeys({
         tssTag: "imported",
         serviceProvider: sp,
-        verifierName: sp.verifierName,
-        verifierId: sp.verifierId,
+        authConnectionId: sp.authConnectionId,
+        userId: sp.userId,
         maxTSSNonceToSimulate: 1,
       });
 
@@ -331,18 +331,18 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
       const deviceTSSShare = ecTSS.genKeyPair().getPrivate();
       const deviceTSSIndex = 3;
 
-      sp.verifierName = "torus-test-health";
-      sp.verifierId = `exportUser${TSS_KEY_TYPE}@example.com`;
+      sp.authConnectionId = "torus-test-health";
+      sp.userId = `exportUser${TSS_KEY_TYPE}@example.com-1`;
       const { signatures, postboxkey } = await fetchPostboxKeyAndSigs({
         serviceProvider: sp,
-        verifierName: sp.verifierName,
-        verifierId: sp.verifierId,
+        authConnectionId: sp.authConnectionId,
+        userId: sp.userId,
       });
       sp.postboxKey = postboxkey;
       const { serverDKGPrivKeys } = await assignTssDkgKeys({
         serviceProvider: sp,
-        verifierName: sp.verifierName,
-        verifierId: sp.verifierId,
+        authConnectionId: sp.authConnectionId,
+        userId: sp.userId,
         maxTSSNonceToSimulate: 1,
       });
 
@@ -377,8 +377,8 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
       await assignTssDkgKeys({
         tssTag: "imported",
         serviceProvider: sp,
-        verifierName: sp.verifierName,
-        verifierId: sp.verifierId,
+        authConnectionId: sp.authConnectionId,
+        userId: sp.userId,
         maxTSSNonceToSimulate: 1,
       });
       // import key
@@ -478,19 +478,19 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
 
       before("setup", async function () {
         const sp = torusSP;
-        sp.verifierName = "torus-test-health";
-        sp.verifierId = `test192${TSS_KEY_TYPE}@example.com`;
+        sp.authConnectionId = "torus-test-health";
+        sp.userId = `test192${TSS_KEY_TYPE}@example.com-1`;
         const { signatures: authSignatures, postboxkey } = await fetchPostboxKeyAndSigs({
           serviceProvider: sp,
-          verifierName: sp.verifierName,
-          verifierId: sp.verifierId,
+          authConnectionId: sp.authConnectionId,
+          userId: sp.userId,
         });
         signatures = authSignatures;
         sp.postboxKey = postboxkey;
         await assignTssDkgKeys({
           serviceProvider: sp,
-          verifierName: sp.verifierName,
-          verifierId: sp.verifierId,
+          authConnectionId: sp.authConnectionId,
+          userId: sp.userId,
           maxTSSNonceToSimulate: 4,
         });
 
@@ -575,21 +575,21 @@ TEST_KEY_TYPES.forEach((TSS_KEY_TYPE) => {
       const sp = torusSP;
 
       before("setup", async function () {
-        sp.verifierName = "torus-test-health";
-        sp.verifierId = `test193${TSS_KEY_TYPE}@example.com`;
+        sp.authConnectionId = "torus-test-health";
+        sp.userId = `test193${TSS_KEY_TYPE}@example.com-1`;
         const { signatures: authSignatures, postboxkey } = await fetchPostboxKeyAndSigs({
           serviceProvider: sp,
-          verifierName: sp.verifierName,
-          verifierId: sp.verifierId,
+          authConnectionId: sp.authConnectionId,
+          userId: sp.userId,
         });
         signatures = authSignatures;
-        // eslint-disable-next-line require-atomic-updates
+
         sp.postboxKey = postboxkey;
 
         await assignTssDkgKeys({
           serviceProvider: sp,
-          verifierName: sp.verifierName,
-          verifierId: sp.verifierId,
+          authConnectionId: sp.authConnectionId,
+          userId: sp.userId,
           maxTSSNonceToSimulate: 4,
         });
 

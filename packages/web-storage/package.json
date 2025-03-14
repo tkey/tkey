@@ -9,7 +9,7 @@
   "module": "dist/lib.esm/index.js",
   "unpkg": "dist/webStorage.umd.min.js",
   "jsdelivr": "dist/webStorage.umd.min.js",
-  "types": "dist/types/index.d.ts",
+  "types": "dist/lib.cjs/types/index.d.ts",
   "sideEffects": false,
   "files": [
     "dist"
@@ -44,7 +44,7 @@
   },
   "dependencies": {
     "@tkey/common-types": "^15.2.1-alpha.0",
-    "@types/bn.js": "^5.1.5",
+    "@types/bn.js": "^5.1.6",
     "bn.js": "^5.2.1"
   },
   "devDependencies": {
@@ -63,7 +63,7 @@
     ]
   },
   "engines": {
-    "node": ">=18.x",
+    "node": ">=20.x",
     "npm": ">=9.x"
   },
   "gitHead": "4ff88f7fe92b8c85bd0bfde069cde2e56005faca"
