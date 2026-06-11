@@ -287,7 +287,6 @@ export interface ITKeyApi {
 
   getTKeyStoreItem(moduleName: string, id: string): Promise<TkeyStoreItemType>;
   getTKeyStore(moduleName: string): Promise<TkeyStoreItemType[]>;
-  _deleteTKeyStoreItem(moduleName: string, id: string): Promise<void>;
   _setTKeyStoreItem(moduleName: string, data: TkeyStoreItemType, updateMetadata?: boolean): Promise<void>;
 }
 
