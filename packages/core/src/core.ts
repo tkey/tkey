@@ -1111,8 +1111,6 @@ class ThresholdKey implements ITKey {
     await this._syncShareMetadata();
   }
 
-
-
   async getTKeyStore(moduleName: string): Promise<TkeyStoreItemType[]> {
     if (!this.metadata) {
       throw CoreError.metadataUndefined();
