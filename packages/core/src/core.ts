@@ -1111,22 +1111,6 @@ class ThresholdKey implements ITKey {
     await this._syncShareMetadata();
   }
 
-  async _deleteTKeyStoreItem(moduleName: string, id: string): Promise<void> {
-    if (!this.metadata) {
-      throw CoreError.metadataUndefined();
-    }
-    const rawTkeyStoreItems = (this.metadata.getTkeyStoreDomain(moduleName) as EncryptedMessage[]) || [];
-    const decryptedItems = await Promise.all(
-      rawTkeyStoreItems.map(async (x) => {
-        const decryptedItem = await this.decrypt(x);
-        return JSON.parse(bytesToUtf8(decryptedItem)) as TkeyStoreItemType;
-      })
-    );
-    const finalItems = decryptedItems.filter((x) => x.id !== id);
-    this.metadata.setTkeyStoreDomain(moduleName, finalItems);
-    await this._syncShareMetadata();
-  }
-
   async getTKeyStore(moduleName: string): Promise<TkeyStoreItemType[]> {
     if (!this.metadata) {
       throw CoreError.metadataUndefined();
@@ -1274,7 +1258,6 @@ class ThresholdKey implements ITKey {
       getTKeyStore: this.getTKeyStore.bind(this),
       getTKeyStoreItem: this.getTKeyStoreItem.bind(this),
       _setTKeyStoreItem: this._setTKeyStoreItem.bind(this),
-      _deleteTKeyStoreItem: this._deleteTKeyStoreItem.bind(this),
       deleteShare: this.deleteShare.bind(this),
     };
   }
