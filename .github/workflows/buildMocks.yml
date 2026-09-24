@@ -21,12 +21,12 @@ jobs:
 
     steps:
       - name: checkout tkey repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           path: ./tkey
 
       - name: Set up node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           node-version: ${{ matrix.node }}
           cache: "npm"
@@ -38,7 +38,7 @@ jobs:
           npm run pack:lerna
 
       - name: Clone comp tests
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           repository: tkey/backward-compatibility-tests
           path: ./backward-compatibility-tests
@@ -59,7 +59,7 @@ jobs:
           cd ./backward-compatibility-tests
           npm run build-mocks
 
-      - uses: EndBug/add-and-commit@v9
+      - uses: EndBug/add-and-commit@a94899bca583c204427a224a7af87c02f9b325d5 # v9.1.4
         with:
           author_name: Auto
           branch: master
